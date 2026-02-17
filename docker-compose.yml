@@ -1,0 +1,15 @@
+services:
+  foedus:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - ADMIN_USER=${ADMIN_USER:-admin}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-changeme}
+      - DATABASE_URL=/data/foedus.db
+      - PORT=3000
+    volumes:
+      - foedus_data:/data
+
+volumes:
+  foedus_data:

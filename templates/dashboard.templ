@@ -1,0 +1,157 @@
+package templates
+
+import (
+	"github.com/dpucci/foedus/internal/models"
+	"strconv"
+)
+
+templ Dashboard(settings models.WeddingSettings, guests []models.Guest, csrfToken string, flash string) {
+	@Layout("Dashboard") {
+		<div class="max-w-4xl mx-auto px-6 py-10">
+			<h1 class="text-3xl font-bold mb-8">Wedding Dashboard</h1>
+			if flash != "" {
+				<div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-6">
+					{ flash }
+				</div>
+			}
+			<!-- settings form -->
+			<section class="bg-white rounded-xl shadow-sm p-6 mb-8">
+				<h2 class="text-xl mb-4">Wedding Settings</h2>
+				<form method="POST" action="/dashboard/settings" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+					<input type="hidden" name="_csrf" value={ csrfToken }/>
+					@settingInput("spouse1_name", "Spouse 1 Name", settings.Spouse1Name)
+					@settingInput("spouse2_name", "Spouse 2 Name", settings.Spouse2Name)
+					@settingInput("ceremony_date", "Ceremony Date", settings.CeremonyDate)
+					@settingInput("church_name", "Church Name", settings.ChurchName)
+					@settingInput("church_address", "Church Address", settings.ChurchAddress)
+					@settingInput("party_venue", "Party Venue", settings.PartyVenue)
+					@settingInput("party_address", "Party Address", settings.PartyAddress)
+					<div class="md:col-span-2">
+						<label class="block text-sm font-medium text-stone-600 mb-1">Details</label>
+						<textarea name="details" rows="3" class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400">{ settings.Details }</textarea>
+					</div>
+					<div class="md:col-span-2">
+						<button type="submit" class="bg-stone-800 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-stone-700">Save Settings</button>
+					</div>
+				</form>
+			</section>
+			<!-- add guest form -->
+			<section class="bg-white rounded-xl shadow-sm p-6 mb-8">
+				<h2 class="text-xl mb-4">Add Guest</h2>
+				<form method="POST" action="/dashboard/guests" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+					<input type="hidden" name="_csrf" value={ csrfToken }/>
+					@settingInput("name", "Name", "")
+					@settingInput("email", "Email", "")
+					<div>
+						<label class="block text-sm font-medium text-stone-600 mb-1">Dietary Notes</label>
+						<input type="text" name="dietary_notes" class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400"/>
+					</div>
+					<div>
+						<label class="block text-sm font-medium text-stone-600 mb-1">Notes</label>
+						<input type="text" name="notes" class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400"/>
+					</div>
+					<div class="flex items-center gap-2">
+						<input type="checkbox" name="plus_one" value="1" id="plus_one" class="rounded"/>
+						<label for="plus_one" class="text-sm text-stone-600">Plus One</label>
+					</div>
+					<div class="md:col-span-2">
+						<button type="submit" class="bg-stone-800 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-stone-700">Add Guest</button>
+					</div>
+				</form>
+			</section>
+			<!-- guest list -->
+			<section class="bg-white rounded-xl shadow-sm p-6">
+				<h2 class="text-xl mb-4">Guests ({ strconv.Itoa(len(guests)) })</h2>
+				if len(guests) == 0 {
+					<p class="text-stone-400 text-sm">No guests added yet.</p>
+				} else {
+					<div class="overflow-x-auto">
+						<table class="w-full text-sm">
+							<thead>
+								<tr class="border-b border-stone-200 text-left text-stone-500">
+									<th class="py-2 pr-4">Name</th>
+									<th class="py-2 pr-4">Email</th>
+									<th class="py-2 pr-4">+1</th>
+									<th class="py-2 pr-4">Dietary</th>
+									<th class="py-2 pr-4">Notes</th>
+									<th class="py-2">Actions</th>
+								</tr>
+							</thead>
+							<tbody>
+								for _, g := range guests {
+									<tr class="border-b border-stone-100">
+										<td class="py-2 pr-4 font-medium">{ g.Name }</td>
+										<td class="py-2 pr-4 text-stone-500">{ g.Email }</td>
+										<td class="py-2 pr-4">
+											if g.PlusOne {
+												Yes
+											} else {
+												No
+											}
+										</td>
+										<td class="py-2 pr-4 text-stone-500">{ g.DietaryNotes }</td>
+										<td class="py-2 pr-4 text-stone-500">{ g.Notes }</td>
+										<td class="py-2 flex gap-2">
+											<a href={ templ.SafeURL("/dashboard/guests/" + strconv.Itoa(g.ID) + "/edit") } class="text-stone-600 hover:text-stone-800 underline">Edit</a>
+											<form method="POST" action={ templ.SafeURL("/dashboard/guests/" + strconv.Itoa(g.ID) + "/delete") } onsubmit="return confirm('Delete this guest?')">
+												<input type="hidden" name="_csrf" value={ csrfToken }/>
+												<button type="submit" class="text-red-500 hover:text-red-700 underline">Delete</button>
+											</form>
+										</td>
+									</tr>
+								}
+							</tbody>
+						</table>
+					</div>
+				}
+			</section>
+		</div>
+	}
+}
+
+templ EditGuest(guest models.Guest, csrfToken string) {
+	@Layout("Edit Guest") {
+		<div class="max-w-2xl mx-auto px-6 py-10">
+			<a href="/dashboard" class="text-sm text-stone-500 hover:text-stone-700 mb-4 inline-block">&larr; Back to Dashboard</a>
+			<h1 class="text-3xl font-bold mb-8">Edit Guest</h1>
+			<section class="bg-white rounded-xl shadow-sm p-6">
+				<form method="POST" action={ templ.SafeURL("/dashboard/guests/" + strconv.Itoa(guest.ID)) } class="grid grid-cols-1 md:grid-cols-2 gap-4">
+					<input type="hidden" name="_csrf" value={ csrfToken }/>
+					@settingInput("name", "Name", guest.Name)
+					@settingInput("email", "Email", guest.Email)
+					<div>
+						<label class="block text-sm font-medium text-stone-600 mb-1">Dietary Notes</label>
+						<input type="text" name="dietary_notes" value={ guest.DietaryNotes } class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400"/>
+					</div>
+					<div>
+						<label class="block text-sm font-medium text-stone-600 mb-1">Notes</label>
+						<input type="text" name="notes" value={ guest.Notes } class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400"/>
+					</div>
+					<div class="flex items-center gap-2">
+						<input
+							type="checkbox"
+							name="plus_one"
+							value="1"
+							id="edit_plus_one"
+							if guest.PlusOne {
+								checked
+							}
+							class="rounded"
+						/>
+						<label for="edit_plus_one" class="text-sm text-stone-600">Plus One</label>
+					</div>
+					<div class="md:col-span-2">
+						<button type="submit" class="bg-stone-800 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-stone-700">Update Guest</button>
+					</div>
+				</form>
+			</section>
+		</div>
+	}
+}
+
+templ settingInput(name, label, value string) {
+	<div>
+		<label class="block text-sm font-medium text-stone-600 mb-1">{ label }</label>
+		<input type="text" name={ name } value={ value } class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400"/>
+	</div>
+}
