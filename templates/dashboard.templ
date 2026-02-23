@@ -1,157 +1,178 @@
 package templates
 
 import (
+	"github.com/dpucci/foedus/internal/i18n"
 	"github.com/dpucci/foedus/internal/models"
 	"strconv"
 )
 
-templ Dashboard(settings models.WeddingSettings, guests []models.Guest, csrfToken string, flash string) {
-	@Layout("Dashboard") {
-		<div class="max-w-4xl mx-auto px-6 py-10">
-			<h1 class="text-3xl font-bold mb-8">Wedding Dashboard</h1>
-			if flash != "" {
-				<div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-6">
-					{ flash }
+// helper to build the combined "name, address" display value for autocomplete fields
+func locationDisplay(name, address string) string {
+	if name != "" && address != "" {
+		return name + ", " + address
+	}
+	if name != "" {
+		return name
+	}
+	return address
+}
+
+templ Dashboard(settings models.WeddingSettings, guests []models.Guest, csrfToken string, flash string, t i18n.T, lang string) {
+	@Layout(t("title.dashboard"), lang) {
+		<h1>{ t("dashboard.title") }</h1>
+		if flash != "" {
+			<div class="flash-success">{ flash }</div>
+		}
+		<!-- settings form -->
+		<article>
+			<h2>{ t("dashboard.settings") }</h2>
+			<form method="POST" action="/dashboard/settings">
+				<input type="hidden" name="_csrf" value={ csrfToken }/>
+				<div class="grid">
+					@settingInput("spouse1_name", t("label.spouse1_name"), settings.Spouse1Name)
+					@settingInput("spouse2_name", t("label.spouse2_name"), settings.Spouse2Name)
+				</div>
+				<label>
+					{ t("label.ceremony_date") }
+					<input type="date" name="ceremony_date" value={ settings.CeremonyDate }/>
+				</label>
+				<label>
+					{ t("label.church") }
+					<input type="text" id="church-input" value={ locationDisplay(settings.ChurchName, settings.ChurchAddress) } autocomplete="off" placeholder={ t("label.church") }/>
+					<div id="church-dropdown" class="autocomplete-dropdown"></div>
+					<input type="hidden" name="church_name" id="church-name-hidden" value={ settings.ChurchName }/>
+					<input type="hidden" name="church_address" id="church-address-hidden" value={ settings.ChurchAddress }/>
+					<small>{ t("osm.attribution") }</small>
+				</label>
+				<label>
+					{ t("label.party") }
+					<input type="text" id="party-input" value={ locationDisplay(settings.PartyVenue, settings.PartyAddress) } autocomplete="off" placeholder={ t("label.party") }/>
+					<div id="party-dropdown" class="autocomplete-dropdown"></div>
+					<input type="hidden" name="party_venue" id="party-name-hidden" value={ settings.PartyVenue }/>
+					<input type="hidden" name="party_address" id="party-address-hidden" value={ settings.PartyAddress }/>
+					<small>{ t("osm.attribution") }</small>
+				</label>
+				<button type="submit">{ t("btn.save_settings") }</button>
+			</form>
+		</article>
+		<!-- add guest form -->
+		<article>
+			<h2>{ t("dashboard.add_guest") }</h2>
+			<form method="POST" action="/dashboard/guests">
+				<input type="hidden" name="_csrf" value={ csrfToken }/>
+				<div class="grid">
+					@settingInput("name", t("label.name"), "")
+					@settingInput("email", t("label.email"), "")
+				</div>
+				<div class="grid">
+					<label>
+						{ t("label.dietary_notes") }
+						<input type="text" name="dietary_notes"/>
+					</label>
+					<label>
+						{ t("label.notes") }
+						<input type="text" name="notes"/>
+					</label>
+				</div>
+				<label>
+					<input type="checkbox" name="plus_one" value="1" role="switch"/>
+					{ t("label.plus_one") }
+				</label>
+				<button type="submit">{ t("btn.add_guest") }</button>
+			</form>
+		</article>
+		<!-- guest list -->
+		<article>
+			<h2>{ t("dashboard.guests") } ({ strconv.Itoa(len(guests)) })</h2>
+			if len(guests) == 0 {
+				<p class="muted">{ t("guests.empty") }</p>
+			} else {
+				<div class="overflow-auto">
+					<table>
+						<thead>
+							<tr>
+								<th>{ t("th.name") }</th>
+								<th>{ t("th.email") }</th>
+								<th>{ t("th.plus_one") }</th>
+								<th>{ t("th.dietary") }</th>
+								<th>{ t("th.notes") }</th>
+								<th>{ t("th.actions") }</th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, g := range guests {
+								<tr>
+									<td><strong>{ g.Name }</strong></td>
+									<td>{ g.Email }</td>
+									<td>
+										if g.PlusOne {
+											{ t("yes") }
+										} else {
+											{ t("no") }
+										}
+									</td>
+									<td>{ g.DietaryNotes }</td>
+									<td>{ g.Notes }</td>
+									<td class="actions">
+										<a href={ templ.SafeURL("/dashboard/guests/" + strconv.Itoa(g.ID) + "/edit") }>{ t("btn.edit") }</a>
+										<form method="POST" action={ templ.SafeURL("/dashboard/guests/" + strconv.Itoa(g.ID) + "/delete") } data-confirm={ t("confirm.delete_guest") } onsubmit="return confirm(this.dataset.confirm)">
+											<input type="hidden" name="_csrf" value={ csrfToken }/>
+											<button type="submit" class="outline secondary">{ t("btn.delete") }</button>
+										</form>
+									</td>
+								</tr>
+							}
+						</tbody>
+					</table>
 				</div>
 			}
-			<!-- settings form -->
-			<section class="bg-white rounded-xl shadow-sm p-6 mb-8">
-				<h2 class="text-xl mb-4">Wedding Settings</h2>
-				<form method="POST" action="/dashboard/settings" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-					<input type="hidden" name="_csrf" value={ csrfToken }/>
-					@settingInput("spouse1_name", "Spouse 1 Name", settings.Spouse1Name)
-					@settingInput("spouse2_name", "Spouse 2 Name", settings.Spouse2Name)
-					@settingInput("ceremony_date", "Ceremony Date", settings.CeremonyDate)
-					@settingInput("church_name", "Church Name", settings.ChurchName)
-					@settingInput("church_address", "Church Address", settings.ChurchAddress)
-					@settingInput("party_venue", "Party Venue", settings.PartyVenue)
-					@settingInput("party_address", "Party Address", settings.PartyAddress)
-					<div class="md:col-span-2">
-						<label class="block text-sm font-medium text-stone-600 mb-1">Details</label>
-						<textarea name="details" rows="3" class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400">{ settings.Details }</textarea>
-					</div>
-					<div class="md:col-span-2">
-						<button type="submit" class="bg-stone-800 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-stone-700">Save Settings</button>
-					</div>
-				</form>
-			</section>
-			<!-- add guest form -->
-			<section class="bg-white rounded-xl shadow-sm p-6 mb-8">
-				<h2 class="text-xl mb-4">Add Guest</h2>
-				<form method="POST" action="/dashboard/guests" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-					<input type="hidden" name="_csrf" value={ csrfToken }/>
-					@settingInput("name", "Name", "")
-					@settingInput("email", "Email", "")
-					<div>
-						<label class="block text-sm font-medium text-stone-600 mb-1">Dietary Notes</label>
-						<input type="text" name="dietary_notes" class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400"/>
-					</div>
-					<div>
-						<label class="block text-sm font-medium text-stone-600 mb-1">Notes</label>
-						<input type="text" name="notes" class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400"/>
-					</div>
-					<div class="flex items-center gap-2">
-						<input type="checkbox" name="plus_one" value="1" id="plus_one" class="rounded"/>
-						<label for="plus_one" class="text-sm text-stone-600">Plus One</label>
-					</div>
-					<div class="md:col-span-2">
-						<button type="submit" class="bg-stone-800 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-stone-700">Add Guest</button>
-					</div>
-				</form>
-			</section>
-			<!-- guest list -->
-			<section class="bg-white rounded-xl shadow-sm p-6">
-				<h2 class="text-xl mb-4">Guests ({ strconv.Itoa(len(guests)) })</h2>
-				if len(guests) == 0 {
-					<p class="text-stone-400 text-sm">No guests added yet.</p>
-				} else {
-					<div class="overflow-x-auto">
-						<table class="w-full text-sm">
-							<thead>
-								<tr class="border-b border-stone-200 text-left text-stone-500">
-									<th class="py-2 pr-4">Name</th>
-									<th class="py-2 pr-4">Email</th>
-									<th class="py-2 pr-4">+1</th>
-									<th class="py-2 pr-4">Dietary</th>
-									<th class="py-2 pr-4">Notes</th>
-									<th class="py-2">Actions</th>
-								</tr>
-							</thead>
-							<tbody>
-								for _, g := range guests {
-									<tr class="border-b border-stone-100">
-										<td class="py-2 pr-4 font-medium">{ g.Name }</td>
-										<td class="py-2 pr-4 text-stone-500">{ g.Email }</td>
-										<td class="py-2 pr-4">
-											if g.PlusOne {
-												Yes
-											} else {
-												No
-											}
-										</td>
-										<td class="py-2 pr-4 text-stone-500">{ g.DietaryNotes }</td>
-										<td class="py-2 pr-4 text-stone-500">{ g.Notes }</td>
-										<td class="py-2 flex gap-2">
-											<a href={ templ.SafeURL("/dashboard/guests/" + strconv.Itoa(g.ID) + "/edit") } class="text-stone-600 hover:text-stone-800 underline">Edit</a>
-											<form method="POST" action={ templ.SafeURL("/dashboard/guests/" + strconv.Itoa(g.ID) + "/delete") } onsubmit="return confirm('Delete this guest?')">
-												<input type="hidden" name="_csrf" value={ csrfToken }/>
-												<button type="submit" class="text-red-500 hover:text-red-700 underline">Delete</button>
-											</form>
-										</td>
-									</tr>
-								}
-							</tbody>
-						</table>
-					</div>
-				}
-			</section>
-		</div>
+		</article>
+		<script src="/static/autocomplete.js"></script>
 	}
 }
 
-templ EditGuest(guest models.Guest, csrfToken string) {
-	@Layout("Edit Guest") {
-		<div class="max-w-2xl mx-auto px-6 py-10">
-			<a href="/dashboard" class="text-sm text-stone-500 hover:text-stone-700 mb-4 inline-block">&larr; Back to Dashboard</a>
-			<h1 class="text-3xl font-bold mb-8">Edit Guest</h1>
-			<section class="bg-white rounded-xl shadow-sm p-6">
-				<form method="POST" action={ templ.SafeURL("/dashboard/guests/" + strconv.Itoa(guest.ID)) } class="grid grid-cols-1 md:grid-cols-2 gap-4">
-					<input type="hidden" name="_csrf" value={ csrfToken }/>
-					@settingInput("name", "Name", guest.Name)
-					@settingInput("email", "Email", guest.Email)
-					<div>
-						<label class="block text-sm font-medium text-stone-600 mb-1">Dietary Notes</label>
-						<input type="text" name="dietary_notes" value={ guest.DietaryNotes } class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400"/>
-					</div>
-					<div>
-						<label class="block text-sm font-medium text-stone-600 mb-1">Notes</label>
-						<input type="text" name="notes" value={ guest.Notes } class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400"/>
-					</div>
-					<div class="flex items-center gap-2">
-						<input
-							type="checkbox"
-							name="plus_one"
-							value="1"
-							id="edit_plus_one"
-							if guest.PlusOne {
-								checked
-							}
-							class="rounded"
-						/>
-						<label for="edit_plus_one" class="text-sm text-stone-600">Plus One</label>
-					</div>
-					<div class="md:col-span-2">
-						<button type="submit" class="bg-stone-800 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-stone-700">Update Guest</button>
-					</div>
-				</form>
-			</section>
-		</div>
+templ EditGuest(guest models.Guest, csrfToken string, t i18n.T, lang string) {
+	@Layout(t("title.edit_guest"), lang) {
+		<a href="/dashboard">&larr; { t("btn.back") }</a>
+		<h1>{ t("title.edit_guest") }</h1>
+		<article>
+			<form method="POST" action={ templ.SafeURL("/dashboard/guests/" + strconv.Itoa(guest.ID)) }>
+				<input type="hidden" name="_csrf" value={ csrfToken }/>
+				<div class="grid">
+					@settingInput("name", t("label.name"), guest.Name)
+					@settingInput("email", t("label.email"), guest.Email)
+				</div>
+				<div class="grid">
+					<label>
+						{ t("label.dietary_notes") }
+						<input type="text" name="dietary_notes" value={ guest.DietaryNotes }/>
+					</label>
+					<label>
+						{ t("label.notes") }
+						<input type="text" name="notes" value={ guest.Notes }/>
+					</label>
+				</div>
+				<label>
+					<input
+						type="checkbox"
+						name="plus_one"
+						value="1"
+						role="switch"
+						if guest.PlusOne {
+							checked
+						}
+					/>
+					{ t("label.plus_one") }
+				</label>
+				<button type="submit">{ t("btn.update_guest") }</button>
+			</form>
+		</article>
 	}
 }
 
 templ settingInput(name, label, value string) {
-	<div>
-		<label class="block text-sm font-medium text-stone-600 mb-1">{ label }</label>
-		<input type="text" name={ name } value={ value } class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400"/>
-	</div>
+	<label>
+		{ label }
+		<input type="text" name={ name } value={ value }/>
+	</label>
 }

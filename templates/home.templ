@@ -1,67 +1,57 @@
 package templates
 
-import "github.com/dpucci/foedus/internal/models"
+import (
+	"github.com/dpucci/foedus/internal/i18n"
+	"github.com/dpucci/foedus/internal/models"
+)
 
-templ Home(settings models.WeddingSettings, guests []models.Guest) {
-	@Layout(settings.Spouse1Name + " & " + settings.Spouse2Name) {
-		<div class="max-w-3xl mx-auto px-6 py-16 text-center">
-			<p class="text-sm uppercase tracking-[0.3em] text-stone-400 mb-4">We're getting married</p>
-			<h1 class="text-5xl md:text-7xl font-bold text-stone-800 mb-6">
-				{ settings.Spouse1Name } <span class="text-stone-400 font-normal">&amp;</span> { settings.Spouse2Name }
+templ Home(settings models.WeddingSettings, guests []models.Guest, t i18n.T, lang string) {
+	@Layout(settings.Spouse1Name+" & "+settings.Spouse2Name, lang) {
+		<header class="hero">
+			<p><small>{ t("home.getting_married") }</small></p>
+			<h1>
+				{ settings.Spouse1Name } <span class="amp">&amp;</span> { settings.Spouse2Name }
 			</h1>
 			if settings.CeremonyDate != "" {
-				<p class="text-xl text-stone-500 mb-12">{ settings.CeremonyDate }</p>
+				<p class="muted">{ i18n.FormatDate(settings.CeremonyDate, lang) }</p>
 			}
-			<hr class="border-stone-200 mb-12"/>
-			if settings.ChurchName != "" || settings.ChurchAddress != "" {
-				<div class="mb-10">
-					<h2 class="text-2xl mb-2">Ceremony</h2>
-					if settings.ChurchName != "" {
-						<p class="text-stone-600 font-medium">{ settings.ChurchName }</p>
-					}
-					if settings.ChurchAddress != "" {
-						<p class="text-stone-400 text-sm">{ settings.ChurchAddress }</p>
-					}
-				</div>
-			}
-			if settings.PartyVenue != "" || settings.PartyAddress != "" {
-				<div class="mb-10">
-					<h2 class="text-2xl mb-2">Reception</h2>
-					if settings.PartyVenue != "" {
-						<p class="text-stone-600 font-medium">{ settings.PartyVenue }</p>
-					}
-					if settings.PartyAddress != "" {
-						<p class="text-stone-400 text-sm">{ settings.PartyAddress }</p>
-					}
-				</div>
-			}
-			if settings.Details != "" {
-				<div class="mb-12">
-					<h2 class="text-2xl mb-2">Details</h2>
-					<p class="text-stone-500 whitespace-pre-line max-w-xl mx-auto">{ settings.Details }</p>
-				</div>
-			}
-			if len(guests) > 0 {
-				<hr class="border-stone-200 mb-12"/>
-				<div class="mb-10">
-					<h2 class="text-2xl mb-6">Guest List</h2>
-					<div class="grid gap-3 max-w-md mx-auto text-left">
-						for _, g := range guests {
-							<div class="flex items-center justify-between bg-white rounded-lg px-4 py-3 shadow-sm">
-								<div>
-									<p class="font-medium text-stone-700">{ g.Name }</p>
-									if g.PlusOne {
-										<span class="text-xs text-stone-400">+1</span>
-									}
-								</div>
-							</div>
+		</header>
+		<hr/>
+		if settings.ChurchName != "" || settings.ChurchAddress != "" {
+			<section class="venue">
+				<h2>{ t("home.ceremony") }</h2>
+				if settings.ChurchName != "" {
+					<p><strong>{ settings.ChurchName }</strong></p>
+				}
+				if settings.ChurchAddress != "" {
+					<p><small>{ settings.ChurchAddress }</small></p>
+				}
+			</section>
+		}
+		if settings.PartyVenue != "" || settings.PartyAddress != "" {
+			<section class="venue">
+				<h2>{ t("home.reception") }</h2>
+				if settings.PartyVenue != "" {
+					<p><strong>{ settings.PartyVenue }</strong></p>
+				}
+				if settings.PartyAddress != "" {
+					<p><small>{ settings.PartyAddress }</small></p>
+				}
+			</section>
+		}
+		if len(guests) > 0 {
+			<hr/>
+			<section>
+				<h2>{ t("home.guest_list") }</h2>
+				for _, g := range guests {
+					<article class="guest-card">
+						<strong>{ g.Name }</strong>
+						if g.PlusOne {
+							<small>+1</small>
 						}
-					</div>
-				</div>
-			}
-			<footer class="mt-16 text-stone-300 text-xs">
-				<p>Made with love</p>
-			</footer>
-		</div>
+					</article>
+				}
+			</section>
+		}
 	}
 }

@@ -1,0 +1,330 @@
+/* ── reset pico's defaults to match the original tailwind stone palette ── */
+
+:root {
+  --stone-50: #fafaf9;
+  --stone-100: #f5f5f4;
+  --stone-200: #e7e5e4;
+  --stone-300: #d6d3d0;
+  --stone-400: #a8a29e;
+  --stone-500: #78716c;
+  --stone-600: #57534e;
+  --stone-700: #44403c;
+  --stone-800: #292524;
+
+  --green-50: #f0fdf4;
+  --green-200: #bbf7d0;
+  --green-700: #15803d;
+
+  --red-500: #ef4444;
+  --red-700: #b91c1c;
+
+  /* override pico's theme colors */
+  --pico-background-color: var(--stone-50);
+  --pico-color: var(--stone-800);
+  --pico-muted-color: var(--stone-500);
+  --pico-muted-border-color: var(--stone-200);
+  --pico-primary: var(--stone-800);
+  --pico-primary-hover: var(--stone-700);
+  --pico-secondary: var(--stone-600);
+  --pico-card-background-color: #fff;
+  --pico-card-border-color: transparent;
+  --pico-card-sectioning-background-color: #fff;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--stone-50);
+  color: var(--stone-800);
+}
+
+h1, h2, h3 {
+  font-family: 'Playfair Display', serif;
+  color: var(--stone-800);
+}
+
+/* ── layout ── */
+
+main.container {
+  max-width: 56rem;
+  padding: 2.5rem 1.5rem;
+}
+
+/* ── cards (article) ── */
+
+article {
+  background: #fff;
+  border: none;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+article h2 {
+  font-size: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+/* ── forms ── */
+
+label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--stone-600);
+}
+
+input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+select, textarea {
+  border: 1px solid var(--stone-300);
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  background: #fff;
+  color: var(--stone-800);
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: var(--stone-400);
+  box-shadow: 0 0 0 2px rgba(168,162,158,0.3);
+  outline: none;
+}
+
+button[type="submit"] {
+  background: var(--stone-800);
+  color: #fff;
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  width: auto;
+}
+
+button[type="submit"]:hover {
+  background: var(--stone-700);
+}
+
+small {
+  color: var(--stone-400);
+}
+
+/* ── grid (pico .grid) ── */
+
+.grid {
+  gap: 1rem;
+}
+
+/* ── flash message ── */
+
+.flash-success {
+  background: var(--green-50);
+  border: 1px solid var(--green-200);
+  color: var(--green-700);
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.875rem;
+}
+
+/* ── table ── */
+
+table {
+  font-size: 0.875rem;
+  width: 100%;
+}
+
+thead tr {
+  border-bottom: 1px solid var(--stone-200);
+}
+
+thead th {
+  color: var(--stone-500);
+  font-weight: 500;
+  text-align: left;
+  padding: 0.5rem 1rem 0.5rem 0;
+}
+
+tbody tr {
+  border-bottom: 1px solid var(--stone-100);
+}
+
+tbody td {
+  padding: 0.5rem 1rem 0.5rem 0;
+  color: var(--stone-500);
+}
+
+tbody td:first-child {
+  color: var(--stone-700);
+  font-weight: 500;
+}
+
+/* actions cell */
+.actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.actions a {
+  color: var(--stone-600);
+  text-decoration: underline;
+  font-size: 0.875rem;
+}
+
+.actions a:hover {
+  color: var(--stone-800);
+}
+
+.actions form {
+  margin: 0;
+  padding: 0;
+}
+
+.actions button {
+  background: none;
+  border: none;
+  color: var(--red-500);
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+  font-size: 0.875rem;
+  width: auto;
+}
+
+.actions button:hover {
+  color: var(--red-700);
+}
+
+/* ── home hero ── */
+
+.hero {
+  text-align: center;
+  padding: 4rem 0 2rem;
+}
+
+.hero small {
+  text-transform: uppercase;
+  letter-spacing: 0.3em;
+  color: var(--stone-400);
+  font-size: 0.875rem;
+}
+
+.hero h1 {
+  font-size: 3rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .hero h1 { font-size: 4.5rem; }
+}
+
+.hero .amp {
+  font-weight: 400;
+  color: var(--stone-400);
+}
+
+.muted {
+  color: var(--stone-500);
+  font-size: 1.25rem;
+}
+
+hr {
+  border-color: var(--stone-200);
+  margin: 3rem 0;
+}
+
+/* ── venue sections ── */
+
+.venue {
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+
+.venue h2 {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.venue strong {
+  color: var(--stone-600);
+}
+
+.venue small {
+  color: var(--stone-400);
+}
+
+/* ── guest cards (home page) ── */
+
+.guest-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.75rem;
+  max-width: 28rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.guest-card strong {
+  color: var(--stone-700);
+}
+
+.guest-card small {
+  color: var(--stone-400);
+}
+
+/* ── autocomplete dropdown ── */
+
+.autocomplete-dropdown {
+  display: none;
+  position: absolute;
+  z-index: 10;
+  width: 100%;
+  background: #fff;
+  border: 1px solid var(--stone-200);
+  border-radius: 0.5rem;
+  margin-top: 0.25rem;
+  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.04);
+}
+
+/* ── back link ── */
+
+a[href="/dashboard"] {
+  font-size: 0.875rem;
+  color: var(--stone-500);
+  display: inline-block;
+  margin-bottom: 1rem;
+}
+
+a[href="/dashboard"]:hover {
+  color: var(--stone-700);
+}
+
+/* ── utilities ── */
+
+.overflow-auto {
+  overflow-x: auto;
+}
+
+/* checkbox switch - keep pico's native styling but match colors */
+[role="switch"] {
+  --pico-switch-color: var(--stone-800);
+}
+
+/* relative positioning for autocomplete containers */
+label:has(#church-input),
+label:has(#party-input) {
+  position: relative;
+}
+
+/* dashboard h1 */
+main.container > h1 {
+  font-size: 1.875rem;
+  font-weight: 700;
+  margin-bottom: 2rem;
+}
