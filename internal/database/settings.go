@@ -5,7 +5,7 @@ import "github.com/dpucci/foedus/internal/models"
 var settingsKeys = []string{
 	"spouse1_name", "spouse2_name", "ceremony_date",
 	"church_name", "church_address",
-	"party_venue", "party_address", "details",
+	"party_venue", "party_address",
 }
 
 // SeedSettings inserts default empty rows for any missing setting keys.
@@ -39,7 +39,6 @@ func GetAllSettings() (models.WeddingSettings, error) {
 		ChurchAddress: m["church_address"],
 		PartyVenue:    m["party_venue"],
 		PartyAddress:  m["party_address"],
-		Details:       m["details"],
 	}, nil
 }
 

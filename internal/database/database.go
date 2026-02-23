@@ -39,6 +39,7 @@ func migrate() {
 			created_at    DATETIME DEFAULT CURRENT_TIMESTAMP,
 			updated_at    DATETIME DEFAULT CURRENT_TIMESTAMP
 		)`,
+		`DELETE FROM settings WHERE key = 'details'`,
 	}
 	for _, s := range statements {
 		if _, err := DB.Exec(s); err != nil {

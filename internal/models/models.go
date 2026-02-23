@@ -8,14 +8,13 @@ type Setting struct {
 }
 
 type WeddingSettings struct {
-	Spouse1Name    string
-	Spouse2Name    string
-	CeremonyDate   string
-	ChurchName     string
-	ChurchAddress  string
-	PartyVenue     string
-	PartyAddress   string
-	Details        string
+	Spouse1Name   string
+	Spouse2Name   string
+	CeremonyDate  string
+	ChurchName    string
+	ChurchAddress string
+	PartyVenue    string
+	PartyAddress  string
 }
 
 type Guest struct {
