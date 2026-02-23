@@ -14,6 +14,7 @@ FROM alpine:3.21
 RUN apk add --no-cache ca-certificates
 WORKDIR /app
 COPY --from=builder /app/foedus .
+COPY --from=builder /app/static ./static
 
 EXPOSE 3000
 CMD ["./foedus"]

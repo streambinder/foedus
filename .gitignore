@@ -1,3 +1,4 @@
 *.db
 .env
 *_templ.go
+foedus

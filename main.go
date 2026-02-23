@@ -20,6 +20,9 @@ func main() {
 
 	app := fiber.New()
 
+	app.Use(middleware.LangDetect())
+	app.Static("/static", "./static")
+
 	// public
 	app.Get("/", handlers.Home)
 
