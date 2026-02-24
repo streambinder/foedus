@@ -28,53 +28,54 @@ var supported = map[string]bool{"en": true, "it": true}
 var translations = map[string]map[string]string{
 	"en": {
 		// layout
-		"title.dashboard": "Dashboard",
+		"title.dashboard":  "Dashboard",
 		"title.edit_guest": "Edit Guest",
 
 		// dashboard - sections
-		"dashboard.title":            "Wedding Dashboard",
-		"dashboard.settings":         "Wedding Settings",
-		"dashboard.add_guest":        "Add Guest",
-		"dashboard.guests":           "Guests",
+		"dashboard.title":   "Wedding Dashboard",
+		"dashboard.details": "Details",
+		"dashboard.guests":  "Guests",
 
-		// dashboard - settings labels
-		"label.spouse1_name":   "Spouse 1 Name",
-		"label.spouse2_name":   "Spouse 2 Name",
-		"label.ceremony_date":  "Ceremony Date",
-		"label.church":         "Church",
-		"label.party":          "Party Venue",
+		// dashboard - labels
+		"label.spouses":  "Spouses",
+		"label.ceremony": "Ceremony",
+		"label.reception": "Reception",
+
+		// dashboard - placeholders
+		"placeholder.name":              "Name",
+		"placeholder.ceremony_address":  "Ceremony address",
+		"placeholder.reception_address": "Reception address",
+		"placeholder.first_name":        "First name",
+		"placeholder.last_name":         "Last name",
+		"placeholder.search":            "Search...",
 
 		// dashboard - guest form labels
-		"label.name":          "Name",
-		"label.email":         "Email",
-		"label.dietary_notes": "Dietary Notes",
-		"label.notes":         "Notes",
-		"label.plus_one":      "Plus One",
-
+		"label.first_name": "First Name",
+		"label.last_name":  "Last Name",
 		// dashboard - table headers
-		"th.name":    "Name",
-		"th.email":   "Email",
-		"th.plus_one": "+1",
-		"th.dietary": "Dietary",
-		"th.notes":   "Notes",
-		"th.actions": "Actions",
+		"th.first_name": "First Name",
+		"th.last_name":  "Last Name",
+		"th.confirmed":  "Confirmed",
+		"th.actions":    "Actions",
 
 		// dashboard - buttons & actions
-		"btn.save_settings": "Save Settings",
-		"btn.add_guest":     "Add Guest",
+		"btn.save_settings": "Save",
+		"btn.add":           "Add",
+		"btn.import_csv":    "Import CSV",
 		"btn.update_guest":  "Update Guest",
 		"btn.edit":          "Edit",
 		"btn.delete":        "Delete",
 		"btn.back":          "Back to Dashboard",
+		"btn.prev":          "Previous",
+		"btn.next":          "Next",
 
 		// dashboard - misc
-		"guests.empty":         "No guests added yet.",
 		"confirm.delete_guest": "Delete this guest?",
-		"osm.attribution":      "Search powered by OpenStreetMap Nominatim",
 
 		// flash messages
 		"flash.settings_saved": "Settings saved.",
 		"flash.guest_added":    "Guest added.",
+		"flash.guests_imported": "guests imported.",
 		"flash.guest_updated":  "Guest updated.",
 		"flash.guest_deleted":  "Guest deleted.",
 
@@ -84,59 +85,59 @@ var translations = map[string]map[string]string{
 		"home.reception":       "Reception",
 		"home.guest_list":      "Guest List",
 
-		// plus one values
-		"yes": "Yes",
-		"no":  "No",
+		// footer
+		"link.dashboard": "dashboard",
 	},
 	"it": {
 		// layout
-		"title.dashboard": "Pannello",
+		"title.dashboard":  "Pannello",
 		"title.edit_guest": "Modifica Invitato",
 
 		// dashboard - sections
-		"dashboard.title":            "Pannello",
-		"dashboard.settings":         "Impostazioni",
-		"dashboard.add_guest":        "Aggiungi Invitato",
-		"dashboard.guests":           "Invitati",
+		"dashboard.title":   "Pannello",
+		"dashboard.details": "Dettagli",
+		"dashboard.guests":  "Invitati",
 
-		// dashboard - settings labels
-		"label.spouse1_name":   "Nome Sposo/a 1",
-		"label.spouse2_name":   "Nome Sposo/a 2",
-		"label.ceremony_date":  "Data Cerimonia",
-		"label.church":         "Chiesa",
-		"label.party":          "Location Ricevimento",
+		// dashboard - labels
+		"label.spouses":  "Sposi",
+		"label.ceremony": "Cerimonia",
+		"label.reception": "Ricevimento",
+
+		// dashboard - placeholders
+		"placeholder.name":              "Nome",
+		"placeholder.ceremony_address":  "Indirizzo cerimonia",
+		"placeholder.reception_address": "Indirizzo ricevimento",
+		"placeholder.first_name":        "Nome",
+		"placeholder.last_name":         "Cognome",
+		"placeholder.search":            "Cerca...",
 
 		// dashboard - guest form labels
-		"label.name":          "Nome",
-		"label.email":         "Email",
-		"label.dietary_notes": "Note Alimentari",
-		"label.notes":         "Note",
-		"label.plus_one":      "Accompagnatore",
-
+		"label.first_name": "Nome",
+		"label.last_name":  "Cognome",
 		// dashboard - table headers
-		"th.name":    "Nome",
-		"th.email":   "Email",
-		"th.plus_one": "+1",
-		"th.dietary": "Dieta",
-		"th.notes":   "Note",
-		"th.actions": "Azioni",
+		"th.first_name": "Nome",
+		"th.last_name":  "Cognome",
+		"th.confirmed":  "Confermato",
+		"th.actions":    "Azioni",
 
 		// dashboard - buttons & actions
-		"btn.save_settings": "Salva Impostazioni",
-		"btn.add_guest":     "Aggiungi Invitato",
+		"btn.save_settings": "Salva",
+		"btn.add":           "Aggiungi",
+		"btn.import_csv":    "Importa CSV",
 		"btn.update_guest":  "Aggiorna Invitato",
 		"btn.edit":          "Modifica",
 		"btn.delete":        "Elimina",
 		"btn.back":          "Torna al Pannello",
+		"btn.prev":          "Precedente",
+		"btn.next":          "Successivo",
 
 		// dashboard - misc
-		"guests.empty":         "Nessun invitato aggiunto.",
 		"confirm.delete_guest": "Eliminare questo invitato?",
-		"osm.attribution":      "Ricerca fornita da OpenStreetMap Nominatim",
 
 		// flash messages
 		"flash.settings_saved": "Impostazioni salvate.",
 		"flash.guest_added":    "Invitato aggiunto.",
+		"flash.guests_imported": "invitati importati.",
 		"flash.guest_updated":  "Invitato aggiornato.",
 		"flash.guest_deleted":  "Invitato eliminato.",
 
@@ -146,9 +147,8 @@ var translations = map[string]map[string]string{
 		"home.reception":       "Ricevimento",
 		"home.guest_list":      "Lista Invitati",
 
-		// plus one values
-		"yes": "Sì",
-		"no":  "No",
+		// footer
+		"link.dashboard": "pannello",
 	},
 }
 
@@ -187,15 +187,29 @@ func DetectLang(acceptLang string) string {
 	return "en"
 }
 
-// FormatDate parses a YYYY-MM-DD string and formats it locale-aware.
-// returns the raw string on parse failure.
-func FormatDate(dateStr, lang string) string {
-	t, err := time.Parse("2006-01-02", dateStr)
+// FormatDatetime parses a datetime-local string (2006-01-02T15:04) and formats it locale-aware.
+// falls back to date-only format (2006-01-02) if datetime parse fails.
+// returns the raw string on total parse failure.
+func FormatDatetime(datetimeStr, lang string) string {
+	t, err := time.Parse("2006-01-02T15:04", datetimeStr)
 	if err != nil {
-		return dateStr
+		// try date-only fallback for old data
+		t, err = time.Parse("2006-01-02", datetimeStr)
+		if err != nil {
+			return datetimeStr
+		}
 	}
+
+	hasTime := strings.Contains(datetimeStr, "T")
 	if lang == "it" {
-		return t.Format("2") + " " + italianMonths[t.Month()] + " " + t.Format("2006")
+		s := t.Format("2") + " " + italianMonths[t.Month()] + " " + t.Format("2006")
+		if hasTime {
+			s += ", " + t.Format("15:04")
+		}
+		return s
+	}
+	if hasTime {
+		return t.Format("January 2, 2006 at 3:04 PM")
 	}
 	return t.Format("January 2, 2006")
 }

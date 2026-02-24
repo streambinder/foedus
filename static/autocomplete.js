@@ -145,15 +145,15 @@
 
   // init both autocomplete fields once DOM is ready
   initAutocomplete({
-    inputId: "church-input",
-    dropdownId: "church-dropdown",
-    nameHiddenId: "church-name-hidden",
-    addressHiddenId: "church-address-hidden",
+    inputId: "ceremony-input",
+    dropdownId: "ceremony-dropdown",
+    nameHiddenId: "ceremony-address-hidden",
+    addressHiddenId: "ceremony-location-hidden",
   });
   initAutocomplete({
-    inputId: "party-input",
-    dropdownId: "party-dropdown",
-    nameHiddenId: "party-name-hidden",
-    addressHiddenId: "party-address-hidden",
+    inputId: "reception-input",
+    dropdownId: "reception-dropdown",
+    nameHiddenId: "reception-address-hidden",
+    addressHiddenId: "reception-location-hidden",
   });
 })();

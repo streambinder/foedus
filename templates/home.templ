@@ -5,53 +5,43 @@ import (
 	"github.com/dpucci/foedus/internal/models"
 )
 
-templ Home(settings models.WeddingSettings, guests []models.Guest, t i18n.T, lang string) {
-	@Layout(settings.Spouse1Name+" & "+settings.Spouse2Name, lang) {
+templ Home(settings models.WeddingSettings, t i18n.T, lang string) {
+	@Layout(settings.Spouse1Name+" & "+settings.Spouse2Name, lang, t) {
 		<header class="hero">
 			<p><small>{ t("home.getting_married") }</small></p>
 			<h1>
 				{ settings.Spouse1Name } <span class="amp">&amp;</span> { settings.Spouse2Name }
 			</h1>
-			if settings.CeremonyDate != "" {
-				<p class="muted">{ i18n.FormatDate(settings.CeremonyDate, lang) }</p>
+			if settings.CeremonyDatetime != "" {
+				<p class="muted">{ i18n.FormatDatetime(settings.CeremonyDatetime, lang) }</p>
 			}
 		</header>
 		<hr/>
-		if settings.ChurchName != "" || settings.ChurchAddress != "" {
+		if settings.CeremonyAddress != "" || settings.CeremonyLocation != "" {
 			<section class="venue">
 				<h2>{ t("home.ceremony") }</h2>
-				if settings.ChurchName != "" {
-					<p><strong>{ settings.ChurchName }</strong></p>
+				if settings.CeremonyAddress != "" {
+					<p><strong>{ settings.CeremonyAddress }</strong></p>
 				}
-				if settings.ChurchAddress != "" {
-					<p><small>{ settings.ChurchAddress }</small></p>
+				if settings.CeremonyLocation != "" {
+					<p><small>{ settings.CeremonyLocation }</small></p>
 				}
 			</section>
 		}
-		if settings.PartyVenue != "" || settings.PartyAddress != "" {
+		if settings.ReceptionAddress != "" || settings.ReceptionLocation != "" {
 			<section class="venue">
 				<h2>{ t("home.reception") }</h2>
-				if settings.PartyVenue != "" {
-					<p><strong>{ settings.PartyVenue }</strong></p>
+				if settings.ReceptionAddress != "" {
+					<p><strong>{ settings.ReceptionAddress }</strong></p>
 				}
-				if settings.PartyAddress != "" {
-					<p><small>{ settings.PartyAddress }</small></p>
-				}
-			</section>
-		}
-		if len(guests) > 0 {
-			<hr/>
-			<section>
-				<h2>{ t("home.guest_list") }</h2>
-				for _, g := range guests {
-					<article class="guest-card">
-						<strong>{ g.Name }</strong>
-						if g.PlusOne {
-							<small>+1</small>
-						}
-					</article>
+				if settings.ReceptionLocation != "" {
+					<p><small>{ settings.ReceptionLocation }</small></p>
 				}
 			</section>
 		}
+		<hr class="footer-separator"/>
+		<footer>
+			<a href="/dashboard">{ t("link.dashboard") }</a>
+		</footer>
 	}
 }

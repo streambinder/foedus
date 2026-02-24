@@ -1,6 +1,8 @@
 package templates
 
-templ Layout(title string, lang string) {
+import "github.com/dpucci/foedus/internal/i18n"
+
+templ Layout(title string, lang string, t i18n.T) {
 	<!DOCTYPE html>
 	<html lang={ lang } data-theme="light">
 		<head>

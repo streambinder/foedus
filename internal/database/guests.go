@@ -1,21 +1,21 @@
 package database
 
-import "github.com/dpucci/foedus/internal/models"
+import (
+	"database/sql"
 
-func CreateGuest(name, email string, plusOne bool, dietaryNotes, notes string) error {
-	po := 0
-	if plusOne {
-		po = 1
-	}
+	"github.com/dpucci/foedus/internal/models"
+)
+
+func CreateGuest(firstName, lastName string) error {
 	_, err := DB.Exec(
-		`INSERT INTO guests (name, email, plus_one, dietary_notes, notes) VALUES (?, ?, ?, ?, ?)`,
-		name, email, po, dietaryNotes, notes,
+		`INSERT INTO guests (first_name, last_name) VALUES (?, ?)`,
+		firstName, lastName,
 	)
 	return err
 }
 
 func GetAllGuests() ([]models.Guest, error) {
-	rows, err := DB.Query(`SELECT id, name, email, plus_one, dietary_notes, notes, created_at, updated_at FROM guests ORDER BY id DESC`)
+	rows, err := DB.Query(`SELECT id, first_name, last_name, confirmed, created_at, updated_at FROM guests ORDER BY id DESC`)
 	if err != nil {
 		return nil, err
 	}
@@ -24,11 +24,9 @@ func GetAllGuests() ([]models.Guest, error) {
 	var guests []models.Guest
 	for rows.Next() {
 		var g models.Guest
-		var po int
-		if err := rows.Scan(&g.ID, &g.Name, &g.Email, &po, &g.DietaryNotes, &g.Notes, &g.CreatedAt, &g.UpdatedAt); err != nil {
+		if err := rows.Scan(&g.ID, &g.FirstName, &g.LastName, &g.Confirmed, &g.CreatedAt, &g.UpdatedAt); err != nil {
 			return nil, err
 		}
-		g.PlusOne = po == 1
 		guests = append(guests, g)
 	}
 	return guests, nil
@@ -36,22 +34,16 @@ func GetAllGuests() ([]models.Guest, error) {
 
 func GetGuest(id int) (models.Guest, error) {
 	var g models.Guest
-	var po int
 	err := DB.QueryRow(
-		`SELECT id, name, email, plus_one, dietary_notes, notes, created_at, updated_at FROM guests WHERE id = ?`, id,
-	).Scan(&g.ID, &g.Name, &g.Email, &po, &g.DietaryNotes, &g.Notes, &g.CreatedAt, &g.UpdatedAt)
-	g.PlusOne = po == 1
+		`SELECT id, first_name, last_name, confirmed, created_at, updated_at FROM guests WHERE id = ?`, id,
+	).Scan(&g.ID, &g.FirstName, &g.LastName, &g.Confirmed, &g.CreatedAt, &g.UpdatedAt)
 	return g, err
 }
 
-func UpdateGuest(id int, name, email string, plusOne bool, dietaryNotes, notes string) error {
-	po := 0
-	if plusOne {
-		po = 1
-	}
+func UpdateGuest(id int, firstName, lastName string) error {
 	_, err := DB.Exec(
-		`UPDATE guests SET name = ?, email = ?, plus_one = ?, dietary_notes = ?, notes = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
-		name, email, po, dietaryNotes, notes, id,
+		`UPDATE guests SET first_name = ?, last_name = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+		firstName, lastName, id,
 	)
 	return err
 }
@@ -59,4 +51,61 @@ func UpdateGuest(id int, name, email string, plusOne bool, dietaryNotes, notes s
 func DeleteGuest(id int) error {
 	_, err := DB.Exec(`DELETE FROM guests WHERE id = ?`, id)
 	return err
+}
+
+func ToggleConfirmed(id int) error {
+	_, err := DB.Exec(
+		`UPDATE guests SET confirmed = NOT confirmed, updated_at = CURRENT_TIMESTAMP WHERE id = ?`, id,
+	)
+	return err
+}
+
+func CountConfirmed() (confirmed int, total int, err error) {
+	err = DB.QueryRow(`SELECT COALESCE(SUM(confirmed), 0), COUNT(*) FROM guests`).Scan(&confirmed, &total)
+	return
+}
+
+func GetGuestsPaginated(page, perPage int, search string) ([]models.Guest, int, error) {
+	offset := (page - 1) * perPage
+	var rows *sql.Rows
+	var err error
+	var total int
+
+	if search == "" {
+		err = DB.QueryRow(`SELECT COUNT(*) FROM guests`).Scan(&total)
+		if err != nil {
+			return nil, 0, err
+		}
+		rows, err = DB.Query(
+			`SELECT id, first_name, last_name, confirmed, created_at, updated_at FROM guests ORDER BY id DESC LIMIT ? OFFSET ?`,
+			perPage, offset,
+		)
+	} else {
+		pattern := "%" + search + "%"
+		err = DB.QueryRow(
+			`SELECT COUNT(*) FROM guests WHERE first_name LIKE ? OR last_name LIKE ?`,
+			pattern, pattern,
+		).Scan(&total)
+		if err != nil {
+			return nil, 0, err
+		}
+		rows, err = DB.Query(
+			`SELECT id, first_name, last_name, confirmed, created_at, updated_at FROM guests WHERE first_name LIKE ? OR last_name LIKE ? ORDER BY id DESC LIMIT ? OFFSET ?`,
+			pattern, pattern, perPage, offset,
+		)
+	}
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var guests []models.Guest
+	for rows.Next() {
+		var g models.Guest
+		if err := rows.Scan(&g.ID, &g.FirstName, &g.LastName, &g.Confirmed, &g.CreatedAt, &g.UpdatedAt); err != nil {
+			return nil, 0, err
+		}
+		guests = append(guests, g)
+	}
+	return guests, total, nil
 }

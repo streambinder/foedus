@@ -11,9 +11,5 @@ func Home(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(500).SendString("failed to load settings")
 	}
-	guests, err := database.GetAllGuests()
-	if err != nil {
-		return c.Status(500).SendString("failed to load guests")
-	}
-	return Render(c, templates.Home(settings, guests, getT(c), getLang(c)))
+	return Render(c, templates.Home(settings, getT(c), getLang(c)))
 }

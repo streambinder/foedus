@@ -39,9 +39,11 @@ func main() {
 	admin.Get("/", handlers.DashboardIndex)
 	admin.Post("/settings", handlers.SaveSettings)
 	admin.Post("/guests", handlers.AddGuest)
+	admin.Post("/guests/import", handlers.ImportGuestsCSV)
 	admin.Get("/guests/:id/edit", handlers.EditGuestPage)
 	admin.Post("/guests/:id", handlers.UpdateGuest)
 	admin.Post("/guests/:id/delete", handlers.DeleteGuest)
+	admin.Post("/guests/:id/confirm", handlers.ToggleConfirmed)
 
 	port := os.Getenv("PORT")
 	if port == "" {

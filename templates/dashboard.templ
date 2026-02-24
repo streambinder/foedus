@@ -17,102 +17,95 @@ func locationDisplay(name, address string) string {
 	return address
 }
 
-templ Dashboard(settings models.WeddingSettings, guests []models.Guest, csrfToken string, flash string, t i18n.T, lang string) {
-	@Layout(t("title.dashboard"), lang) {
-		<h1>{ t("dashboard.title") }</h1>
+// helper to build pagination URL preserving search query
+func paginationURL(page int, search string) string {
+	if search == "" {
+		return "/dashboard?page=" + strconv.Itoa(page)
+	}
+	return "/dashboard?page=" + strconv.Itoa(page) + "&q=" + search
+}
+
+templ Dashboard(settings models.WeddingSettings, guests []models.Guest, confirmed int, total int, page int, totalPages int, search string, csrfToken string, flash string, t i18n.T, lang string) {
+	@Layout(t("title.dashboard"), lang, t) {
 		if flash != "" {
 			<div class="flash-success">{ flash }</div>
 		}
-		<!-- settings form -->
+		<!-- details -->
 		<article>
-			<h2>{ t("dashboard.settings") }</h2>
+			<h2>{ t("dashboard.details") }</h2>
 			<form method="POST" action="/dashboard/settings">
 				<input type="hidden" name="_csrf" value={ csrfToken }/>
+				<label>{ t("label.spouses") }</label>
 				<div class="grid">
-					@settingInput("spouse1_name", t("label.spouse1_name"), settings.Spouse1Name)
-					@settingInput("spouse2_name", t("label.spouse2_name"), settings.Spouse2Name)
+					<input type="text" name="spouse1_name" value={ settings.Spouse1Name } placeholder={ t("placeholder.name") }/>
+					<input type="text" name="spouse2_name" value={ settings.Spouse2Name } placeholder={ t("placeholder.name") }/>
 				</div>
-				<label>
-					{ t("label.ceremony_date") }
-					<input type="date" name="ceremony_date" value={ settings.CeremonyDate }/>
-				</label>
-				<label>
-					{ t("label.church") }
-					<input type="text" id="church-input" value={ locationDisplay(settings.ChurchName, settings.ChurchAddress) } autocomplete="off" placeholder={ t("label.church") }/>
-					<div id="church-dropdown" class="autocomplete-dropdown"></div>
-					<input type="hidden" name="church_name" id="church-name-hidden" value={ settings.ChurchName }/>
-					<input type="hidden" name="church_address" id="church-address-hidden" value={ settings.ChurchAddress }/>
-					<small>{ t("osm.attribution") }</small>
-				</label>
-				<label>
-					{ t("label.party") }
-					<input type="text" id="party-input" value={ locationDisplay(settings.PartyVenue, settings.PartyAddress) } autocomplete="off" placeholder={ t("label.party") }/>
-					<div id="party-dropdown" class="autocomplete-dropdown"></div>
-					<input type="hidden" name="party_venue" id="party-name-hidden" value={ settings.PartyVenue }/>
-					<input type="hidden" name="party_address" id="party-address-hidden" value={ settings.PartyAddress }/>
-					<small>{ t("osm.attribution") }</small>
-				</label>
-				<button type="submit">{ t("btn.save_settings") }</button>
+				<label>{ t("label.ceremony") }</label>
+				<div class="grid">
+					<div style="position:relative">
+						<input type="text" id="ceremony-input" value={ locationDisplay(settings.CeremonyAddress, settings.CeremonyLocation) } autocomplete="off" placeholder={ t("placeholder.ceremony_address") }/>
+						<div id="ceremony-dropdown" class="autocomplete-dropdown"></div>
+						<input type="hidden" name="ceremony_address" id="ceremony-address-hidden" value={ settings.CeremonyAddress }/>
+						<input type="hidden" name="ceremony_location" id="ceremony-location-hidden" value={ settings.CeremonyLocation }/>
+					</div>
+					<input type="datetime-local" name="ceremony_datetime" value={ settings.CeremonyDatetime }/>
+				</div>
+				<label>{ t("label.reception") }</label>
+				<div style="position:relative">
+					<input type="text" id="reception-input" value={ locationDisplay(settings.ReceptionAddress, settings.ReceptionLocation) } autocomplete="off" placeholder={ t("placeholder.reception_address") }/>
+					<div id="reception-dropdown" class="autocomplete-dropdown"></div>
+					<input type="hidden" name="reception_address" id="reception-address-hidden" value={ settings.ReceptionAddress }/>
+					<input type="hidden" name="reception_location" id="reception-location-hidden" value={ settings.ReceptionLocation }/>
+				</div>
+				<button type="submit" class="save-btn">{ t("btn.save_settings") }</button>
 			</form>
 		</article>
-		<!-- add guest form -->
+		<!-- guests -->
 		<article>
-			<h2>{ t("dashboard.add_guest") }</h2>
-			<form method="POST" action="/dashboard/guests">
-				<input type="hidden" name="_csrf" value={ csrfToken }/>
-				<div class="grid">
-					@settingInput("name", t("label.name"), "")
-					@settingInput("email", t("label.email"), "")
-				</div>
-				<div class="grid">
-					<label>
-						{ t("label.dietary_notes") }
-						<input type="text" name="dietary_notes"/>
-					</label>
-					<label>
-						{ t("label.notes") }
-						<input type="text" name="notes"/>
-					</label>
-				</div>
-				<label>
-					<input type="checkbox" name="plus_one" value="1" role="switch"/>
-					{ t("label.plus_one") }
-				</label>
-				<button type="submit">{ t("btn.add_guest") }</button>
-			</form>
-		</article>
-		<!-- guest list -->
-		<article>
-			<h2>{ t("dashboard.guests") } ({ strconv.Itoa(len(guests)) })</h2>
-			if len(guests) == 0 {
-				<p class="muted">{ t("guests.empty") }</p>
-			} else {
+			<div class="guests-header">
+				<h2>{ t("dashboard.guests") }</h2>
+				<small class="guest-count">{ strconv.Itoa(confirmed) }/{ strconv.Itoa(total) }</small>
+			</div>
+			<div class="guest-forms-row">
+				<form class="add-guest-form" method="POST" action="/dashboard/guests">
+					<input type="hidden" name="_csrf" value={ csrfToken }/>
+					<input type="text" name="first_name" placeholder={ t("placeholder.first_name") }/>
+					<input type="text" name="last_name" placeholder={ t("placeholder.last_name") }/>
+					<button type="submit">{ t("btn.add") }</button>
+				</form>
+				<form class="import-csv-form" method="POST" action="/dashboard/guests/import" enctype="multipart/form-data">
+					<input type="hidden" name="_csrf" value={ csrfToken }/>
+					<input type="file" name="csv_file" accept=".csv"/>
+					<button type="submit">{ t("btn.import_csv") }</button>
+				</form>
+			</div>
+			<input type="search" id="guest-search" name="q" value={ search } placeholder={ t("placeholder.search") } autocomplete="off"/>
+			if len(guests) > 0 {
 				<div class="overflow-auto">
 					<table>
 						<thead>
 							<tr>
-								<th>{ t("th.name") }</th>
-								<th>{ t("th.email") }</th>
-								<th>{ t("th.plus_one") }</th>
-								<th>{ t("th.dietary") }</th>
-								<th>{ t("th.notes") }</th>
+								<th>{ t("th.first_name") }</th>
+								<th>{ t("th.last_name") }</th>
+								<th>{ t("th.confirmed") }</th>
 								<th>{ t("th.actions") }</th>
 							</tr>
 						</thead>
 						<tbody>
 							for _, g := range guests {
 								<tr>
-									<td><strong>{ g.Name }</strong></td>
-									<td>{ g.Email }</td>
+									<td>{ g.FirstName }</td>
+									<td>{ g.LastName }</td>
 									<td>
-										if g.PlusOne {
-											{ t("yes") }
-										} else {
-											{ t("no") }
-										}
+										<form method="POST" action={ templ.SafeURL("/dashboard/guests/" + strconv.Itoa(g.ID) + "/confirm") }>
+											<input type="hidden" name="_csrf" value={ csrfToken }/>
+											if g.Confirmed {
+												<input type="checkbox" role="switch" checked onchange="this.form.submit()"/>
+											} else {
+												<input type="checkbox" role="switch" onchange="this.form.submit()"/>
+											}
+										</form>
 									</td>
-									<td>{ g.DietaryNotes }</td>
-									<td>{ g.Notes }</td>
 									<td class="actions">
 										<a href={ templ.SafeURL("/dashboard/guests/" + strconv.Itoa(g.ID) + "/edit") }>{ t("btn.edit") }</a>
 										<form method="POST" action={ templ.SafeURL("/dashboard/guests/" + strconv.Itoa(g.ID) + "/delete") } data-confirm={ t("confirm.delete_guest") } onsubmit="return confirm(this.dataset.confirm)">
@@ -125,45 +118,62 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, csrfToke
 						</tbody>
 					</table>
 				</div>
+				if totalPages > 1 {
+					<nav class="pagination">
+						if page > 1 {
+							<a href={ templ.SafeURL(paginationURL(page-1, search)) }>{ t("btn.prev") }</a>
+						} else {
+							<span class="disabled">{ t("btn.prev") }</span>
+						}
+						<span class="page-info">{ strconv.Itoa(page) } / { strconv.Itoa(totalPages) }</span>
+						if page < totalPages {
+							<a href={ templ.SafeURL(paginationURL(page+1, search)) }>{ t("btn.next") }</a>
+						} else {
+							<span class="disabled">{ t("btn.next") }</span>
+						}
+					</nav>
+				}
 			}
 		</article>
 		<script src="/static/autocomplete.js"></script>
+		<script>
+			(function() {
+				const input = document.getElementById('guest-search');
+				if (!input) return;
+				if (input.value) {
+					input.focus();
+					input.setSelectionRange(input.value.length, input.value.length);
+				}
+				let timeout;
+				input.addEventListener('input', function() {
+					clearTimeout(timeout);
+					timeout = setTimeout(function() {
+						const url = new URL(window.location);
+						if (input.value) {
+							url.searchParams.set('q', input.value);
+						} else {
+							url.searchParams.delete('q');
+						}
+						url.searchParams.delete('page');
+						window.location = url;
+					}, 300);
+				});
+			})();
+		</script>
 	}
 }
 
 templ EditGuest(guest models.Guest, csrfToken string, t i18n.T, lang string) {
-	@Layout(t("title.edit_guest"), lang) {
+	@Layout(t("title.edit_guest"), lang, t) {
 		<a href="/dashboard">&larr; { t("btn.back") }</a>
 		<h1>{ t("title.edit_guest") }</h1>
 		<article>
 			<form method="POST" action={ templ.SafeURL("/dashboard/guests/" + strconv.Itoa(guest.ID)) }>
 				<input type="hidden" name="_csrf" value={ csrfToken }/>
 				<div class="grid">
-					@settingInput("name", t("label.name"), guest.Name)
-					@settingInput("email", t("label.email"), guest.Email)
+					@settingInput("first_name", t("label.first_name"), guest.FirstName)
+					@settingInput("last_name", t("label.last_name"), guest.LastName)
 				</div>
-				<div class="grid">
-					<label>
-						{ t("label.dietary_notes") }
-						<input type="text" name="dietary_notes" value={ guest.DietaryNotes }/>
-					</label>
-					<label>
-						{ t("label.notes") }
-						<input type="text" name="notes" value={ guest.Notes }/>
-					</label>
-				</div>
-				<label>
-					<input
-						type="checkbox"
-						name="plus_one"
-						value="1"
-						role="switch"
-						if guest.PlusOne {
-							checked
-						}
-					/>
-					{ t("label.plus_one") }
-				</label>
 				<button type="submit">{ t("btn.update_guest") }</button>
 			</form>
 		</article>
