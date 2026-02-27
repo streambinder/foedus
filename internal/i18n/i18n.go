@@ -84,6 +84,26 @@ var translations = map[string]map[string]string{
 		"home.ceremony":        "Ceremony",
 		"home.reception":       "Reception",
 		"home.guest_list":      "Guest List",
+		"home.gift":            "Gift",
+		"home.gift_description": "If you'd like to send us a gift, choose an amount below.",
+
+		// gift form
+		"placeholder.donor":        "Your name (optional)",
+		"placeholder.gift_message": "Leave a message (optional)",
+		"placeholder.amount":       "Amount",
+		"btn.send_gift":            "Send Gift",
+
+		// gift success
+		"gift.thank_you":    "Thank You!",
+		"gift.thanks_donor": "Thank you",
+		"gift.back_home":    "Back to home",
+
+		// dashboard - gifts
+		"dashboard.gifts":   "Gifts",
+		"th.donor":          "Donor",
+		"th.amount":         "Amount",
+		"th.message":        "Message",
+		"th.date":           "Date",
 
 		// footer
 		"link.dashboard": "dashboard",
@@ -146,6 +166,26 @@ var translations = map[string]map[string]string{
 		"home.ceremony":        "Cerimonia",
 		"home.reception":       "Ricevimento",
 		"home.guest_list":      "Lista Invitati",
+		"home.gift":            "Regalo",
+		"home.gift_description": "Se desideri farci un regalo, scegli un importo qui sotto.",
+
+		// gift form
+		"placeholder.donor":        "Il tuo nome (facoltativo)",
+		"placeholder.gift_message": "Lascia un messaggio (facoltativo)",
+		"placeholder.amount":       "Importo",
+		"btn.send_gift":            "Invia Regalo",
+
+		// gift success
+		"gift.thank_you":    "Grazie!",
+		"gift.thanks_donor": "Grazie",
+		"gift.back_home":    "Torna alla home",
+
+		// dashboard - gifts
+		"dashboard.gifts":   "Regali",
+		"th.donor":          "Da",
+		"th.amount":         "Importo",
+		"th.message":        "Messaggio",
+		"th.date":           "Data",
 
 		// footer
 		"link.dashboard": "pannello",
@@ -185,6 +225,14 @@ func DetectLang(acceptLang string) string {
 		}
 	}
 	return "en"
+}
+
+// FormatDate formats a time.Time as a short date string.
+func FormatDate(t time.Time, lang string) string {
+	if lang == "it" {
+		return t.Format("2") + " " + italianMonths[t.Month()] + " " + t.Format("2006")
+	}
+	return t.Format("Jan 2, 2006")
 }
 
 // FormatDatetime parses a datetime-local string (2006-01-02T15:04) and formats it locale-aware.

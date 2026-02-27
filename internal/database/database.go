@@ -37,6 +37,15 @@ func migrate() {
 			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 		)`,
+		`CREATE TABLE IF NOT EXISTS gifts (
+			id         INTEGER PRIMARY KEY AUTOINCREMENT,
+			amount     INTEGER NOT NULL,
+			currency   TEXT NOT NULL DEFAULT 'eur',
+			donor      TEXT NOT NULL DEFAULT '',
+			message    TEXT NOT NULL DEFAULT '',
+			session_id TEXT NOT NULL UNIQUE,
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+		)`,
 	}
 	for _, s := range statements {
 		if _, err := DB.Exec(s); err != nil {

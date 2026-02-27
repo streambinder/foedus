@@ -5,7 +5,7 @@ import (
 	"github.com/dpucci/foedus/internal/models"
 )
 
-templ Home(settings models.WeddingSettings, t i18n.T, lang string) {
+templ Home(settings models.WeddingSettings, giftEnabled bool, t i18n.T, lang string) {
 	@Layout(settings.Spouse1Name+" & "+settings.Spouse2Name, lang, t) {
 		<header class="hero">
 			<p><small>{ t("home.getting_married") }</small></p>
@@ -39,9 +39,37 @@ templ Home(settings models.WeddingSettings, t i18n.T, lang string) {
 				}
 			</section>
 		}
+		if giftEnabled {
+			<hr/>
+			<section class="venue">
+				<h2>{ t("home.gift") }</h2>
+				<p><small>{ t("home.gift_description") }</small></p>
+				<form class="gift-form" method="POST" action="/gift/checkout">
+					<input type="text" name="donor" placeholder={ t("placeholder.donor") } maxlength="200"/>
+					<input type="text" name="message" placeholder={ t("placeholder.gift_message") } maxlength="400"/>
+					<div class="gift-amount-row">
+						<input type="number" name="amount" min="1" max="10000" step="0.01" placeholder={ t("placeholder.amount") } required/>
+						<button type="submit">{ t("btn.send_gift") }</button>
+					</div>
+				</form>
+			</section>
+		}
 		<hr class="footer-separator"/>
 		<footer>
 			<a href="/dashboard">{ t("link.dashboard") }</a>
 		</footer>
+	}
+}
+
+templ GiftSuccess(settings models.WeddingSettings, donor string, amount string, currency string, t i18n.T, lang string) {
+	@Layout(settings.Spouse1Name+" & "+settings.Spouse2Name, lang, t) {
+		<section class="venue" style="padding-top: 4rem;">
+			<h2>{ t("gift.thank_you") }</h2>
+			if donor != "" {
+				<p>{ t("gift.thanks_donor") }, { donor }!</p>
+			}
+			<p><small>{ amount } { currency }</small></p>
+			<p><a href="/">{ t("gift.back_home") }</a></p>
+		</section>
 	}
 }

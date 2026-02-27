@@ -365,6 +365,34 @@ a[href="/dashboard"]:hover {
   color: var(--stone-700);
 }
 
+/* ── gift form ── */
+
+.gift-form {
+  max-width: 20rem;
+  margin: 1.5rem auto 0;
+}
+
+.gift-form input[type="text"],
+.gift-form input[type="number"] {
+  width: 100%;
+  margin-bottom: 0.5rem;
+}
+
+.gift-amount-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: start;
+}
+
+.gift-amount-row input {
+  flex: 1;
+  margin-bottom: 0 !important;
+}
+
+.gift-amount-row button {
+  white-space: nowrap;
+}
+
 /* ── utilities ── */
 
 .overflow-auto {

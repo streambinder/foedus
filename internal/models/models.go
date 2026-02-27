@@ -25,3 +25,13 @@ type Guest struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
+
+type Gift struct {
+	ID        int
+	Amount    int // cents
+	Currency  string
+	Donor     string
+	Message   string
+	SessionID string // stripe checkout session id
+	CreatedAt time.Time
+}

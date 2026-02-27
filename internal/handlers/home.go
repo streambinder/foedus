@@ -11,5 +11,5 @@ func Home(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(500).SendString("failed to load settings")
 	}
-	return Render(c, templates.Home(settings, getT(c), getLang(c)))
+	return Render(c, templates.Home(settings, StripeEnabled(), getT(c), getLang(c)))
 }

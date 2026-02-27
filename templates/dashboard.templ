@@ -1,9 +1,11 @@
 package templates
 
 import (
+	"fmt"
 	"github.com/dpucci/foedus/internal/i18n"
 	"github.com/dpucci/foedus/internal/models"
 	"strconv"
+	"strings"
 )
 
 // helper to build the combined "name, address" display value for autocomplete fields
@@ -25,7 +27,11 @@ func paginationURL(page int, search string) string {
 	return "/dashboard?page=" + strconv.Itoa(page) + "&q=" + search
 }
 
-templ Dashboard(settings models.WeddingSettings, guests []models.Guest, confirmed int, total int, page int, totalPages int, search string, csrfToken string, flash string, t i18n.T, lang string) {
+func formatGiftAmount(amount int, currency string) string {
+	return fmt.Sprintf("%.2f %s", float64(amount)/100, strings.ToUpper(currency))
+}
+
+templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []models.Gift, confirmed int, total int, page int, totalPages int, search string, csrfToken string, flash string, giftEnabled bool, t i18n.T, lang string) {
 	@Layout(t("title.dashboard"), lang, t) {
 		if flash != "" {
 			<div class="flash-success">{ flash }</div>
@@ -135,6 +141,36 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, confirme
 				}
 			}
 		</article>
+		<!-- gifts -->
+		if giftEnabled {
+			<article>
+				<h2>{ t("dashboard.gifts") }</h2>
+				if len(gifts) > 0 {
+					<div class="overflow-auto">
+						<table>
+							<thead>
+								<tr>
+									<th>{ t("th.donor") }</th>
+									<th>{ t("th.amount") }</th>
+									<th>{ t("th.message") }</th>
+									<th>{ t("th.date") }</th>
+								</tr>
+							</thead>
+							<tbody>
+								for _, g := range gifts {
+									<tr>
+										<td>{ g.Donor }</td>
+										<td>{ formatGiftAmount(g.Amount, g.Currency) }</td>
+										<td>{ g.Message }</td>
+										<td>{ i18n.FormatDate(g.CreatedAt, lang) }</td>
+									</tr>
+								}
+							</tbody>
+						</table>
+					</div>
+				}
+			</article>
+		}
 		<script src="/static/autocomplete.js"></script>
 		<script>
 			(function() {

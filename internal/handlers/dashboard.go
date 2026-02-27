@@ -64,6 +64,10 @@ func DashboardIndex(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(500).SendString("failed to count guests")
 	}
+	gifts, err := database.GetAllGifts()
+	if err != nil {
+		return c.Status(500).SendString("failed to load gifts")
+	}
 	search := strings.TrimSpace(c.Query("q"))
 	page, _ := strconv.Atoi(c.Query("page", "1"))
 	if page < 1 {
@@ -81,7 +85,7 @@ func DashboardIndex(c *fiber.Ctx) error {
 		page = totalPages
 	}
 	csrfToken, _ := c.Locals("csrf").(string)
-	return Render(c, templates.Dashboard(settings, guests, confirmed, totalGuests, page, totalPages, search, csrfToken, getFlash(c), getT(c), getLang(c)))
+	return Render(c, templates.Dashboard(settings, guests, gifts, confirmed, totalGuests, page, totalPages, search, csrfToken, getFlash(c), StripeEnabled(), getT(c), getLang(c)))
 }
 
 func SaveSettings(c *fiber.Ctx) error {
