@@ -122,6 +122,7 @@ var translations = map[string]map[string]string{
 
 		// footer
 		"link.dashboard": "dashboard",
+		"link.home":      "home",
 	},
 	"it": {
 		// layout
@@ -219,6 +220,7 @@ var translations = map[string]map[string]string{
 
 		// footer
 		"link.dashboard": "pannello",
+		"link.home":      "home",
 	},
 }
 

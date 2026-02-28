@@ -354,14 +354,14 @@ hr {
 
 /* ── back link ── */
 
-a[href="/dashboard"] {
+a[href="/dashboard"]:not(footer a) {
   font-size: 0.875rem;
   color: var(--stone-500);
   display: inline-block;
   margin-bottom: 1rem;
 }
 
-a[href="/dashboard"]:hover {
+a[href="/dashboard"]:not(footer a):hover {
   color: var(--stone-700);
 }
 
