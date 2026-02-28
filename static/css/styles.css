@@ -399,6 +399,94 @@ a[href="/dashboard"]:hover {
   overflow-x: auto;
 }
 
+/* ── registry grid (home page) ── */
+
+.registry-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: 1.5rem;
+  max-width: 48rem;
+  margin: 1.5rem auto 0;
+}
+
+.registry-card {
+  background: #fff;
+  border: 1px solid var(--stone-200);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  text-align: center;
+}
+
+.registry-card img {
+  width: 100%;
+  max-height: 12rem;
+  object-fit: contain;
+  border-radius: 0.375rem;
+}
+
+.registry-card strong {
+  color: var(--stone-700);
+  font-size: 0.9375rem;
+}
+
+.registry-card .price {
+  color: var(--stone-500);
+  font-size: 0.875rem;
+}
+
+.registry-card form {
+  margin: 0;
+  width: 100%;
+}
+
+.registry-card button {
+  width: 100%;
+}
+
+/* ── registry dashboard ── */
+
+.registry-add-form .grid {
+  align-items: start;
+}
+
+.registry-add-form input[type="file"] {
+  font-size: 0.6875rem;
+  padding: 0;
+  height: 2rem;
+  border: 1px solid var(--stone-300);
+  border-radius: 0.375rem;
+  background: #fff;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+.registry-add-form input[type="file"]::file-selector-button {
+  height: 100%;
+  padding: 0 0.5rem;
+  margin-right: 0.5rem;
+  border: none;
+  border-right: 1px solid var(--stone-300);
+  background: var(--stone-100);
+  color: var(--stone-600);
+  font-size: 0.6875rem;
+  cursor: pointer;
+}
+
+.registry-add-form input[type="file"]::file-selector-button:hover {
+  background: var(--stone-200);
+}
+
+.registry-thumb {
+  width: 2.5rem;
+  height: 2.5rem;
+  object-fit: cover;
+  border-radius: 0.25rem;
+}
+
 /* checkbox switch - compact size */
 [role="switch"] {
   --pico-switch-color: var(--stone-800);

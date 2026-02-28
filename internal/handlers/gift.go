@@ -121,6 +121,44 @@ func GiftCancel(c *fiber.Ctx) error {
 	return c.Redirect("/")
 }
 
+func CreateRegistryCheckout(c *fiber.Ctx) error {
+	if !StripeEnabled() {
+		return c.Status(404).SendString("payments not configured")
+	}
+	id, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		return c.Status(400).SendString("invalid id")
+	}
+	item, err := database.GetRegistryItem(id)
+	if err != nil {
+		return c.Status(404).SendString("item not found")
+	}
+
+	baseURL := schemeHost(c)
+	params := &stripe.CheckoutSessionParams{
+		Mode: stripe.String(string(stripe.CheckoutSessionModePayment)),
+		LineItems: []*stripe.CheckoutSessionLineItemParams{{
+			PriceData: &stripe.CheckoutSessionLineItemPriceDataParams{
+				Currency:   stripe.String(stripeCurrency()),
+				UnitAmount: stripe.Int64(int64(item.Price) * 100),
+				ProductData: &stripe.CheckoutSessionLineItemPriceDataProductDataParams{
+					Name: stripe.String(item.Name),
+				},
+			},
+			Quantity: stripe.Int64(1),
+		}},
+		SuccessURL: stripe.String(baseURL + "/gift/success?session_id={CHECKOUT_SESSION_ID}"),
+		CancelURL:  stripe.String(baseURL + "/gift/cancel"),
+	}
+
+	s, err := session.New(params)
+	if err != nil {
+		log.Printf("stripe registry checkout failed: %v", err)
+		return c.Status(500).SendString("failed to create checkout session")
+	}
+	return c.Redirect(s.URL, fiber.StatusSeeOther)
+}
+
 func schemeHost(c *fiber.Ctx) string {
 	return c.Protocol() + "://" + c.Hostname()
 }

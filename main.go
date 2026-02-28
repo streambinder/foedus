@@ -29,6 +29,7 @@ func main() {
 	app.Post("/gift/checkout", handlers.CreateGiftCheckout)
 	app.Get("/gift/success", handlers.GiftSuccess)
 	app.Get("/gift/cancel", handlers.GiftCancel)
+	app.Post("/registry/:id/checkout", handlers.CreateRegistryCheckout)
 
 	// admin group
 	admin := app.Group("/dashboard", middleware.BasicAuth())
@@ -48,6 +49,8 @@ func main() {
 	admin.Post("/guests/:id", handlers.UpdateGuest)
 	admin.Post("/guests/:id/delete", handlers.DeleteGuest)
 	admin.Post("/guests/:id/confirm", handlers.ToggleConfirmed)
+	admin.Post("/registry", handlers.AddRegistryItem)
+	admin.Post("/registry/:id/delete", handlers.DeleteRegistryItem)
 
 	port := os.Getenv("PORT")
 	if port == "" {

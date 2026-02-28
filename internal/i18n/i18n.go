@@ -105,6 +105,21 @@ var translations = map[string]map[string]string{
 		"th.message":        "Message",
 		"th.date":           "Date",
 
+		// registry
+		"dashboard.registry":      "Registry",
+		"home.registry":           "Registry",
+		"home.registry_description": "If you'd like to gift us something specific, pick an item below.",
+		"placeholder.item_name":   "Item name",
+		"placeholder.item_price":  "Price",
+		"btn.add_item":            "Add Item",
+		"btn.buy":                 "Buy",
+		"th.item_name":            "Name",
+		"th.item_price":           "Price",
+		"th.item_image":           "Image",
+		"flash.item_added":        "Item added.",
+		"flash.item_deleted":      "Item deleted.",
+		"confirm.delete_item":     "Delete this item?",
+
 		// footer
 		"link.dashboard": "dashboard",
 	},
@@ -186,6 +201,21 @@ var translations = map[string]map[string]string{
 		"th.amount":         "Importo",
 		"th.message":        "Messaggio",
 		"th.date":           "Data",
+
+		// registry
+		"dashboard.registry":      "Lista nozze",
+		"home.registry":           "Lista nozze",
+		"home.registry_description": "Se vuoi regalarci qualcosa di specifico, scegli un articolo qui sotto.",
+		"placeholder.item_name":   "Nome articolo",
+		"placeholder.item_price":  "Prezzo",
+		"btn.add_item":            "Aggiungi",
+		"btn.buy":                 "Acquista",
+		"th.item_name":            "Nome",
+		"th.item_price":           "Prezzo",
+		"th.item_image":           "Immagine",
+		"flash.item_added":        "Articolo aggiunto.",
+		"flash.item_deleted":      "Articolo eliminato.",
+		"confirm.delete_item":     "Eliminare questo articolo?",
 
 		// footer
 		"link.dashboard": "pannello",

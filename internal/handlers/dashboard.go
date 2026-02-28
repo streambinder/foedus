@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/base64"
 	"encoding/csv"
 	"io"
 	"net/url"
@@ -68,6 +69,10 @@ func DashboardIndex(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(500).SendString("failed to load gifts")
 	}
+	registryItems, err := database.GetAllRegistryItems()
+	if err != nil {
+		return c.Status(500).SendString("failed to load registry items")
+	}
 	search := strings.TrimSpace(c.Query("q"))
 	page, _ := strconv.Atoi(c.Query("page", "1"))
 	if page < 1 {
@@ -85,7 +90,7 @@ func DashboardIndex(c *fiber.Ctx) error {
 		page = totalPages
 	}
 	csrfToken, _ := c.Locals("csrf").(string)
-	return Render(c, templates.Dashboard(settings, guests, gifts, confirmed, totalGuests, page, totalPages, search, csrfToken, getFlash(c), StripeEnabled(), getT(c), getLang(c)))
+	return Render(c, templates.Dashboard(settings, guests, gifts, registryItems, confirmed, totalGuests, page, totalPages, search, csrfToken, getFlash(c), StripeEnabled(), getT(c), getLang(c)))
 }
 
 func SaveSettings(c *fiber.Ctx) error {
@@ -215,5 +220,50 @@ func DeleteGuest(c *fiber.Ctx) error {
 		return c.Status(500).SendString("failed to delete guest")
 	}
 	setFlash(c, getT(c)("flash.guest_deleted"))
+	return c.Redirect("/dashboard")
+}
+
+const maxImageBytes = 150 * 1024 // 150KB
+
+func AddRegistryItem(c *fiber.Ctx) error {
+	name := strings.TrimSpace(c.FormValue("name"))
+	if name == "" {
+		return c.Status(400).SendString("name is required")
+	}
+	price, err := strconv.Atoi(c.FormValue("price"))
+	if err != nil || price < 1 {
+		return c.Status(400).SendString("invalid price")
+	}
+	image := c.FormValue("image")
+	// validate base64 data URI and size
+	if image != "" {
+		const prefix = "data:image/png;base64,"
+		if !strings.HasPrefix(image, prefix) {
+			return c.Status(400).SendString("invalid image format")
+		}
+		decoded, err := base64.StdEncoding.DecodeString(image[len(prefix):])
+		if err != nil {
+			return c.Status(400).SendString("invalid image data")
+		}
+		if len(decoded) > maxImageBytes {
+			return c.Status(400).SendString("image too large")
+		}
+	}
+	if err := database.CreateRegistryItem(name, price, image); err != nil {
+		return c.Status(500).SendString("failed to add item")
+	}
+	setFlash(c, getT(c)("flash.item_added"))
+	return c.Redirect("/dashboard")
+}
+
+func DeleteRegistryItem(c *fiber.Ctx) error {
+	id, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		return c.Status(400).SendString("invalid id")
+	}
+	if err := database.DeleteRegistryItem(id); err != nil {
+		return c.Status(500).SendString("failed to delete item")
+	}
+	setFlash(c, getT(c)("flash.item_deleted"))
 	return c.Redirect("/dashboard")
 }

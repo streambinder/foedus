@@ -3,9 +3,10 @@ package templates
 import (
 	"github.com/dpucci/foedus/internal/i18n"
 	"github.com/dpucci/foedus/internal/models"
+	"strconv"
 )
 
-templ Home(settings models.WeddingSettings, giftEnabled bool, t i18n.T, lang string) {
+templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem, giftEnabled bool, t i18n.T, lang string) {
 	@Layout(settings.Spouse1Name+" & "+settings.Spouse2Name, lang, t) {
 		<header class="hero">
 			<p><small>{ t("home.getting_married") }</small></p>
@@ -37,6 +38,29 @@ templ Home(settings models.WeddingSettings, giftEnabled bool, t i18n.T, lang str
 				if settings.ReceptionLocation != "" {
 					<p><small>{ settings.ReceptionLocation }</small></p>
 				}
+			</section>
+		}
+		if len(registryItems) > 0 {
+			<hr/>
+			<section class="venue">
+				<h2>{ t("home.registry") }</h2>
+				<p><small>{ t("home.registry_description") }</small></p>
+				<div class="registry-grid">
+					for _, item := range registryItems {
+						<div class="registry-card">
+							if item.Image != "" {
+								<img src={ item.Image } alt={ item.Name }/>
+							}
+							<strong>{ item.Name }</strong>
+							<span class="price">{ formatPrice(item.Price) }</span>
+							if giftEnabled {
+								<form method="POST" action={ templ.SafeURL("/registry/" + strconv.Itoa(item.ID) + "/checkout") }>
+									<button type="submit">{ t("btn.buy") }</button>
+								</form>
+							}
+						</div>
+					}
+				</div>
 			</section>
 		}
 		if giftEnabled {

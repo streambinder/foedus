@@ -31,7 +31,11 @@ func formatGiftAmount(amount int, currency string) string {
 	return fmt.Sprintf("%.2f %s", float64(amount)/100, strings.ToUpper(currency))
 }
 
-templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []models.Gift, confirmed int, total int, page int, totalPages int, search string, csrfToken string, flash string, giftEnabled bool, t i18n.T, lang string) {
+func formatPrice(price int) string {
+	return fmt.Sprintf("%d €", price)
+}
+
+templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []models.Gift, registryItems []models.RegistryItem, confirmed int, total int, page int, totalPages int, search string, csrfToken string, flash string, giftEnabled bool, t i18n.T, lang string) {
 	@Layout(t("title.dashboard"), lang, t) {
 		if flash != "" {
 			<div class="flash-success">{ flash }</div>
@@ -141,6 +145,53 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 				}
 			}
 		</article>
+		<!-- registry -->
+		<article>
+			<h2>{ t("dashboard.registry") }</h2>
+			<form class="registry-add-form" method="POST" action="/dashboard/registry" enctype="multipart/form-data">
+				<input type="hidden" name="_csrf" value={ csrfToken }/>
+				<input type="hidden" name="image" id="registry-image-data"/>
+				<div class="grid">
+					<input type="file" id="registry-file" accept="image/*"/>
+					<input type="text" name="name" placeholder={ t("placeholder.item_name") } required/>
+					<input type="number" name="price" min="1" placeholder={ t("placeholder.item_price") } required/>
+					<button type="submit">{ t("btn.add_item") }</button>
+				</div>
+			</form>
+			if len(registryItems) > 0 {
+				<div class="overflow-auto">
+					<table>
+						<thead>
+							<tr>
+								<th>{ t("th.item_image") }</th>
+								<th>{ t("th.item_name") }</th>
+								<th>{ t("th.item_price") }</th>
+								<th>{ t("th.actions") }</th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, item := range registryItems {
+								<tr>
+									<td>
+										if item.Image != "" {
+											<img class="registry-thumb" src={ item.Image } alt={ item.Name }/>
+										}
+									</td>
+									<td>{ item.Name }</td>
+									<td>{ formatPrice(item.Price) }</td>
+									<td class="actions">
+										<form method="POST" action={ templ.SafeURL("/dashboard/registry/" + strconv.Itoa(item.ID) + "/delete") } data-confirm={ t("confirm.delete_item") } onsubmit="return confirm(this.dataset.confirm)">
+											<input type="hidden" name="_csrf" value={ csrfToken }/>
+											<button type="submit" class="outline secondary">{ t("btn.delete") }</button>
+										</form>
+									</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+			}
+		</article>
 		<!-- gifts -->
 		if giftEnabled {
 			<article>
@@ -193,6 +244,34 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 						url.searchParams.delete('page');
 						window.location = url;
 					}, 300);
+				});
+			})();
+		</script>
+		<script>
+			// registry image compression: resize to 400x400 max, export as png data URI
+			(function() {
+				const fileInput = document.getElementById('registry-file');
+				const dataInput = document.getElementById('registry-image-data');
+				if (!fileInput) return;
+				fileInput.addEventListener('change', function() {
+					const file = this.files[0];
+					if (!file) return;
+					const img = new Image();
+					img.onload = function() {
+						const max = 400;
+						let w = img.width, h = img.height;
+						if (w > max || h > max) {
+							const ratio = Math.min(max / w, max / h);
+							w = Math.round(w * ratio);
+							h = Math.round(h * ratio);
+						}
+						const canvas = document.createElement('canvas');
+						canvas.width = w;
+						canvas.height = h;
+						canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+						dataInput.value = canvas.toDataURL('image/png');
+					};
+					img.src = URL.createObjectURL(file);
 				});
 			})();
 		</script>
