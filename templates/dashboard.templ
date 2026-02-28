@@ -193,33 +193,31 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 			}
 		</article>
 		<!-- gifts -->
-		if giftEnabled {
+		if len(gifts) > 0 {
 			<article>
 				<h2>{ t("dashboard.gifts") }</h2>
-				if len(gifts) > 0 {
-					<div class="overflow-auto">
-						<table>
-							<thead>
+				<div class="overflow-auto">
+					<table>
+						<thead>
+							<tr>
+								<th>{ t("th.donor") }</th>
+								<th>{ t("th.amount") }</th>
+								<th>{ t("th.message") }</th>
+								<th>{ t("th.date") }</th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, g := range gifts {
 								<tr>
-									<th>{ t("th.donor") }</th>
-									<th>{ t("th.amount") }</th>
-									<th>{ t("th.message") }</th>
-									<th>{ t("th.date") }</th>
+									<td>{ g.Donor }</td>
+									<td>{ formatGiftAmount(g.Amount, g.Currency) }</td>
+									<td>{ g.Message }</td>
+									<td>{ i18n.FormatDate(g.CreatedAt, lang) }</td>
 								</tr>
-							</thead>
-							<tbody>
-								for _, g := range gifts {
-									<tr>
-										<td>{ g.Donor }</td>
-										<td>{ formatGiftAmount(g.Amount, g.Currency) }</td>
-										<td>{ g.Message }</td>
-										<td>{ i18n.FormatDate(g.CreatedAt, lang) }</td>
-									</tr>
-								}
-							</tbody>
-						</table>
-					</div>
-				}
+							}
+						</tbody>
+					</table>
+				</div>
 			</article>
 		}
 		<script src="/static/autocomplete.js"></script>

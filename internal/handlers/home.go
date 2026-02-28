@@ -15,5 +15,9 @@ func Home(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(500).SendString("failed to load registry items")
 	}
-	return Render(c, templates.Home(settings, registryItems, StripeEnabled(), getT(c), getLang(c)))
+	soldItems, err := database.GetSoldRegistryItemIDs()
+	if err != nil {
+		return c.Status(500).SendString("failed to load sold items")
+	}
+	return Render(c, templates.Home(settings, registryItems, soldItems, StripeEnabled(), getT(c), getLang(c)))
 }

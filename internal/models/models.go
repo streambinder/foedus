@@ -27,13 +27,14 @@ type Guest struct {
 }
 
 type Gift struct {
-	ID        int
-	Amount    int // cents
-	Currency  string
-	Donor     string
-	Message   string
-	SessionID string // stripe checkout session id
-	CreatedAt time.Time
+	ID             int
+	Amount         int // cents
+	Currency       string
+	Donor          string
+	Message        string
+	SessionID      string // stripe checkout session id
+	RegistryItemID *int   // fk to registry_items, nil for free-form gifts
+	CreatedAt      time.Time
 }
 
 type RegistryItem struct {

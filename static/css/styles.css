@@ -447,6 +447,20 @@ a[href="/dashboard"]:not(footer a):hover {
   width: 100%;
 }
 
+.registry-card.sold {
+  opacity: 0.55;
+}
+
+.sold-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--stone-500);
+  border: 1px solid var(--stone-300);
+  border-radius: 0.375rem;
+}
+
 /* ── registry dashboard ── */
 
 .registry-add-form .grid {

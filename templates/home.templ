@@ -6,7 +6,7 @@ import (
 	"strconv"
 )
 
-templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem, giftEnabled bool, t i18n.T, lang string) {
+templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem, soldItems map[int]bool, giftEnabled bool, t i18n.T, lang string) {
 	@Layout(settings.Spouse1Name+" & "+settings.Spouse2Name, lang, t) {
 		<header class="hero">
 			<p><small>{ t("home.getting_married") }</small></p>
@@ -47,13 +47,15 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 				<p><small>{ t("home.registry_description") }</small></p>
 				<div class="registry-grid">
 					for _, item := range registryItems {
-						<div class="registry-card">
+						<div class={ "registry-card", templ.KV("sold", soldItems[item.ID]) }>
 							if item.Image != "" {
 								<img src={ item.Image } alt={ item.Name }/>
 							}
 							<strong>{ item.Name }</strong>
 							<span class="price">{ formatPrice(item.Price) }</span>
-							if giftEnabled {
+							if soldItems[item.ID] {
+								<span class="sold-badge">{ t("badge.sold") }</span>
+							} else if giftEnabled {
 								<form method="POST" action={ templ.SafeURL("/registry/" + strconv.Itoa(item.ID) + "/checkout") }>
 									<button type="submit">{ t("btn.buy") }</button>
 								</form>

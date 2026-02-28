@@ -109,7 +109,13 @@ func GiftSuccess(c *fiber.Ctx) error {
 	currency := string(s.Currency)
 	donor := s.Metadata["donor"]
 	message := s.Metadata["message"]
-	if err := database.CreateGift(int(s.AmountTotal), currency, donor, message, sessionID); err != nil {
+	var registryItemID *int
+	if raw := s.Metadata["registry_item_id"]; raw != "" {
+		if id, err := strconv.Atoi(raw); err == nil {
+			registryItemID = &id
+		}
+	}
+	if err := database.CreateGift(int(s.AmountTotal), currency, donor, message, sessionID, registryItemID); err != nil {
 		log.Printf("failed to store gift (session %s): %v", sessionID, err)
 	}
 
@@ -149,6 +155,9 @@ func CreateRegistryCheckout(c *fiber.Ctx) error {
 		}},
 		SuccessURL: stripe.String(baseURL + "/gift/success?session_id={CHECKOUT_SESSION_ID}"),
 		CancelURL:  stripe.String(baseURL + "/gift/cancel"),
+		Metadata: map[string]string{
+			"registry_item_id": strconv.Itoa(item.ID),
+		},
 	}
 
 	s, err := session.New(params)
