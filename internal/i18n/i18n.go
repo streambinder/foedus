@@ -94,9 +94,10 @@ var translations = map[string]map[string]string{
 		"btn.send_gift":            "Send Gift",
 
 		// gift success
-		"gift.thank_you":    "Thank You!",
-		"gift.thanks_donor": "Thank you",
-		"gift.back_home":    "Back to home",
+		"gift.thank_you":      "Thank You!",
+		"gift.thanks_message": "Your gift has been recorded. Thank you for your generosity!",
+		"gift.thanks_donor":   "Thank you",
+		"gift.back_home":      "Back to home",
 
 		// dashboard - gifts
 		"dashboard.gifts":   "Gifts",
@@ -120,6 +121,32 @@ var translations = map[string]map[string]string{
 		"flash.item_added":        "Item added.",
 		"flash.item_deleted":      "Item deleted.",
 		"confirm.delete_item":     "Delete this item?",
+
+		// bank transfer modal
+		"modal.transfer_intro":        "Make a bank transfer with the details below to claim this gift.",
+		"modal.iban":                  "IBAN",
+		"modal.owner":                 "Account holder",
+		"modal.reason":                "Reason",
+		"modal.transfer_confirm_text": "Once the transfer is done, confirm below.",
+		"btn.cancel":                  "Cancel",
+		"btn.confirm":                 "Confirm",
+		"btn.copy":                    "Copy",
+		"btn.copied":                  "Copied!",
+		"btn.close":                   "Close",
+		"home.generic_gift":             "Free Gift",
+		"home.generic_gift_description": "Send us a gift of any amount",
+		"placeholder.custom_amount":     "Custom amount",
+		"home.remaining":                "remaining",
+
+		// bank settings
+		"label.bank_account_iban":         "IBAN",
+		"label.bank_account_holder":       "Account holder",
+		"placeholder.bank_account_iban":   "IT60 X054 2811 1010 0000 0123 456",
+		"placeholder.bank_account_holder": "Account holder name",
+		"label.bank":                      "Bank Transfer",
+
+		// registry item link in gifts table
+		"th.registry_item": "Item",
 
 		// footer
 		"link.dashboard": "dashboard",
@@ -193,9 +220,10 @@ var translations = map[string]map[string]string{
 		"btn.send_gift":            "Invia Regalo",
 
 		// gift success
-		"gift.thank_you":    "Grazie!",
-		"gift.thanks_donor": "Grazie",
-		"gift.back_home":    "Torna alla home",
+		"gift.thank_you":      "Grazie!",
+		"gift.thanks_message": "Il tuo regalo è stato registrato. Grazie per la tua generosità!",
+		"gift.thanks_donor":   "Grazie",
+		"gift.back_home":      "Torna alla home",
 
 		// dashboard - gifts
 		"dashboard.gifts":   "Regali",
@@ -219,6 +247,32 @@ var translations = map[string]map[string]string{
 		"flash.item_added":        "Articolo aggiunto.",
 		"flash.item_deleted":      "Articolo eliminato.",
 		"confirm.delete_item":     "Eliminare questo articolo?",
+
+		// bank transfer modal
+		"modal.transfer_intro":        "Effettua un bonifico con i dati seguenti per prenotare questo regalo.",
+		"modal.iban":                  "IBAN",
+		"modal.owner":                 "Intestatario",
+		"modal.reason":                "Causale",
+		"modal.transfer_confirm_text": "Una volta effettuato il bonifico, conferma qui sotto.",
+		"btn.cancel":                  "Annulla",
+		"btn.confirm":                 "Conferma",
+		"btn.copy":                    "Copia",
+		"btn.copied":                  "Copiato!",
+		"btn.close":                   "Chiudi",
+		"home.generic_gift":             "Regalo libero",
+		"home.generic_gift_description": "Inviaci un regalo di qualsiasi importo",
+		"placeholder.custom_amount":     "Importo personalizzato",
+		"home.remaining":                "rimanenti",
+
+		// bank settings
+		"label.bank_account_iban":         "IBAN",
+		"label.bank_account_holder":       "Intestatario",
+		"placeholder.bank_account_iban":   "IT60 X054 2811 1010 0000 0123 456",
+		"placeholder.bank_account_holder": "Nome intestatario conto",
+		"label.bank":                      "Bonifico Bancario",
+
+		// registry item link in gifts table
+		"th.registry_item": "Articolo",
 
 		// footer
 		"link.dashboard": "pannello",

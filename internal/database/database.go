@@ -40,10 +40,7 @@ func migrate() {
 		`CREATE TABLE IF NOT EXISTS gifts (
 			id               INTEGER PRIMARY KEY AUTOINCREMENT,
 			amount           INTEGER NOT NULL,
-			currency         TEXT NOT NULL DEFAULT 'eur',
 			donor            TEXT NOT NULL DEFAULT '',
-			message          TEXT NOT NULL DEFAULT '',
-			session_id       TEXT NOT NULL UNIQUE,
 			registry_item_id INTEGER REFERENCES registry_items(id),
 			created_at       DATETIME DEFAULT CURRENT_TIMESTAMP
 		)`,

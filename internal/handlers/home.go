@@ -15,9 +15,10 @@ func Home(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(500).SendString("failed to load registry items")
 	}
-	soldItems, err := database.GetSoldRegistryItemIDs()
+	claimedAmounts, err := database.GetClaimedAmountsByItem()
 	if err != nil {
-		return c.Status(500).SendString("failed to load sold items")
+		return c.Status(500).SendString("failed to load claimed amounts")
 	}
-	return Render(c, templates.Home(settings, registryItems, soldItems, StripeEnabled(), getT(c), getLang(c)))
+	bankConfigured := settings.BankAccountIBAN != "" && settings.BankAccountHolder != ""
+	return Render(c, templates.Home(settings, registryItems, claimedAmounts, bankConfigured, getT(c), getLang(c)))
 }

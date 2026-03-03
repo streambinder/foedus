@@ -367,30 +367,286 @@ a[href="/dashboard"]:not(footer a):hover {
 
 /* ── gift form ── */
 
-.gift-form {
-  max-width: 20rem;
-  margin: 1.5rem auto 0;
+.buy-btn {
+  background: var(--stone-800);
+  color: #fff;
+  border: 1px solid transparent;
+  border-radius: 0.375rem;
+  padding: 0.35rem 1rem;
+  font-size: 0.8125rem;
+  line-height: 1.25rem;
+  height: 2rem;
+  font-weight: 500;
+  cursor: pointer;
+  width: 100%;
 }
 
-.gift-form input[type="text"],
-.gift-form input[type="number"] {
+.buy-btn:hover {
+  background: var(--stone-700);
+}
+
+.buy-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ── progress bar (partially claimed items) ── */
+
+.progress-bar {
   width: 100%;
+  height: 0.375rem;
+  background: var(--stone-200);
+  border-radius: 0.25rem;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--stone-600);
+  border-radius: 0.25rem;
+  transition: width 0.3s;
+}
+
+/* ── generic gift card ── */
+
+.generic-gift-card {
+  border: 2px dashed var(--stone-300);
+  background: var(--stone-50);
+}
+
+.generic-gift-icon {
+  font-size: 2.5rem;
+  line-height: 1;
+}
+
+.generic-amounts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.375rem;
+  width: 100%;
+}
+
+.amount-btn {
+  background: #fff;
+  border: 1px solid var(--stone-300);
+  border-radius: 0.375rem;
+  padding: 0.35rem 0.5rem;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  color: var(--stone-700);
+  font-weight: 500;
+  height: 2rem;
+}
+
+.amount-btn:hover {
+  border-color: var(--stone-500);
+}
+
+.amount-btn.selected {
+  background: var(--stone-800);
+  color: #fff;
+  border-color: var(--stone-800);
+}
+
+.custom-amount-input {
+  width: 100%;
+}
+
+/* ── modal overlay ── */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.modal-box {
+  background: #fff;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  max-width: 28rem;
+  width: 100%;
+  box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1);
+}
+
+.modal-box h3 {
+  margin: 0 0 0.25rem;
+  font-size: 1.125rem;
+}
+
+.modal-box p {
+  margin: 0 0 0.75rem;
+}
+
+.modal-intro {
+  color: var(--stone-600);
+  font-size: 0.875rem;
+}
+
+.modal-confirm-text {
+  margin-top: 0.75rem;
+}
+
+.modal-field {
+  margin-bottom: 0.75rem;
+}
+
+.modal-field label {
+  display: block;
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--stone-400);
+  margin-bottom: 0.25rem;
+}
+
+.modal-field code {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.9375rem;
+  letter-spacing: 0.05em;
+  color: var(--stone-800);
+}
+
+.modal-field strong {
+  font-size: 1.125rem;
+  color: var(--stone-800);
+}
+
+.copyable {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.copy-btn {
+  background: var(--stone-100);
+  border: 1px solid var(--stone-300);
+  border-radius: 0.25rem;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.6875rem;
+  cursor: pointer;
+  color: var(--stone-600);
+  white-space: nowrap;
+  height: auto;
+  width: auto;
+}
+
+.copy-btn:hover {
+  background: var(--stone-200);
+}
+
+.modal-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
+.modal-actions button {
+  border-radius: 0.375rem;
+  padding: 0.4rem 1.25rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  height: auto;
+  width: auto;
+}
+
+.modal-actions button:not(.outline) {
+  background: var(--stone-800);
+  color: #fff;
+  border: 1px solid transparent;
+}
+
+.modal-actions button:not(.outline):hover {
+  background: var(--stone-700);
+}
+
+.modal-actions button:not(.outline):disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.modal-actions button.outline {
+  background: #fff;
+  color: var(--stone-600);
+  border: 1px solid var(--stone-300);
+}
+
+.modal-actions button.outline:hover {
+  background: var(--stone-50);
+}
+
+/* thank you modal */
+.thanks-box {
+  text-align: center;
+}
+
+.thanks-box h3 {
+  font-size: 1.5rem;
   margin-bottom: 0.5rem;
 }
 
-.gift-amount-row {
-  display: flex;
-  gap: 0.5rem;
-  align-items: start;
+.thanks-box p {
+  color: var(--stone-500);
 }
 
-.gift-amount-row input {
+.thanks-box .modal-actions {
+  justify-content: center;
+}
+
+/* ── percentage selector ── */
+
+.pct-buttons {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.375rem;
+  margin-bottom: 0.75rem;
+}
+
+.pct-btn {
+  background: #fff;
+  border: 1px solid var(--stone-300);
+  border-radius: 0.375rem;
+  padding: 0.4rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  color: var(--stone-700);
+  font-weight: 500;
+  height: auto;
+  width: auto;
+}
+
+.pct-btn:hover {
+  border-color: var(--stone-500);
+}
+
+.pct-btn.selected {
+  background: var(--stone-800);
+  color: #fff;
+  border-color: var(--stone-800);
+}
+
+.pct-custom-row {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin-bottom: 0.75rem;
+}
+
+.pct-custom-row input {
   flex: 1;
   margin-bottom: 0 !important;
 }
 
-.gift-amount-row button {
-  white-space: nowrap;
+.pct-custom-row span {
+  color: var(--stone-500);
+  font-weight: 500;
 }
 
 /* ── utilities ── */

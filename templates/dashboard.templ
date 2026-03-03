@@ -5,7 +5,6 @@ import (
 	"github.com/dpucci/foedus/internal/i18n"
 	"github.com/dpucci/foedus/internal/models"
 	"strconv"
-	"strings"
 )
 
 // helper to build the combined "name, address" display value for autocomplete fields
@@ -27,15 +26,28 @@ func paginationURL(page int, search string) string {
 	return "/dashboard?page=" + strconv.Itoa(page) + "&q=" + search
 }
 
-func formatGiftAmount(amount int, currency string) string {
-	return fmt.Sprintf("%.2f %s", float64(amount)/100, strings.ToUpper(currency))
+func formatGiftAmount(amount int) string {
+	return fmt.Sprintf("%.2f €", float64(amount)/100)
 }
 
 func formatPrice(price int) string {
 	return fmt.Sprintf("%d €", price)
 }
 
-templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []models.Gift, registryItems []models.RegistryItem, confirmed int, total int, page int, totalPages int, search string, csrfToken string, flash string, giftEnabled bool, t i18n.T, lang string) {
+// find registry item name by id
+func registryItemName(items []models.RegistryItem, id *int) string {
+	if id == nil {
+		return ""
+	}
+	for _, item := range items {
+		if item.ID == *id {
+			return item.Name
+		}
+	}
+	return ""
+}
+
+templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []models.Gift, registryItems []models.RegistryItem, confirmed int, total int, page int, totalPages int, search string, csrfToken string, flash string, t i18n.T, lang string) {
 	@Layout(t("title.dashboard"), lang, t) {
 		if flash != "" {
 			<div class="flash-success">{ flash }</div>
@@ -66,6 +78,11 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 					<div id="reception-dropdown" class="autocomplete-dropdown"></div>
 					<input type="hidden" name="reception_address" id="reception-address-hidden" value={ settings.ReceptionAddress }/>
 					<input type="hidden" name="reception_location" id="reception-location-hidden" value={ settings.ReceptionLocation }/>
+				</div>
+				<label>{ t("label.bank") }</label>
+				<div class="grid">
+					<input type="text" name="bank_account_iban" value={ settings.BankAccountIBAN } placeholder={ t("placeholder.bank_account_iban") }/>
+					<input type="text" name="bank_account_holder" value={ settings.BankAccountHolder } placeholder={ t("placeholder.bank_account_holder") }/>
 				</div>
 				<button type="submit" class="save-btn">{ t("btn.save_settings") }</button>
 			</form>
@@ -202,7 +219,7 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 							<tr>
 								<th>{ t("th.donor") }</th>
 								<th>{ t("th.amount") }</th>
-								<th>{ t("th.message") }</th>
+								<th>{ t("th.registry_item") }</th>
 								<th>{ t("th.date") }</th>
 							</tr>
 						</thead>
@@ -210,8 +227,8 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 							for _, g := range gifts {
 								<tr>
 									<td>{ g.Donor }</td>
-									<td>{ formatGiftAmount(g.Amount, g.Currency) }</td>
-									<td>{ g.Message }</td>
+									<td>{ formatGiftAmount(g.Amount) }</td>
+									<td>{ registryItemName(registryItems, g.RegistryItemID) }</td>
 									<td>{ i18n.FormatDate(g.CreatedAt, lang) }</td>
 								</tr>
 							}

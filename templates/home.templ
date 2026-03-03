@@ -4,9 +4,32 @@ import (
 	"github.com/dpucci/foedus/internal/i18n"
 	"github.com/dpucci/foedus/internal/models"
 	"strconv"
+	"fmt"
 )
 
-templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem, soldItems map[int]bool, giftEnabled bool, t i18n.T, lang string) {
+// remaining cents for a registry item
+func remainingCents(item models.RegistryItem, claimed map[int]int) int {
+	return item.Price*100 - claimed[item.ID]
+}
+
+func formatCents(cents int) string {
+	return fmt.Sprintf("%.2f €", float64(cents)/100)
+}
+
+// progress percentage (0-100) for a partially-claimed item
+func claimedPercent(item models.RegistryItem, claimed map[int]int) int {
+	total := item.Price * 100
+	if total <= 0 {
+		return 0
+	}
+	pct := claimed[item.ID] * 100 / total
+	if pct > 100 {
+		return 100
+	}
+	return pct
+}
+
+templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem, claimedAmounts map[int]int, bankConfigured bool, t i18n.T, lang string) {
 	@Layout(settings.Spouse1Name+" & "+settings.Spouse2Name, lang, t) {
 		<header class="hero">
 			<p><small>{ t("home.getting_married") }</small></p>
@@ -40,62 +63,331 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 				}
 			</section>
 		}
-		if len(registryItems) > 0 {
+		if bankConfigured {
 			<hr/>
 			<section class="venue">
 				<h2>{ t("home.registry") }</h2>
 				<p><small>{ t("home.registry_description") }</small></p>
 				<div class="registry-grid">
 					for _, item := range registryItems {
-						<div class={ "registry-card", templ.KV("sold", soldItems[item.ID]) }>
-							if item.Image != "" {
-								<img src={ item.Image } alt={ item.Name }/>
-							}
-							<strong>{ item.Name }</strong>
-							<span class="price">{ formatPrice(item.Price) }</span>
-							if soldItems[item.ID] {
+						if remainingCents(item, claimedAmounts) <= 0 {
+							<div class="registry-card sold">
+								if item.Image != "" {
+									<img src={ item.Image } alt={ item.Name }/>
+								}
+								<strong>{ item.Name }</strong>
+								<span class="price">{ formatPrice(item.Price) }</span>
 								<span class="sold-badge">{ t("badge.sold") }</span>
-							} else if giftEnabled {
-								<form method="POST" action={ templ.SafeURL("/registry/" + strconv.Itoa(item.ID) + "/checkout") }>
-									<button type="submit">{ t("btn.buy") }</button>
-								</form>
-							}
-						</div>
+							</div>
+						} else {
+							<div class="registry-card">
+								if item.Image != "" {
+									<img src={ item.Image } alt={ item.Name }/>
+								}
+								<strong>{ item.Name }</strong>
+								<span class="price">{ formatPrice(item.Price) }</span>
+								if claimedAmounts[item.ID] > 0 {
+									<div class="progress-bar">
+										<div class="progress-fill" style={ fmt.Sprintf("width:%d%%", claimedPercent(item, claimedAmounts)) }></div>
+									</div>
+									<small>{ formatCents(remainingCents(item, claimedAmounts)) } { t("home.remaining") }</small>
+								}
+								<button
+									type="button"
+									class="buy-btn"
+									data-item-id={ strconv.Itoa(item.ID) }
+									data-item-name={ item.Name }
+									data-item-price={ strconv.Itoa(item.Price * 100) }
+									data-item-remaining={ strconv.Itoa(remainingCents(item, claimedAmounts)) }
+								>{ t("btn.buy") }</button>
+							</div>
+						}
 					}
+					<!-- generic gift card -->
+					<div class="registry-card generic-gift-card">
+						<div class="generic-gift-icon">🎁</div>
+						<strong>{ t("home.generic_gift") }</strong>
+						<small>{ t("home.generic_gift_description") }</small>
+						<div class="generic-amounts">
+							<button type="button" class="amount-btn" data-amount="5000">50 €</button>
+							<button type="button" class="amount-btn" data-amount="10000">100 €</button>
+							<button type="button" class="amount-btn" data-amount="20000">200 €</button>
+							<button type="button" class="amount-btn" data-amount="50000">500 €</button>
+						</div>
+						<input type="number" class="custom-amount-input" min="1" step="1" placeholder={ t("placeholder.custom_amount") }/>
+						<button type="button" class="buy-btn generic-buy-btn" disabled>{ t("btn.buy") }</button>
+					</div>
 				</div>
 			</section>
 		}
-		if giftEnabled {
-			<hr/>
-			<section class="venue">
-				<h2>{ t("home.gift") }</h2>
-				<p><small>{ t("home.gift_description") }</small></p>
-				<form class="gift-form" method="POST" action="/gift/checkout">
-					<input type="text" name="donor" placeholder={ t("placeholder.donor") } maxlength="200"/>
-					<input type="text" name="message" placeholder={ t("placeholder.gift_message") } maxlength="400"/>
-					<div class="gift-amount-row">
-						<input type="number" name="amount" min="1" max="10000" step="0.01" placeholder={ t("placeholder.amount") } required/>
-						<button type="submit">{ t("btn.send_gift") }</button>
+		<!-- transfer modal -->
+		if bankConfigured {
+			<div
+				id="transfer-cfg"
+				style="display:none"
+				data-spouse1={ settings.Spouse1Name }
+				data-spouse2={ settings.Spouse2Name }
+				data-copy-label={ t("btn.copy") }
+				data-copied-label={ t("btn.copied") }
+			></div>
+			<div id="transfer-modal" class="modal-overlay" style="display:none">
+				<div class="modal-box">
+					<p class="modal-intro">{ t("modal.transfer_intro") }<br/>{ t("modal.transfer_confirm_text") }</p>
+					<div class="modal-field">
+						<label>{ t("modal.iban") }</label>
+						<div class="copyable">
+							<code id="modal-iban">{ settings.BankAccountIBAN }</code>
+							<button type="button" class="copy-btn" data-target="modal-iban">{ t("btn.copy") }</button>
+						</div>
 					</div>
-				</form>
-			</section>
+					<div class="modal-field">
+						<label>{ t("modal.owner") }</label>
+						<div class="copyable">
+							<span id="modal-owner">{ settings.BankAccountHolder }</span>
+							<button type="button" class="copy-btn" data-target="modal-owner">{ t("btn.copy") }</button>
+						</div>
+					</div>
+					<div class="modal-field">
+						<label>{ t("modal.reason") }</label>
+						<div class="copyable">
+							<span id="modal-reason"></span>
+							<button type="button" class="copy-btn" data-target="modal-reason">{ t("btn.copy") }</button>
+						</div>
+					</div>
+					<div class="modal-field">
+						<label>{ t("th.amount") }</label>
+						<strong id="modal-amount"></strong>
+					</div>
+					<div class="modal-field">
+						<label>{ t("placeholder.donor") }</label>
+						<input type="text" id="modal-donor" placeholder={ t("placeholder.donor") } maxlength="200"/>
+					</div>
+					<div class="modal-actions">
+						<button type="button" id="modal-cancel" class="outline secondary">{ t("btn.cancel") }</button>
+						<button type="button" id="modal-confirm">{ t("btn.confirm") }</button>
+					</div>
+				</div>
+			</div>
+			<!-- percentage selector modal (shown before transfer modal for registry items) -->
+			<div id="pct-modal" class="modal-overlay" style="display:none">
+				<div class="modal-box">
+					<h3 id="pct-item-name"></h3>
+					<p id="pct-item-price"></p>
+					<div class="pct-buttons">
+						<button type="button" class="pct-btn" data-pct="25">25%</button>
+						<button type="button" class="pct-btn" data-pct="50">50%</button>
+						<button type="button" class="pct-btn" data-pct="75">75%</button>
+						<button type="button" class="pct-btn" data-pct="100">100%</button>
+					</div>
+					<div class="pct-custom-row">
+						<input type="number" id="pct-custom" min="1" step="1" placeholder={ t("placeholder.custom_amount") }/>
+						<span>€</span>
+					</div>
+					<div class="modal-actions">
+						<button type="button" id="pct-cancel" class="outline secondary">{ t("btn.cancel") }</button>
+						<button type="button" id="pct-next" disabled>{ t("btn.confirm") }</button>
+					</div>
+				</div>
+			</div>
+			<!-- thank you modal -->
+			<div id="thanks-modal" class="modal-overlay" style="display:none">
+				<div class="modal-box thanks-box">
+					<h3>{ t("gift.thank_you") }</h3>
+					<p>{ t("gift.thanks_message") }</p>
+					<div class="modal-actions">
+						<button type="button" id="thanks-close">{ t("btn.close") }</button>
+					</div>
+				</div>
+			</div>
 		}
+		<script>
+		(function() {
+			var cfg = document.getElementById('transfer-cfg');
+			if (!cfg) return;
+			var spouse1 = cfg.dataset.spouse1;
+			var spouse2 = cfg.dataset.spouse2;
+			var copyLabel = cfg.dataset.copyLabel;
+			var copiedLabel = cfg.dataset.copiedLabel;
+
+			// state for current claim
+			var currentItemId = null;
+			var currentAmount = 0;
+
+			var transferModal = document.getElementById('transfer-modal');
+			var pctModal = document.getElementById('pct-modal');
+			if (!transferModal) return;
+
+			// copy buttons
+			document.querySelectorAll('.copy-btn').forEach(function(btn) {
+				btn.addEventListener('click', function() {
+					var target = document.getElementById(btn.dataset.target);
+					navigator.clipboard.writeText(target.textContent.trim());
+					btn.textContent = copiedLabel;
+					setTimeout(function() { btn.textContent = copyLabel; }, 1500);
+				});
+			});
+
+			// registry item buy buttons -> open percentage modal
+			document.querySelectorAll('.registry-card .buy-btn[data-item-id]').forEach(function(btn) {
+				btn.addEventListener('click', function() {
+					currentItemId = parseInt(btn.dataset.itemId);
+					var remaining = parseInt(btn.dataset.itemRemaining);
+					var price = parseInt(btn.dataset.itemPrice);
+					document.getElementById('pct-item-name').textContent = btn.dataset.itemName;
+					document.getElementById('pct-item-price').textContent = (remaining / 100).toFixed(2) + ' €';
+
+					// configure pct buttons: cap at remaining
+					document.querySelectorAll('.pct-btn').forEach(function(pb) {
+						var pct = parseInt(pb.dataset.pct);
+						var amt = Math.round(remaining * pct / 100);
+						pb.dataset.amount = amt;
+						// hide 100% if remaining < price (already partially claimed, 100% of remaining is shown)
+						pb.style.display = '';
+					});
+
+					document.getElementById('pct-custom').value = '';
+					document.getElementById('pct-custom').max = (remaining / 100).toFixed(0);
+					document.getElementById('pct-next').disabled = true;
+					currentAmount = 0;
+					pctModal.style.display = '';
+				});
+			});
+
+			// pct button clicks
+			var pctCustom = document.getElementById('pct-custom');
+			document.querySelectorAll('.pct-btn').forEach(function(btn) {
+				btn.addEventListener('click', function() {
+					document.querySelectorAll('.pct-btn').forEach(function(b) { b.classList.remove('selected'); });
+					btn.classList.add('selected');
+					currentAmount = parseInt(btn.dataset.amount);
+					pctCustom.value = '';
+					pctCustom.blur();
+					document.getElementById('pct-next').disabled = false;
+				});
+			});
+
+			// pct custom input — focus deselects presets
+			pctCustom.addEventListener('focus', function() {
+				document.querySelectorAll('.pct-btn').forEach(function(b) { b.classList.remove('selected'); });
+				currentAmount = 0;
+				document.getElementById('pct-next').disabled = true;
+			});
+			pctCustom.addEventListener('input', function() {
+				document.querySelectorAll('.pct-btn').forEach(function(b) { b.classList.remove('selected'); });
+				var val = parseFloat(this.value);
+				if (val > 0) {
+					currentAmount = Math.round(val * 100);
+					document.getElementById('pct-next').disabled = false;
+				} else {
+					currentAmount = 0;
+					document.getElementById('pct-next').disabled = true;
+				}
+			});
+
+			// pct cancel
+			document.getElementById('pct-cancel').addEventListener('click', function() {
+				pctModal.style.display = 'none';
+			});
+
+			// pct next -> open transfer modal
+			document.getElementById('pct-next').addEventListener('click', function() {
+				if (currentAmount <= 0) return;
+				pctModal.style.display = 'none';
+				openTransferModal();
+			});
+
+			// generic gift card
+			var genericCard = document.querySelector('.generic-gift-card');
+			if (genericCard) {
+				var customInput = genericCard.querySelector('.custom-amount-input');
+				var genericBuyBtn = genericCard.querySelector('.generic-buy-btn');
+
+				genericCard.querySelectorAll('.amount-btn').forEach(function(btn) {
+					btn.addEventListener('click', function() {
+						genericCard.querySelectorAll('.amount-btn').forEach(function(b) { b.classList.remove('selected'); });
+						btn.classList.add('selected');
+						currentAmount = parseInt(btn.dataset.amount);
+						currentItemId = null;
+						customInput.value = '';
+						customInput.blur();
+						genericBuyBtn.disabled = false;
+					});
+				});
+
+				customInput.addEventListener('focus', function() {
+					genericCard.querySelectorAll('.amount-btn').forEach(function(b) { b.classList.remove('selected'); });
+					currentAmount = 0;
+					genericBuyBtn.disabled = true;
+				});
+				customInput.addEventListener('input', function() {
+					genericCard.querySelectorAll('.amount-btn').forEach(function(b) { b.classList.remove('selected'); });
+					var val = parseFloat(this.value);
+					if (val > 0) {
+						currentAmount = Math.round(val * 100);
+						currentItemId = null;
+						genericBuyBtn.disabled = false;
+					} else {
+						genericBuyBtn.disabled = true;
+					}
+				});
+
+				genericBuyBtn.addEventListener('click', function() {
+					if (currentAmount <= 0) return;
+					openTransferModal();
+				});
+			}
+
+			function openTransferModal() {
+				var reason = 'Regalo di nozze';
+				if (spouse1 && spouse2) reason += ' ' + spouse1 + ' e ' + spouse2;
+				document.getElementById('modal-reason').textContent = reason;
+				document.getElementById('modal-amount').textContent = (currentAmount / 100).toFixed(2) + ' €';
+				document.getElementById('modal-donor').value = '';
+				transferModal.style.display = '';
+			}
+
+			// transfer modal cancel
+			document.getElementById('modal-cancel').addEventListener('click', function() {
+				transferModal.style.display = 'none';
+			});
+
+			// transfer modal confirm -> POST claim
+			document.getElementById('modal-confirm').addEventListener('click', function() {
+				var body = { amount: currentAmount, donor: document.getElementById('modal-donor').value };
+				if (currentItemId !== null) body.registry_item_id = currentItemId;
+				fetch('/gift/claim', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify(body)
+				}).then(function(res) {
+					if (res.ok) {
+						transferModal.style.display = 'none';
+						document.getElementById('thanks-modal').style.display = '';
+					} else {
+						res.json().then(function(data) { alert(data.error || 'Error'); });
+					}
+				});
+			});
+
+			// thanks modal close -> reload
+			document.getElementById('thanks-close').addEventListener('click', function() {
+				window.location.reload();
+			});
+			document.getElementById('thanks-modal').addEventListener('click', function(e) {
+				if (e.target === this) window.location.reload();
+			});
+
+			// close modals on overlay click
+			[transferModal, pctModal].forEach(function(m) {
+				m.addEventListener('click', function(e) {
+					if (e.target === m) m.style.display = 'none';
+				});
+			});
+		})();
+		</script>
 		<hr class="footer-separator"/>
 		<footer>
 			<a href="/dashboard">{ t("link.dashboard") }</a>
 		</footer>
-	}
-}
-
-templ GiftSuccess(settings models.WeddingSettings, donor string, amount string, currency string, t i18n.T, lang string) {
-	@Layout(settings.Spouse1Name+" & "+settings.Spouse2Name, lang, t) {
-		<section class="venue" style="padding-top: 4rem;">
-			<h2>{ t("gift.thank_you") }</h2>
-			if donor != "" {
-				<p>{ t("gift.thanks_donor") }, { donor }!</p>
-			}
-			<p><small>{ amount } { currency }</small></p>
-			<p><a href="/">{ t("gift.back_home") }</a></p>
-		</section>
 	}
 }

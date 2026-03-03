@@ -8,8 +8,6 @@ services:
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-changeme}
       - DATABASE_URL=/data/foedus.db
       - PORT=3000
-      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-}
-      - STRIPE_CURRENCY=${STRIPE_CURRENCY:-eur}
     volumes:
       - foedus_data:/data
 

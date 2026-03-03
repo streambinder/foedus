@@ -17,7 +17,6 @@ func main() {
 		dsn = "foedus.db"
 	}
 	database.Init(dsn)
-	handlers.InitStripe()
 
 	app := fiber.New()
 
@@ -26,10 +25,7 @@ func main() {
 
 	// public
 	app.Get("/", handlers.Home)
-	app.Post("/gift/checkout", handlers.CreateGiftCheckout)
-	app.Get("/gift/success", handlers.GiftSuccess)
-	app.Get("/gift/cancel", handlers.GiftCancel)
-	app.Post("/registry/:id/checkout", handlers.CreateRegistryCheckout)
+	app.Post("/gift/claim", handlers.ClaimGift)
 
 	// admin group
 	admin := app.Group("/dashboard", middleware.BasicAuth())

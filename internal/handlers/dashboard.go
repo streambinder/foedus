@@ -90,7 +90,7 @@ func DashboardIndex(c *fiber.Ctx) error {
 		page = totalPages
 	}
 	csrfToken, _ := c.Locals("csrf").(string)
-	return Render(c, templates.Dashboard(settings, guests, gifts, registryItems, confirmed, totalGuests, page, totalPages, search, csrfToken, getFlash(c), StripeEnabled(), getT(c), getLang(c)))
+	return Render(c, templates.Dashboard(settings, guests, gifts, registryItems, confirmed, totalGuests, page, totalPages, search, csrfToken, getFlash(c), getT(c), getLang(c)))
 }
 
 func SaveSettings(c *fiber.Ctx) error {
@@ -98,6 +98,7 @@ func SaveSettings(c *fiber.Ctx) error {
 		"spouse1_name", "spouse2_name", "ceremony_datetime",
 		"ceremony_address", "ceremony_location",
 		"reception_address", "reception_location",
+		"bank_account_iban", "bank_account_holder",
 	}
 	for _, key := range keys {
 		if err := database.UpdateSetting(key, c.FormValue(key)); err != nil {

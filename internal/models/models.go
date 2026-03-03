@@ -8,13 +8,15 @@ type Setting struct {
 }
 
 type WeddingSettings struct {
-	Spouse1Name      string
-	Spouse2Name      string
-	CeremonyAddress  string
-	CeremonyLocation string
-	CeremonyDatetime string
+	Spouse1Name       string
+	Spouse2Name       string
+	CeremonyAddress   string
+	CeremonyLocation  string
+	CeremonyDatetime  string
 	ReceptionAddress  string
 	ReceptionLocation string
+	BankAccountIBAN   string
+	BankAccountHolder string
 }
 
 type Guest struct {
@@ -28,12 +30,9 @@ type Guest struct {
 
 type Gift struct {
 	ID             int
-	Amount         int // cents
-	Currency       string
-	Donor          string
-	Message        string
-	SessionID      string // stripe checkout session id
-	RegistryItemID *int   // fk to registry_items, nil for free-form gifts
+	Amount         int    // cents
+	Donor          string // who sent the gift
+	RegistryItemID *int   // fk to registry_items, nil for generic gifts
 	CreatedAt      time.Time
 }
 
