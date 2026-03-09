@@ -19,9 +19,6 @@ func ViewInvitation(c *fiber.Ctx) error {
 		return c.Status(500).SendString("failed to load invitation")
 	}
 
-	// mark as viewed on first open
-	database.MarkInvitationViewed(inv.ID)
-
 	settings, err := database.GetAllSettings()
 	if err != nil {
 		return c.Status(500).SendString("failed to load settings")
@@ -35,7 +32,16 @@ func ViewInvitation(c *fiber.Ctx) error {
 		return c.Status(500).SendString("failed to load polls")
 	}
 
-	return Render(c, templates.Invitation(inv, settings, polls, getT(c), getLang(c)))
+	return Render(c, templates.Invitation(inv, settings, polls, inv.ViewedAt != nil, getT(c), getLang(c)))
+}
+
+func MarkInvitationViewed(c *fiber.Ctx) error {
+	inv, err := database.GetInvitationByCode(c.Params("code"))
+	if err != nil {
+		return c.Status(404).SendString("not found")
+	}
+	database.MarkInvitationViewed(inv.ID)
+	return c.SendStatus(204)
 }
 
 func UpdateInvitationRSVP(c *fiber.Ctx) error {

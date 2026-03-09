@@ -54,6 +54,7 @@ func main() {
 
 	// invitation public routes (catch-all, must be last)
 	app.Get("/:code", handlers.ViewInvitation)
+	app.Post("/:code/viewed", handlers.MarkInvitationViewed)
 	app.Post("/:code/rsvp", handlers.UpdateInvitationRSVP)
 
 	port := os.Getenv("PORT")

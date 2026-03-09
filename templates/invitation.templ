@@ -15,8 +15,21 @@ func guestAnsweredYes(g models.Guest, pollID int) bool {
 	return false
 }
 
-templ Invitation(inv models.Invitation, settings models.WeddingSettings, polls []models.Poll, t i18n.T, lang string) {
+templ Invitation(inv models.Invitation, settings models.WeddingSettings, polls []models.Poll, alreadyViewed bool, t i18n.T, lang string) {
 	@Layout(pageTitle(t("invitation.title"), settings.Spouse1Name, settings.Spouse2Name), lang, t) {
+		if !alreadyViewed {
+			<div id="envelope-overlay">
+				<div class="envelope">
+					<div class="envelope-back"></div>
+					<div class="envelope-flap"></div>
+					<div class="envelope-letter">
+						<p>{ settings.Spouse1Name } <span class="amp">&amp;</span> { settings.Spouse2Name }</p>
+					</div>
+					<div class="envelope-front"></div>
+				</div>
+			</div>
+		}
+		<div id="invitation-content" class={ templ.KV("hidden-until-opened", !alreadyViewed) }>
 		<header class="hero">
 			<p><small>{ t("home.getting_married") }</small></p>
 			<h1>
@@ -116,5 +129,25 @@ templ Invitation(inv models.Invitation, settings models.WeddingSettings, polls [
 				<button type="submit">{ t("invitation.confirm") }</button>
 			</form>
 		</article>
+		</div>
+		if !alreadyViewed {
+			<script>
+				(function() {
+					var overlay = document.getElementById('envelope-overlay');
+					var content = document.getElementById('invitation-content');
+					var code = window.location.pathname.replace('/', '');
+					overlay.addEventListener('click', function() {
+						if (overlay.classList.contains('opening')) return;
+						overlay.classList.add('opening');
+						// after animation completes, reveal content and mark viewed
+						setTimeout(function() {
+							overlay.style.display = 'none';
+							content.classList.remove('hidden-until-opened');
+							fetch('/' + code + '/viewed', { method: 'POST' });
+						}, 1800);
+					});
+				})();
+			</script>
+		}
 	}
 }
