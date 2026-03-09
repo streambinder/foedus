@@ -3,7 +3,7 @@ package database
 import (
 	"database/sql"
 
-	"github.com/dpucci/foedus/internal/models"
+	"github.com/streambinder/foedus/internal/models"
 )
 
 func CreateGuest(firstName, lastName string) error {

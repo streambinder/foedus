@@ -1,6 +1,6 @@
 package database
 
-import "github.com/dpucci/foedus/internal/models"
+import "github.com/streambinder/foedus/internal/models"
 
 var settingsKeys = []string{
 	"spouse1_name", "spouse2_name", "ceremony_datetime",

@@ -6,7 +6,7 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/dpucci/foedus/internal/models"
+	"github.com/streambinder/foedus/internal/models"
 )
 
 const base62Chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"

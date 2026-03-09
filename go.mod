@@ -1,4 +1,4 @@
-module github.com/dpucci/foedus
+module github.com/streambinder/foedus
 
 go 1.24.0
 

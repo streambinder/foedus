@@ -4,8 +4,8 @@ import (
 	"database/sql"
 	"strconv"
 
-	"github.com/dpucci/foedus/internal/database"
-	"github.com/dpucci/foedus/templates"
+	"github.com/streambinder/foedus/internal/database"
+	"github.com/streambinder/foedus/templates"
 	"github.com/gofiber/fiber/v2"
 )
 

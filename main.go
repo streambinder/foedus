@@ -4,9 +4,9 @@ import (
 	"log"
 	"os"
 
-	"github.com/dpucci/foedus/internal/database"
-	"github.com/dpucci/foedus/internal/handlers"
-	"github.com/dpucci/foedus/internal/middleware"
+	"github.com/streambinder/foedus/internal/database"
+	"github.com/streambinder/foedus/internal/handlers"
+	"github.com/streambinder/foedus/internal/middleware"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/csrf"
 )

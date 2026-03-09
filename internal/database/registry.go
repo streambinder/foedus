@@ -1,6 +1,6 @@
 package database
 
-import "github.com/dpucci/foedus/internal/models"
+import "github.com/streambinder/foedus/internal/models"
 
 func CreateRegistryItem(name string, price int, image string) error {
 	_, err := DB.Exec(

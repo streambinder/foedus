@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"github.com/dpucci/foedus/internal/i18n"
+	"github.com/streambinder/foedus/internal/i18n"
 	"github.com/gofiber/fiber/v2"
 )
 

@@ -3,7 +3,7 @@ package handlers
 import (
 	"strings"
 
-	"github.com/dpucci/foedus/internal/database"
+	"github.com/streambinder/foedus/internal/database"
 	"github.com/gofiber/fiber/v2"
 )
 

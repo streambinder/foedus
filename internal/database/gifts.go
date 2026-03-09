@@ -1,6 +1,6 @@
 package database
 
-import "github.com/dpucci/foedus/internal/models"
+import "github.com/streambinder/foedus/internal/models"
 
 func CreateGift(amount int, donor string, registryItemID *int) error {
 	_, err := DB.Exec(

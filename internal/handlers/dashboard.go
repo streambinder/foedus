@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dpucci/foedus/internal/database"
-	"github.com/dpucci/foedus/internal/i18n"
-	"github.com/dpucci/foedus/templates"
+	"github.com/streambinder/foedus/internal/database"
+	"github.com/streambinder/foedus/internal/i18n"
+	"github.com/streambinder/foedus/templates"
 	"github.com/gofiber/fiber/v2"
 )
 
