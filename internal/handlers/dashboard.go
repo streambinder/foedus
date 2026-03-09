@@ -89,8 +89,12 @@ func DashboardIndex(c *fiber.Ctx) error {
 	if page > totalPages {
 		page = totalPages
 	}
+	invitations, err := database.GetAllInvitations()
+	if err != nil {
+		return c.Status(500).SendString("failed to load invitations")
+	}
 	csrfToken, _ := c.Locals("csrf").(string)
-	return Render(c, templates.Dashboard(settings, guests, gifts, registryItems, confirmed, totalGuests, page, totalPages, search, csrfToken, getFlash(c), getT(c), getLang(c)))
+	return Render(c, templates.Dashboard(settings, guests, gifts, registryItems, invitations, confirmed, totalGuests, page, totalPages, search, csrfToken, getFlash(c), getT(c), getLang(c)))
 }
 
 func SaveSettings(c *fiber.Ctx) error {
@@ -266,5 +270,42 @@ func DeleteRegistryItem(c *fiber.Ctx) error {
 		return c.Status(500).SendString("failed to delete item")
 	}
 	setFlash(c, getT(c)("flash.item_deleted"))
+	return c.Redirect("/dashboard")
+}
+
+func CreateInvitation(c *fiber.Ctx) error {
+	raw := c.FormValue("guest_ids")
+	if raw == "" {
+		return c.Redirect("/dashboard")
+	}
+	parts := strings.Split(raw, ",")
+	var guestIDs []int
+	for _, p := range parts {
+		id, err := strconv.Atoi(strings.TrimSpace(p))
+		if err != nil {
+			continue
+		}
+		guestIDs = append(guestIDs, id)
+	}
+	if len(guestIDs) == 0 {
+		return c.Redirect("/dashboard")
+	}
+	code, err := database.CreateInvitation(guestIDs)
+	if err != nil {
+		return c.Status(500).SendString("failed to create invitation")
+	}
+	setFlash(c, getT(c)("flash.invitation_created")+" "+code)
+	return c.Redirect("/dashboard")
+}
+
+func DeleteInvitation(c *fiber.Ctx) error {
+	id, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		return c.Status(400).SendString("invalid id")
+	}
+	if err := database.DeleteInvitation(id); err != nil {
+		return c.Status(500).SendString("failed to delete invitation")
+	}
+	setFlash(c, getT(c)("flash.invitation_deleted"))
 	return c.Redirect("/dashboard")
 }

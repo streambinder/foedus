@@ -15,7 +15,7 @@ func CreateGuest(firstName, lastName string) error {
 }
 
 func GetAllGuests() ([]models.Guest, error) {
-	rows, err := DB.Query(`SELECT id, first_name, last_name, confirmed, created_at, updated_at FROM guests ORDER BY id DESC`)
+	rows, err := DB.Query(`SELECT id, first_name, last_name, confirmed, invitation_id, created_at, updated_at FROM guests ORDER BY id DESC`)
 	if err != nil {
 		return nil, err
 	}
@@ -24,7 +24,7 @@ func GetAllGuests() ([]models.Guest, error) {
 	var guests []models.Guest
 	for rows.Next() {
 		var g models.Guest
-		if err := rows.Scan(&g.ID, &g.FirstName, &g.LastName, &g.Confirmed, &g.CreatedAt, &g.UpdatedAt); err != nil {
+		if err := rows.Scan(&g.ID, &g.FirstName, &g.LastName, &g.Confirmed, &g.InvitationID, &g.CreatedAt, &g.UpdatedAt); err != nil {
 			return nil, err
 		}
 		guests = append(guests, g)
@@ -35,8 +35,8 @@ func GetAllGuests() ([]models.Guest, error) {
 func GetGuest(id int) (models.Guest, error) {
 	var g models.Guest
 	err := DB.QueryRow(
-		`SELECT id, first_name, last_name, confirmed, created_at, updated_at FROM guests WHERE id = ?`, id,
-	).Scan(&g.ID, &g.FirstName, &g.LastName, &g.Confirmed, &g.CreatedAt, &g.UpdatedAt)
+		`SELECT id, first_name, last_name, confirmed, invitation_id, created_at, updated_at FROM guests WHERE id = ?`, id,
+	).Scan(&g.ID, &g.FirstName, &g.LastName, &g.Confirmed, &g.InvitationID, &g.CreatedAt, &g.UpdatedAt)
 	return g, err
 }
 
@@ -77,7 +77,7 @@ func GetGuestsPaginated(page, perPage int, search string) ([]models.Guest, int, 
 			return nil, 0, err
 		}
 		rows, err = DB.Query(
-			`SELECT id, first_name, last_name, confirmed, created_at, updated_at FROM guests ORDER BY id DESC LIMIT ? OFFSET ?`,
+			`SELECT id, first_name, last_name, confirmed, invitation_id, created_at, updated_at FROM guests ORDER BY id DESC LIMIT ? OFFSET ?`,
 			perPage, offset,
 		)
 	} else {
@@ -90,7 +90,7 @@ func GetGuestsPaginated(page, perPage int, search string) ([]models.Guest, int, 
 			return nil, 0, err
 		}
 		rows, err = DB.Query(
-			`SELECT id, first_name, last_name, confirmed, created_at, updated_at FROM guests WHERE first_name LIKE ? OR last_name LIKE ? ORDER BY id DESC LIMIT ? OFFSET ?`,
+			`SELECT id, first_name, last_name, confirmed, invitation_id, created_at, updated_at FROM guests WHERE first_name LIKE ? OR last_name LIKE ? ORDER BY id DESC LIMIT ? OFFSET ?`,
 			pattern, pattern, perPage, offset,
 		)
 	}
@@ -102,7 +102,7 @@ func GetGuestsPaginated(page, perPage int, search string) ([]models.Guest, int, 
 	var guests []models.Guest
 	for rows.Next() {
 		var g models.Guest
-		if err := rows.Scan(&g.ID, &g.FirstName, &g.LastName, &g.Confirmed, &g.CreatedAt, &g.UpdatedAt); err != nil {
+		if err := rows.Scan(&g.ID, &g.FirstName, &g.LastName, &g.Confirmed, &g.InvitationID, &g.CreatedAt, &g.UpdatedAt); err != nil {
 			return nil, 0, err
 		}
 		guests = append(guests, g)

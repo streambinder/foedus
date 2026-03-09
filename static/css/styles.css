@@ -757,6 +757,115 @@ a[href="/dashboard"]:not(footer a):hover {
   border-radius: 0.25rem;
 }
 
+/* invitation checkbox column */
+.checkbox-col {
+  width: 2rem;
+  text-align: center !important;
+  padding-right: 0 !important;
+}
+
+.checkbox-col input[type="checkbox"] {
+  margin: 0;
+  width: 1rem;
+  height: 1rem;
+  cursor: pointer;
+}
+
+/* invitation code badge on guest rows */
+.invitation-badge {
+  display: inline-block;
+  background: var(--stone-100);
+  color: var(--stone-600);
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.625rem;
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.25rem;
+  margin-left: 0.375rem;
+  vertical-align: middle;
+  letter-spacing: 0.02em;
+}
+
+/* invitation code in invitations table */
+.invitation-code {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.8125rem;
+  letter-spacing: 0.03em;
+  background: var(--stone-100);
+  padding: 0.15rem 0.4rem;
+  border-radius: 0.25rem;
+}
+
+/* create invitation bar */
+.invitation-bar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.5rem;
+}
+
+.invitation-bar button {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.75rem;
+  height: 1.75rem;
+}
+
+.invitation-bar button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* rsvp card (invitation public page) */
+.rsvp-card {
+  max-width: 28rem;
+  margin: 0 auto 1rem;
+  text-align: center;
+}
+
+.rsvp-card h2 {
+  font-size: 1.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.rsvp-subtitle {
+  color: var(--stone-500);
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}
+
+.rsvp-guest {
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--stone-100);
+}
+
+.rsvp-guest:last-of-type {
+  border-bottom: none;
+}
+
+.rsvp-label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  margin-bottom: 0;
+}
+
+.rsvp-label input[type="checkbox"] {
+  width: 1.125rem;
+  height: 1.125rem;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.rsvp-name {
+  color: var(--stone-700);
+  font-weight: 500;
+}
+
+.rsvp-card button[type="submit"] {
+  margin-top: 1rem;
+  width: 100%;
+}
+
 /* checkbox switch - compact size */
 [role="switch"] {
   --pico-switch-color: var(--stone-800);

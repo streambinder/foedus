@@ -27,7 +27,7 @@ func main() {
 	app.Get("/", handlers.Home)
 	app.Post("/gift/claim", handlers.ClaimGift)
 
-	// admin group
+	// admin group (must be registered before the /:code catch-all)
 	admin := app.Group("/dashboard", middleware.BasicAuth())
 
 	// csrf for all dashboard routes — token extracted from form field "_csrf"
@@ -47,6 +47,12 @@ func main() {
 	admin.Post("/guests/:id/confirm", handlers.ToggleConfirmed)
 	admin.Post("/registry", handlers.AddRegistryItem)
 	admin.Post("/registry/:id/delete", handlers.DeleteRegistryItem)
+	admin.Post("/invitations", handlers.CreateInvitation)
+	admin.Post("/invitations/:id/delete", handlers.DeleteInvitation)
+
+	// invitation public routes (catch-all, must be last)
+	app.Get("/:code", handlers.ViewInvitation)
+	app.Post("/:code/rsvp", handlers.UpdateInvitationRSVP)
 
 	port := os.Getenv("PORT")
 	if port == "" {

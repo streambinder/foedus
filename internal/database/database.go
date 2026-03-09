@@ -30,12 +30,13 @@ func migrate() {
 			value TEXT NOT NULL DEFAULT ''
 		)`,
 		`CREATE TABLE IF NOT EXISTS guests (
-			id         INTEGER PRIMARY KEY AUTOINCREMENT,
-			first_name TEXT NOT NULL,
-			last_name  TEXT NOT NULL DEFAULT '',
-			confirmed  INTEGER NOT NULL DEFAULT 0,
-			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+			id            INTEGER PRIMARY KEY AUTOINCREMENT,
+			first_name    TEXT NOT NULL,
+			last_name     TEXT NOT NULL DEFAULT '',
+			confirmed     INTEGER NOT NULL DEFAULT 0,
+			invitation_id INTEGER REFERENCES invitations(id),
+			created_at    DATETIME DEFAULT CURRENT_TIMESTAMP,
+			updated_at    DATETIME DEFAULT CURRENT_TIMESTAMP
 		)`,
 		`CREATE TABLE IF NOT EXISTS gifts (
 			id               INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -49,6 +50,12 @@ func migrate() {
 			name       TEXT NOT NULL,
 			price      INTEGER NOT NULL,
 			image      TEXT NOT NULL DEFAULT '',
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+		)`,
+		`CREATE TABLE IF NOT EXISTS invitations (
+			id         INTEGER PRIMARY KEY AUTOINCREMENT,
+			code       TEXT NOT NULL UNIQUE,
+			viewed_at  DATETIME,
 			created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 		)`,
 	}

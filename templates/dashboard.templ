@@ -2,6 +2,7 @@ package templates
 
 import (
 	"fmt"
+	"strings"
 	"github.com/dpucci/foedus/internal/i18n"
 	"github.com/dpucci/foedus/internal/models"
 	"strconv"
@@ -47,7 +48,29 @@ func registryItemName(items []models.RegistryItem, id *int) string {
 	return ""
 }
 
-templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []models.Gift, registryItems []models.RegistryItem, confirmed int, total int, page int, totalPages int, search string, csrfToken string, flash string, t i18n.T, lang string) {
+// find invitation code for a guest by their invitation_id
+func guestInvitationCode(invitations []models.Invitation, invitationID *int) string {
+	if invitationID == nil {
+		return ""
+	}
+	for _, inv := range invitations {
+		if inv.ID == *invitationID {
+			return inv.Code
+		}
+	}
+	return ""
+}
+
+// join guest names in an invitation
+func invitationGuestNames(inv models.Invitation) string {
+	var names []string
+	for _, g := range inv.Guests {
+		names = append(names, g.FirstName+" "+g.LastName)
+	}
+	return strings.Join(names, ", ")
+}
+
+templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []models.Gift, registryItems []models.RegistryItem, invitations []models.Invitation, confirmed int, total int, page int, totalPages int, search string, csrfToken string, flash string, t i18n.T, lang string) {
 	@Layout(t("title.dashboard"), lang, t) {
 		if flash != "" {
 			<div class="flash-success">{ flash }</div>
@@ -108,10 +131,18 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 			</div>
 			<input type="search" id="guest-search" name="q" value={ search } placeholder={ t("placeholder.search") } autocomplete="off"/>
 			if len(guests) > 0 {
+				<form id="invitation-form" method="POST" action="/dashboard/invitations">
+					<input type="hidden" name="_csrf" value={ csrfToken }/>
+					<input type="hidden" name="guest_ids" id="guest-ids-input"/>
+					<div class="invitation-bar">
+						<button type="submit" id="create-invitation-btn" disabled>{ t("btn.create_invitation") }</button>
+					</div>
+				</form>
 				<div class="overflow-auto">
 					<table>
 						<thead>
 							<tr>
+								<th class="checkbox-col"></th>
 								<th>{ t("th.first_name") }</th>
 								<th>{ t("th.last_name") }</th>
 								<th>{ t("th.confirmed") }</th>
@@ -121,7 +152,17 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 						<tbody>
 							for _, g := range guests {
 								<tr>
-									<td>{ g.FirstName }</td>
+									<td class="checkbox-col">
+										if g.InvitationID == nil {
+											<input type="checkbox" class="guest-checkbox" value={ strconv.Itoa(g.ID) }/>
+										}
+									</td>
+									<td>
+										{ g.FirstName }
+										if guestInvitationCode(invitations, g.InvitationID) != "" {
+											<span class="invitation-badge">{ guestInvitationCode(invitations, g.InvitationID) }</span>
+										}
+									</td>
 									<td>{ g.LastName }</td>
 									<td>
 										<form method="POST" action={ templ.SafeURL("/dashboard/guests/" + strconv.Itoa(g.ID) + "/confirm") }>
@@ -162,6 +203,52 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 				}
 			}
 		</article>
+		<!-- invitations -->
+		if len(invitations) > 0 {
+			<article>
+				<h2>{ t("dashboard.invitations") }</h2>
+				<div class="overflow-auto">
+					<table>
+						<thead>
+							<tr>
+								<th>{ t("th.code") }</th>
+								<th>{ t("th.guests") }</th>
+								<th>{ t("th.viewed") }</th>
+								<th>{ t("th.created") }</th>
+								<th>{ t("th.actions") }</th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, inv := range invitations {
+								<tr>
+									<td>
+										<span class="copyable">
+											<code class="invitation-code">{ inv.Code }</code>
+											<button type="button" class="copy-btn" data-code={ inv.Code } onclick="copyInvitationURL(this)">{ t("btn.copy") }</button>
+										</span>
+									</td>
+									<td>{ invitationGuestNames(inv) }</td>
+									<td>
+										if inv.ViewedAt != nil {
+											{ i18n.FormatDate(*inv.ViewedAt, lang) }
+										} else {
+											—
+										}
+									</td>
+									<td>{ i18n.FormatDate(inv.CreatedAt, lang) }</td>
+									<td class="actions">
+										<form method="POST" action={ templ.SafeURL("/dashboard/invitations/" + strconv.Itoa(inv.ID) + "/delete") } data-confirm={ t("confirm.delete_invitation") } onsubmit="return confirm(this.dataset.confirm)">
+											<input type="hidden" name="_csrf" value={ csrfToken }/>
+											<button type="submit" class="outline secondary">{ t("btn.delete") }</button>
+										</form>
+									</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+			</article>
+		}
 		<!-- registry -->
 		<article>
 			<h2>{ t("dashboard.registry") }</h2>
@@ -237,6 +324,33 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 				</div>
 			</article>
 		}
+		<script>
+			// copy invitation URL to clipboard
+			function copyInvitationURL(btn) {
+				const code = btn.dataset.code;
+				const url = window.location.protocol + '//' + window.location.host + '/' + code;
+				navigator.clipboard.writeText(url).then(function() {
+					const orig = btn.textContent;
+					btn.textContent = '✓';
+					setTimeout(function() { btn.textContent = orig; }, 1500);
+				});
+			}
+		</script>
+		<script>
+			// invitation checkbox logic
+			(function() {
+				const btn = document.getElementById('create-invitation-btn');
+				const hidden = document.getElementById('guest-ids-input');
+				if (!btn || !hidden) return;
+				document.addEventListener('change', function(e) {
+					if (!e.target.classList.contains('guest-checkbox')) return;
+					const checked = document.querySelectorAll('.guest-checkbox:checked');
+					const ids = Array.from(checked).map(cb => cb.value);
+					hidden.value = ids.join(',');
+					btn.disabled = ids.length === 0;
+				});
+			})();
+		</script>
 		<script src="/static/autocomplete.js"></script>
 		<script>
 			(function() {

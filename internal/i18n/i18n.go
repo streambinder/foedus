@@ -148,6 +148,23 @@ var translations = map[string]map[string]string{
 		// registry item link in gifts table
 		"th.registry_item": "Item",
 
+		// invitations
+		"dashboard.invitations":      "Invitations",
+		"th.code":                    "Code",
+		"th.guests":                  "Guests",
+		"th.viewed":                  "Viewed",
+		"th.created":                 "Created",
+		"btn.create_invitation":      "Create Invitation",
+		"flash.invitation_created":   "Invitation created:",
+		"flash.invitation_deleted":   "Invitation deleted.",
+		"confirm.delete_invitation":  "Delete this invitation?",
+
+		// invitation public page
+		"invitation.title":            "Invitation",
+		"invitation.rsvp":             "RSVP",
+		"invitation.rsvp_description": "Please confirm attendance for each guest.",
+		"invitation.confirm":          "Confirm",
+
 		// footer
 		"link.dashboard": "dashboard",
 		"link.home":      "home",
@@ -273,6 +290,23 @@ var translations = map[string]map[string]string{
 
 		// registry item link in gifts table
 		"th.registry_item": "Articolo",
+
+		// invitations
+		"dashboard.invitations":      "Inviti",
+		"th.code":                    "Codice",
+		"th.guests":                  "Invitati",
+		"th.viewed":                  "Visualizzato",
+		"th.created":                 "Creato",
+		"btn.create_invitation":      "Crea Invito",
+		"flash.invitation_created":   "Invito creato:",
+		"flash.invitation_deleted":   "Invito eliminato.",
+		"confirm.delete_invitation":  "Eliminare questo invito?",
+
+		// invitation public page
+		"invitation.title":            "Invito",
+		"invitation.rsvp":             "RSVP",
+		"invitation.rsvp_description": "Conferma la presenza per ciascun invitato.",
+		"invitation.confirm":          "Conferma",
 
 		// footer
 		"link.dashboard": "pannello",

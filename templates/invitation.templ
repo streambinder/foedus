@@ -1,0 +1,64 @@
+package templates
+
+import (
+	"github.com/dpucci/foedus/internal/i18n"
+	"github.com/dpucci/foedus/internal/models"
+	"strconv"
+)
+
+templ Invitation(inv models.Invitation, settings models.WeddingSettings, t i18n.T, lang string) {
+	@Layout(t("invitation.title"), lang, t) {
+		<header class="hero">
+			<p><small>{ t("home.getting_married") }</small></p>
+			<h1>
+				{ settings.Spouse1Name } <span class="amp">&amp;</span> { settings.Spouse2Name }
+			</h1>
+			if settings.CeremonyDatetime != "" {
+				<p class="muted">{ i18n.FormatDatetime(settings.CeremonyDatetime, lang) }</p>
+			}
+		</header>
+		<hr/>
+		if settings.CeremonyAddress != "" || settings.CeremonyLocation != "" {
+			<section class="venue">
+				<h2>{ t("home.ceremony") }</h2>
+				if settings.CeremonyAddress != "" {
+					<p><strong>{ settings.CeremonyAddress }</strong></p>
+				}
+				if settings.CeremonyLocation != "" {
+					<p><small>{ settings.CeremonyLocation }</small></p>
+				}
+			</section>
+		}
+		if settings.ReceptionAddress != "" || settings.ReceptionLocation != "" {
+			<section class="venue">
+				<h2>{ t("home.reception") }</h2>
+				if settings.ReceptionAddress != "" {
+					<p><strong>{ settings.ReceptionAddress }</strong></p>
+				}
+				if settings.ReceptionLocation != "" {
+					<p><small>{ settings.ReceptionLocation }</small></p>
+				}
+			</section>
+		}
+		<hr/>
+		<article class="rsvp-card">
+			<h2>{ t("invitation.rsvp") }</h2>
+			<p class="rsvp-subtitle">{ t("invitation.rsvp_description") }</p>
+			<form method="POST" action={ templ.SafeURL("/" + inv.Code + "/rsvp") }>
+				for _, g := range inv.Guests {
+					<div class="rsvp-guest">
+						<label class="rsvp-label">
+							if g.Confirmed {
+								<input type="checkbox" name={ "confirmed_" + strconv.Itoa(g.ID) } value="1" checked/>
+							} else {
+								<input type="checkbox" name={ "confirmed_" + strconv.Itoa(g.ID) } value="1"/>
+							}
+							<span class="rsvp-name">{ g.FirstName } { g.LastName }</span>
+						</label>
+					</div>
+				}
+				<button type="submit">{ t("invitation.confirm") }</button>
+			</form>
+		</article>
+	}
+}
