@@ -104,12 +104,18 @@ func DashboardIndex(c *fiber.Ctx) error {
 func SaveSettings(c *fiber.Ctx) error {
 	keys := []string{
 		"spouse1_name", "spouse2_name", "ceremony_datetime",
-		"ceremony_address", "ceremony_location",
-		"reception_address", "reception_location",
+		"ceremony_address", "ceremony_location", "ceremony_image",
+		"reception_address", "reception_location", "reception_image",
 		"bank_account_iban", "bank_account_holder",
 	}
 	for _, key := range keys {
-		if err := database.UpdateSetting(key, c.FormValue(key)); err != nil {
+		val := c.FormValue(key)
+		if (key == "ceremony_image" || key == "reception_image") && val != "" {
+			if err := validateBase64ImageAny(val); err != nil {
+				return c.Status(400).SendString(err.Error())
+			}
+		}
+		if err := database.UpdateSetting(key, val); err != nil {
 			return c.Status(500).SendString("failed to save settings")
 		}
 	}
@@ -238,6 +244,41 @@ func DeleteGuest(c *fiber.Ctx) error {
 
 const maxImageBytes = 150 * 1024 // 150KB
 
+// validateBase64Image checks a base64 data URI for PNG prefix and size
+func validateBase64Image(image string) error {
+	const prefix = "data:image/png;base64,"
+	if !strings.HasPrefix(image, prefix) {
+		return fiber.NewError(400, "invalid image format")
+	}
+	decoded, err := base64.StdEncoding.DecodeString(image[len(prefix):])
+	if err != nil {
+		return fiber.NewError(400, "invalid image data")
+	}
+	if len(decoded) > maxImageBytes {
+		return fiber.NewError(400, "image too large")
+	}
+	return nil
+}
+
+// validateBase64ImageAny accepts any image/* data URI, not just PNG
+func validateBase64ImageAny(image string) error {
+	if !strings.HasPrefix(image, "data:image/") {
+		return fiber.NewError(400, "invalid image format")
+	}
+	idx := strings.Index(image, ";base64,")
+	if idx == -1 {
+		return fiber.NewError(400, "invalid image format")
+	}
+	decoded, err := base64.StdEncoding.DecodeString(image[idx+8:])
+	if err != nil {
+		return fiber.NewError(400, "invalid image data")
+	}
+	if len(decoded) > maxImageBytes {
+		return fiber.NewError(400, "image too large")
+	}
+	return nil
+}
+
 func AddRegistryItem(c *fiber.Ctx) error {
 	name := strings.TrimSpace(c.FormValue("name"))
 	if name == "" {
@@ -248,18 +289,9 @@ func AddRegistryItem(c *fiber.Ctx) error {
 		return c.Status(400).SendString("invalid price")
 	}
 	image := c.FormValue("image")
-	// validate base64 data URI and size
 	if image != "" {
-		const prefix = "data:image/png;base64,"
-		if !strings.HasPrefix(image, prefix) {
-			return c.Status(400).SendString("invalid image format")
-		}
-		decoded, err := base64.StdEncoding.DecodeString(image[len(prefix):])
-		if err != nil {
-			return c.Status(400).SendString("invalid image data")
-		}
-		if len(decoded) > maxImageBytes {
-			return c.Status(400).SendString("image too large")
+		if err := validateBase64Image(image); err != nil {
+			return c.Status(400).SendString(err.Error())
 		}
 	}
 	if err := database.CreateRegistryItem(name, price, image); err != nil {

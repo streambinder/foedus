@@ -380,6 +380,56 @@ hr {
   color: var(--stone-400);
 }
 
+.venue-image {
+  max-width: 20rem;
+  width: 100%;
+  border-radius: 0.5rem;
+  margin: 0.75rem auto;
+  display: block;
+}
+
+/* dashboard venue image upload */
+.venue-image-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.venue-file-input {
+  font-size: 0.6875rem;
+  padding: 0;
+  height: 2rem;
+  border: 1px solid var(--stone-300);
+  border-radius: 0.375rem;
+  background: #fff;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+.venue-file-input::file-selector-button {
+  height: 100%;
+  padding: 0 0.5rem;
+  margin-right: 0.5rem;
+  border: none;
+  border-right: 1px solid var(--stone-300);
+  background: var(--stone-100);
+  color: var(--stone-600);
+  font-size: 0.6875rem;
+  cursor: pointer;
+}
+
+.venue-file-input::file-selector-button:hover {
+  background: var(--stone-200);
+}
+
+.venue-image-preview {
+  width: 3rem;
+  height: 3rem;
+  object-fit: cover;
+  border-radius: 0.375rem;
+}
+
 /* ── guest cards (home page) ── */
 
 .guest-card {

@@ -15,6 +15,8 @@ type WeddingSettings struct {
 	CeremonyDatetime  string
 	ReceptionAddress  string
 	ReceptionLocation string
+	CeremonyImage     string
+	ReceptionImage    string
 	BankAccountIBAN   string
 	BankAccountHolder string
 }

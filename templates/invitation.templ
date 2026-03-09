@@ -43,6 +43,9 @@ templ Invitation(inv models.Invitation, settings models.WeddingSettings, polls [
 		if settings.CeremonyAddress != "" || settings.CeremonyLocation != "" {
 			<section class="venue">
 				<h2>{ t("home.ceremony") }</h2>
+				if settings.CeremonyImage != "" {
+					<img class="venue-image" src={ settings.CeremonyImage } alt={ t("home.ceremony") }/>
+				}
 				if settings.CeremonyAddress != "" {
 					<p><strong>{ settings.CeremonyAddress }</strong></p>
 				}
@@ -54,6 +57,9 @@ templ Invitation(inv models.Invitation, settings models.WeddingSettings, polls [
 		if settings.ReceptionAddress != "" || settings.ReceptionLocation != "" {
 			<section class="venue">
 				<h2>{ t("home.reception") }</h2>
+				if settings.ReceptionImage != "" {
+					<img class="venue-image" src={ settings.ReceptionImage } alt={ t("home.reception") }/>
+				}
 				if settings.ReceptionAddress != "" {
 					<p><strong>{ settings.ReceptionAddress }</strong></p>
 				}

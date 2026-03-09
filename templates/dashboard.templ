@@ -95,12 +95,30 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 					</div>
 					<input type="datetime-local" name="ceremony_datetime" value={ settings.CeremonyDatetime }/>
 				</div>
+				<div class="venue-image-row">
+					<input type="file" id="ceremony-file" accept="image/*" class="venue-file-input"/>
+					<input type="hidden" name="ceremony_image" id="ceremony-image-data" value={ settings.CeremonyImage }/>
+					if settings.CeremonyImage != "" {
+						<img class="venue-image-preview" id="ceremony-preview" src={ settings.CeremonyImage } alt="ceremony"/>
+					} else {
+						<img class="venue-image-preview" id="ceremony-preview" style="display:none" alt="ceremony"/>
+					}
+				</div>
 				<label>{ t("label.reception") }</label>
 				<div style="position:relative">
 					<input type="text" id="reception-input" value={ locationDisplay(settings.ReceptionAddress, settings.ReceptionLocation) } autocomplete="off" placeholder={ t("placeholder.reception_address") }/>
 					<div id="reception-dropdown" class="autocomplete-dropdown"></div>
 					<input type="hidden" name="reception_address" id="reception-address-hidden" value={ settings.ReceptionAddress }/>
 					<input type="hidden" name="reception_location" id="reception-location-hidden" value={ settings.ReceptionLocation }/>
+				</div>
+				<div class="venue-image-row">
+					<input type="file" id="reception-file" accept="image/*" class="venue-file-input"/>
+					<input type="hidden" name="reception_image" id="reception-image-data" value={ settings.ReceptionImage }/>
+					if settings.ReceptionImage != "" {
+						<img class="venue-image-preview" id="reception-preview" src={ settings.ReceptionImage } alt="reception"/>
+					} else {
+						<img class="venue-image-preview" id="reception-preview" style="display:none" alt="reception"/>
+					}
 				</div>
 				<label>{ t("label.bank") }</label>
 				<div class="grid">
@@ -474,11 +492,8 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 			})();
 		</script>
 		<script>
-			// registry image compression: resize to 400x400 max, export as png data URI
-			(function() {
-				const fileInput = document.getElementById('registry-file');
-				const dataInput = document.getElementById('registry-image-data');
-				if (!fileInput) return;
+			// shared image resize: compress to 400x400 max, format defaults to image/png
+			function resizeImageToDataURI(fileInput, dataInput, previewImg, format, quality) {
 				fileInput.addEventListener('change', function() {
 					const file = this.files[0];
 					if (!file) return;
@@ -495,10 +510,34 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 						canvas.width = w;
 						canvas.height = h;
 						canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-						dataInput.value = canvas.toDataURL('image/png');
+						dataInput.value = canvas.toDataURL(format || 'image/png', quality);
+						if (previewImg) {
+							previewImg.src = dataInput.value;
+							previewImg.style.display = '';
+						}
 					};
 					img.src = URL.createObjectURL(file);
 				});
+			}
+			// registry (png only)
+			(function() {
+				const f = document.getElementById('registry-file');
+				const d = document.getElementById('registry-image-data');
+				if (f && d) resizeImageToDataURI(f, d);
+			})();
+			// ceremony (jpeg, 0.7 quality for smaller payloads)
+			(function() {
+				const f = document.getElementById('ceremony-file');
+				const d = document.getElementById('ceremony-image-data');
+				const p = document.getElementById('ceremony-preview');
+				if (f && d) resizeImageToDataURI(f, d, p, 'image/jpeg', 0.7);
+			})();
+			// reception (jpeg, 0.7 quality for smaller payloads)
+			(function() {
+				const f = document.getElementById('reception-file');
+				const d = document.getElementById('reception-image-data');
+				const p = document.getElementById('reception-preview');
+				if (f && d) resizeImageToDataURI(f, d, p, 'image/jpeg', 0.7);
 			})();
 		</script>
 		<hr class="footer-separator"/>
