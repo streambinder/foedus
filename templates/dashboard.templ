@@ -2,6 +2,7 @@ package templates
 
 import (
 	"fmt"
+	"net/url"
 	"strings"
 	"github.com/streambinder/foedus/internal/i18n"
 	"github.com/streambinder/foedus/internal/models"
@@ -17,6 +18,11 @@ func locationDisplay(name, address string) string {
 		return name
 	}
 	return address
+}
+
+// google maps search url for a venue
+func mapsURL(name, address string) string {
+	return "https://www.google.com/maps/search/?api=1&query=" + url.QueryEscape(locationDisplay(name, address))
 }
 
 // helper to build pagination URL preserving search query

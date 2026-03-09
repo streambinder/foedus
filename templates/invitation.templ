@@ -43,29 +43,33 @@ templ Invitation(inv models.Invitation, settings models.WeddingSettings, polls [
 		if settings.CeremonyAddress != "" || settings.CeremonyLocation != "" {
 			<section class="venue">
 				<h2>{ t("home.ceremony") }</h2>
-				if settings.CeremonyImage != "" {
-					<img class="venue-image" src={ settings.CeremonyImage } alt={ t("home.ceremony") }/>
-				}
-				if settings.CeremonyAddress != "" {
-					<p><strong>{ settings.CeremonyAddress }</strong></p>
-				}
-				if settings.CeremonyLocation != "" {
-					<p><small>{ settings.CeremonyLocation }</small></p>
-				}
+				<a href={ templ.SafeURL(mapsURL(settings.CeremonyAddress, settings.CeremonyLocation)) } target="_blank" class="venue-link">
+					if settings.CeremonyImage != "" {
+						<img class="venue-image" src={ settings.CeremonyImage } alt={ t("home.ceremony") }/>
+					}
+					if settings.CeremonyAddress != "" {
+						<p><strong>{ settings.CeremonyAddress }</strong></p>
+					}
+					if settings.CeremonyLocation != "" {
+						<p><small>{ settings.CeremonyLocation }</small></p>
+					}
+				</a>
 			</section>
 		}
 		if settings.ReceptionAddress != "" || settings.ReceptionLocation != "" {
 			<section class="venue">
 				<h2>{ t("home.reception") }</h2>
-				if settings.ReceptionImage != "" {
-					<img class="venue-image" src={ settings.ReceptionImage } alt={ t("home.reception") }/>
-				}
-				if settings.ReceptionAddress != "" {
-					<p><strong>{ settings.ReceptionAddress }</strong></p>
-				}
-				if settings.ReceptionLocation != "" {
-					<p><small>{ settings.ReceptionLocation }</small></p>
-				}
+				<a href={ templ.SafeURL(mapsURL(settings.ReceptionAddress, settings.ReceptionLocation)) } target="_blank" class="venue-link">
+					if settings.ReceptionImage != "" {
+						<img class="venue-image" src={ settings.ReceptionImage } alt={ t("home.reception") }/>
+					}
+					if settings.ReceptionAddress != "" {
+						<p><strong>{ settings.ReceptionAddress }</strong></p>
+					}
+					if settings.ReceptionLocation != "" {
+						<p><small>{ settings.ReceptionLocation }</small></p>
+					}
+				</a>
 			</section>
 		}
 		<hr/>

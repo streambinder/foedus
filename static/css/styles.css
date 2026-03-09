@@ -380,6 +380,12 @@ hr {
   color: var(--stone-400);
 }
 
+.venue-link {
+  color: inherit;
+  text-decoration: none;
+  display: block;
+}
+
 .venue-image {
   max-width: 20rem;
   width: 100%;
