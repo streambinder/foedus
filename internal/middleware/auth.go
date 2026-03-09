@@ -8,13 +8,19 @@ import (
 )
 
 func BasicAuth() fiber.Handler {
-	user := os.Getenv("ADMIN_USER")
-	pass := os.Getenv("ADMIN_PASSWORD")
-	if user == "" || pass == "" {
-		user = "admin"
-		pass = "admin"
+	users := make(map[string]string)
+	// check ADMIN_USER/ADMIN_PASSWORD, then ADMIN_USER1..9/ADMIN_PASSWORD1..9
+	for _, suffix := range []string{"", "1", "2", "3", "4", "5", "6", "7", "8", "9"} {
+		user := os.Getenv("ADMIN_USER" + suffix)
+		pass := os.Getenv("ADMIN_PASSWORD" + suffix)
+		if user != "" && pass != "" {
+			users[user] = pass
+		}
+	}
+	if len(users) == 0 {
+		users["admin"] = "admin"
 	}
 	return basicauth.New(basicauth.Config{
-		Users: map[string]string{user: pass},
+		Users: users,
 	})
 }
