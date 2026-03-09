@@ -2,6 +2,15 @@ package templates
 
 import "github.com/streambinder/foedus/internal/i18n"
 
+templ SetupGuard(lang string, t i18n.T) {
+	@Layout(t("title.setup"), lang, t) {
+		<div class="setup-guard">
+			<h1>{ t("setup.not_ready") }</h1>
+			<p><a href="/dashboard">{ t("setup.go_to_dashboard") }</a></p>
+		</div>
+	}
+}
+
 templ Layout(title string, lang string, t i18n.T) {
 	<!DOCTYPE html>
 	<html lang={ lang } data-theme="light">

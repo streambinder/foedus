@@ -30,6 +30,7 @@ var translations = map[string]map[string]string{
 		// layout
 		"title.dashboard":  "Dashboard",
 		"title.edit_guest": "Edit Guest",
+		"title.setup":      "Setup Required",
 
 		// dashboard - sections
 		"dashboard.title":   "Wedding Dashboard",
@@ -175,6 +176,10 @@ var translations = map[string]map[string]string{
 		"invitation.rsvp_description": "Please confirm attendance for each guest.",
 		"invitation.confirm":          "Confirm",
 
+		// setup guard
+		"setup.not_ready":     "This wedding hasn't been set up yet.",
+		"setup.go_to_dashboard": "Go to the dashboard to get started.",
+
 		// footer
 		"link.dashboard": "dashboard",
 		"link.home":      "home",
@@ -183,6 +188,7 @@ var translations = map[string]map[string]string{
 		// layout
 		"title.dashboard":  "Pannello",
 		"title.edit_guest": "Modifica Invitato",
+		"title.setup":      "Configurazione necessaria",
 
 		// dashboard - sections
 		"dashboard.title":   "Pannello",
@@ -327,6 +333,10 @@ var translations = map[string]map[string]string{
 		"invitation.rsvp":             "RSVP",
 		"invitation.rsvp_description": "Conferma la presenza per ciascun invitato.",
 		"invitation.confirm":          "Conferma",
+
+		// setup guard
+		"setup.not_ready":       "Questo matrimonio non è ancora stato configurato.",
+		"setup.go_to_dashboard": "Vai al pannello per iniziare.",
 
 		// footer
 		"link.dashboard": "pannello",

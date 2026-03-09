@@ -80,6 +80,32 @@ footer a:hover {
   color: var(--stone-600);
 }
 
+/* ── setup guard ── */
+
+.setup-guard {
+  text-align: center;
+  padding: 6rem 1rem;
+}
+
+.setup-guard h1 {
+  font-size: 1.5rem;
+  color: var(--stone-500);
+  margin-bottom: 0.75rem;
+}
+
+.setup-guard p {
+  font-size: 0.875rem;
+}
+
+.setup-guard a {
+  color: var(--stone-600);
+  text-decoration: underline;
+}
+
+.setup-guard a:hover {
+  color: var(--stone-800);
+}
+
 /* ── counters row ── */
 
 .counters-row {

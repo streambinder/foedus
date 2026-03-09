@@ -19,6 +19,10 @@ type WeddingSettings struct {
 	BankAccountHolder string
 }
 
+func (s WeddingSettings) IsConfigured() bool {
+	return s.Spouse1Name != "" && s.Spouse2Name != ""
+}
+
 type Guest struct {
 	ID                 int
 	FirstName          string

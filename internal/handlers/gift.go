@@ -14,6 +14,14 @@ type claimRequest struct {
 }
 
 func ClaimGift(c *fiber.Ctx) error {
+	settings, err := database.GetAllSettings()
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "internal error"})
+	}
+	if !settings.IsConfigured() {
+		return c.Status(503).JSON(fiber.Map{"error": "not configured"})
+	}
+
 	var req claimRequest
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "invalid request"})

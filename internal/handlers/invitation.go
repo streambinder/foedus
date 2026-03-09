@@ -26,6 +26,9 @@ func ViewInvitation(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(500).SendString("failed to load settings")
 	}
+	if !settings.IsConfigured() {
+		return Render(c, templates.SetupGuard(getLang(c), getT(c)))
+	}
 
 	return Render(c, templates.Invitation(inv, settings, getT(c), getLang(c)))
 }
