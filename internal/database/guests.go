@@ -74,7 +74,7 @@ func CycleConfirmed(id int, field string) error {
 }
 
 func CountConfirmed() (ceremony, reception, pending, total int, err error) {
-	err = DB.QueryRow(`SELECT COALESCE(SUM(confirmed_ceremony),0), COALESCE(SUM(confirmed_reception),0), SUM(CASE WHEN confirmed_ceremony IS NULL AND confirmed_reception IS NULL THEN 1 ELSE 0 END), COUNT(*) FROM guests`).Scan(&ceremony, &reception, &pending, &total)
+	err = DB.QueryRow(`SELECT COALESCE(SUM(confirmed_ceremony),0), COALESCE(SUM(confirmed_reception),0), COALESCE(SUM(CASE WHEN confirmed_ceremony IS NULL AND confirmed_reception IS NULL THEN 1 ELSE 0 END),0), COUNT(*) FROM guests`).Scan(&ceremony, &reception, &pending, &total)
 	return
 }
 
