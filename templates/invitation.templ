@@ -7,7 +7,7 @@ import (
 )
 
 templ Invitation(inv models.Invitation, settings models.WeddingSettings, t i18n.T, lang string) {
-	@Layout(t("invitation.title"), lang, t) {
+	@Layout(pageTitle(t("invitation.title"), settings.Spouse1Name, settings.Spouse2Name), lang, t) {
 		<header class="hero">
 			<p><small>{ t("home.getting_married") }</small></p>
 			<h1>

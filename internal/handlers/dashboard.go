@@ -196,8 +196,12 @@ func EditGuestPage(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(404).SendString("guest not found")
 	}
+	settings, err := database.GetAllSettings()
+	if err != nil {
+		return c.Status(500).SendString("failed to load settings")
+	}
 	csrfToken, _ := c.Locals("csrf").(string)
-	return Render(c, templates.EditGuest(guest, csrfToken, getT(c), getLang(c)))
+	return Render(c, templates.EditGuest(guest, settings, csrfToken, getT(c), getLang(c)))
 }
 
 func UpdateGuest(c *fiber.Ctx) error {

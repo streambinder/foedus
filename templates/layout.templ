@@ -2,6 +2,13 @@ package templates
 
 import "github.com/streambinder/foedus/internal/i18n"
 
+func pageTitle(title, spouse1, spouse2 string) string {
+	if spouse1 != "" && spouse2 != "" {
+		return title + " · " + spouse1 + " & " + spouse2
+	}
+	return title
+}
+
 templ SetupGuard(lang string, t i18n.T) {
 	@Layout(t("title.setup"), lang, t) {
 		<div class="setup-guard">

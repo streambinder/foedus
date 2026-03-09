@@ -71,7 +71,7 @@ func invitationGuestNames(inv models.Invitation) string {
 }
 
 templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []models.Gift, registryItems []models.RegistryItem, invitations []models.Invitation, confirmedCeremony int, confirmedReception int, pendingGuests int, total int, page int, totalPages int, search string, csrfToken string, flash string, t i18n.T, lang string) {
-	@Layout(t("title.dashboard"), lang, t) {
+	@Layout(pageTitle(t("title.dashboard"), settings.Spouse1Name, settings.Spouse2Name), lang, t) {
 		if flash != "" {
 			<div class="flash-success">{ flash }</div>
 		}
@@ -438,8 +438,8 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 	}
 }
 
-templ EditGuest(guest models.Guest, csrfToken string, t i18n.T, lang string) {
-	@Layout(t("title.edit_guest"), lang, t) {
+templ EditGuest(guest models.Guest, settings models.WeddingSettings, csrfToken string, t i18n.T, lang string) {
+	@Layout(pageTitle(t("title.edit_guest"), settings.Spouse1Name, settings.Spouse2Name), lang, t) {
 		<a href="/dashboard">&larr; { t("btn.back") }</a>
 		<h1>{ t("title.edit_guest") }</h1>
 		<article>
