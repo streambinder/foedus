@@ -93,8 +93,12 @@ func DashboardIndex(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(500).SendString("failed to load invitations")
 	}
+	polls, err := database.GetAllPollsWithCounts()
+	if err != nil {
+		return c.Status(500).SendString("failed to load polls")
+	}
 	csrfToken, _ := c.Locals("csrf").(string)
-	return Render(c, templates.Dashboard(settings, guests, gifts, registryItems, invitations, confirmedCeremony, confirmedReception, pendingGuests, totalGuests, page, totalPages, search, csrfToken, getFlash(c), getT(c), getLang(c)))
+	return Render(c, templates.Dashboard(settings, guests, gifts, registryItems, invitations, polls, confirmedCeremony, confirmedReception, pendingGuests, totalGuests, page, totalPages, search, csrfToken, getFlash(c), getT(c), getLang(c)))
 }
 
 func SaveSettings(c *fiber.Ctx) error {
@@ -299,6 +303,30 @@ func CreateInvitation(c *fiber.Ctx) error {
 		return c.Status(500).SendString("failed to create invitation")
 	}
 	setFlash(c, getT(c)("flash.invitation_created")+" "+code)
+	return c.Redirect("/dashboard")
+}
+
+func AddPoll(c *fiber.Ctx) error {
+	question := strings.TrimSpace(c.FormValue("question"))
+	if question == "" {
+		return c.Redirect("/dashboard")
+	}
+	if err := database.CreatePoll(question); err != nil {
+		return c.Status(500).SendString("failed to add poll")
+	}
+	setFlash(c, getT(c)("flash.poll_added"))
+	return c.Redirect("/dashboard")
+}
+
+func DeletePoll(c *fiber.Ctx) error {
+	id, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		return c.Status(400).SendString("invalid id")
+	}
+	if err := database.DeletePoll(id); err != nil {
+		return c.Status(500).SendString("failed to delete poll")
+	}
+	setFlash(c, getT(c)("flash.poll_deleted"))
 	return c.Redirect("/dashboard")
 }
 

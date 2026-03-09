@@ -30,8 +30,22 @@ type Guest struct {
 	ConfirmedCeremony  *bool
 	ConfirmedReception *bool
 	InvitationID       *int
+	PollAnswers        []PollAnswer
 	CreatedAt          time.Time
 	UpdatedAt          time.Time
+}
+
+type Poll struct {
+	ID         int
+	Question   string
+	TotalCount int      // computed at query time
+	YesVoters  []string // guest names who answered yes
+	CreatedAt  time.Time
+}
+
+type PollAnswer struct {
+	PollID int
+	Answer bool
 }
 
 type Invitation struct {

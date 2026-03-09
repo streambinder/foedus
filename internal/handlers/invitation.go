@@ -30,7 +30,12 @@ func ViewInvitation(c *fiber.Ctx) error {
 		return Render(c, templates.SetupGuard(getLang(c), getT(c)))
 	}
 
-	return Render(c, templates.Invitation(inv, settings, getT(c), getLang(c)))
+	polls, err := database.GetAllPolls()
+	if err != nil {
+		return c.Status(500).SendString("failed to load polls")
+	}
+
+	return Render(c, templates.Invitation(inv, settings, polls, getT(c), getLang(c)))
 }
 
 func UpdateInvitationRSVP(c *fiber.Ctx) error {
@@ -43,12 +48,26 @@ func UpdateInvitationRSVP(c *fiber.Ctx) error {
 		return c.Status(500).SendString("failed to load invitation")
 	}
 
+	polls, err := database.GetAllPolls()
+	if err != nil {
+		return c.Status(500).SendString("failed to load polls")
+	}
+
 	// each guest has radio fields ceremony_<id> and reception_<id>: "1"=yes, "0"=no, absent=nil
 	for _, g := range inv.Guests {
 		ceremony := parseRSVPField(c.FormValue("ceremony_" + strconv.Itoa(g.ID)))
 		reception := parseRSVPField(c.FormValue("reception_" + strconv.Itoa(g.ID)))
 		if err := database.SetGuestRSVP(g.ID, ceremony, reception); err != nil {
 			return c.Status(500).SendString("failed to update RSVP")
+		}
+
+		// parse poll checkbox fields: poll_{pollID}_{guestID} = "1" if checked
+		answers := make(map[int]bool)
+		for _, p := range polls {
+			answers[p.ID] = c.FormValue("poll_"+strconv.Itoa(p.ID)+"_"+strconv.Itoa(g.ID)) == "1"
+		}
+		if err := database.SavePollAnswers(g.ID, answers); err != nil {
+			return c.Status(500).SendString("failed to save poll answers")
 		}
 	}
 

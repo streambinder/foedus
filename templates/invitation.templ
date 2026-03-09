@@ -6,7 +6,16 @@ import (
 	"strconv"
 )
 
-templ Invitation(inv models.Invitation, settings models.WeddingSettings, t i18n.T, lang string) {
+func guestAnsweredYes(g models.Guest, pollID int) bool {
+	for _, a := range g.PollAnswers {
+		if a.PollID == pollID && a.Answer {
+			return true
+		}
+	}
+	return false
+}
+
+templ Invitation(inv models.Invitation, settings models.WeddingSettings, polls []models.Poll, t i18n.T, lang string) {
 	@Layout(pageTitle(t("invitation.title"), settings.Spouse1Name, settings.Spouse2Name), lang, t) {
 		<header class="hero">
 			<p><small>{ t("home.getting_married") }</small></p>
@@ -88,6 +97,20 @@ templ Invitation(inv models.Invitation, settings models.WeddingSettings, t i18n.
 								</label>
 							</fieldset>
 						</div>
+						if len(polls) > 0 {
+							<div class="rsvp-polls">
+								for _, p := range polls {
+									<label>
+										if guestAnsweredYes(g, p.ID) {
+											<input type="checkbox" name={ "poll_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) } value="1" checked/>
+										} else {
+											<input type="checkbox" name={ "poll_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) } value="1"/>
+										}
+										{ p.Question }
+									</label>
+								}
+							</div>
+						}
 					</div>
 				}
 				<button type="submit">{ t("invitation.confirm") }</button>

@@ -70,7 +70,7 @@ func invitationGuestNames(inv models.Invitation) string {
 	return strings.Join(names, ", ")
 }
 
-templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []models.Gift, registryItems []models.RegistryItem, invitations []models.Invitation, confirmedCeremony int, confirmedReception int, pendingGuests int, total int, page int, totalPages int, search string, csrfToken string, flash string, t i18n.T, lang string) {
+templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []models.Gift, registryItems []models.RegistryItem, invitations []models.Invitation, polls []models.Poll, confirmedCeremony int, confirmedReception int, pendingGuests int, total int, page int, totalPages int, search string, csrfToken string, flash string, t i18n.T, lang string) {
 	@Layout(pageTitle(t("title.dashboard"), settings.Spouse1Name, settings.Spouse2Name), lang, t) {
 		if flash != "" {
 			<div class="flash-success">{ flash }</div>
@@ -276,6 +276,67 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 				</div>
 			</article>
 		}
+		<!-- polls -->
+		<article>
+			<h2>{ t("dashboard.polls") }</h2>
+			<form class="add-poll-form" method="POST" action="/dashboard/polls">
+				<input type="hidden" name="_csrf" value={ csrfToken }/>
+				<div class="grid">
+					<input type="text" name="question" placeholder={ t("placeholder.question") } required/>
+					<button type="submit">{ t("btn.add") }</button>
+				</div>
+			</form>
+			if len(polls) > 0 {
+				<div class="overflow-auto">
+					<table>
+						<thead>
+							<tr>
+								<th>{ t("th.question") }</th>
+								<th>{ t("th.yes") }</th>
+								<th>{ t("th.actions") }</th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, p := range polls {
+								<tr>
+									<td>{ p.Question }</td>
+									<td>
+										if len(p.YesVoters) > 0 {
+											<a href="#" class="poll-yes-link" data-poll-id={ strconv.Itoa(p.ID) }>{ strconv.Itoa(len(p.YesVoters)) }<small>/{ strconv.Itoa(p.TotalCount) }</small></a>
+										} else {
+											{ strconv.Itoa(len(p.YesVoters)) }<small>/{ strconv.Itoa(p.TotalCount) }</small>
+										}
+									</td>
+									<td class="actions">
+										<form method="POST" action={ templ.SafeURL("/dashboard/polls/" + strconv.Itoa(p.ID) + "/delete") } data-confirm={ t("confirm.delete_poll") } onsubmit="return confirm(this.dataset.confirm)">
+											<input type="hidden" name="_csrf" value={ csrfToken }/>
+											<button type="submit" class="outline secondary">{ t("btn.delete") }</button>
+										</form>
+									</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+				for _, p := range polls {
+					if len(p.YesVoters) > 0 {
+						<div id={ "poll-modal-" + strconv.Itoa(p.ID) } class="modal-overlay" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+							<div class="modal-box">
+								<h3>{ p.Question }</h3>
+								<ul>
+									for _, name := range p.YesVoters {
+										<li>{ name }</li>
+									}
+								</ul>
+								<div class="modal-actions">
+									<button type="button" class="outline secondary" onclick="this.closest('.modal-overlay').style.display='none'">{ t("btn.close") }</button>
+								</div>
+							</div>
+						</div>
+					}
+				}
+			}
+		</article>
 		<!-- registry -->
 		<article>
 			<h2>{ t("dashboard.registry") }</h2>
@@ -351,6 +412,15 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 				</div>
 			</article>
 		}
+		<script>
+			// poll yes-voters modal
+			document.addEventListener('click', function(e) {
+				var link = e.target.closest('.poll-yes-link');
+				if (!link) return;
+				e.preventDefault();
+				document.getElementById('poll-modal-' + link.dataset.pollId).style.display = '';
+			});
+		</script>
 		<script>
 			// copy invitation URL to clipboard
 			function copyInvitationURL(btn) {

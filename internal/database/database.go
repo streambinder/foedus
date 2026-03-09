@@ -59,6 +59,18 @@ func migrate() {
 			viewed_at  DATETIME,
 			created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 		)`,
+		`CREATE TABLE IF NOT EXISTS polls (
+			id         INTEGER PRIMARY KEY AUTOINCREMENT,
+			question   TEXT NOT NULL,
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+		)`,
+		`CREATE TABLE IF NOT EXISTS poll_answers (
+			id       INTEGER PRIMARY KEY AUTOINCREMENT,
+			poll_id  INTEGER NOT NULL REFERENCES polls(id),
+			guest_id INTEGER NOT NULL REFERENCES guests(id),
+			answer   INTEGER NOT NULL DEFAULT 0,
+			UNIQUE(poll_id, guest_id)
+		)`,
 	}
 	for _, s := range statements {
 		if _, err := DB.Exec(s); err != nil {

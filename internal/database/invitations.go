@@ -160,5 +160,19 @@ func GetInvitationByCode(code string) (models.Invitation, error) {
 		}
 		inv.Guests = append(inv.Guests, g)
 	}
+
+	// load poll answers per guest
+	var guestIDs []int
+	for _, g := range inv.Guests {
+		guestIDs = append(guestIDs, g.ID)
+	}
+	answersMap, err := GetPollAnswersForGuests(guestIDs)
+	if err != nil {
+		return inv, err
+	}
+	for i := range inv.Guests {
+		inv.Guests[i].PollAnswers = answersMap[inv.Guests[i].ID]
+	}
+
 	return inv, nil
 }

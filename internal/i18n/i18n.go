@@ -159,6 +159,16 @@ var translations = map[string]map[string]string{
 		// registry item link in gifts table
 		"th.registry_item": "Item",
 
+		// polls
+		"dashboard.polls":       "Polls",
+		"placeholder.question":  "Question",
+		"th.question":           "Question",
+		"th.yes":                "Yes",
+		"th.no":                 "No",
+		"flash.poll_added":      "Poll added.",
+		"flash.poll_deleted":    "Poll deleted.",
+		"confirm.delete_poll":   "Delete this poll?",
+
 		// invitations
 		"dashboard.invitations":      "Invitations",
 		"th.code":                    "Code",
@@ -316,6 +326,16 @@ var translations = map[string]map[string]string{
 
 		// registry item link in gifts table
 		"th.registry_item": "Articolo",
+
+		// polls
+		"dashboard.polls":       "Sondaggi",
+		"placeholder.question":  "Domanda",
+		"th.question":           "Domanda",
+		"th.yes":                "Sì",
+		"th.no":                 "No",
+		"flash.poll_added":      "Sondaggio aggiunto.",
+		"flash.poll_deleted":    "Sondaggio eliminato.",
+		"confirm.delete_poll":   "Eliminare questo sondaggio?",
 
 		// invitations
 		"dashboard.invitations":      "Inviti",
