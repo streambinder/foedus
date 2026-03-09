@@ -70,7 +70,7 @@ func invitationGuestNames(inv models.Invitation) string {
 	return strings.Join(names, ", ")
 }
 
-templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []models.Gift, registryItems []models.RegistryItem, invitations []models.Invitation, confirmed int, total int, page int, totalPages int, search string, csrfToken string, flash string, t i18n.T, lang string) {
+templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []models.Gift, registryItems []models.RegistryItem, invitations []models.Invitation, confirmedCeremony int, confirmedReception int, pendingGuests int, total int, page int, totalPages int, search string, csrfToken string, flash string, t i18n.T, lang string) {
 	@Layout(t("title.dashboard"), lang, t) {
 		if flash != "" {
 			<div class="flash-success">{ flash }</div>
@@ -110,12 +110,24 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 				<button type="submit" class="save-btn">{ t("btn.save_settings") }</button>
 			</form>
 		</article>
+		<!-- counters -->
+		<div class="counters-row">
+			<div class="counter-card">
+				<span class="counter-value">{ strconv.Itoa(confirmedCeremony) }<small>/{ strconv.Itoa(total) }</small></span>
+				<span class="counter-label">{ t("counter.ceremony") }</span>
+			</div>
+			<div class="counter-card">
+				<span class="counter-value">{ strconv.Itoa(confirmedReception) }<small>/{ strconv.Itoa(total) }</small></span>
+				<span class="counter-label">{ t("counter.reception") }</span>
+			</div>
+			<div class="counter-card">
+				<span class="counter-value">{ strconv.Itoa(pendingGuests) }<small>/{ strconv.Itoa(total) }</small></span>
+				<span class="counter-label">{ t("counter.pending") }</span>
+			</div>
+		</div>
 		<!-- guests -->
 		<article>
-			<div class="guests-header">
-				<h2>{ t("dashboard.guests") }</h2>
-				<small class="guest-count">{ strconv.Itoa(confirmed) }/{ strconv.Itoa(total) }</small>
-			</div>
+			<h2>{ t("dashboard.guests") }</h2>
 			<div class="guest-forms-row">
 				<form class="add-guest-form" method="POST" action="/dashboard/guests">
 					<input type="hidden" name="_csrf" value={ csrfToken }/>
@@ -145,7 +157,8 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 								<th class="checkbox-col"></th>
 								<th>{ t("th.first_name") }</th>
 								<th>{ t("th.last_name") }</th>
-								<th>{ t("th.confirmed") }</th>
+								<th>{ t("th.ceremony") }</th>
+								<th>{ t("th.reception") }</th>
 								<th>{ t("th.actions") }</th>
 							</tr>
 						</thead>
@@ -165,9 +178,23 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 									</td>
 									<td>{ g.LastName }</td>
 									<td>
-										<form method="POST" action={ templ.SafeURL("/dashboard/guests/" + strconv.Itoa(g.ID) + "/confirm") }>
+										<form method="POST" action={ templ.SafeURL("/dashboard/guests/" + strconv.Itoa(g.ID) + "/confirm/ceremony") }>
 											<input type="hidden" name="_csrf" value={ csrfToken }/>
-											if g.Confirmed {
+											if g.ConfirmedCeremony == nil {
+												<input type="checkbox" role="switch" class="toggle-null" onchange="this.form.submit()"/>
+											} else if *g.ConfirmedCeremony {
+												<input type="checkbox" role="switch" checked onchange="this.form.submit()"/>
+											} else {
+												<input type="checkbox" role="switch" onchange="this.form.submit()"/>
+											}
+										</form>
+									</td>
+									<td>
+										<form method="POST" action={ templ.SafeURL("/dashboard/guests/" + strconv.Itoa(g.ID) + "/confirm/reception") }>
+											<input type="hidden" name="_csrf" value={ csrfToken }/>
+											if g.ConfirmedReception == nil {
+												<input type="checkbox" role="switch" class="toggle-null" onchange="this.form.submit()"/>
+											} else if *g.ConfirmedReception {
 												<input type="checkbox" role="switch" checked onchange="this.form.submit()"/>
 											} else {
 												<input type="checkbox" role="switch" onchange="this.form.submit()"/>

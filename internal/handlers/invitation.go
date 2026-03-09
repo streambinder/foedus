@@ -40,13 +40,27 @@ func UpdateInvitationRSVP(c *fiber.Ctx) error {
 		return c.Status(500).SendString("failed to load invitation")
 	}
 
-	// each guest has a form field "confirmed_<id>" that's "1" if checked, absent if not
+	// each guest has radio fields ceremony_<id> and reception_<id>: "1"=yes, "0"=no, absent=nil
 	for _, g := range inv.Guests {
-		confirmed := c.FormValue("confirmed_"+strconv.Itoa(g.ID)) == "1"
-		if err := database.SetGuestConfirmed(g.ID, confirmed); err != nil {
+		ceremony := parseRSVPField(c.FormValue("ceremony_" + strconv.Itoa(g.ID)))
+		reception := parseRSVPField(c.FormValue("reception_" + strconv.Itoa(g.ID)))
+		if err := database.SetGuestRSVP(g.ID, ceremony, reception); err != nil {
 			return c.Status(500).SendString("failed to update RSVP")
 		}
 	}
 
 	return c.Redirect("/" + code)
+}
+
+func parseRSVPField(val string) *bool {
+	switch val {
+	case "1":
+		t := true
+		return &t
+	case "0":
+		f := false
+		return &f
+	default:
+		return nil
+	}
 }

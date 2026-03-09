@@ -20,13 +20,14 @@ type WeddingSettings struct {
 }
 
 type Guest struct {
-	ID           int
-	FirstName    string
-	LastName     string
-	Confirmed    bool
-	InvitationID *int
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
+	ID                 int
+	FirstName          string
+	LastName           string
+	ConfirmedCeremony  *bool
+	ConfirmedReception *bool
+	InvitationID       *int
+	CreatedAt          time.Time
+	UpdatedAt          time.Time
 }
 
 type Invitation struct {

@@ -76,7 +76,7 @@ func GetAllInvitations() ([]models.Invitation, error) {
 	// load guests per invitation
 	for i := range invitations {
 		guestRows, err := DB.Query(
-			`SELECT id, first_name, last_name, confirmed, invitation_id, created_at, updated_at FROM guests WHERE invitation_id = ? ORDER BY id`,
+			`SELECT id, first_name, last_name, confirmed_ceremony, confirmed_reception, invitation_id, created_at, updated_at FROM guests WHERE invitation_id = ? ORDER BY id`,
 			invitations[i].ID,
 		)
 		if err != nil {
@@ -84,7 +84,7 @@ func GetAllInvitations() ([]models.Invitation, error) {
 		}
 		for guestRows.Next() {
 			var g models.Guest
-			if err := guestRows.Scan(&g.ID, &g.FirstName, &g.LastName, &g.Confirmed, &g.InvitationID, &g.CreatedAt, &g.UpdatedAt); err != nil {
+			if err := guestRows.Scan(&g.ID, &g.FirstName, &g.LastName, &g.ConfirmedCeremony, &g.ConfirmedReception, &g.InvitationID, &g.CreatedAt, &g.UpdatedAt); err != nil {
 				guestRows.Close()
 				return nil, err
 			}
@@ -117,13 +117,23 @@ func MarkInvitationViewed(id int) error {
 	return err
 }
 
-func SetGuestConfirmed(id int, confirmed bool) error {
-	val := 0
-	if confirmed {
-		val = 1
-	}
-	_, err := DB.Exec(`UPDATE guests SET confirmed = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`, val, id)
+func SetGuestRSVP(id int, ceremony, reception *bool) error {
+	_, err := DB.Exec(
+		`UPDATE guests SET confirmed_ceremony = ?, confirmed_reception = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+		boolToNullableInt(ceremony), boolToNullableInt(reception), id,
+	)
 	return err
+}
+
+func boolToNullableInt(b *bool) *int {
+	if b == nil {
+		return nil
+	}
+	v := 0
+	if *b {
+		v = 1
+	}
+	return &v
 }
 
 func GetInvitationByCode(code string) (models.Invitation, error) {
@@ -136,7 +146,7 @@ func GetInvitationByCode(code string) (models.Invitation, error) {
 	}
 
 	rows, err := DB.Query(
-		`SELECT id, first_name, last_name, confirmed, invitation_id, created_at, updated_at FROM guests WHERE invitation_id = ? ORDER BY id`,
+		`SELECT id, first_name, last_name, confirmed_ceremony, confirmed_reception, invitation_id, created_at, updated_at FROM guests WHERE invitation_id = ? ORDER BY id`,
 		inv.ID,
 	)
 	if err != nil {
@@ -145,7 +155,7 @@ func GetInvitationByCode(code string) (models.Invitation, error) {
 	defer rows.Close()
 	for rows.Next() {
 		var g models.Guest
-		if err := rows.Scan(&g.ID, &g.FirstName, &g.LastName, &g.Confirmed, &g.InvitationID, &g.CreatedAt, &g.UpdatedAt); err != nil {
+		if err := rows.Scan(&g.ID, &g.FirstName, &g.LastName, &g.ConfirmedCeremony, &g.ConfirmedReception, &g.InvitationID, &g.CreatedAt, &g.UpdatedAt); err != nil {
 			return inv, err
 		}
 		inv.Guests = append(inv.Guests, g)

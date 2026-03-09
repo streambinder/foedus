@@ -56,7 +56,7 @@ main.container {
 }
 
 /* dashboard-specific compact layout */
-body:has(.guests-header) main.container {
+body:has(.counters-row) main.container {
   padding: 1rem;
 }
 
@@ -78,6 +78,48 @@ footer a {
 
 footer a:hover {
   color: var(--stone-600);
+}
+
+/* ── counters row ── */
+
+.counters-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.counter-card {
+  background: #fff;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.125rem;
+}
+
+.counter-value {
+  font-family: 'Inter', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--stone-800);
+  line-height: 1;
+}
+
+.counter-value small {
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: var(--stone-400);
+}
+
+.counter-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--stone-400);
 }
 
 /* ── cards (article) ── */
@@ -840,20 +882,48 @@ a[href="/dashboard"]:not(footer a):hover {
   border-bottom: none;
 }
 
-.rsvp-label {
+/* rsvp radio button groups */
+.rsvp-fields {
+  display: flex;
+  gap: 1.5rem;
+  margin-top: 0.5rem;
+}
+
+.rsvp-radio-group {
+  border: none;
+  padding: 0;
+  margin: 0;
   display: flex;
   align-items: center;
   gap: 0.75rem;
+}
+
+.rsvp-radio-group legend {
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--stone-400);
+  margin-bottom: 0.25rem;
+  float: left;
+  width: 100%;
+}
+
+.rsvp-radio-group label {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
   cursor: pointer;
   font-size: 0.875rem;
   margin-bottom: 0;
+  color: var(--stone-700);
 }
 
-.rsvp-label input[type="checkbox"] {
-  width: 1.125rem;
-  height: 1.125rem;
+.rsvp-radio-group input[type="radio"] {
+  width: 1rem;
+  height: 1rem;
   cursor: pointer;
   flex-shrink: 0;
+  margin: 0;
 }
 
 .rsvp-name {
@@ -873,26 +943,11 @@ a[href="/dashboard"]:not(footer a):hover {
   width: 2.25rem;
 }
 
-/* guests section header: title left, count right */
-.guests-header {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  margin-bottom: 0.5rem;
+/* null/unanswered toggle — dimmed appearance */
+[role="switch"].toggle-null {
+  opacity: 0.3;
 }
 
-.guests-header h2 {
-  margin-bottom: 0;
-}
-
-/* guest count badge */
-.guest-count {
-  font-family: 'Inter', sans-serif;
-  font-size: 0.75rem;
-  font-weight: 400;
-  color: var(--stone-400);
-  white-space: nowrap;
-}
 
 /* row containing add-guest and import-csv forms side by side */
 .guest-forms-row {

@@ -41,6 +41,11 @@ var translations = map[string]map[string]string{
 		"label.ceremony": "Ceremony",
 		"label.reception": "Reception",
 
+		// dashboard - counters
+		"counter.ceremony":  "Ceremony",
+		"counter.reception": "Reception",
+		"counter.pending":   "Pending",
+
 		// dashboard - placeholders
 		"placeholder.name":              "Name",
 		"placeholder.ceremony_address":  "Ceremony address",
@@ -55,8 +60,13 @@ var translations = map[string]map[string]string{
 		// dashboard - table headers
 		"th.first_name": "First Name",
 		"th.last_name":  "Last Name",
-		"th.confirmed":  "Confirmed",
+		"th.ceremony":   "Ceremony",
+		"th.reception":  "Reception",
 		"th.actions":    "Actions",
+
+		// rsvp radio labels
+		"rsvp.yes": "Yes",
+		"rsvp.no":  "No",
 
 		// dashboard - buttons & actions
 		"btn.save_settings": "Save",
@@ -184,6 +194,11 @@ var translations = map[string]map[string]string{
 		"label.ceremony": "Cerimonia",
 		"label.reception": "Ricevimento",
 
+		// dashboard - counters
+		"counter.ceremony":  "Cerimonia",
+		"counter.reception": "Ricevimento",
+		"counter.pending":   "In attesa",
+
 		// dashboard - placeholders
 		"placeholder.name":              "Nome",
 		"placeholder.ceremony_address":  "Indirizzo cerimonia",
@@ -198,8 +213,13 @@ var translations = map[string]map[string]string{
 		// dashboard - table headers
 		"th.first_name": "Nome",
 		"th.last_name":  "Cognome",
-		"th.confirmed":  "Confermato",
+		"th.ceremony":   "Cerimonia",
+		"th.reception":  "Ricevimento",
 		"th.actions":    "Azioni",
+
+		// rsvp radio labels
+		"rsvp.yes": "Sì",
+		"rsvp.no":  "No",
 
 		// dashboard - buttons & actions
 		"btn.save_settings": "Salva",

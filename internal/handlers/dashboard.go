@@ -61,7 +61,7 @@ func DashboardIndex(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(500).SendString("failed to load settings")
 	}
-	confirmed, totalGuests, err := database.CountConfirmed()
+	confirmedCeremony, confirmedReception, pendingGuests, totalGuests, err := database.CountConfirmed()
 	if err != nil {
 		return c.Status(500).SendString("failed to count guests")
 	}
@@ -94,7 +94,7 @@ func DashboardIndex(c *fiber.Ctx) error {
 		return c.Status(500).SendString("failed to load invitations")
 	}
 	csrfToken, _ := c.Locals("csrf").(string)
-	return Render(c, templates.Dashboard(settings, guests, gifts, registryItems, invitations, confirmed, totalGuests, page, totalPages, search, csrfToken, getFlash(c), getT(c), getLang(c)))
+	return Render(c, templates.Dashboard(settings, guests, gifts, registryItems, invitations, confirmedCeremony, confirmedReception, pendingGuests, totalGuests, page, totalPages, search, csrfToken, getFlash(c), getT(c), getLang(c)))
 }
 
 func SaveSettings(c *fiber.Ctx) error {
@@ -176,13 +176,13 @@ func ImportGuestsCSV(c *fiber.Ctx) error {
 	return c.Redirect("/dashboard")
 }
 
-func ToggleConfirmed(c *fiber.Ctx) error {
+func CycleConfirmed(c *fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
 		return c.Status(400).SendString("invalid id")
 	}
-	if err := database.ToggleConfirmed(id); err != nil {
-		return c.Status(500).SendString("failed to toggle confirmed")
+	if err := database.CycleConfirmed(id, c.Params("field")); err != nil {
+		return c.Status(400).SendString("invalid field")
 	}
 	return c.Redirect("/dashboard")
 }

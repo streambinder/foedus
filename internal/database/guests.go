@@ -2,6 +2,7 @@ package database
 
 import (
 	"database/sql"
+	"fmt"
 
 	"github.com/streambinder/foedus/internal/models"
 )
@@ -15,7 +16,7 @@ func CreateGuest(firstName, lastName string) error {
 }
 
 func GetAllGuests() ([]models.Guest, error) {
-	rows, err := DB.Query(`SELECT id, first_name, last_name, confirmed, invitation_id, created_at, updated_at FROM guests ORDER BY id DESC`)
+	rows, err := DB.Query(`SELECT id, first_name, last_name, confirmed_ceremony, confirmed_reception, invitation_id, created_at, updated_at FROM guests ORDER BY id DESC`)
 	if err != nil {
 		return nil, err
 	}
@@ -23,8 +24,8 @@ func GetAllGuests() ([]models.Guest, error) {
 
 	var guests []models.Guest
 	for rows.Next() {
-		var g models.Guest
-		if err := rows.Scan(&g.ID, &g.FirstName, &g.LastName, &g.Confirmed, &g.InvitationID, &g.CreatedAt, &g.UpdatedAt); err != nil {
+		g, err := scanGuest(rows)
+		if err != nil {
 			return nil, err
 		}
 		guests = append(guests, g)
@@ -35,8 +36,8 @@ func GetAllGuests() ([]models.Guest, error) {
 func GetGuest(id int) (models.Guest, error) {
 	var g models.Guest
 	err := DB.QueryRow(
-		`SELECT id, first_name, last_name, confirmed, invitation_id, created_at, updated_at FROM guests WHERE id = ?`, id,
-	).Scan(&g.ID, &g.FirstName, &g.LastName, &g.Confirmed, &g.InvitationID, &g.CreatedAt, &g.UpdatedAt)
+		`SELECT id, first_name, last_name, confirmed_ceremony, confirmed_reception, invitation_id, created_at, updated_at FROM guests WHERE id = ?`, id,
+	).Scan(&g.ID, &g.FirstName, &g.LastName, &g.ConfirmedCeremony, &g.ConfirmedReception, &g.InvitationID, &g.CreatedAt, &g.UpdatedAt)
 	return g, err
 }
 
@@ -53,15 +54,27 @@ func DeleteGuest(id int) error {
 	return err
 }
 
-func ToggleConfirmed(id int) error {
+// CycleConfirmed cycles a confirmation field through NULL → 1 → 0 → NULL.
+// field must be "ceremony" or "reception".
+func CycleConfirmed(id int, field string) error {
+	var col string
+	switch field {
+	case "ceremony":
+		col = "confirmed_ceremony"
+	case "reception":
+		col = "confirmed_reception"
+	default:
+		return fmt.Errorf("invalid field: %s", field)
+	}
 	_, err := DB.Exec(
-		`UPDATE guests SET confirmed = NOT confirmed, updated_at = CURRENT_TIMESTAMP WHERE id = ?`, id,
+		fmt.Sprintf(`UPDATE guests SET %s = CASE WHEN %s IS NULL THEN 1 WHEN %s = 1 THEN 0 ELSE NULL END, updated_at = CURRENT_TIMESTAMP WHERE id = ?`, col, col, col),
+		id,
 	)
 	return err
 }
 
-func CountConfirmed() (confirmed int, total int, err error) {
-	err = DB.QueryRow(`SELECT COALESCE(SUM(confirmed), 0), COUNT(*) FROM guests`).Scan(&confirmed, &total)
+func CountConfirmed() (ceremony, reception, pending, total int, err error) {
+	err = DB.QueryRow(`SELECT COALESCE(SUM(confirmed_ceremony),0), COALESCE(SUM(confirmed_reception),0), SUM(CASE WHEN confirmed_ceremony IS NULL AND confirmed_reception IS NULL THEN 1 ELSE 0 END), COUNT(*) FROM guests`).Scan(&ceremony, &reception, &pending, &total)
 	return
 }
 
@@ -77,7 +90,7 @@ func GetGuestsPaginated(page, perPage int, search string) ([]models.Guest, int, 
 			return nil, 0, err
 		}
 		rows, err = DB.Query(
-			`SELECT id, first_name, last_name, confirmed, invitation_id, created_at, updated_at FROM guests ORDER BY id DESC LIMIT ? OFFSET ?`,
+			`SELECT id, first_name, last_name, confirmed_ceremony, confirmed_reception, invitation_id, created_at, updated_at FROM guests ORDER BY id DESC LIMIT ? OFFSET ?`,
 			perPage, offset,
 		)
 	} else {
@@ -90,7 +103,7 @@ func GetGuestsPaginated(page, perPage int, search string) ([]models.Guest, int, 
 			return nil, 0, err
 		}
 		rows, err = DB.Query(
-			`SELECT id, first_name, last_name, confirmed, invitation_id, created_at, updated_at FROM guests WHERE first_name LIKE ? OR last_name LIKE ? ORDER BY id DESC LIMIT ? OFFSET ?`,
+			`SELECT id, first_name, last_name, confirmed_ceremony, confirmed_reception, invitation_id, created_at, updated_at FROM guests WHERE first_name LIKE ? OR last_name LIKE ? ORDER BY id DESC LIMIT ? OFFSET ?`,
 			pattern, pattern, perPage, offset,
 		)
 	}
@@ -101,11 +114,18 @@ func GetGuestsPaginated(page, perPage int, search string) ([]models.Guest, int, 
 
 	var guests []models.Guest
 	for rows.Next() {
-		var g models.Guest
-		if err := rows.Scan(&g.ID, &g.FirstName, &g.LastName, &g.Confirmed, &g.InvitationID, &g.CreatedAt, &g.UpdatedAt); err != nil {
+		g, err := scanGuest(rows)
+		if err != nil {
 			return nil, 0, err
 		}
 		guests = append(guests, g)
 	}
 	return guests, total, nil
+}
+
+// scanGuest scans a guest row from the standard column set
+func scanGuest(rows *sql.Rows) (models.Guest, error) {
+	var g models.Guest
+	err := rows.Scan(&g.ID, &g.FirstName, &g.LastName, &g.ConfirmedCeremony, &g.ConfirmedReception, &g.InvitationID, &g.CreatedAt, &g.UpdatedAt)
+	return g, err
 }

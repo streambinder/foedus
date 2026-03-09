@@ -47,14 +47,47 @@ templ Invitation(inv models.Invitation, settings models.WeddingSettings, t i18n.
 			<form method="POST" action={ templ.SafeURL("/" + inv.Code + "/rsvp") }>
 				for _, g := range inv.Guests {
 					<div class="rsvp-guest">
-						<label class="rsvp-label">
-							if g.Confirmed {
-								<input type="checkbox" name={ "confirmed_" + strconv.Itoa(g.ID) } value="1" checked/>
-							} else {
-								<input type="checkbox" name={ "confirmed_" + strconv.Itoa(g.ID) } value="1"/>
-							}
-							<span class="rsvp-name">{ g.FirstName } { g.LastName }</span>
-						</label>
+						<span class="rsvp-name">{ g.FirstName } { g.LastName }</span>
+						<div class="rsvp-fields">
+							<fieldset class="rsvp-radio-group">
+								<legend>{ t("th.ceremony") }</legend>
+								<label>
+									if g.ConfirmedCeremony != nil && *g.ConfirmedCeremony {
+										<input type="radio" name={ "ceremony_" + strconv.Itoa(g.ID) } value="1" checked/>
+									} else {
+										<input type="radio" name={ "ceremony_" + strconv.Itoa(g.ID) } value="1"/>
+									}
+									{ t("rsvp.yes") }
+								</label>
+								<label>
+									if g.ConfirmedCeremony != nil && !*g.ConfirmedCeremony {
+										<input type="radio" name={ "ceremony_" + strconv.Itoa(g.ID) } value="0" checked/>
+									} else {
+										<input type="radio" name={ "ceremony_" + strconv.Itoa(g.ID) } value="0"/>
+									}
+									{ t("rsvp.no") }
+								</label>
+							</fieldset>
+							<fieldset class="rsvp-radio-group">
+								<legend>{ t("th.reception") }</legend>
+								<label>
+									if g.ConfirmedReception != nil && *g.ConfirmedReception {
+										<input type="radio" name={ "reception_" + strconv.Itoa(g.ID) } value="1" checked/>
+									} else {
+										<input type="radio" name={ "reception_" + strconv.Itoa(g.ID) } value="1"/>
+									}
+									{ t("rsvp.yes") }
+								</label>
+								<label>
+									if g.ConfirmedReception != nil && !*g.ConfirmedReception {
+										<input type="radio" name={ "reception_" + strconv.Itoa(g.ID) } value="0" checked/>
+									} else {
+										<input type="radio" name={ "reception_" + strconv.Itoa(g.ID) } value="0"/>
+									}
+									{ t("rsvp.no") }
+								</label>
+							</fieldset>
+						</div>
 					</div>
 				}
 				<button type="submit">{ t("invitation.confirm") }</button>

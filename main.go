@@ -44,7 +44,7 @@ func main() {
 	admin.Get("/guests/:id/edit", handlers.EditGuestPage)
 	admin.Post("/guests/:id", handlers.UpdateGuest)
 	admin.Post("/guests/:id/delete", handlers.DeleteGuest)
-	admin.Post("/guests/:id/confirm", handlers.ToggleConfirmed)
+	admin.Post("/guests/:id/confirm/:field", handlers.CycleConfirmed)
 	admin.Post("/registry", handlers.AddRegistryItem)
 	admin.Post("/registry/:id/delete", handlers.DeleteRegistryItem)
 	admin.Post("/invitations", handlers.CreateInvitation)
