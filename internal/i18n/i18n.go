@@ -34,17 +34,17 @@ var translations = map[string]map[string]string{
 
 		// dashboard - sections
 		"dashboard.title":   "Wedding Dashboard",
-		"dashboard.details": "Details",
+		"dashboard.details": "Settings",
 		"dashboard.guests":  "Guests",
 
 		// dashboard - labels
-		"label.spouses":  "Spouses",
+		"label.spouses":  "Couple's Names",
 		"label.ceremony": "Ceremony",
-		"label.reception": "Reception",
+		"label.reception": "Celebration",
 
 		// dashboard - counters
 		"counter.ceremony":  "Ceremony",
-		"counter.reception": "Reception",
+		"counter.reception": "Celebration",
 		"counter.pending":   "Pending",
 
 		// dashboard - placeholders
@@ -91,12 +91,12 @@ var translations = map[string]map[string]string{
 		"flash.guest_deleted":  "Guest deleted.",
 
 		// home
-		"home.getting_married": "We're getting married",
-		"home.ceremony":        "Ceremony",
-		"home.reception":       "Reception",
+		"home.getting_married": "Together, forever",
+		"home.ceremony":        "The Ceremony",
+		"home.reception":       "The Celebration",
 		"home.guest_list":      "Guest List",
 		"home.gift":            "Gift",
-		"home.gift_description": "If you'd like to send us a gift, choose an amount below.",
+		"home.gift_description": "If you'd like to honour us with a gift, choose an amount",
 
 		// gift form
 		"placeholder.donor":        "Your name (optional)",
@@ -111,21 +111,21 @@ var translations = map[string]map[string]string{
 		"gift.back_home":      "Back to home",
 
 		// dashboard - gifts
-		"dashboard.gifts":   "Gifts",
+		"dashboard.gifts":   "Gifts Received",
 		"th.donor":          "Donor",
 		"th.amount":         "Amount",
 		"th.message":        "Message",
 		"th.date":           "Date",
 
 		// registry
-		"dashboard.registry":      "Registry",
-		"home.registry":           "Registry",
-		"home.registry_description": "If you'd like to gift us something specific, pick an item below.",
+		"dashboard.registry":      "Wish List",
+		"home.registry":           "A Gift for Us",
+		"home.registry_description": "If you'd like to join us on this new journey",
 		"placeholder.item_name":   "Item name",
 		"placeholder.item_price":  "Price",
 		"btn.add_item":            "Add Item",
-		"btn.buy":                 "Buy",
-		"badge.sold":              "Sold",
+		"btn.buy":                 "Give",
+		"badge.sold":              "Gifted",
 		"th.item_name":            "Name",
 		"th.item_price":           "Price",
 		"th.item_image":           "Image",
@@ -144,8 +144,8 @@ var translations = map[string]map[string]string{
 		"btn.copy":                    "Copy",
 		"btn.copied":                  "Copied!",
 		"btn.close":                   "Close",
-		"home.generic_gift":             "Free Gift",
-		"home.generic_gift_description": "Send us a gift of any amount",
+		"home.generic_gift":             "A Gift of Your Choice",
+		"home.generic_gift_description": "Choose your amount",
 		"placeholder.custom_amount":     "Custom amount",
 		"home.remaining":                "remaining",
 
@@ -175,16 +175,16 @@ var translations = map[string]map[string]string{
 		"th.guests":                  "Guests",
 		"th.viewed":                  "Viewed",
 		"th.created":                 "Created",
-		"btn.create_invitation":      "Create Invitation",
+		"btn.create_invitation":      "Generate Invitation",
 		"flash.invitation_created":   "Invitation created:",
 		"flash.invitation_deleted":   "Invitation deleted.",
 		"confirm.delete_invitation":  "Delete this invitation?",
 
 		// invitation public page
 		"invitation.title":            "Invitation",
-		"invitation.rsvp":             "RSVP",
-		"invitation.rsvp_description": "Please confirm attendance for each guest.",
-		"invitation.confirm":          "Confirm",
+		"invitation.rsvp":             "We Look Forward to Seeing You",
+		"invitation.rsvp_description": "Let us know if you can join us on this special day",
+		"invitation.confirm":          "Send Confirmation",
 
 		// setup guard
 		"setup.not_ready":     "This wedding hasn't been set up yet.",
@@ -202,17 +202,17 @@ var translations = map[string]map[string]string{
 
 		// dashboard - sections
 		"dashboard.title":   "Pannello",
-		"dashboard.details": "Dettagli",
+		"dashboard.details": "Impostazioni",
 		"dashboard.guests":  "Invitati",
 
 		// dashboard - labels
-		"label.spouses":  "Sposi",
-		"label.ceremony": "Cerimonia",
-		"label.reception": "Ricevimento",
+		"label.spouses":  "Nomi degli sposi",
+		"label.ceremony": "Rito",
+		"label.reception": "Festa",
 
 		// dashboard - counters
-		"counter.ceremony":  "Cerimonia",
-		"counter.reception": "Ricevimento",
+		"counter.ceremony":  "Rito",
+		"counter.reception": "Festa",
 		"counter.pending":   "In attesa",
 
 		// dashboard - placeholders
@@ -221,7 +221,7 @@ var translations = map[string]map[string]string{
 		"placeholder.reception_address": "Indirizzo ricevimento",
 		"placeholder.first_name":        "Nome",
 		"placeholder.last_name":         "Cognome",
-		"placeholder.search":            "Cerca...",
+		"placeholder.search":            "Cerca tra gli invitati...",
 
 		// dashboard - guest form labels
 		"label.first_name": "Nome",
@@ -259,41 +259,41 @@ var translations = map[string]map[string]string{
 		"flash.guest_deleted":  "Invitato eliminato.",
 
 		// home
-		"home.getting_married": "Ci sposiamo",
-		"home.ceremony":        "Cerimonia",
-		"home.reception":       "Ricevimento",
+		"home.getting_married": "Insieme per sempre",
+		"home.ceremony":        "Il Rito",
+		"home.reception":       "I Festeggiamenti",
 		"home.guest_list":      "Lista Invitati",
 		"home.gift":            "Regalo",
-		"home.gift_description": "Se desideri farci un regalo, scegli un importo qui sotto.",
+		"home.gift_description": "Se desiderate onorarci con un dono, scegliete un importo",
 
 		// gift form
-		"placeholder.donor":        "Il tuo nome (facoltativo)",
-		"placeholder.gift_message": "Lascia un messaggio (facoltativo)",
+		"placeholder.donor":        "Il vostro nome (facoltativo)",
+		"placeholder.gift_message": "Lasciate un messaggio (facoltativo)",
 		"placeholder.amount":       "Importo",
 		"btn.send_gift":            "Invia Regalo",
 
 		// gift success
 		"gift.thank_you":      "Grazie!",
-		"gift.thanks_message": "Il tuo regalo è stato registrato. Grazie per la tua generosità!",
+		"gift.thanks_message": "Il vostro dono è stato registrato. Grazie per la vostra generosità!",
 		"gift.thanks_donor":   "Grazie",
 		"gift.back_home":      "Torna alla home",
 
 		// dashboard - gifts
-		"dashboard.gifts":   "Regali",
+		"dashboard.gifts":   "Doni ricevuti",
 		"th.donor":          "Da",
 		"th.amount":         "Importo",
 		"th.message":        "Messaggio",
 		"th.date":           "Data",
 
 		// registry
-		"dashboard.registry":      "Lista nozze",
-		"home.registry":           "Lista nozze",
-		"home.registry_description": "Se vuoi regalarci qualcosa di specifico, scegli un articolo qui sotto.",
+		"dashboard.registry":      "Lista dei desideri",
+		"home.registry":           "Un Pensiero per Noi",
+		"home.registry_description": "Se desiderate accompagnarci in questo nuovo cammino",
 		"placeholder.item_name":   "Nome articolo",
 		"placeholder.item_price":  "Prezzo",
 		"btn.add_item":            "Aggiungi",
-		"btn.buy":                 "Acquista",
-		"badge.sold":              "Venduto",
+		"btn.buy":                 "Dona",
+		"badge.sold":              "Offerto",
 		"th.item_name":            "Nome",
 		"th.item_price":           "Prezzo",
 		"th.item_image":           "Immagine",
@@ -312,8 +312,8 @@ var translations = map[string]map[string]string{
 		"btn.copy":                    "Copia",
 		"btn.copied":                  "Copiato!",
 		"btn.close":                   "Chiudi",
-		"home.generic_gift":             "Regalo libero",
-		"home.generic_gift_description": "Inviaci un regalo di qualsiasi importo",
+		"home.generic_gift":             "Dono Libero",
+		"home.generic_gift_description": "Scegliete voi l'importo",
 		"placeholder.custom_amount":     "Importo personalizzato",
 		"home.remaining":                "rimanenti",
 
@@ -343,16 +343,16 @@ var translations = map[string]map[string]string{
 		"th.guests":                  "Invitati",
 		"th.viewed":                  "Visualizzato",
 		"th.created":                 "Creato",
-		"btn.create_invitation":      "Crea Invito",
+		"btn.create_invitation":      "Genera invito",
 		"flash.invitation_created":   "Invito creato:",
 		"flash.invitation_deleted":   "Invito eliminato.",
 		"confirm.delete_invitation":  "Eliminare questo invito?",
 
 		// invitation public page
 		"invitation.title":            "Invito",
-		"invitation.rsvp":             "RSVP",
-		"invitation.rsvp_description": "Conferma la presenza per ciascun invitato.",
-		"invitation.confirm":          "Conferma",
+		"invitation.rsvp":             "Vi aspettiamo",
+		"invitation.rsvp_description": "Fateci sapere se potrete essere con noi in questo giorno speciale",
+		"invitation.confirm":          "Invio conferma",
 
 		// setup guard
 		"setup.not_ready":       "Questo matrimonio non è ancora stato configurato.",
