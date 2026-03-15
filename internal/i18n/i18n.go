@@ -185,6 +185,8 @@ var translations = map[string]map[string]string{
 		"invitation.rsvp":             "We Look Forward to Seeing You",
 		"invitation.rsvp_description": "Let us know if you can join us on this special day",
 		"invitation.confirm":          "Send Confirmation",
+		"invitation.already_answered": "You have already sent your confirmation.",
+		"invitation.change_answer":    "Change my answer",
 
 		// setup guard
 		"setup.not_ready":     "This wedding hasn't been set up yet.",
@@ -353,6 +355,8 @@ var translations = map[string]map[string]string{
 		"invitation.rsvp":             "Vi aspettiamo",
 		"invitation.rsvp_description": "Fateci sapere se potrete essere con noi in questo giorno speciale",
 		"invitation.confirm":          "Invio conferma",
+		"invitation.already_answered": "Avete già inviato la vostra conferma.",
+		"invitation.change_answer":    "Modifica risposta",
 
 		// setup guard
 		"setup.not_ready":       "Questo matrimonio non è ancora stato configurato.",

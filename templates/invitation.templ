@@ -15,6 +15,15 @@ func guestAnsweredYes(g models.Guest, pollID int) bool {
 	return false
 }
 
+func invitationAnswered(inv models.Invitation) bool {
+	for _, g := range inv.Guests {
+		if g.ConfirmedCeremony != nil || g.ConfirmedReception != nil {
+			return true
+		}
+	}
+	return false
+}
+
 templ Invitation(inv models.Invitation, settings models.WeddingSettings, polls []models.Poll, alreadyViewed bool, t i18n.T, lang string) {
 	@Layout(pageTitle(t("invitation.title"), settings.Spouse1Name, settings.Spouse2Name), lang, t) {
 		if !alreadyViewed {
@@ -75,8 +84,15 @@ templ Invitation(inv models.Invitation, settings models.WeddingSettings, polls [
 		<hr/>
 		<article class="rsvp-card">
 			<h2>{ t("invitation.rsvp") }</h2>
-			<p class="rsvp-subtitle">{ t("invitation.rsvp_description") }</p>
-			<form method="POST" action={ templ.SafeURL("/" + inv.Code + "/rsvp") }>
+			if invitationAnswered(inv) {
+				<div id="rsvp-locked">
+					<p class="rsvp-subtitle rsvp-answered-notice">{ t("invitation.already_answered") }</p>
+					<button type="button" id="rsvp-unlock-btn" class="secondary outline">{ t("invitation.change_answer") }</button>
+				</div>
+			} else {
+				<p class="rsvp-subtitle">{ t("invitation.rsvp_description") }</p>
+			}
+			<form method="POST" action={ templ.SafeURL("/" + inv.Code + "/rsvp") } id="rsvp-form" class={ templ.KV("rsvp-form-locked", invitationAnswered(inv)) }>
 				for _, g := range inv.Guests {
 					<div class="rsvp-guest">
 						<span class="rsvp-name">{ g.FirstName } { g.LastName }</span>
@@ -155,6 +171,18 @@ templ Invitation(inv models.Invitation, settings models.WeddingSettings, polls [
 							content.classList.remove('hidden-until-opened');
 							fetch('/' + code + '/viewed', { method: 'POST' });
 						}, 1800);
+					});
+				})();
+			</script>
+		}
+		if invitationAnswered(inv) {
+			<script>
+				(function() {
+					var unlockBtn = document.getElementById('rsvp-unlock-btn');
+					if (!unlockBtn) return;
+					unlockBtn.addEventListener('click', function() {
+						document.getElementById('rsvp-locked').style.display = 'none';
+						document.getElementById('rsvp-form').classList.remove('rsvp-form-locked');
 					});
 				})();
 			</script>

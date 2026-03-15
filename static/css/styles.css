@@ -1616,6 +1616,17 @@ a[href="/dashboard"]:not(footer a):hover {
   cursor: pointer;
   padding: var(--sp-1) 0;
 }
+.rsvp-form-locked {
+  display: none;
+}
+.rsvp-answered-notice {
+  color: var(--sage-dark);
+  font-style: italic;
+}
+#rsvp-unlock-btn {
+  margin-top: var(--sp-3);
+  font-size: var(--fs-base);
+}
 [role="switch"] {
   --pico-switch-color: var(--dusty-rose);
   height: 1.25rem;
