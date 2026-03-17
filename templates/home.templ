@@ -31,105 +31,178 @@ func claimedPercent(item models.RegistryItem, claimed map[int]int) int {
 
 templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem, claimedAmounts map[int]int, bankConfigured bool, t i18n.T, lang string) {
 	@Layout(settings.Spouse1Name + " & " + settings.Spouse2Name, lang, t) {
-		<header class="hero">
-			<p><small>{ t("home.getting_married") }</small></p>
-			<h1>
-				{ settings.Spouse1Name } <span class="amp">&amp;</span> { settings.Spouse2Name }
-			</h1>
-			if settings.CeremonyDatetime != "" {
-				<p class="muted">{ i18n.FormatDatetime(settings.CeremonyDatetime, lang) }</p>
-			}
-		</header>
-		<hr/>
-		if settings.CeremonyAddress != "" || settings.CeremonyLocation != "" {
-			<section class="venue">
-				<h2>{ t("home.ceremony") }</h2>
-				<a href={ templ.SafeURL(mapsURL(settings.CeremonyAddress, settings.CeremonyLocation)) } target="_blank" class="venue-link">
-					if settings.CeremonyImage != "" {
-						<img class="venue-image" src={ settings.CeremonyImage } alt={ t("home.ceremony") }/>
-					}
-					if settings.CeremonyAddress != "" {
-						<p><strong>{ settings.CeremonyAddress }</strong></p>
-					}
-					if settings.CeremonyLocation != "" {
-						<p><small>{ settings.CeremonyLocation }</small></p>
-					}
-				</a>
-			</section>
-		}
-		if settings.ReceptionAddress != "" || settings.ReceptionLocation != "" {
-			<section class="venue">
-				<h2>{ t("home.reception") }</h2>
-				<a href={ templ.SafeURL(mapsURL(settings.ReceptionAddress, settings.ReceptionLocation)) } target="_blank" class="venue-link">
-					if settings.ReceptionImage != "" {
-						<img class="venue-image" src={ settings.ReceptionImage } alt={ t("home.reception") }/>
-					}
-					if settings.ReceptionAddress != "" {
-						<p><strong>{ settings.ReceptionAddress }</strong></p>
-					}
-					if settings.ReceptionLocation != "" {
-						<p><small>{ settings.ReceptionLocation }</small></p>
-					}
-				</a>
-			</section>
-		}
-		if bankConfigured {
-			<hr/>
-			<section class="venue">
-				<h2>{ t("home.registry") }</h2>
-				<p><small>{ t("home.registry_description") }</small></p>
-				<div class="registry-grid">
-					for _, item := range registryItems {
-						if remainingCents(item, claimedAmounts) <= 0 {
-							<div class="registry-card sold">
-								if item.Image != "" {
-									<img src={ item.Image } alt={ item.Name }/>
-								}
-								<strong>{ item.Name }</strong>
-								<span class="price">{ formatPrice(item.Price) }</span>
-								<span class="sold-badge">{ t("badge.sold") }</span>
-							</div>
-						} else {
-							<div class="registry-card">
-								if item.Image != "" {
-									<img src={ item.Image } alt={ item.Name }/>
-								}
-								<strong>{ item.Name }</strong>
-								<span class="price">{ formatPrice(item.Price) }</span>
-								if claimedAmounts[item.ID] > 0 {
-									<div class="progress-bar">
-										<div class="progress-fill" style={ fmt.Sprintf("width:%d%%", claimedPercent(item, claimedAmounts)) }></div>
+		<!-- section 1: title -->
+		<section id="sec-title" class="vp-section vp-hero">
+			<div class="vp-section-inner">
+				<p class="hero-kicker">{ t("home.getting_married") }</p>
+				<h1>
+					{ settings.Spouse1Name } <span class="amp">&amp;</span> { settings.Spouse2Name }
+				</h1>
+				if settings.CeremonyDatetime != "" {
+					<p class="muted">{ i18n.FormatDatetime(settings.CeremonyDatetime, lang) }</p>
+				}
+			</div>
+			<a href="#sec-venues" class="vp-arrow vp-arrow--down" aria-label={ t("home.ceremony") }>
+				<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+			</a>
+		</section>
+		<!-- section 2: ceremony & celebration -->
+		<section id="sec-venues" class="vp-section vp-venues">
+			<a href="#sec-title" class="vp-arrow vp-arrow--up" aria-label={ t("home.getting_married") }>
+				<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
+			</a>
+			<div class="vp-section-inner">
+				<div class="venues-pair">
+					if settings.CeremonyAddress != "" || settings.CeremonyLocation != "" {
+						<div class="venue">
+							<h2>{ t("home.ceremony") }</h2>
+							<a href={ templ.SafeURL(mapsURL(settings.CeremonyAddress, settings.CeremonyLocation)) } target="_blank" class="venue-link">
+								if settings.CeremonyImage != "" {
+									<div class="venue-image-wrapper">
+										<img class="venue-image" src={ settings.CeremonyImage } alt={ t("home.ceremony") }/>
+									<div class="venue-overlay">
+										<span class="venue-overlay-label">{ t("home.ceremony") }</span>
+										if settings.CeremonyAddress != "" {
+											<strong>{ settings.CeremonyAddress }</strong>
+										}
+										if settings.CeremonyLocation != "" {
+											<span>{ settings.CeremonyLocation }</span>
+										}
 									</div>
-									<small>{ formatCents(remainingCents(item, claimedAmounts)) } { t("home.remaining") }</small>
+									</div>
+								} else {
+									if settings.CeremonyAddress != "" {
+										<p><strong>{ settings.CeremonyAddress }</strong></p>
+									}
+									if settings.CeremonyLocation != "" {
+										<p><small>{ settings.CeremonyLocation }</small></p>
+									}
 								}
-								<button
-									type="button"
-									class="buy-btn"
-									data-item-id={ strconv.Itoa(item.ID) }
-									data-item-name={ item.Name }
-									data-item-price={ strconv.Itoa(item.Price * 100) }
-									data-item-remaining={ strconv.Itoa(remainingCents(item, claimedAmounts)) }
-								>{ t("btn.buy") }</button>
+							</a>
+						</div>
+					}
+					if settings.ReceptionAddress != "" || settings.ReceptionLocation != "" {
+						<div class="venue">
+							<h2>{ t("home.reception") }</h2>
+							<a href={ templ.SafeURL(mapsURL(settings.ReceptionAddress, settings.ReceptionLocation)) } target="_blank" class="venue-link">
+								if settings.ReceptionImage != "" {
+									<div class="venue-image-wrapper">
+										<img class="venue-image" src={ settings.ReceptionImage } alt={ t("home.reception") }/>
+									<div class="venue-overlay">
+										<span class="venue-overlay-label">{ t("home.reception") }</span>
+										if settings.ReceptionAddress != "" {
+											<strong>{ settings.ReceptionAddress }</strong>
+										}
+										if settings.ReceptionLocation != "" {
+											<span>{ settings.ReceptionLocation }</span>
+										}
+									</div>
+									</div>
+								} else {
+									if settings.ReceptionAddress != "" {
+										<p><strong>{ settings.ReceptionAddress }</strong></p>
+									}
+									if settings.ReceptionLocation != "" {
+										<p><small>{ settings.ReceptionLocation }</small></p>
+									}
+								}
+							</a>
+						</div>
+					}
+				</div>
+			</div>
+			if bankConfigured {
+				<a href="#sec-registry" class="vp-arrow vp-arrow--down" aria-label={ t("home.registry") }>
+					<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+				</a>
+			}
+		</section>
+		<!-- section 3: registry / gifts -->
+		if bankConfigured {
+			<section id="sec-registry" class="vp-section vp-registry">
+				<a href="#sec-venues" class="vp-arrow vp-arrow--up" aria-label={ t("home.ceremony") }>
+					<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
+				</a>
+				<div class="vp-section-inner">
+					<div class="registry-v2">
+						<h2>{ t("home.registry") }</h2>
+						<p class="registry-v2-subtitle">{ t("home.registry_description") }</p>
+						if len(registryItems) > 0 {
+							<div class="registry-v2-carousel">
+								for _, item := range registryItems {
+									<div class={ "gift-tile", templ.KV("gift-tile--gifted", remainingCents(item, claimedAmounts) <= 0) }>
+										if item.Image != "" {
+											<div class="gift-tile-image">
+												<img src={ item.Image } alt={ item.Name }/>
+												<span class="gift-tile-price">{ formatPrice(item.Price) }</span>
+												if remainingCents(item, claimedAmounts) <= 0 {
+													<span class="gift-tile-gifted-ribbon">{ t("badge.sold") }</span>
+												}
+											</div>
+										}
+										<div class="gift-tile-body">
+											<h3>{ item.Name }</h3>
+											if claimedAmounts[item.ID] > 0 || remainingCents(item, claimedAmounts) <= 0 {
+												<div class="gift-tile-progress">
+													<div class="gift-tile-progress-track">
+														<div class="gift-tile-progress-fill" style={ fmt.Sprintf("width:%d%%", claimedPercent(item, claimedAmounts)) }></div>
+													</div>
+													<span class="gift-tile-progress-label">
+														if remainingCents(item, claimedAmounts) <= 0 {
+															{ t("badge.sold") }
+														} else {
+															{ formatCents(remainingCents(item, claimedAmounts)) } { t("home.remaining") }
+														}
+													</span>
+												</div>
+											}
+											if remainingCents(item, claimedAmounts) > 0 {
+												<button
+													type="button"
+													class="gift-tile-btn"
+													data-item-id={ strconv.Itoa(item.ID) }
+													data-item-name={ item.Name }
+													data-item-price={ strconv.Itoa(item.Price * 100) }
+													data-item-remaining={ strconv.Itoa(remainingCents(item, claimedAmounts)) }
+												>{ t("btn.buy") }</button>
+											}
+										</div>
+									</div>
+								}
 							</div>
 						}
-					}
-					<!-- generic gift card -->
-					<div class="registry-card generic-gift-card">
-						<div class="generic-gift-icon">🎁</div>
-						<strong>{ t("home.generic_gift") }</strong>
-						<small>{ t("home.generic_gift_description") }</small>
-						<div class="generic-amounts">
-							<button type="button" class="amount-btn" data-amount="5000">50 €</button>
-							<button type="button" class="amount-btn" data-amount="10000">100 €</button>
-							<button type="button" class="amount-btn" data-amount="20000">200 €</button>
-							<button type="button" class="amount-btn" data-amount="50000">500 €</button>
+						<!-- free gift card -->
+						<div class="free-gift-card">
+							<div class="free-gift-header">
+								<svg class="free-gift-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"/></svg>
+								<div>
+									<h3>{ t("home.generic_gift") }</h3>
+									<p>{ t("home.generic_gift_description") }</p>
+								</div>
+							</div>
+							<div class="free-gift-amounts">
+								<button type="button" class="free-gift-chip amount-btn" data-amount="5000">50 €</button>
+								<button type="button" class="free-gift-chip amount-btn" data-amount="10000">100 €</button>
+								<button type="button" class="free-gift-chip amount-btn" data-amount="20000">200 €</button>
+								<button type="button" class="free-gift-chip amount-btn" data-amount="50000">500 €</button>
+							</div>
+							<div class="free-gift-custom">
+								<input type="number" class="custom-amount-input" min="1" step="1" placeholder={ t("placeholder.custom_amount") }/>
+								<button type="button" class="gift-tile-btn generic-buy-btn" disabled>{ t("btn.buy") }</button>
+							</div>
 						</div>
-						<input type="number" class="custom-amount-input" min="1" step="1" placeholder={ t("placeholder.custom_amount") }/>
-						<button type="button" class="buy-btn generic-buy-btn" disabled>{ t("btn.buy") }</button>
 					</div>
 				</div>
 			</section>
 		}
+		<!-- nav dots -->
+		<nav class="vp-dots" aria-label="Sections">
+			<a href="#sec-title" class="vp-dot active" aria-label={ settings.Spouse1Name + " & " + settings.Spouse2Name }></a>
+			<a href="#sec-venues" class="vp-dot" aria-label={ t("home.ceremony") }></a>
+			if bankConfigured {
+				<a href="#sec-registry" class="vp-dot" aria-label={ t("home.registry") }></a>
+			}
+		</nav>
 		<!-- transfer modal -->
 		if bankConfigured {
 			<div
@@ -178,7 +251,7 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 					</div>
 				</div>
 			</div>
-			<!-- percentage selector modal (shown before transfer modal for registry items) -->
+			<!-- percentage selector modal -->
 			<div id="pct-modal" class="modal-overlay" style="display:none">
 				<div class="modal-box">
 					<h3 id="pct-item-name"></h3>
@@ -212,6 +285,23 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 		}
 		<script>
 		(function() {
+			// nav dots: highlight active section on scroll
+			var dots = document.querySelectorAll('.vp-dot');
+			var sections = document.querySelectorAll('.vp-section');
+			if (dots.length && sections.length) {
+				var observer = new IntersectionObserver(function(entries) {
+					entries.forEach(function(entry) {
+						if (entry.isIntersecting) {
+							var id = entry.target.id;
+							dots.forEach(function(d) {
+								d.classList.toggle('active', d.getAttribute('href') === '#' + id);
+							});
+						}
+					});
+				}, { threshold: 0.5 });
+				sections.forEach(function(s) { observer.observe(s); });
+			}
+
 			var cfg = document.getElementById('transfer-cfg');
 			if (!cfg) return;
 			var spouse1 = cfg.dataset.spouse1;
@@ -238,7 +328,7 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 			});
 
 			// registry item buy buttons -> open percentage modal
-			document.querySelectorAll('.registry-card .buy-btn[data-item-id]').forEach(function(btn) {
+			document.querySelectorAll('.gift-tile-btn[data-item-id]').forEach(function(btn) {
 				btn.addEventListener('click', function() {
 					currentItemId = parseInt(btn.dataset.itemId);
 					var remaining = parseInt(btn.dataset.itemRemaining);
@@ -251,7 +341,6 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 						var pct = parseInt(pb.dataset.pct);
 						var amt = Math.round(remaining * pct / 100);
 						pb.dataset.amount = amt;
-						// hide 100% if remaining < price (already partially claimed, 100% of remaining is shown)
 						pb.style.display = '';
 					});
 
@@ -306,15 +395,15 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 				openTransferModal();
 			});
 
-			// generic gift card
-			var genericCard = document.querySelector('.generic-gift-card');
-			if (genericCard) {
-				var customInput = genericCard.querySelector('.custom-amount-input');
-				var genericBuyBtn = genericCard.querySelector('.generic-buy-btn');
+			// generic gift card (free gift)
+			var freeCard = document.querySelector('.free-gift-card');
+			if (freeCard) {
+				var customInput = freeCard.querySelector('.custom-amount-input');
+				var genericBuyBtn = freeCard.querySelector('.generic-buy-btn');
 
-				genericCard.querySelectorAll('.amount-btn').forEach(function(btn) {
+				freeCard.querySelectorAll('.amount-btn').forEach(function(btn) {
 					btn.addEventListener('click', function() {
-						genericCard.querySelectorAll('.amount-btn').forEach(function(b) { b.classList.remove('selected'); });
+						freeCard.querySelectorAll('.amount-btn').forEach(function(b) { b.classList.remove('selected'); });
 						btn.classList.add('selected');
 						currentAmount = parseInt(btn.dataset.amount);
 						currentItemId = null;
@@ -325,12 +414,12 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 				});
 
 				customInput.addEventListener('focus', function() {
-					genericCard.querySelectorAll('.amount-btn').forEach(function(b) { b.classList.remove('selected'); });
+					freeCard.querySelectorAll('.amount-btn').forEach(function(b) { b.classList.remove('selected'); });
 					currentAmount = 0;
 					genericBuyBtn.disabled = true;
 				});
 				customInput.addEventListener('input', function() {
-					genericCard.querySelectorAll('.amount-btn').forEach(function(b) { b.classList.remove('selected'); });
+					freeCard.querySelectorAll('.amount-btn').forEach(function(b) { b.classList.remove('selected'); });
 					var val = parseFloat(this.value);
 					if (val > 0) {
 						currentAmount = Math.round(val * 100);
@@ -395,7 +484,6 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 			});
 		})();
 		</script>
-		<hr class="footer-separator"/>
 		<footer>
 			<a href="/dashboard">{ t("link.dashboard") }</a>
 		</footer>

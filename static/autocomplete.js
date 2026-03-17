@@ -29,15 +29,13 @@
       }
       items.forEach(function (item, idx) {
         var div = document.createElement("div");
-        div.className =
-          "px-3 py-2 text-sm cursor-pointer hover:bg-stone-100 transition-colors";
         var name = extractName(item);
         var address = extractAddress(item, name);
         div.innerHTML =
-          '<span class="font-medium text-stone-800">' + escapeHtml(name) + "</span>" +
-          (address ? '<br><span class="text-xs text-stone-400">' + escapeHtml(address) + "</span>" : "");
+          '<span style="font-weight:500;color:var(--charcoal-dark)">' + escapeHtml(name) + "</span>" +
+          (address ? '<br><span style="font-size:var(--fs-xs);color:var(--sage-dark)">' + escapeHtml(address) + "</span>" : "");
         div.addEventListener("mousedown", function (e) {
-          e.preventDefault(); // prevent input blur before selection
+          e.preventDefault();
           select(idx);
         });
         dropdown.appendChild(div);
@@ -48,7 +46,7 @@
     function highlight(idx) {
       var children = dropdown.children;
       for (var i = 0; i < children.length; i++) {
-        children[i].classList.toggle("bg-stone-100", i === idx);
+        children[i].style.background = i === idx ? "var(--ivory-deep)" : "";
       }
       activeIndex = idx;
     }
@@ -71,7 +69,6 @@
 
     function extractAddress(item, name) {
       if (!item.display_name) return "";
-      // strip the name prefix from display_name to get the address portion
       var dn = item.display_name;
       if (name && dn.indexOf(name) === 0) {
         var rest = dn.substring(name.length).replace(/^,\s*/, "");
@@ -101,7 +98,6 @@
         .catch(function () { hide(); });
     }
 
-    // when user types, clear hidden fields (they'll be re-populated on selection)
     input.addEventListener("input", function () {
       nameHidden.value = "";
       addressHidden.value = "";
@@ -131,11 +127,9 @@
     });
 
     input.addEventListener("blur", function () {
-      // short delay to allow mousedown on dropdown items to fire
       setTimeout(hide, 200);
     });
 
-    // click outside closes dropdown
     document.addEventListener("click", function (e) {
       if (!input.contains(e.target) && !dropdown.contains(e.target)) {
         hide();
@@ -143,7 +137,6 @@
     });
   }
 
-  // init both autocomplete fields once DOM is ready
   initAutocomplete({
     inputId: "ceremony-input",
     dropdownId: "ceremony-dropdown",

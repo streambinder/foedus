@@ -194,14 +194,14 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 											<input type="checkbox" class="guest-checkbox" value={ strconv.Itoa(g.ID) }/>
 										}
 									</td>
-									<td>
+									<td data-label={ t("th.first_name") }>
 										{ g.FirstName }
 										if guestInvitationCode(invitations, g.InvitationID) != "" {
 											<span class="invitation-badge">{ guestInvitationCode(invitations, g.InvitationID) }</span>
 										}
 									</td>
-									<td>{ g.LastName }</td>
-									<td>
+									<td data-label={ t("th.last_name") }>{ g.LastName }</td>
+									<td data-label={ t("th.ceremony") }>
 										<form method="POST" action={ templ.SafeURL("/dashboard/guests/" + strconv.Itoa(g.ID) + "/confirm/ceremony") }>
 											<input type="hidden" name="_csrf" value={ csrfToken }/>
 											if g.ConfirmedCeremony == nil {
@@ -213,7 +213,7 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 											}
 										</form>
 									</td>
-									<td>
+									<td data-label={ t("th.reception") }>
 										<form method="POST" action={ templ.SafeURL("/dashboard/guests/" + strconv.Itoa(g.ID) + "/confirm/reception") }>
 											<input type="hidden" name="_csrf" value={ csrfToken }/>
 											if g.ConfirmedReception == nil {
@@ -272,21 +272,21 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 						<tbody>
 							for _, inv := range invitations {
 								<tr>
-									<td>
+									<td data-label={ t("th.code") }>
 										<span class="copyable">
 											<code class="invitation-code">{ inv.Code }</code>
 											<button type="button" class="copy-btn" data-code={ inv.Code } onclick="copyInvitationURL(this)">{ t("btn.copy") }</button>
 										</span>
 									</td>
-									<td>{ invitationGuestNames(inv) }</td>
-									<td>
+									<td data-label={ t("th.guests") }>{ invitationGuestNames(inv) }</td>
+									<td data-label={ t("th.viewed") }>
 										if inv.ViewedAt != nil {
 											{ i18n.FormatDate(*inv.ViewedAt, lang) }
 										} else {
 											—
 										}
 									</td>
-									<td>{ i18n.FormatDate(inv.CreatedAt, lang) }</td>
+									<td data-label={ t("th.created") }>{ i18n.FormatDate(inv.CreatedAt, lang) }</td>
 									<td class="actions">
 										<form method="POST" action={ templ.SafeURL("/dashboard/invitations/" + strconv.Itoa(inv.ID) + "/delete") } data-confirm={ t("confirm.delete_invitation") } onsubmit="return confirm(this.dataset.confirm)">
 											<input type="hidden" name="_csrf" value={ csrfToken }/>
@@ -323,8 +323,8 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 						<tbody>
 							for _, p := range polls {
 								<tr>
-									<td>{ p.Question }</td>
-									<td>
+									<td data-label={ t("th.question") }>{ p.Question }</td>
+									<td data-label={ t("th.yes") }>
 										if len(p.YesVoters) > 0 {
 											<a href="#" class="poll-yes-link" data-poll-id={ strconv.Itoa(p.ID) }>{ strconv.Itoa(len(p.YesVoters)) }<small>/{ strconv.Itoa(p.TotalCount) }</small></a>
 										} else {
@@ -388,13 +388,13 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 						<tbody>
 							for _, item := range registryItems {
 								<tr>
-									<td>
+									<td data-label={ t("th.item_image") }>
 										if item.Image != "" {
 											<img class="registry-thumb" src={ item.Image } alt={ item.Name }/>
 										}
 									</td>
-									<td>{ item.Name }</td>
-									<td>{ formatPrice(item.Price) }</td>
+									<td data-label={ t("th.item_name") }>{ item.Name }</td>
+									<td data-label={ t("th.item_price") }>{ formatPrice(item.Price) }</td>
 									<td class="actions">
 										<form method="POST" action={ templ.SafeURL("/dashboard/registry/" + strconv.Itoa(item.ID) + "/delete") } data-confirm={ t("confirm.delete_item") } onsubmit="return confirm(this.dataset.confirm)">
 											<input type="hidden" name="_csrf" value={ csrfToken }/>
@@ -425,10 +425,10 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 						<tbody>
 							for _, g := range gifts {
 								<tr>
-									<td>{ g.Donor }</td>
-									<td>{ formatGiftAmount(g.Amount) }</td>
-									<td>{ registryItemName(registryItems, g.RegistryItemID) }</td>
-									<td>{ i18n.FormatDate(g.CreatedAt, lang) }</td>
+									<td data-label={ t("th.donor") }>{ g.Donor }</td>
+									<td data-label={ t("th.amount") }>{ formatGiftAmount(g.Amount) }</td>
+									<td data-label={ t("th.registry_item") }>{ registryItemName(registryItems, g.RegistryItemID) }</td>
+									<td data-label={ t("th.date") }>{ i18n.FormatDate(g.CreatedAt, lang) }</td>
 								</tr>
 							}
 						</tbody>
@@ -452,7 +452,7 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 				const url = window.location.protocol + '//' + window.location.host + '/' + code;
 				navigator.clipboard.writeText(url).then(function() {
 					const orig = btn.textContent;
-					btn.textContent = '✓';
+					btn.textContent = '\u2713';
 					setTimeout(function() { btn.textContent = orig; }, 1500);
 				});
 			}
