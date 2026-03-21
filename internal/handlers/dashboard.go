@@ -3,6 +3,8 @@ package handlers
 import (
 	"encoding/base64"
 	"encoding/csv"
+	"encoding/json"
+	"fmt"
 	"io"
 	"net/url"
 	"strconv"
@@ -11,6 +13,7 @@ import (
 
 	"github.com/streambinder/foedus/internal/database"
 	"github.com/streambinder/foedus/internal/i18n"
+	"github.com/streambinder/foedus/internal/models"
 	"github.com/streambinder/foedus/templates"
 	"github.com/gofiber/fiber/v2"
 )
@@ -119,6 +122,46 @@ func SaveSettings(c *fiber.Ctx) error {
 			return c.Status(500).SendString("failed to save settings")
 		}
 	}
+
+	// spotify playlists: collect all non-empty playlist URL values
+	var playlists []string
+	for i := 0; ; i++ {
+		v := c.FormValue(fmt.Sprintf("spotify_playlist_%d", i))
+		if v == "" {
+			break
+		}
+		v = strings.TrimSpace(v)
+		if v != "" {
+			playlists = append(playlists, v)
+		}
+	}
+	playlistsJSON, _ := json.Marshal(playlists)
+	if err := database.UpdateSetting("spotify_playlists", string(playlistsJSON)); err != nil {
+		return c.Status(500).SendString("failed to save settings")
+	}
+
+	// places: collect ordered place entries
+	var places []models.Place
+	for i := 0; ; i++ {
+		name := c.FormValue(fmt.Sprintf("place_name_%d", i))
+		if name == "" {
+			break
+		}
+		lat, _ := strconv.ParseFloat(c.FormValue(fmt.Sprintf("place_lat_%d", i)), 64)
+		lng, _ := strconv.ParseFloat(c.FormValue(fmt.Sprintf("place_lng_%d", i)), 64)
+		places = append(places, models.Place{
+			Label:   strings.TrimSpace(c.FormValue(fmt.Sprintf("place_label_%d", i))),
+			Name:    strings.TrimSpace(name),
+			Address: strings.TrimSpace(c.FormValue(fmt.Sprintf("place_address_%d", i))),
+			Lat:     lat,
+			Lng:     lng,
+		})
+	}
+	placesJSON, _ := json.Marshal(places)
+	if err := database.UpdateSetting("places", string(placesJSON)); err != nil {
+		return c.Status(500).SendString("failed to save settings")
+	}
+
 	setFlash(c, getT(c)("flash.settings_saved"))
 	return c.Redirect("/dashboard")
 }

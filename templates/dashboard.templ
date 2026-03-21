@@ -131,6 +131,64 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 					<input type="text" name="bank_account_iban" value={ settings.BankAccountIBAN } placeholder={ t("placeholder.bank_account_iban") }/>
 					<input type="text" name="bank_account_holder" value={ settings.BankAccountHolder } placeholder={ t("placeholder.bank_account_holder") }/>
 				</div>
+				<!-- playlists -->
+				<hr/>
+				<label>{ t("dashboard.playlists") }</label>
+				<p class="muted" style="margin-top:-0.5rem;margin-bottom:0.75rem">{ t("dashboard.playlists_description") }</p>
+				<div id="playlists-container">
+					if len(settings.SpotifyPlaylists) > 0 {
+						for idx, url := range settings.SpotifyPlaylists {
+							<div class="playlist-row">
+								<input type="text" name={ fmt.Sprintf("spotify_playlist_%d", idx) } value={ url } placeholder={ t("placeholder.playlist_url") }/>
+								<button type="button" class="outline secondary remove-playlist-btn" aria-label={ t("btn.delete") }>&times;</button>
+							</div>
+						}
+					}
+				</div>
+				<button type="button" id="add-playlist-btn" class="add-entry-btn">+ { t("btn.add_playlist") }</button>
+				<!-- places -->
+				<hr/>
+				<label>{ t("dashboard.places") }</label>
+				<p class="muted" style="margin-top:-0.5rem;margin-bottom:0.75rem">{ t("dashboard.places_description") }</p>
+				<div id="places-container">
+					if len(settings.Places) > 0 {
+						for idx, place := range settings.Places {
+							<div class="place-card" data-index={ strconv.Itoa(idx) }>
+								<div class="place-card-header">
+									<span class="place-number">{ strconv.Itoa(idx + 1) }</span>
+									<div class="place-card-actions">
+										<button type="button" class="place-move-up" aria-label="Move up">&uarr;</button>
+										<button type="button" class="place-move-down" aria-label="Move down">&darr;</button>
+										<button type="button" class="place-remove outline secondary" aria-label={ t("btn.delete") }>&times;</button>
+									</div>
+								</div>
+								<div class="grid">
+									<div>
+										<label>{ t("label.place_label") }</label>
+										<input type="text" name={ fmt.Sprintf("place_label_%d", idx) } value={ place.Label } placeholder={ t("placeholder.place_label") }/>
+									</div>
+									<div style="position:relative">
+										<label>{ t("label.place_location") }</label>
+										<input type="text" class="place-location-input" value={ locationDisplay(place.Name, place.Address) } autocomplete="off" placeholder={ t("placeholder.place_location") }/>
+										<div class="autocomplete-dropdown place-dropdown"></div>
+										<input type="hidden" name={ fmt.Sprintf("place_name_%d", idx) } class="place-name-hidden" value={ place.Name }/>
+										<input type="hidden" name={ fmt.Sprintf("place_address_%d", idx) } class="place-address-hidden" value={ place.Address }/>
+										<input type="hidden" name={ fmt.Sprintf("place_lat_%d", idx) } class="place-lat-hidden" value={ fmt.Sprintf("%f", place.Lat) }/>
+										<input type="hidden" name={ fmt.Sprintf("place_lng_%d", idx) } class="place-lng-hidden" value={ fmt.Sprintf("%f", place.Lng) }/>
+									</div>
+								</div>
+								if place.Lat != 0 || place.Lng != 0 {
+									<div class="place-coords">
+										<span class="place-coords-check">&#10003;</span>
+										<code>{ fmt.Sprintf("%.4f, %.4f", place.Lat, place.Lng) }</code>
+									</div>
+								}
+							</div>
+						}
+					}
+				</div>
+				<button type="button" id="add-place-btn" class="add-entry-btn">+ { t("btn.add_place") }</button>
+				<hr/>
 				<button type="submit" class="save-btn">{ t("btn.save_settings") }</button>
 			</form>
 		</article>
@@ -473,6 +531,7 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 			})();
 		</script>
 		<script src="/static/autocomplete.js"></script>
+		<script src="/static/dashboard-features.js"></script>
 		<script>
 			(function() {
 				const input = document.getElementById('guest-search');
