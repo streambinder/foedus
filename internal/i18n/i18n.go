@@ -192,6 +192,25 @@ var translations = map[string]map[string]string{
 		"setup.not_ready":     "This wedding hasn't been set up yet.",
 		"setup.go_to_dashboard": "Go to the dashboard to get started.",
 
+		// spotify playlists
+		"home.soundtrack":             "Soundtrack",
+		"home.soundtrack_description":  "The music that tells our story",
+		"dashboard.playlists":          "Spotify Playlists",
+		"dashboard.playlists_description": "Add Spotify playlist URLs to display on the homepage",
+		"placeholder.playlist_url":     "https://open.spotify.com/playlist/...",
+		"btn.add_playlist":             "Add playlist",
+
+		// places
+		"home.places":                  "Where It All Happened",
+		"home.places_description":      "The coordinates of us",
+		"dashboard.places":             "Places",
+		"dashboard.places_description": "Locations that mark your story, shown in order on the homepage",
+		"label.place_label":            "Label",
+		"label.place_location":         "Location",
+		"placeholder.place_label":      "e.g. First date",
+		"placeholder.place_location":   "Search for a place...",
+		"btn.add_place":                "Add place",
+
 		// footer
 		"link.dashboard": "dashboard",
 		"link.home":      "home",
@@ -361,6 +380,25 @@ var translations = map[string]map[string]string{
 		// setup guard
 		"setup.not_ready":       "Questo matrimonio non è ancora stato configurato.",
 		"setup.go_to_dashboard": "Vai al pannello per iniziare.",
+
+		// spotify playlists
+		"home.soundtrack":             "Colonna Sonora",
+		"home.soundtrack_description":  "La musica che racconta la nostra storia",
+		"dashboard.playlists":          "Playlist Spotify",
+		"dashboard.playlists_description": "Aggiungi URL di playlist Spotify da mostrare nella homepage",
+		"placeholder.playlist_url":     "https://open.spotify.com/playlist/...",
+		"btn.add_playlist":             "Aggiungi playlist",
+
+		// places
+		"home.places":                  "Dove Tutto è Successo",
+		"home.places_description":      "Le coordinate di noi",
+		"dashboard.places":             "Luoghi",
+		"dashboard.places_description": "I luoghi che segnano la vostra storia, mostrati in ordine nella homepage",
+		"label.place_label":            "Etichetta",
+		"label.place_location":         "Luogo",
+		"placeholder.place_label":      "es. Primo appuntamento",
+		"placeholder.place_location":   "Cerca un luogo...",
+		"btn.add_place":                "Aggiungi luogo",
 
 		// footer
 		"link.dashboard": "pannello",

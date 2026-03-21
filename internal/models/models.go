@@ -7,6 +7,14 @@ type Setting struct {
 	Value string
 }
 
+type Place struct {
+	Label   string  `json:"label"`
+	Name    string  `json:"name"`
+	Address string  `json:"address"`
+	Lat     float64 `json:"lat"`
+	Lng     float64 `json:"lng"`
+}
+
 type WeddingSettings struct {
 	Spouse1Name       string
 	Spouse2Name       string
@@ -19,6 +27,8 @@ type WeddingSettings struct {
 	ReceptionImage    string
 	BankAccountIBAN   string
 	BankAccountHolder string
+	SpotifyPlaylists  []string
+	Places            []Place
 }
 
 func (s WeddingSettings) IsConfigured() bool {

@@ -1,12 +1,17 @@
 package database
 
-import "github.com/streambinder/foedus/internal/models"
+import (
+	"encoding/json"
+
+	"github.com/streambinder/foedus/internal/models"
+)
 
 var settingsKeys = []string{
 	"spouse1_name", "spouse2_name", "ceremony_datetime",
 	"ceremony_address", "ceremony_location", "ceremony_image",
 	"reception_address", "reception_location", "reception_image",
 	"bank_account_iban", "bank_account_holder",
+	"spotify_playlists", "places",
 }
 
 // SeedSettings inserts default empty rows for any missing setting keys.
@@ -32,6 +37,16 @@ func GetAllSettings() (models.WeddingSettings, error) {
 		m[k] = v
 	}
 
+	var playlists []string
+	if raw := m["spotify_playlists"]; raw != "" {
+		json.Unmarshal([]byte(raw), &playlists)
+	}
+
+	var places []models.Place
+	if raw := m["places"]; raw != "" {
+		json.Unmarshal([]byte(raw), &places)
+	}
+
 	return models.WeddingSettings{
 		Spouse1Name:       m["spouse1_name"],
 		Spouse2Name:       m["spouse2_name"],
@@ -44,6 +59,8 @@ func GetAllSettings() (models.WeddingSettings, error) {
 		ReceptionImage:    m["reception_image"],
 		BankAccountIBAN:   m["bank_account_iban"],
 		BankAccountHolder: m["bank_account_holder"],
+		SpotifyPlaylists:  playlists,
+		Places:            places,
 	}, nil
 }
 
