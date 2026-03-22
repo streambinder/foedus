@@ -179,6 +179,25 @@ func SaveSettings(c *fiber.Ctx) error {
 		return c.Status(500).SendString("failed to save settings")
 	}
 
+	// homepage_labels: collect per-lang per-key overrides
+	homepageLabels := make(map[string]map[string]string)
+	for _, lang := range []string{"en", "it"} {
+		langOverrides := make(map[string]string)
+		for _, key := range i18n.HomepageKeys {
+			fieldName := "homepage_label_" + lang + "_" + key
+			if v := strings.TrimSpace(c.FormValue(fieldName)); v != "" {
+				langOverrides[key] = v
+			}
+		}
+		if len(langOverrides) > 0 {
+			homepageLabels[lang] = langOverrides
+		}
+	}
+	homepageLabelsJSON, _ := json.Marshal(homepageLabels)
+	if err := database.UpdateSetting("homepage_labels", string(homepageLabelsJSON)); err != nil {
+		return c.Status(500).SendString("failed to save settings")
+	}
+
 	setFlash(c, getT(c)("flash.settings_saved"))
 	return c.Redirect("/dashboard")
 }

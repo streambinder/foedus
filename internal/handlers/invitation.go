@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/streambinder/foedus/internal/database"
+	"github.com/streambinder/foedus/internal/i18n"
 	"github.com/streambinder/foedus/templates"
 	"github.com/gofiber/fiber/v2"
 )
@@ -32,7 +33,8 @@ func ViewInvitation(c *fiber.Ctx) error {
 		return c.Status(500).SendString("failed to load polls")
 	}
 
-	return Render(c, templates.Invitation(inv, settings, polls, inv.ViewedAt != nil, getT(c), getLang(c)))
+	lang := getLang(c)
+	return Render(c, templates.Invitation(inv, settings, polls, inv.ViewedAt != nil, i18n.NewTWithOverrides(lang, settings.HomepageLabels[lang]), lang))
 }
 
 func MarkInvitationViewed(c *fiber.Ctx) error {

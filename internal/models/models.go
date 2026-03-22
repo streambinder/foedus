@@ -35,6 +35,7 @@ type WeddingSettings struct {
 	SpotifyPlaylists  []string
 	Places            []Place
 	Impersonations    []Impersonation
+	HomepageLabels    map[string]map[string]string
 }
 
 func (s WeddingSettings) IsConfigured() bool {

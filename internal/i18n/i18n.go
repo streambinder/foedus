@@ -430,6 +430,36 @@ var translations = map[string]map[string]string{
 	},
 }
 
+// HomepageKeys is the ordered list of i18n keys overridable from the dashboard.
+var HomepageKeys = []string{
+	"home.getting_married", "home.ceremony", "home.reception",
+	"home.soundtrack", "home.soundtrack_description",
+	"home.places", "home.places_description",
+	"home.registry", "home.registry_description",
+	"home.generic_gift", "home.generic_gift_description", "home.remaining",
+	"invitation.title", "invitation.rsvp", "invitation.rsvp_description",
+	"invitation.confirm", "invitation.already_answered", "invitation.change_answer",
+	"gift.thank_you", "gift.thanks_message",
+	"badge.sold",
+	"btn.buy", "btn.copy", "btn.copied", "btn.cancel", "btn.confirm", "btn.close",
+	"modal.transfer_intro", "modal.iban", "modal.owner", "modal.reason", "modal.transfer_confirm_text",
+	"placeholder.custom_amount", "placeholder.donor",
+	"chat.title", "chat.placeholder", "chat.send", "chat.error", "chat.rate_limited",
+	"rsvp.yes", "rsvp.no",
+	"th.amount", "th.ceremony", "th.reception",
+	"link.dashboard",
+}
+
+// Defaults returns the default translations for the given language for all HomepageKeys.
+func Defaults(lang string) map[string]string {
+	t := NewT(lang)
+	result := make(map[string]string, len(HomepageKeys))
+	for _, key := range HomepageKeys {
+		result[key] = t(key)
+	}
+	return result
+}
+
 // NewT returns a translator closure for the given language.
 // falls back to english for missing keys.
 func NewT(lang string) T {
@@ -446,6 +476,19 @@ func NewT(lang string) T {
 			return v
 		}
 		return key
+	}
+}
+
+// NewTWithOverrides returns a translator that checks overrides first, then falls back to NewT.
+func NewTWithOverrides(lang string, overrides map[string]string) T {
+	base := NewT(lang)
+	return func(key string) string {
+		if overrides != nil {
+			if v, ok := overrides[key]; ok && v != "" {
+				return v
+			}
+		}
+		return base(key)
 	}
 }
 

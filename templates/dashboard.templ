@@ -207,6 +207,28 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 					}
 				</div>
 				<button type="button" id="add-impersonation-btn" class="add-entry-btn">+ { t("btn.add_impersonation") }</button>
+				<!-- homepage labels -->
+				<hr/>
+				<label>Homepage Labels</label>
+				<p class="muted" style="margin-top:-0.5rem;margin-bottom:0.75rem">Override guest-facing text on the homepage and invitation pages.</p>
+				for _, lang := range []string{"en", "it"} {
+					<details>
+						<summary style="cursor:pointer;font-weight:600;text-transform:uppercase;letter-spacing:.05em">{ lang }</summary>
+						<div style="margin-top:0.75rem">
+							@homepageLabelGroup(lang, "home", []string{"home.getting_married","home.ceremony","home.reception","home.soundtrack","home.soundtrack_description","home.places","home.places_description","home.registry","home.registry_description","home.generic_gift","home.generic_gift_description","home.remaining"}, settings.HomepageLabels, i18n.Defaults(lang))
+							<hr/>
+							@homepageLabelGroup(lang, "invitation", []string{"invitation.title","invitation.rsvp","invitation.rsvp_description","invitation.confirm","invitation.already_answered","invitation.change_answer"}, settings.HomepageLabels, i18n.Defaults(lang))
+							<hr/>
+							@homepageLabelGroup(lang, "gift / badge", []string{"gift.thank_you","gift.thanks_message","badge.sold"}, settings.HomepageLabels, i18n.Defaults(lang))
+							<hr/>
+							@homepageLabelGroup(lang, "buttons", []string{"btn.buy","btn.copy","btn.copied","btn.cancel","btn.confirm","btn.close"}, settings.HomepageLabels, i18n.Defaults(lang))
+							<hr/>
+							@homepageLabelGroup(lang, "modal", []string{"modal.transfer_intro","modal.iban","modal.owner","modal.reason","modal.transfer_confirm_text"}, settings.HomepageLabels, i18n.Defaults(lang))
+							<hr/>
+							@homepageLabelGroup(lang, "placeholders / chat / misc", []string{"placeholder.custom_amount","placeholder.donor","chat.title","chat.placeholder","chat.send","chat.error","chat.rate_limited","rsvp.yes","rsvp.no","th.amount","th.ceremony","th.reception","link.dashboard"}, settings.HomepageLabels, i18n.Defaults(lang))
+						</div>
+					</details>
+				}
 				<hr/>
 				<button type="submit" class="save-btn">{ t("btn.save_settings") }</button>
 			</form>
@@ -653,4 +675,18 @@ templ settingInput(name, label, value string) {
 		{ label }
 		<input type="text" name={ name } value={ value }/>
 	</label>
+}
+
+// homepageLabelGroup renders a labelled group of overridable i18n inputs for one language.
+templ homepageLabelGroup(lang, groupLabel string, keys []string, overrides map[string]map[string]string, defaults map[string]string) {
+	<p style="font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted-color,#888);margin-bottom:0.5rem">{ groupLabel }</p>
+	for _, key := range keys {
+		<label style="font-size:.85rem">
+			{ key }
+			<input type="text"
+				name={ "homepage_label_" + lang + "_" + key }
+				placeholder={ defaults[key] }
+				value={ overrides[lang][key] }/>
+		</label>
+	}
 }

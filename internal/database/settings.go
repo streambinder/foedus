@@ -11,7 +11,7 @@ var settingsKeys = []string{
 	"ceremony_address", "ceremony_location", "ceremony_image",
 	"reception_address", "reception_location", "reception_image",
 	"bank_account_iban", "bank_account_holder",
-	"spotify_playlists", "places", "impersonations",
+	"spotify_playlists", "places", "impersonations", "homepage_labels",
 }
 
 // SeedSettings inserts default empty rows for any missing setting keys.
@@ -52,6 +52,11 @@ func GetAllSettings() (models.WeddingSettings, error) {
 		json.Unmarshal([]byte(raw), &impersonations)
 	}
 
+	var homepageLabels map[string]map[string]string
+	if raw := m["homepage_labels"]; raw != "" {
+		json.Unmarshal([]byte(raw), &homepageLabels)
+	}
+
 	return models.WeddingSettings{
 		Spouse1Name:       m["spouse1_name"],
 		Spouse2Name:       m["spouse2_name"],
@@ -67,6 +72,7 @@ func GetAllSettings() (models.WeddingSettings, error) {
 		SpotifyPlaylists:  playlists,
 		Places:            places,
 		Impersonations:    impersonations,
+		HomepageLabels:    homepageLabels,
 	}, nil
 }
 
