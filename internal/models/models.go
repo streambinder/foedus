@@ -36,6 +36,7 @@ type WeddingSettings struct {
 	Places            []Place
 	Impersonations    []Impersonation
 	HomepageLabels    map[string]map[string]string
+	SharePreviewImage string
 }
 
 func (s WeddingSettings) IsConfigured() bool {

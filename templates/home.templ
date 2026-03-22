@@ -72,8 +72,8 @@ func claimedPercent(item models.RegistryItem, claimed map[int]int) int {
 	return pct
 }
 
-templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem, claimedAmounts map[int]int, bankConfigured bool, chatEnabled bool, t i18n.T, lang string) {
-	@Layout(settings.Spouse1Name + " & " + settings.Spouse2Name, lang, t) {
+templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem, claimedAmounts map[int]int, bankConfigured bool, chatEnabled bool, t i18n.T, lang string, ogMeta OGMeta) {
+	@Layout(settings.Spouse1Name + " & " + settings.Spouse2Name, lang, t, ogMeta) {
 		<!-- section 1: title -->
 		<section id="sec-title" class="vp-section vp-hero">
 			<div class="vp-section-inner">

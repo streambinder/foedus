@@ -77,7 +77,7 @@ func invitationGuestNames(inv models.Invitation) string {
 }
 
 templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []models.Gift, registryItems []models.RegistryItem, invitations []models.Invitation, polls []models.Poll, confirmedCeremony int, confirmedReception int, pendingGuests int, total int, page int, totalPages int, search string, csrfToken string, flash string, t i18n.T, lang string) {
-	@Layout(pageTitle(t("title.dashboard"), settings.Spouse1Name, settings.Spouse2Name), lang, t) {
+	@Layout(pageTitle(t("title.dashboard"), settings.Spouse1Name, settings.Spouse2Name), lang, t, OGMeta{}) {
 		if flash != "" {
 			<div class="flash-success">{ flash }</div>
 		}
@@ -130,6 +130,20 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 				<div class="grid">
 					<input type="text" name="bank_account_iban" value={ settings.BankAccountIBAN } placeholder={ t("placeholder.bank_account_iban") }/>
 					<input type="text" name="bank_account_holder" value={ settings.BankAccountHolder } placeholder={ t("placeholder.bank_account_holder") }/>
+				</div>
+				<!-- share preview image (og:image) -->
+				<label>Share Preview Image</label>
+				<p class="muted" style="margin-top:-0.5rem;margin-bottom:0.75rem">Image shown when sharing the website link on WhatsApp and social media. Defaults to the site favicon.</p>
+				<div class="venue-image-row">
+					<input type="file" id="share-preview-file" accept="image/*" class="venue-file-input"/>
+					<input type="hidden" name="share_preview_image" id="share-preview-image-data" value={ settings.SharePreviewImage }/>
+					if settings.SharePreviewImage != "" {
+						<img class="venue-image-preview" id="share-preview-preview" src={ settings.SharePreviewImage } alt="share preview"/>
+						<button type="button" id="share-preview-remove" class="outline secondary" style="margin-top:0.5rem">Remove</button>
+					} else {
+						<img class="venue-image-preview" id="share-preview-preview" style="display:none" alt="share preview"/>
+						<button type="button" id="share-preview-remove" class="outline secondary" style="margin-top:0.5rem;display:none">Remove</button>
+					}
 				</div>
 				<!-- playlists -->
 				<hr/>
@@ -645,6 +659,27 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 				const p = document.getElementById('reception-preview');
 				if (f && d) resizeImageToDataURI(f, d, p, 'image/jpeg', 0.7);
 			})();
+			// share preview image (png, for og:image)
+			(function() {
+				const f = document.getElementById('share-preview-file');
+				const d = document.getElementById('share-preview-image-data');
+				const p = document.getElementById('share-preview-preview');
+				const removeBtn = document.getElementById('share-preview-remove');
+				if (f && d) {
+					resizeImageToDataURI(f, d, p);
+					f.addEventListener('change', function() {
+						if (removeBtn) removeBtn.style.display = '';
+					});
+				}
+				if (removeBtn) {
+					removeBtn.addEventListener('click', function() {
+						d.value = '';
+						if (p) { p.src = ''; p.style.display = 'none'; }
+						removeBtn.style.display = 'none';
+						if (f) f.value = '';
+					});
+				}
+			})();
 		</script>
 		<hr class="footer-separator"/>
 		<footer>
@@ -654,7 +689,7 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 }
 
 templ EditGuest(guest models.Guest, settings models.WeddingSettings, csrfToken string, t i18n.T, lang string) {
-	@Layout(pageTitle(t("title.edit_guest"), settings.Spouse1Name, settings.Spouse2Name), lang, t) {
+	@Layout(pageTitle(t("title.edit_guest"), settings.Spouse1Name, settings.Spouse2Name), lang, t, OGMeta{}) {
 		<a href="/dashboard">&larr; { t("btn.back") }</a>
 		<h1>{ t("title.edit_guest") }</h1>
 		<article>

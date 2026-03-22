@@ -3,6 +3,7 @@ package handlers
 import (
 	"database/sql"
 	"strconv"
+	"strings"
 
 	"github.com/streambinder/foedus/internal/database"
 	"github.com/streambinder/foedus/internal/i18n"
@@ -34,7 +35,21 @@ func ViewInvitation(c *fiber.Ctx) error {
 	}
 
 	lang := getLang(c)
-	return Render(c, templates.Invitation(inv, settings, polls, inv.ViewedAt != nil, i18n.NewTWithOverrides(lang, settings.HomepageLabels[lang]), lang))
+	baseURL := c.Protocol() + "://" + c.Hostname()
+	var ogDescParts []string
+	if settings.CeremonyDatetime != "" {
+		ogDescParts = append(ogDescParts, i18n.FormatDatetime(settings.CeremonyDatetime, lang))
+	}
+	if settings.CeremonyLocation != "" {
+		ogDescParts = append(ogDescParts, settings.CeremonyLocation)
+	}
+	ogMeta := templates.OGMeta{
+		Title:       settings.Spouse1Name + " & " + settings.Spouse2Name,
+		Description: strings.Join(ogDescParts, " · "),
+		URL:         baseURL + "/" + code,
+		ImageURL:    baseURL + "/og-image",
+	}
+	return Render(c, templates.Invitation(inv, settings, polls, inv.ViewedAt != nil, i18n.NewTWithOverrides(lang, settings.HomepageLabels[lang]), lang, ogMeta))
 }
 
 func MarkInvitationViewed(c *fiber.Ctx) error {

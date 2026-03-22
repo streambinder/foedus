@@ -24,8 +24,8 @@ func invitationAnswered(inv models.Invitation) bool {
 	return false
 }
 
-templ Invitation(inv models.Invitation, settings models.WeddingSettings, polls []models.Poll, alreadyViewed bool, t i18n.T, lang string) {
-	@Layout(pageTitle(t("invitation.title"), settings.Spouse1Name, settings.Spouse2Name), lang, t) {
+templ Invitation(inv models.Invitation, settings models.WeddingSettings, polls []models.Poll, alreadyViewed bool, t i18n.T, lang string, ogMeta OGMeta) {
+	@Layout(pageTitle(t("invitation.title"), settings.Spouse1Name, settings.Spouse2Name), lang, t, ogMeta) {
 		if !alreadyViewed {
 			<div id="envelope-overlay">
 				<div class="envelope">

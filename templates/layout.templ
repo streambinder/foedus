@@ -2,6 +2,13 @@ package templates
 
 import "github.com/streambinder/foedus/internal/i18n"
 
+type OGMeta struct {
+	Title       string
+	Description string
+	URL         string
+	ImageURL    string
+}
+
 func pageTitle(title, spouse1, spouse2 string) string {
 	if spouse1 != "" && spouse2 != "" {
 		return title + " · " + spouse1 + " & " + spouse2
@@ -10,7 +17,7 @@ func pageTitle(title, spouse1, spouse2 string) string {
 }
 
 templ SetupGuard(lang string, t i18n.T) {
-	@Layout(t("title.setup"), lang, t) {
+	@Layout(t("title.setup"), lang, t, OGMeta{}) {
 		<div class="setup-guard">
 			<h1>{ t("setup.not_ready") }</h1>
 			<p><a href="/dashboard">{ t("setup.go_to_dashboard") }</a></p>
@@ -18,13 +25,20 @@ templ SetupGuard(lang string, t i18n.T) {
 	}
 }
 
-templ Layout(title string, lang string, t i18n.T) {
+templ Layout(title string, lang string, t i18n.T, ogMeta OGMeta) {
 	<!DOCTYPE html>
 	<html lang={ lang } data-theme="light">
 		<head>
 			<meta charset="UTF-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 			<title>{ title }</title>
+			if ogMeta.Title != "" {
+				<meta property="og:title" content={ ogMeta.Title }/>
+				<meta property="og:description" content={ ogMeta.Description }/>
+				<meta property="og:image" content={ ogMeta.ImageURL }/>
+				<meta property="og:type" content="website"/>
+				<meta property="og:url" content={ ogMeta.URL }/>
+			}
 			<link rel="icon" type="image/svg+xml" href="/static/favicon.svg"/>
 			<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css"/>
 			<link rel="preconnect" href="https://fonts.googleapis.com"/>

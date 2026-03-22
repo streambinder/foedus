@@ -12,6 +12,7 @@ var settingsKeys = []string{
 	"reception_address", "reception_location", "reception_image",
 	"bank_account_iban", "bank_account_holder",
 	"spotify_playlists", "places", "impersonations", "homepage_labels",
+	"share_preview_image",
 }
 
 // SeedSettings inserts default empty rows for any missing setting keys.
@@ -73,6 +74,7 @@ func GetAllSettings() (models.WeddingSettings, error) {
 		Places:            places,
 		Impersonations:    impersonations,
 		HomepageLabels:    homepageLabels,
+		SharePreviewImage: m["share_preview_image"],
 	}, nil
 }
 

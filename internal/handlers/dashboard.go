@@ -109,11 +109,11 @@ func SaveSettings(c *fiber.Ctx) error {
 		"spouse1_name", "spouse2_name", "ceremony_datetime",
 		"ceremony_address", "ceremony_location", "ceremony_image",
 		"reception_address", "reception_location", "reception_image",
-		"bank_account_iban", "bank_account_holder",
+		"bank_account_iban", "bank_account_holder", "share_preview_image",
 	}
 	for _, key := range keys {
 		val := c.FormValue(key)
-		if (key == "ceremony_image" || key == "reception_image") && val != "" {
+		if (key == "ceremony_image" || key == "reception_image" || key == "share_preview_image") && val != "" {
 			if err := validateBase64ImageAny(val); err != nil {
 				return c.Status(400).SendString(err.Error())
 			}
