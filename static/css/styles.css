@@ -2812,6 +2812,7 @@ td [role="switch"] { margin: 0; }
 #chat-messages {
   flex: 1;
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding: var(--sp-4);
   display: flex;
   flex-direction: column;
