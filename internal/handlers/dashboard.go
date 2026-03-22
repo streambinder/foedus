@@ -162,6 +162,23 @@ func SaveSettings(c *fiber.Ctx) error {
 		return c.Status(500).SendString("failed to save settings")
 	}
 
+	// impersonations: collect codename + profile pairs
+	var impersonations []models.Impersonation
+	for i := 0; ; i++ {
+		codename := strings.TrimSpace(c.FormValue(fmt.Sprintf("impersonation_codename_%d", i)))
+		if codename == "" {
+			break
+		}
+		impersonations = append(impersonations, models.Impersonation{
+			Codename: codename,
+			Profile:  strings.TrimSpace(c.FormValue(fmt.Sprintf("impersonation_profile_%d", i))),
+		})
+	}
+	impersonationsJSON, _ := json.Marshal(impersonations)
+	if err := database.UpdateSetting("impersonations", string(impersonationsJSON)); err != nil {
+		return c.Status(500).SendString("failed to save settings")
+	}
+
 	setFlash(c, getT(c)("flash.settings_saved"))
 	return c.Redirect("/dashboard")
 }

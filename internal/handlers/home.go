@@ -23,5 +23,6 @@ func Home(c *fiber.Ctx) error {
 		return c.Status(500).SendString("failed to load claimed amounts")
 	}
 	bankConfigured := settings.BankAccountIBAN != "" && settings.BankAccountHolder != ""
-	return Render(c, templates.Home(settings, registryItems, claimedAmounts, bankConfigured, getT(c), getLang(c)))
+	chatEnabled := ChatEnabled() && len(settings.Impersonations) > 0
+	return Render(c, templates.Home(settings, registryItems, claimedAmounts, bankConfigured, chatEnabled, getT(c), getLang(c)))
 }

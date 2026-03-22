@@ -15,6 +15,11 @@ type Place struct {
 	Lng     float64 `json:"lng"`
 }
 
+type Impersonation struct {
+	Codename string `json:"codename"`
+	Profile  string `json:"profile"`
+}
+
 type WeddingSettings struct {
 	Spouse1Name       string
 	Spouse2Name       string
@@ -29,6 +34,7 @@ type WeddingSettings struct {
 	BankAccountHolder string
 	SpotifyPlaylists  []string
 	Places            []Place
+	Impersonations    []Impersonation
 }
 
 func (s WeddingSettings) IsConfigured() bool {

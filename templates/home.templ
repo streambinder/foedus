@@ -72,7 +72,7 @@ func claimedPercent(item models.RegistryItem, claimed map[int]int) int {
 	return pct
 }
 
-templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem, claimedAmounts map[int]int, bankConfigured bool, t i18n.T, lang string) {
+templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem, claimedAmounts map[int]int, bankConfigured bool, chatEnabled bool, t i18n.T, lang string) {
 	@Layout(settings.Spouse1Name + " & " + settings.Spouse2Name, lang, t) {
 		<!-- section 1: title -->
 		<section id="sec-title" class="vp-section vp-hero">
@@ -612,6 +612,25 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 		})();
 		</script>
 		<script src="/static/places.js"></script>
+		if chatEnabled {
+			<div id="chat-bubble" title={ t("chat.title") }>
+				<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+			</div>
+			<div id="chat-panel" style="display:none"
+				data-msg-error={ t("chat.error") }
+				data-msg-rate={ t("chat.rate_limited") }>
+				<div class="chat-header">
+					<span>{ t("chat.title") }</span>
+					<button id="chat-close" type="button">&times;</button>
+				</div>
+				<div id="chat-messages"></div>
+				<form id="chat-form">
+					<input id="chat-input" type="text" maxlength="500" placeholder={ t("chat.placeholder") } autocomplete="off"/>
+					<button type="submit">{ t("chat.send") }</button>
+				</form>
+			</div>
+			<script src="/static/chat.js"></script>
+		}
 		<footer>
 			<a href="/dashboard">{ t("link.dashboard") }</a>
 		</footer>

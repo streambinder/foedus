@@ -20,6 +20,13 @@ func main() {
 	}
 	database.Init(dsn)
 
+	openrouterKey := os.Getenv("OPENROUTER_API_KEY")
+	openrouterModel := os.Getenv("OPENROUTER_MODEL")
+	if openrouterModel == "" {
+		openrouterModel = "meta-llama/llama-3.3-70b-instruct:free"
+	}
+	handlers.InitChat(openrouterKey, openrouterModel)
+
 	app := fiber.New()
 
 	app.Use(middleware.LangDetect())
@@ -28,6 +35,7 @@ func main() {
 	// public
 	app.Get("/", handlers.Home)
 	app.Post("/gift/claim", handlers.ClaimGift)
+	app.Post("/chat", handlers.ChatStream)
 
 	// admin group (must be registered before the /:code catch-all)
 	admin := app.Group("/dashboard", middleware.BasicAuth())

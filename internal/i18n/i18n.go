@@ -211,6 +211,18 @@ var translations = map[string]map[string]string{
 		"placeholder.place_location":   "Search for a place...",
 		"btn.add_place":                "Add place",
 
+		// impersonations
+		"dashboard.impersonations":             "Impersonations",
+		"dashboard.impersonations_description": "Define personas the chatbot can use to reply as",
+		"placeholder.impersonation_codename":   "e.g. Anna",
+		"placeholder.impersonation_profile":    "Describe how this person writes...",
+		"btn.add_impersonation":                "Add impersonation",
+		"chat.placeholder":                     "Ask us anything...",
+		"chat.title":                           "Chat",
+		"chat.send":                            "Send",
+		"chat.error":                           "Something went wrong, try again",
+		"chat.rate_limited":                    "Too many messages, slow down",
+
 		// footer
 		"link.dashboard": "dashboard",
 		"link.home":      "home",
@@ -399,6 +411,18 @@ var translations = map[string]map[string]string{
 		"placeholder.place_label":      "es. Primo appuntamento",
 		"placeholder.place_location":   "Cerca un luogo...",
 		"btn.add_place":                "Aggiungi luogo",
+
+		// impersonations
+		"dashboard.impersonations":             "Impersonazioni",
+		"dashboard.impersonations_description": "Definisci i personaggi che il chatbot può usare per rispondere",
+		"placeholder.impersonation_codename":   "es. Anna",
+		"placeholder.impersonation_profile":    "Descrivi come scrive questa persona...",
+		"btn.add_impersonation":                "Aggiungi impersonazione",
+		"chat.placeholder":                     "Chiedici qualcosa...",
+		"chat.title":                           "Chat",
+		"chat.send":                            "Invia",
+		"chat.error":                           "Qualcosa è andato storto, riprova",
+		"chat.rate_limited":                    "Troppi messaggi, rallenta",
 
 		// footer
 		"link.dashboard": "pannello",

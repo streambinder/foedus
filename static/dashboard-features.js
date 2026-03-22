@@ -278,4 +278,50 @@
   function escapeAttr(str) {
     return str.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   }
+
+  // ---------------------------------------------------------------
+  // impersonations management
+  // ---------------------------------------------------------------
+  var impersonationsContainer = document.getElementById("impersonations-container");
+  var addImpersonationBtn = document.getElementById("add-impersonation-btn");
+
+  if (impersonationsContainer && addImpersonationBtn) {
+    addImpersonationBtn.addEventListener("click", function () {
+      addImpersonationCard();
+      reindexImpersonations();
+    });
+
+    impersonationsContainer.addEventListener("click", function (e) {
+      if (e.target.classList.contains("impersonation-remove")) {
+        e.target.closest(".impersonation-card").remove();
+        reindexImpersonations();
+      }
+    });
+  }
+
+  function addImpersonationCard() {
+    var idx = impersonationsContainer.querySelectorAll(".impersonation-card").length;
+    var card = document.createElement("div");
+    card.className = "impersonation-card";
+    card.innerHTML =
+      '<div class="impersonation-card-header">' +
+        '<span class="impersonation-number">' + (idx + 1) + "</span>" +
+        '<button type="button" class="impersonation-remove outline secondary" aria-label="Remove">&times;</button>' +
+      "</div>" +
+      '<input type="text" name="impersonation_codename_' + idx + '" placeholder="e.g. Anna"/>' +
+      '<textarea name="impersonation_profile_' + idx + '" rows="3" placeholder="Describe how this person writes..."></textarea>';
+    impersonationsContainer.appendChild(card);
+  }
+
+  function reindexImpersonations() {
+    var cards = impersonationsContainer.querySelectorAll(".impersonation-card");
+    cards.forEach(function (card, idx) {
+      var num = card.querySelector(".impersonation-number");
+      if (num) num.textContent = idx + 1;
+      var codename = card.querySelector('input[type="text"]');
+      if (codename) codename.name = "impersonation_codename_" + idx;
+      var profile = card.querySelector("textarea");
+      if (profile) profile.name = "impersonation_profile_" + idx;
+    });
+  }
 })();
