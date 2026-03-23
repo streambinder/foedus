@@ -13,12 +13,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/streambinder/foedus/internal/database"
 	"github.com/gofiber/fiber/v2"
+	"github.com/streambinder/foedus/internal/database"
 )
 
 const (
-	chatRateLimit          = 10  // requests per minute per IP
+	chatRateLimit          = 10 // requests per minute per IP
 	chatMaxMessageLen      = 500
 	chatMaxHistoryInPrompt = 10
 	chatMaxHistoryInReq    = 20
@@ -160,6 +160,8 @@ func ChatStream(c *fiber.Ctx) error {
 			"- Bank account (IBAN): %s, holder: %s\n"+
 			"- Spotify playlists: %s\n"+
 			"- Places of our story: %s\n\n"+
+			"IDENTITY RULE: Never assume who you are talking to. If the conversation requires knowing who the user is (e.g. personalised answers, checking RSVPs, addressing someone by name), kindly and warmly ask who they are first before proceeding.\n\n"+
+			"SCOPE RULE: You only answer questions related to the wedding (date, location, logistics, couple, gifts, music, story, etc.). If someone asks about anything unrelated, politely decline and gently redirect the conversation back to the wedding.\n\n"+
 			"Reply in the same language the user writes in. Preferred language hint: %s.\n"+
 			"Keep replies warm, personal, and concise.",
 		persona.Codename, persona.Profile, persona.Codename,
@@ -256,7 +258,7 @@ func ChatStream(c *fiber.Ctx) error {
 
 // i18nLangFromAccept extracts a 2-char language code from Accept-Language header.
 func i18nLangFromAccept(header string) string {
-	for _, part := range strings.Split(header, ",") {
+	for part := range strings.SplitSeq(header, ",") {
 		tag := strings.TrimSpace(strings.SplitN(part, ";", 2)[0])
 		if len(tag) >= 2 {
 			return strings.ToLower(tag[:2])
