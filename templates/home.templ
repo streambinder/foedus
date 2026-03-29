@@ -248,68 +248,58 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 					<div class="registry-v2">
 						<h2>{ t("home.registry") }</h2>
 						<p class="registry-v2-subtitle">{ t("home.registry_description") }</p>
-						if len(registryItems) > 0 {
-							<div class="registry-v2-carousel">
-								for _, item := range registryItems {
-									<div class={ "gift-tile", templ.KV("gift-tile--gifted", remainingCents(item, claimedAmounts) <= 0) }>
-										if item.Image != "" {
-											<div class="gift-tile-image">
-												<img src={ item.Image } alt={ item.Name }/>
-												<span class="gift-tile-price">{ formatPrice(item.Price) }</span>
-												if remainingCents(item, claimedAmounts) <= 0 {
-													<span class="gift-tile-gifted-ribbon">{ t("badge.sold") }</span>
-												}
-											</div>
-										}
-										<div class="gift-tile-body">
-											<h3>{ item.Name }</h3>
-											if claimedAmounts[item.ID] > 0 || remainingCents(item, claimedAmounts) <= 0 {
-												<div class="gift-tile-progress">
-													<div class="gift-tile-progress-track">
-														<div class="gift-tile-progress-fill" style={ fmt.Sprintf("width:%d%%", claimedPercent(item, claimedAmounts)) }></div>
-													</div>
-													<span class="gift-tile-progress-label">
-														if remainingCents(item, claimedAmounts) <= 0 {
-															{ t("badge.sold") }
-														} else {
-															{ formatCents(remainingCents(item, claimedAmounts)) } { t("home.remaining") }
-														}
-													</span>
-												</div>
-											}
-											if remainingCents(item, claimedAmounts) > 0 {
-												<button
-													type="button"
-													class="gift-tile-btn"
-													data-item-id={ strconv.Itoa(item.ID) }
-													data-item-name={ item.Name }
-													data-item-price={ strconv.Itoa(item.Price * 100) }
-													data-item-remaining={ strconv.Itoa(remainingCents(item, claimedAmounts)) }
-												>{ t("btn.buy") }</button>
+						<div class="registry-v2-carousel">
+							for _, item := range registryItems {
+								<div class={ "gift-tile", templ.KV("gift-tile--gifted", remainingCents(item, claimedAmounts) <= 0) }>
+									if item.Image != "" {
+										<div class="gift-tile-image">
+											<img src={ item.Image } alt={ item.Name }/>
+											<span class="gift-tile-price">{ formatPrice(item.Price) }</span>
+											if remainingCents(item, claimedAmounts) <= 0 {
+												<span class="gift-tile-gifted-ribbon">{ t("badge.sold") }</span>
 											}
 										</div>
+									}
+									<div class="gift-tile-body">
+										<h3>{ item.Name }</h3>
+										if claimedAmounts[item.ID] > 0 || remainingCents(item, claimedAmounts) <= 0 {
+											<div class="gift-tile-progress">
+												<div class="gift-tile-progress-track">
+													<div class="gift-tile-progress-fill" style={ fmt.Sprintf("width:%d%%", claimedPercent(item, claimedAmounts)) }></div>
+												</div>
+												<span class="gift-tile-progress-label">
+													if remainingCents(item, claimedAmounts) <= 0 {
+														{ t("badge.sold") }
+													} else {
+														{ formatCents(remainingCents(item, claimedAmounts)) } { t("home.remaining") }
+													}
+												</span>
+											</div>
+										}
+										if remainingCents(item, claimedAmounts) > 0 {
+											<button
+												type="button"
+												class="gift-tile-btn"
+												data-item-id={ strconv.Itoa(item.ID) }
+												data-item-name={ item.Name }
+												data-item-price={ strconv.Itoa(item.Price * 100) }
+												data-item-remaining={ strconv.Itoa(remainingCents(item, claimedAmounts)) }
+											>{ t("btn.buy") }</button>
+										}
 									</div>
-								}
-							</div>
-						}
-						<!-- free gift card -->
-						<div class="free-gift-card">
-							<div class="free-gift-header">
-								<svg class="free-gift-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"/></svg>
-								<div>
-									<h3>{ t("home.generic_gift") }</h3>
-									<p>{ t("home.generic_gift_description") }</p>
 								</div>
-							</div>
-							<div class="free-gift-amounts">
-								<button type="button" class="free-gift-chip amount-btn" data-amount="5000">50 €</button>
-								<button type="button" class="free-gift-chip amount-btn" data-amount="10000">100 €</button>
-								<button type="button" class="free-gift-chip amount-btn" data-amount="20000">200 €</button>
-								<button type="button" class="free-gift-chip amount-btn" data-amount="50000">500 €</button>
-							</div>
-							<div class="free-gift-custom">
-								<input type="number" class="custom-amount-input" min="1" step="1" placeholder={ t("placeholder.custom_amount") }/>
-								<button type="button" class="gift-tile-btn generic-buy-btn" disabled>{ t("btn.buy") }</button>
+							}
+							<!-- free gift tile -->
+							<div class="gift-tile">
+								<div class="gift-tile-image">
+									<div class="free-gift-image-placeholder">
+										<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"/></svg>
+									</div>
+								</div>
+								<div class="gift-tile-body">
+									<h3>{ t("home.generic_gift") }</h3>
+									<button type="button" class="gift-tile-btn generic-buy-btn">{ t("btn.buy") }</button>
+								</div>
 							</div>
 						</div>
 					</div>
@@ -412,6 +402,19 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 		}
 		<script>
 		(function() {
+			// chrome clamps momentum scroll short of the last snap point — on scrollend,
+			// if we stopped within one section-height of the last section's top, snap to it
+			var sections = document.querySelectorAll('.vp-section');
+			var lastSection = sections[sections.length - 1];
+			if (lastSection) {
+				document.body.addEventListener('scrollend', function() {
+					var gap = lastSection.offsetTop - document.body.scrollTop;
+					if (gap > 0 && gap < lastSection.offsetHeight) {
+						lastSection.scrollIntoView({behavior: 'instant', block: 'start'});
+					}
+				});
+			}
+
 			// nav dots: highlight active section on scroll
 			var dots = document.querySelectorAll('.vp-dot');
 			var sections = document.querySelectorAll('.vp-section');
@@ -443,6 +446,14 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 			var transferModal = document.getElementById('transfer-modal');
 			var pctModal = document.getElementById('pct-modal');
 			if (!transferModal) return;
+
+			function closeModal(m) {
+				m.classList.add('is-closing');
+				m.addEventListener('animationend', function() {
+					m.style.display = 'none';
+					m.classList.remove('is-closing');
+				}, { once: true });
+			}
 
 			// copy buttons
 			document.querySelectorAll('.copy-btn').forEach(function(btn) {
@@ -512,54 +523,28 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 
 			// pct cancel
 			document.getElementById('pct-cancel').addEventListener('click', function() {
-				pctModal.style.display = 'none';
+				closeModal(pctModal);
 			});
 
 			// pct next -> open transfer modal
 			document.getElementById('pct-next').addEventListener('click', function() {
 				if (currentAmount <= 0) return;
-				pctModal.style.display = 'none';
+				closeModal(pctModal);
 				openTransferModal();
 			});
 
-			// generic gift card (free gift)
-			var freeCard = document.querySelector('.free-gift-card');
-			if (freeCard) {
-				var customInput = freeCard.querySelector('.custom-amount-input');
-				var genericBuyBtn = freeCard.querySelector('.generic-buy-btn');
-
-				freeCard.querySelectorAll('.amount-btn').forEach(function(btn) {
-					btn.addEventListener('click', function() {
-						freeCard.querySelectorAll('.amount-btn').forEach(function(b) { b.classList.remove('selected'); });
-						btn.classList.add('selected');
-						currentAmount = parseInt(btn.dataset.amount);
-						currentItemId = null;
-						customInput.value = '';
-						customInput.blur();
-						genericBuyBtn.disabled = false;
-					});
-				});
-
-				customInput.addEventListener('focus', function() {
-					freeCard.querySelectorAll('.amount-btn').forEach(function(b) { b.classList.remove('selected'); });
-					currentAmount = 0;
-					genericBuyBtn.disabled = true;
-				});
-				customInput.addEventListener('input', function() {
-					freeCard.querySelectorAll('.amount-btn').forEach(function(b) { b.classList.remove('selected'); });
-					var val = parseFloat(this.value);
-					if (val > 0) {
-						currentAmount = Math.round(val * 100);
-						currentItemId = null;
-						genericBuyBtn.disabled = false;
-					} else {
-						genericBuyBtn.disabled = true;
-					}
-				});
-
+			// generic gift tile — opens pct modal for free-form amount entry
+			var genericBuyBtn = document.querySelector('.generic-buy-btn');
+			if (genericBuyBtn) {
 				genericBuyBtn.addEventListener('click', function() {
-					if (currentAmount <= 0) return;
-					openTransferModal();
+					currentItemId = null;
+					currentAmount = 0;
+					document.getElementById('pct-item-name').textContent = genericBuyBtn.closest('.gift-tile').querySelector('h3').textContent;
+					document.getElementById('pct-item-price').textContent = '';
+					document.querySelectorAll('.pct-btn').forEach(function(pb) { pb.style.display = 'none'; });
+					document.getElementById('pct-custom').value = '';
+					document.getElementById('pct-next').disabled = true;
+					pctModal.style.display = '';
 				});
 			}
 
@@ -574,7 +559,7 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 
 			// transfer modal cancel
 			document.getElementById('modal-cancel').addEventListener('click', function() {
-				transferModal.style.display = 'none';
+				closeModal(transferModal);
 			});
 
 			// transfer modal confirm -> POST claim
@@ -587,7 +572,7 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 					body: JSON.stringify(body)
 				}).then(function(res) {
 					if (res.ok) {
-						transferModal.style.display = 'none';
+						closeModal(transferModal);
 						document.getElementById('thanks-modal').style.display = '';
 					} else {
 						res.json().then(function(data) { alert(data.error || 'Error'); });
@@ -606,7 +591,7 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 			// close modals on overlay click
 			[transferModal, pctModal].forEach(function(m) {
 				m.addEventListener('click', function(e) {
-					if (e.target === m) m.style.display = 'none';
+					if (e.target === m) closeModal(m);
 				});
 			});
 		})();
@@ -631,8 +616,5 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 			</div>
 			<script src="/static/chat.js"></script>
 		}
-		<footer>
-			<a href="/dashboard">{ t("link.dashboard") }</a>
-		</footer>
 	}
 }

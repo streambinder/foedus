@@ -147,22 +147,21 @@ main.container:not(:has(.vp-section)) {
 
 /* snap scrolling for vp-section pages */
 html:has(.vp-section) {
+  overflow: hidden;
+}
+
+html:has(.vp-section) body {
+  height: 100dvh;
+  overflow-y: scroll;
   scroll-snap-type: y mandatory;
 }
 
-/* on mobile, relax snap to proximity so users can still freely scroll */
-@media (max-width: 767px) {
-  html:has(.vp-section) {
-    scroll-snap-type: y proximity;
-  }
-}
-
 /* ---------------------------------------------------------------
-   viewport sections (invitation page)
+   viewport sections
    --------------------------------------------------------------- */
 .vp-section {
-  min-height: 100vh;
-  min-height: 100svh;
+  min-height: 100dvh;
+  margin: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -170,6 +169,7 @@ html:has(.vp-section) {
   padding: var(--sp-8) var(--sp-4);
   position: relative;
   scroll-snap-align: start;
+  scroll-snap-stop: always;
 }
 
 .vp-section-inner {
@@ -200,11 +200,6 @@ html:has(.vp-section) {
 
 .vp-registry {
   background: var(--ivory);
-  padding-bottom: calc(var(--sp-16) + env(safe-area-inset-bottom, 0));
-  /* allow registry to exceed viewport if many items */
-  min-height: 100vh;
-  min-height: 100svh;
-  height: auto;
 }
 
 .vp-hero .hero-kicker {
@@ -469,20 +464,6 @@ footer {
   padding-bottom: calc(var(--sp-4) + env(safe-area-inset-bottom, 0));
   text-align: center;
   font-size: var(--fs-xs);
-}
-
-/* when inside a vp-section page, footer is absolute at bottom of last section */
-main.container:has(.vp-section) > footer {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 5;
-}
-
-/* make the last vp-section the positioning context for footer */
-main.container:has(.vp-section) {
-  position: relative;
 }
 
 footer a {
@@ -1137,6 +1118,8 @@ a[href="/dashboard"]:not(footer a):hover {
   justify-content: center;
   padding: 0;
   padding-bottom: env(safe-area-inset-bottom, 0);
+  transition: opacity 0.2s ease, backdrop-filter 0.2s ease;
+  @starting-style { opacity: 0; }
 }
 
 .modal-box {
@@ -1150,6 +1133,24 @@ a[href="/dashboard"]:not(footer a):hover {
   max-height: 85vh;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s ease;
+  @starting-style { transform: translateY(24px); opacity: 0; }
+}
+
+.modal-overlay.is-closing {
+  animation: modal-overlay-out 0.2s ease forwards;
+}
+
+.modal-overlay.is-closing .modal-box {
+  animation: modal-box-out 0.22s cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+@keyframes modal-overlay-out {
+  to { opacity: 0; }
+}
+
+@keyframes modal-box-out {
+  to { transform: translateY(24px); opacity: 0; }
 }
 
 /* bottom sheet drag indicator */
@@ -1503,6 +1504,19 @@ a[href="/dashboard"]:not(footer a):hover {
 .gift-tile-btn:hover {
   background: var(--charcoal);
   transform: translateY(-1px);
+}
+
+/* ---------------------------------------------------------------
+   free gift tile placeholder image
+   --------------------------------------------------------------- */
+.free-gift-image-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--white);
+  color: var(--dusty-rose);
 }
 
 /* ---------------------------------------------------------------
@@ -2270,7 +2284,7 @@ td [role="switch"] { margin: 0; }
   .vp-dots {
     display: flex;
     position: fixed;
-    right: var(--sp-4);
+    right: 28px;
     top: 50%;
     transform: translateY(-50%);
     flex-direction: column;
@@ -2931,10 +2945,12 @@ td [role="switch"] { margin: 0; }
 @media (min-width: 768px) {
   /* shift chat clear of the nav dots column on the right */
   #chat-bubble {
+    bottom: 56px;
     right: 56px;
   }
 
   #chat-panel {
     right: 56px;
+    bottom: 120px;
   }
 }
