@@ -38,25 +38,25 @@ func placesJSON(places []models.Place) string {
 // nextSection computes the href for the down-arrow after venues
 func nextSectionAfterVenues(playlists []string, places []models.Place, bankConfigured bool) string {
 	if len(playlists) > 0 {
-		return "#sec-soundtrack"
+		return "#soundtrack"
 	}
 	if len(places) > 0 {
-		return "#sec-places"
+		return "#places"
 	}
 	if bankConfigured {
-		return "#sec-registry"
+		return "#registry"
 	}
 	return ""
 }
 
 func prevSectionBeforeRegistry(places []models.Place, playlists []string) string {
 	if len(places) > 0 {
-		return "#sec-places"
+		return "#places"
 	}
 	if len(playlists) > 0 {
-		return "#sec-soundtrack"
+		return "#soundtrack"
 	}
-	return "#sec-venues"
+	return "#venues"
 }
 
 // progress percentage (0-100) for a partially-claimed item
@@ -75,7 +75,7 @@ func claimedPercent(item models.RegistryItem, claimed map[int]int) int {
 templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem, claimedAmounts map[int]int, bankConfigured bool, chatEnabled bool, t i18n.T, lang string, ogMeta OGMeta) {
 	@Layout(settings.Spouse1Name + " & " + settings.Spouse2Name, lang, t, ogMeta) {
 		<!-- section 1: title -->
-		<section id="sec-title" class="vp-section vp-hero">
+		<section id="landing" class="vp-section vp-hero">
 			<div class="vp-section-inner">
 				<p class="hero-kicker">{ t("home.getting_married") }</p>
 				<h1>
@@ -85,13 +85,13 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 					<p class="muted">{ i18n.FormatDatetime(settings.CeremonyDatetime, lang) }</p>
 				}
 			</div>
-			<a href="#sec-venues" class="vp-arrow vp-arrow--down" aria-label={ t("home.ceremony") }>
+			<a href="#venues" class="vp-arrow vp-arrow--down" aria-label={ t("home.ceremony") }>
 				<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
 			</a>
 		</section>
 		<!-- section 2: ceremony & celebration -->
-		<section id="sec-venues" class="vp-section vp-venues">
-			<a href="#sec-title" class="vp-arrow vp-arrow--up" aria-label={ t("home.getting_married") }>
+		<section id="venues" class="vp-section vp-venues">
+			<a href="#landing" class="vp-arrow vp-arrow--up" aria-label={ t("home.getting_married") }>
 				<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
 			</a>
 			<div class="vp-section-inner">
@@ -162,8 +162,8 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 		</section>
 		<!-- section: soundtrack (spotify playlists) -->
 		if len(settings.SpotifyPlaylists) > 0 {
-			<section id="sec-soundtrack" class="vp-section vp-soundtrack">
-				<a href="#sec-venues" class="vp-arrow vp-arrow--up" aria-label={ t("home.ceremony") }>
+			<section id="soundtrack" class="vp-section vp-soundtrack">
+				<a href="#venues" class="vp-arrow vp-arrow--up" aria-label={ t("home.ceremony") }>
 					<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
 				</a>
 				<div class="vp-section-inner">
@@ -188,11 +188,11 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 					</div>
 				</div>
 				if len(settings.Places) > 0 {
-					<a href="#sec-places" class="vp-arrow vp-arrow--down">
+					<a href="#places" class="vp-arrow vp-arrow--down">
 						<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
 					</a>
 				} else if bankConfigured {
-					<a href="#sec-registry" class="vp-arrow vp-arrow--down">
+					<a href="#registry" class="vp-arrow vp-arrow--down">
 						<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
 					</a>
 				}
@@ -200,13 +200,13 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 		}
 		<!-- section: places -->
 		if len(settings.Places) > 0 {
-			<section id="sec-places" class="vp-section vp-places">
+			<section id="places" class="vp-section vp-places">
 				if len(settings.SpotifyPlaylists) > 0 {
-					<a href="#sec-soundtrack" class="vp-arrow vp-arrow--up">
+					<a href="#soundtrack" class="vp-arrow vp-arrow--up">
 						<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
 					</a>
 				} else {
-					<a href="#sec-venues" class="vp-arrow vp-arrow--up">
+					<a href="#venues" class="vp-arrow vp-arrow--up">
 						<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
 					</a>
 				}
@@ -232,7 +232,7 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 				</div>
 				<div id="places-data" style="display:none">{ placesJSON(settings.Places) }</div>
 				if bankConfigured {
-					<a href="#sec-registry" class="vp-arrow vp-arrow--down">
+					<a href="#registry" class="vp-arrow vp-arrow--down">
 						<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
 					</a>
 				}
@@ -240,7 +240,7 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 		}
 		<!-- section: registry / gifts -->
 		if bankConfigured {
-			<section id="sec-registry" class="vp-section vp-registry">
+			<section id="registry" class="vp-section vp-registry">
 				<a href={ templ.SafeURL(prevSectionBeforeRegistry(settings.Places, settings.SpotifyPlaylists)) } class="vp-arrow vp-arrow--up" aria-label={ t("home.ceremony") }>
 					<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
 				</a>
@@ -308,16 +308,16 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 		}
 		<!-- nav dots -->
 		<nav class="vp-dots" aria-label="Sections">
-			<a href="#sec-title" class="vp-dot active" aria-label={ settings.Spouse1Name + " & " + settings.Spouse2Name }></a>
-			<a href="#sec-venues" class="vp-dot" aria-label={ t("home.ceremony") }></a>
+			<a href="#landing" class="vp-dot active" aria-label={ settings.Spouse1Name + " & " + settings.Spouse2Name }></a>
+			<a href="#venues" class="vp-dot" aria-label={ t("home.ceremony") }></a>
 			if len(settings.SpotifyPlaylists) > 0 {
-				<a href="#sec-soundtrack" class="vp-dot" aria-label={ t("home.soundtrack") }></a>
+				<a href="#soundtrack" class="vp-dot" aria-label={ t("home.soundtrack") }></a>
 			}
 			if len(settings.Places) > 0 {
-				<a href="#sec-places" class="vp-dot" aria-label={ t("home.places") }></a>
+				<a href="#places" class="vp-dot" aria-label={ t("home.places") }></a>
 			}
 			if bankConfigured {
-				<a href="#sec-registry" class="vp-dot" aria-label={ t("home.registry") }></a>
+				<a href="#registry" class="vp-dot" aria-label={ t("home.registry") }></a>
 			}
 		</nav>
 		<!-- transfer modal -->
