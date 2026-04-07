@@ -402,19 +402,6 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 		}
 		<script>
 		(function() {
-			// chrome clamps momentum scroll short of the last snap point — on scrollend,
-			// if we stopped within one section-height of the last section's top, snap to it
-			var sections = document.querySelectorAll('.vp-section');
-			var lastSection = sections[sections.length - 1];
-			if (lastSection) {
-				document.body.addEventListener('scrollend', function() {
-					var gap = lastSection.offsetTop - document.body.scrollTop;
-					if (gap > 0 && gap < lastSection.offsetHeight) {
-						lastSection.scrollIntoView({behavior: 'instant', block: 'start'});
-					}
-				});
-			}
-
 			// nav dots: highlight active section on scroll
 			var dots = document.querySelectorAll('.vp-dot');
 			var sections = document.querySelectorAll('.vp-section');
