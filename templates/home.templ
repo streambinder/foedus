@@ -10,13 +10,12 @@ import (
 	"github.com/streambinder/foedus/internal/models"
 )
 
-// remaining cents for a registry item
-func remainingCents(item models.RegistryItem, claimed map[int]int) int {
-	return item.Price*100 - claimed[item.ID]
-}
-
-func formatCents(cents int) string {
-	return fmt.Sprintf("%.2f €", float64(cents)/100)
+func remainingAmount(item models.RegistryItem, claimed map[int]int) int {
+	remaining := item.Price - claimed[item.ID]
+	if remaining <= 0 {
+		return 0
+	}
+	return remaining
 }
 
 // extract spotify playlist ID from various URL formats
@@ -61,9 +60,12 @@ func prevSectionBeforeRegistry(places []models.Place, playlists []string) string
 
 // progress percentage (0-100) for a partially-claimed item
 func claimedPercent(item models.RegistryItem, claimed map[int]int) int {
-	total := item.Price * 100
+	total := item.Price
 	if total <= 0 {
 		return 0
+	}
+	if remainingAmount(item, claimed) == 0 {
+		return 100
 	}
 	pct := claimed[item.ID] * 100 / total
 	if pct > 100 {
@@ -250,40 +252,39 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 						<p class="registry-v2-subtitle">{ t("home.registry_description") }</p>
 						<div class="registry-v2-carousel">
 							for _, item := range registryItems {
-								<div class={ "gift-tile", templ.KV("gift-tile--gifted", remainingCents(item, claimedAmounts) <= 0) }>
+								<div class={ "gift-tile", templ.KV("gift-tile--gifted", remainingAmount(item, claimedAmounts) <= 0) }>
 									if item.Image != "" {
 										<div class="gift-tile-image">
 											<img src={ item.Image } alt={ item.Name }/>
 											<span class="gift-tile-price">{ formatPrice(item.Price) }</span>
-											if remainingCents(item, claimedAmounts) <= 0 {
+											if remainingAmount(item, claimedAmounts) <= 0 {
 												<span class="gift-tile-gifted-ribbon">{ t("badge.sold") }</span>
 											}
 										</div>
 									}
 									<div class="gift-tile-body">
 										<h3>{ item.Name }</h3>
-										if claimedAmounts[item.ID] > 0 || remainingCents(item, claimedAmounts) <= 0 {
+										if claimedAmounts[item.ID] > 0 || remainingAmount(item, claimedAmounts) <= 0 {
 											<div class="gift-tile-progress">
 												<div class="gift-tile-progress-track">
 													<div class="gift-tile-progress-fill" style={ fmt.Sprintf("width:%d%%", claimedPercent(item, claimedAmounts)) }></div>
 												</div>
 												<span class="gift-tile-progress-label">
-													if remainingCents(item, claimedAmounts) <= 0 {
+													if remainingAmount(item, claimedAmounts) <= 0 {
 														{ t("badge.sold") }
 													} else {
-														{ formatCents(remainingCents(item, claimedAmounts)) } { t("home.remaining") }
+														{ formatPrice(remainingAmount(item, claimedAmounts)) } { t("home.remaining") }
 													}
 												</span>
 											</div>
 										}
-										if remainingCents(item, claimedAmounts) > 0 {
+										if remainingAmount(item, claimedAmounts) > 0 {
 											<button
 												type="button"
 												class="gift-tile-btn"
 												data-item-id={ strconv.Itoa(item.ID) }
 												data-item-name={ item.Name }
-												data-item-price={ strconv.Itoa(item.Price * 100) }
-												data-item-remaining={ strconv.Itoa(remainingCents(item, claimedAmounts)) }
+												data-item-remaining={ strconv.Itoa(remainingAmount(item, claimedAmounts)) }
 											>{ t("btn.buy") }</button>
 										}
 									</div>
@@ -457,20 +458,26 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 				btn.addEventListener('click', function() {
 					currentItemId = parseInt(btn.dataset.itemId);
 					var remaining = parseInt(btn.dataset.itemRemaining);
-					var price = parseInt(btn.dataset.itemPrice);
 					document.getElementById('pct-item-name').textContent = btn.dataset.itemName;
-					document.getElementById('pct-item-price').textContent = (remaining / 100).toFixed(2) + ' €';
+					document.getElementById('pct-item-price').textContent = remaining + ' €';
 
-					// configure pct buttons: cap at remaining
+					// configure pct buttons: cut percentage amounts to the integer part only
 					document.querySelectorAll('.pct-btn').forEach(function(pb) {
 						var pct = parseInt(pb.dataset.pct);
-						var amt = Math.round(remaining * pct / 100);
-						pb.dataset.amount = amt;
+						var amt = Math.floor(remaining * pct / 100);
+						if (amt < 1 || amt > remaining) {
+							pb.style.display = 'none';
+							pb.classList.remove('selected');
+							delete pb.dataset.amount;
+							return;
+						}
+						pb.dataset.amount = String(amt);
 						pb.style.display = '';
 					});
 
 					document.getElementById('pct-custom').value = '';
-					document.getElementById('pct-custom').max = (remaining / 100).toFixed(0);
+					document.getElementById('pct-custom').max = String(remaining);
+					document.getElementById('pct-custom').step = '1';
 					document.getElementById('pct-next').disabled = true;
 					currentAmount = 0;
 					pctModal.style.display = '';
@@ -498,9 +505,10 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 			});
 			pctCustom.addEventListener('input', function() {
 				document.querySelectorAll('.pct-btn').forEach(function(b) { b.classList.remove('selected'); });
-				var val = parseFloat(this.value);
-				if (val > 0) {
-					currentAmount = Math.round(val * 100);
+				var max = currentItemId !== null ? parseInt(this.max) : 0;
+				var val = Number(this.value);
+				if (Number.isInteger(val) && val > 0 && (currentItemId === null || val <= max)) {
+					currentAmount = val;
 					document.getElementById('pct-next').disabled = false;
 				} else {
 					currentAmount = 0;
@@ -530,6 +538,8 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 					document.getElementById('pct-item-price').textContent = '';
 					document.querySelectorAll('.pct-btn').forEach(function(pb) { pb.style.display = 'none'; });
 					document.getElementById('pct-custom').value = '';
+					document.getElementById('pct-custom').step = '1';
+					document.getElementById('pct-custom').removeAttribute('max');
 					document.getElementById('pct-next').disabled = true;
 					pctModal.style.display = '';
 				});
@@ -539,7 +549,7 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 				var reason = 'Regalo di nozze';
 				if (spouse1 && spouse2) reason += ' ' + spouse1 + ' e ' + spouse2;
 				document.getElementById('modal-reason').textContent = reason;
-				document.getElementById('modal-amount').textContent = (currentAmount / 100).toFixed(2) + ' €';
+				document.getElementById('modal-amount').textContent = currentAmount + ' €';
 				document.getElementById('modal-donor').value = '';
 				transferModal.style.display = '';
 			}

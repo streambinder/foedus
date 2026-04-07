@@ -77,4 +77,17 @@ func migrate() {
 			log.Fatalf("migration failed: %v", err)
 		}
 	}
+
+	var version int
+	if err := DB.QueryRow(`PRAGMA user_version`).Scan(&version); err != nil {
+		log.Fatalf("failed to read schema version: %v", err)
+	}
+	if version < 1 {
+		if _, err := DB.Exec(`UPDATE gifts SET amount = CAST(amount / 100 AS INTEGER)`); err != nil {
+			log.Fatalf("failed to migrate gift amounts to integer euros: %v", err)
+		}
+		if _, err := DB.Exec(`PRAGMA user_version = 1`); err != nil {
+			log.Fatalf("failed to persist schema version: %v", err)
+		}
+	}
 }

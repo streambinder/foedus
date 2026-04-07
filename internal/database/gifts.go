@@ -28,7 +28,7 @@ func GetAllGifts() ([]models.Gift, error) {
 	return gifts, nil
 }
 
-// GetClaimedAmountsByItem returns a map of registry_item_id -> total claimed cents.
+// GetClaimedAmountsByItem returns a map of registry_item_id -> total claimed amount.
 func GetClaimedAmountsByItem() (map[int]int, error) {
 	rows, err := DB.Query(`SELECT registry_item_id, SUM(amount) FROM gifts WHERE registry_item_id IS NOT NULL GROUP BY registry_item_id`)
 	if err != nil {

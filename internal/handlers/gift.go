@@ -3,13 +3,13 @@ package handlers
 import (
 	"strings"
 
-	"github.com/streambinder/foedus/internal/database"
 	"github.com/gofiber/fiber/v2"
+	"github.com/streambinder/foedus/internal/database"
 )
 
 type claimRequest struct {
 	RegistryItemID *int   `json:"registry_item_id"`
-	Amount         int    `json:"amount"` // cents
+	Amount         int    `json:"amount"` // whole currency units (e.g. euros)
 	Donor          string `json:"donor"`
 }
 
@@ -40,7 +40,7 @@ func ClaimGift(c *fiber.Ctx) error {
 		if err != nil {
 			return c.Status(500).JSON(fiber.Map{"error": "internal error"})
 		}
-		remaining := item.Price*100 - claimed[item.ID]
+		remaining := item.Price - claimed[item.ID]
 		if req.Amount > remaining {
 			return c.Status(400).JSON(fiber.Map{"error": "amount exceeds remaining"})
 		}

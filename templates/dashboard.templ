@@ -34,7 +34,7 @@ func paginationURL(page int, search string) string {
 }
 
 func formatGiftAmount(amount int) string {
-	return fmt.Sprintf("%.2f €", float64(amount)/100)
+	return fmt.Sprintf("%d €", amount)
 }
 
 func formatPrice(price int) string {
@@ -483,7 +483,7 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 				<div class="grid">
 					<input type="file" id="registry-file" accept="image/*"/>
 					<input type="text" name="name" placeholder={ t("placeholder.item_name") } required/>
-					<input type="number" name="price" min="1" placeholder={ t("placeholder.item_price") } required/>
+					<input type="number" name="price" min="1" step="1" placeholder={ t("placeholder.item_price") } required/>
 					<button type="submit">{ t("btn.add_item") }</button>
 				</div>
 			</form>
