@@ -35,209 +35,282 @@ func invitationAnswered(inv models.Invitation) bool {
 
 templ Invitation(inv models.Invitation, settings models.WeddingSettings, polls []models.Poll, alreadyViewed bool, t i18n.T, lang string, ogMeta OGMeta) {
 	@Layout(pageTitle(t("invitation.title"), settings.Spouse1Name, settings.Spouse2Name), lang, t, ogMeta) {
-		if !alreadyViewed {
-			<div id="envelope-overlay">
-				<div class="envelope">
-					<div class="envelope-back"></div>
-					<div class="envelope-flap"></div>
-					<div class="envelope-letter">
-						<p>{ settings.Spouse1Name } <span class="amp">&amp;</span> { settings.Spouse2Name }</p>
-					</div>
-					<div class="envelope-front"></div>
-				</div>
-			</div>
-		}
-		<div id="invitation-content" class={ templ.KV("hidden-until-opened", !alreadyViewed) }>
-		<header class="hero">
-			<p><small>{ t("home.getting_married") }</small></p>
-			<h1>
-				{ settings.Spouse1Name } <span class="amp">&amp;</span> { settings.Spouse2Name }
-			</h1>
-			if settings.CeremonyDatetime != "" {
-				<p class="muted">{ i18n.FormatDatetime(settings.CeremonyDatetime, lang) }</p>
-			}
-		</header>
-		<hr/>
-		if settings.CeremonyAddress != "" || settings.CeremonyLocation != "" {
-			<section class="venue">
-				<h2>{ t("home.ceremony") }</h2>
-				<a href={ templ.SafeURL(mapsURL(settings.CeremonyAddress, settings.CeremonyLocation)) } target="_blank" class="venue-link">
-					if settings.CeremonyImage != "" {
-						<div class="venue-image-wrapper">
-							<img class="venue-image" src={ settings.CeremonyImage } alt={ t("home.ceremony") }/>
-							<div class="venue-overlay">
-								if settings.CeremonyAddress != "" {
-									<strong>{ settings.CeremonyAddress }</strong>
-								}
-								if settings.CeremonyLocation != "" {
-									<span>{ settings.CeremonyLocation }</span>
-								}
-							</div>
-						</div>
-					} else {
-						if settings.CeremonyAddress != "" {
-							<p><strong>{ settings.CeremonyAddress }</strong></p>
+		<div id="envelope-overlay" class={ templ.KV("is-complete", alreadyViewed) }>
+			<div id="envelope-open-button" role="button" tabindex="0" aria-label={ t("invitation.title") }></div>
+			<div class="envelope">
+				<div class="envelope-shadow"></div>
+				<div class="envelope-back"></div>
+				<div id="invitation-content" class={ templ.KV("invitation-content--staged", !alreadyViewed) }>
+				<div class="invitation-page">
+					<header class="hero">
+						<p><small>{ t("home.getting_married") }</small></p>
+						<h1>
+							{ settings.Spouse1Name } <span class="amp">&amp;</span> { settings.Spouse2Name }
+						</h1>
+						if settings.CeremonyDatetime != "" {
+							<p class="muted">{ i18n.FormatDatetime(settings.CeremonyDatetime, lang) }</p>
 						}
-						if settings.CeremonyLocation != "" {
-							<p><small>{ settings.CeremonyLocation }</small></p>
-						}
-					}
-				</a>
-			</section>
-		}
-		if settings.ReceptionAddress != "" || settings.ReceptionLocation != "" {
-			<section class="venue">
-				<h2>{ t("home.reception") }</h2>
-				<a href={ templ.SafeURL(mapsURL(settings.ReceptionAddress, settings.ReceptionLocation)) } target="_blank" class="venue-link">
-					if settings.ReceptionImage != "" {
-						<div class="venue-image-wrapper">
-							<img class="venue-image" src={ settings.ReceptionImage } alt={ t("home.reception") }/>
-							<div class="venue-overlay">
-								if settings.ReceptionAddress != "" {
-									<strong>{ settings.ReceptionAddress }</strong>
-								}
-								if settings.ReceptionLocation != "" {
-									<span>{ settings.ReceptionLocation }</span>
-								}
-							</div>
-						</div>
-					} else {
-						if settings.ReceptionAddress != "" {
-							<p><strong>{ settings.ReceptionAddress }</strong></p>
-						}
-						if settings.ReceptionLocation != "" {
-							<p><small>{ settings.ReceptionLocation }</small></p>
-						}
-					}
-				</a>
-			</section>
-		}
-		<hr/>
-		<article class="rsvp-card">
-			<h2>{ t("invitation.rsvp") }</h2>
-			if invitationAnswered(inv) {
-				<div id="rsvp-locked">
-					<p class="rsvp-subtitle rsvp-answered-notice">{ t("invitation.already_answered") }</p>
-					<button type="button" id="rsvp-unlock-btn" class="secondary outline">{ t("invitation.change_answer") }</button>
-				</div>
-			} else {
-				<p class="rsvp-subtitle">{ t("invitation.rsvp_description") }</p>
-			}
-			<form method="POST" action={ templ.SafeURL("/" + inv.Code + "/rsvp") } id="rsvp-form" class={ templ.KV("rsvp-form-locked", invitationAnswered(inv)) }>
-				for _, g := range inv.Guests {
-					<div class="rsvp-guest">
-						<span class="rsvp-name">{ g.FirstName } { g.LastName }</span>
-						<div class="rsvp-fields">
-							<fieldset class="rsvp-radio-group">
-								<legend>{ t("th.ceremony") }</legend>
-								<label>
-									if g.ConfirmedCeremony != nil && *g.ConfirmedCeremony {
-										<input type="radio" name={ "ceremony_" + strconv.Itoa(g.ID) } value="1" checked/>
-									} else {
-										<input type="radio" name={ "ceremony_" + strconv.Itoa(g.ID) } value="1"/>
-									}
-									{ t("rsvp.yes") }
-								</label>
-								<label>
-									if g.ConfirmedCeremony != nil && !*g.ConfirmedCeremony {
-										<input type="radio" name={ "ceremony_" + strconv.Itoa(g.ID) } value="0" checked/>
-									} else {
-										<input type="radio" name={ "ceremony_" + strconv.Itoa(g.ID) } value="0"/>
-									}
-									{ t("rsvp.no") }
-								</label>
-							</fieldset>
-							<fieldset class="rsvp-radio-group">
-								<legend>{ t("th.reception") }</legend>
-								<label>
-									if g.ConfirmedReception != nil && *g.ConfirmedReception {
-										<input type="radio" name={ "reception_" + strconv.Itoa(g.ID) } value="1" checked/>
-									} else {
-										<input type="radio" name={ "reception_" + strconv.Itoa(g.ID) } value="1"/>
-									}
-									{ t("rsvp.yes") }
-								</label>
-								<label>
-									if g.ConfirmedReception != nil && !*g.ConfirmedReception {
-										<input type="radio" name={ "reception_" + strconv.Itoa(g.ID) } value="0" checked/>
-									} else {
-										<input type="radio" name={ "reception_" + strconv.Itoa(g.ID) } value="0"/>
-									}
-									{ t("rsvp.no") }
-								</label>
-							</fieldset>
-						</div>
-						if len(polls) > 0 {
-							<div class="rsvp-polls">
-								for _, p := range polls {
-									<div class="rsvp-poll-item">
-										<div class="rsvp-poll-header">
-											<label class="rsvp-poll-label" for={ "poll_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }>
-												{ p.Question }
-											</label>
-											if guestAnsweredYes(g, p.ID) {
-												<input
-													type="checkbox"
-													role="switch"
-													id={ "poll_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }
-													name={ "poll_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }
-													value="1"
-													checked
-													data-poll-toggle="true"
-													data-notes-target={ "poll_notes_wrap_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }
-													data-notes-input={ "poll_notes_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }/>
-											} else {
-												<input
-													type="checkbox"
-													role="switch"
-													id={ "poll_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }
-													name={ "poll_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }
-													value="1"
-													data-poll-toggle="true"
-													data-notes-target={ "poll_notes_wrap_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }
-													data-notes-input={ "poll_notes_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }/>
+					</header>
+					if settings.CeremonyAddress != "" || settings.CeremonyLocation != "" {
+						<section class="venue venue-ceremony">
+							<a href={ templ.SafeURL(mapsURL(settings.CeremonyAddress, settings.CeremonyLocation)) } target="_blank" class="venue-link">
+								if settings.CeremonyImage != "" {
+									<div class="venue-image-wrapper">
+										<img class="venue-image" src={ settings.CeremonyImage } alt={ t("home.ceremony") }/>
+										<div class="venue-overlay venue-overlay-top">
+											<div class="venue-overlay-badge">
+												<span class="venue-overlay-icon" aria-hidden="true"></span>
+												<strong>{ t("home.ceremony") }</strong>
+											</div>
+										</div>
+										<div class="venue-overlay venue-overlay-bottom">
+											if settings.CeremonyAddress != "" {
+												<strong>{ settings.CeremonyAddress }</strong>
+											}
+											if settings.CeremonyLocation != "" {
+												<div class="venue-address-line">
+													<span class="venue-address-icon" aria-hidden="true"></span>
+													<span>{ settings.CeremonyLocation }</span>
+												</div>
 											}
 										</div>
-										<div
-											class="rsvp-poll-notes"
-											id={ "poll_notes_wrap_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }
-											hidden?={ !guestAnsweredYes(g, p.ID) }>
-											<textarea
-												name={ "poll_notes_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }
-												id={ "poll_notes_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }
-												placeholder={ t("placeholder.poll_notes") }
-												aria-label={ t("invitation.poll_notes") }
-												disabled?={ !guestAnsweredYes(g, p.ID) }>{ guestPollNotes(g, p.ID) }</textarea>
+									</div>
+								} else {
+									<p class="venue-inline-title">{ t("home.ceremony") }</p>
+									if settings.CeremonyAddress != "" {
+										<p><strong>{ settings.CeremonyAddress }</strong></p>
+									}
+									if settings.CeremonyLocation != "" {
+										<p><small>{ settings.CeremonyLocation }</small></p>
+									}
+								}
+							</a>
+						</section>
+					}
+					if settings.ReceptionAddress != "" || settings.ReceptionLocation != "" {
+						<section class="venue venue-reception">
+							<a href={ templ.SafeURL(mapsURL(settings.ReceptionAddress, settings.ReceptionLocation)) } target="_blank" class="venue-link">
+								if settings.ReceptionImage != "" {
+									<div class="venue-image-wrapper">
+										<img class="venue-image" src={ settings.ReceptionImage } alt={ t("home.reception") }/>
+										<div class="venue-overlay venue-overlay-top">
+											<div class="venue-overlay-badge">
+												<span class="venue-overlay-icon" aria-hidden="true"></span>
+												<strong>{ t("home.reception") }</strong>
+											</div>
+										</div>
+										<div class="venue-overlay venue-overlay-bottom">
+											if settings.ReceptionAddress != "" {
+												<strong>{ settings.ReceptionAddress }</strong>
+											}
+											if settings.ReceptionLocation != "" {
+												<div class="venue-address-line">
+													<span class="venue-address-icon" aria-hidden="true"></span>
+													<span>{ settings.ReceptionLocation }</span>
+												</div>
+											}
 										</div>
 									</div>
+								} else {
+									<p class="venue-inline-title">{ t("home.reception") }</p>
+									if settings.ReceptionAddress != "" {
+										<p><strong>{ settings.ReceptionAddress }</strong></p>
+									}
+									if settings.ReceptionLocation != "" {
+										<p><small>{ settings.ReceptionLocation }</small></p>
+									}
 								}
+							</a>
+						</section>
+					}
+					<article class="rsvp-card">
+						<h2>{ t("invitation.rsvp") }</h2>
+						if invitationAnswered(inv) {
+							<div id="rsvp-locked">
+								<p class="rsvp-subtitle rsvp-answered-notice">{ t("invitation.already_answered") }</p>
+								<button type="button" id="rsvp-unlock-btn" class="secondary outline">{ t("invitation.change_answer") }</button>
 							</div>
+						} else {
+							<p class="rsvp-subtitle">{ t("invitation.rsvp_description") }</p>
 						}
+						<form method="POST" action={ templ.SafeURL("/" + inv.Code + "/rsvp") } id="rsvp-form" class={ templ.KV("rsvp-form-locked", invitationAnswered(inv)) }>
+							for _, g := range inv.Guests {
+								<div class="rsvp-guest">
+									<span class="rsvp-name">{ g.FirstName } { g.LastName }</span>
+									<div class="rsvp-fields">
+										<fieldset class="rsvp-radio-group">
+											<legend>{ t("th.ceremony") }</legend>
+											<div class="rsvp-radio-options">
+												<label>
+													if g.ConfirmedCeremony != nil && *g.ConfirmedCeremony {
+														<input type="radio" name={ "ceremony_" + strconv.Itoa(g.ID) } value="1" checked/>
+													} else {
+														<input type="radio" name={ "ceremony_" + strconv.Itoa(g.ID) } value="1"/>
+													}
+													{ t("rsvp.yes") }
+												</label>
+												<label>
+													if g.ConfirmedCeremony != nil && !*g.ConfirmedCeremony {
+														<input type="radio" name={ "ceremony_" + strconv.Itoa(g.ID) } value="0" checked/>
+													} else {
+														<input type="radio" name={ "ceremony_" + strconv.Itoa(g.ID) } value="0"/>
+													}
+													{ t("rsvp.no") }
+												</label>
+											</div>
+										</fieldset>
+										<fieldset class="rsvp-radio-group">
+											<legend>{ t("th.reception") }</legend>
+											<div class="rsvp-radio-options">
+												<label>
+													if g.ConfirmedReception != nil && *g.ConfirmedReception {
+														<input type="radio" name={ "reception_" + strconv.Itoa(g.ID) } value="1" checked/>
+													} else {
+														<input type="radio" name={ "reception_" + strconv.Itoa(g.ID) } value="1"/>
+													}
+													{ t("rsvp.yes") }
+												</label>
+												<label>
+													if g.ConfirmedReception != nil && !*g.ConfirmedReception {
+														<input type="radio" name={ "reception_" + strconv.Itoa(g.ID) } value="0" checked/>
+													} else {
+														<input type="radio" name={ "reception_" + strconv.Itoa(g.ID) } value="0"/>
+													}
+													{ t("rsvp.no") }
+												</label>
+											</div>
+										</fieldset>
+									</div>
+									if len(polls) > 0 {
+										<div class="rsvp-polls">
+											for _, p := range polls {
+												<div class="rsvp-poll-item">
+													<div class="rsvp-poll-header">
+														<label class="rsvp-poll-label" for={ "poll_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }>
+															{ p.Question }
+														</label>
+														if guestAnsweredYes(g, p.ID) {
+															<input
+																type="checkbox"
+																role="switch"
+																id={ "poll_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }
+																name={ "poll_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }
+																value="1"
+																checked
+																data-poll-toggle="true"
+																data-notes-target={ "poll_notes_wrap_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }
+																data-notes-input={ "poll_notes_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }/>
+														} else {
+															<input
+																type="checkbox"
+																role="switch"
+																id={ "poll_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }
+																name={ "poll_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }
+																value="1"
+																data-poll-toggle="true"
+																data-notes-target={ "poll_notes_wrap_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }
+																data-notes-input={ "poll_notes_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }/>
+														}
+													</div>
+													<div
+														class="rsvp-poll-notes"
+														id={ "poll_notes_wrap_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }
+														hidden?={ !guestAnsweredYes(g, p.ID) }>
+														<textarea
+															name={ "poll_notes_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }
+															id={ "poll_notes_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }
+															placeholder={ t("placeholder.poll_notes") }
+															aria-label={ t("invitation.poll_notes") }
+															disabled?={ !guestAnsweredYes(g, p.ID) }>{ guestPollNotes(g, p.ID) }</textarea>
+													</div>
+												</div>
+											}
+										</div>
+									}
+								</div>
+							}
+							<button type="submit">{ t("invitation.confirm") }</button>
+						</form>
+					</article>
+					<div class="invitation-replay">
+						<button type="button" id="replay-invitation-animation" class="secondary outline">{ t("invitation.close_envelope") }</button>
 					</div>
-				}
-				<button type="submit">{ t("invitation.confirm") }</button>
-			</form>
-		</article>
+				</div>
+				</div>
+				<div class="envelope-flap envelope-flap-top"></div>
+				<div class="envelope-flap envelope-flap-right"></div>
+				<div class="envelope-flap envelope-flap-bottom"></div>
+				<div class="envelope-flap envelope-flap-left"></div>
+			</div>
 		</div>
-		if !alreadyViewed {
-			<script>
-				(function() {
-					var overlay = document.getElementById('envelope-overlay');
-					var content = document.getElementById('invitation-content');
-					var code = window.location.pathname.replace('/', '');
-					overlay.addEventListener('click', function() {
-						if (overlay.classList.contains('opening')) return;
-						overlay.classList.add('opening');
-						// after animation completes, reveal content and mark viewed
-						setTimeout(function() {
-							overlay.style.display = 'none';
-							content.classList.remove('hidden-until-opened');
-							fetch('/' + code + '/viewed', { method: 'POST' });
-						}, 1800);
+		<script>
+			(function() {
+				var overlay = document.getElementById('envelope-overlay');
+				var content = document.getElementById('invitation-content');
+				var openButton = document.getElementById('envelope-open-button');
+				var replayButton = document.getElementById('replay-invitation-animation');
+				var code = window.location.pathname.replace('/', '');
+				if (!overlay || !content || !openButton || !replayButton) return;
+				var shouldMarkViewed = !overlay.classList.contains('is-complete');
+				if (shouldMarkViewed) {
+					document.body.classList.add('invitation-opening');
+				}
+
+				function setInitialAnimationState() {
+					overlay.classList.remove('is-complete', 'opening');
+					content.classList.add('invitation-content--staged');
+					content.classList.remove('is-opening');
+					document.body.classList.add('invitation-opening');
+				}
+
+				function finishAnimation(markViewed) {
+					overlay.classList.add('is-complete');
+					overlay.classList.remove('opening');
+					content.classList.remove('invitation-content--staged', 'is-opening');
+					document.body.classList.remove('invitation-opening');
+					if (markViewed) {
+						fetch('/' + code + '/viewed', { method: 'POST' });
+					}
+				}
+
+				function startOpening(markViewed) {
+					if (overlay.classList.contains('opening')) return;
+					overlay.classList.remove('is-complete');
+					overlay.classList.add('opening');
+					window.requestAnimationFrame(function() {
+						content.classList.add('is-opening');
 					});
-				})();
-			</script>
-		}
+					window.setTimeout(function() {
+						finishAnimation(markViewed);
+					}, 2800);
+				}
+
+				function resetAndReplay() {
+					window.scrollTo(0, 0);
+					content.classList.add('is-resetting');
+					setInitialAnimationState();
+					void overlay.offsetWidth;
+					void content.offsetWidth;
+					content.classList.remove('is-resetting');
+				}
+
+				openButton.addEventListener('click', function() {
+					startOpening(shouldMarkViewed);
+					shouldMarkViewed = false;
+				});
+
+				openButton.addEventListener('keydown', function(event) {
+					if (event.key !== 'Enter' && event.key !== ' ') return;
+					event.preventDefault();
+					startOpening(shouldMarkViewed);
+					shouldMarkViewed = false;
+				});
+
+				replayButton.addEventListener('click', function() {
+					resetAndReplay();
+				});
+			})();
+		</script>
 		if invitationAnswered(inv) {
 			<script>
 				(function() {

@@ -190,6 +190,8 @@ var translations = map[string]map[string]string{
 		"invitation.confirm":          "Send Confirmation",
 		"invitation.already_answered": "You have already sent your confirmation.",
 		"invitation.change_answer":    "Change my answer",
+		"invitation.replay_animation": "Replay envelope animation",
+		"invitation.close_envelope":   "close envelope",
 		"invitation.poll_notes":       "Notes",
 		"placeholder.poll_notes":      "Add a note",
 
@@ -409,6 +411,8 @@ var translations = map[string]map[string]string{
 		"invitation.confirm":          "Invio conferma",
 		"invitation.already_answered": "Avete già inviato la vostra conferma.",
 		"invitation.change_answer":    "Modifica risposta",
+		"invitation.replay_animation": "Rivedi animazione busta",
+		"invitation.close_envelope":   "chiudi busta",
 		"invitation.poll_notes":       "Note",
 		"placeholder.poll_notes":      "Aggiungi una nota",
 
@@ -475,7 +479,7 @@ var HomepageKeys = []string{
 	"home.registry", "home.registry_description",
 	"home.generic_gift", "home.generic_gift_description", "home.remaining",
 	"invitation.title", "invitation.rsvp", "invitation.rsvp_description",
-	"invitation.confirm", "invitation.already_answered", "invitation.change_answer",
+	"invitation.confirm", "invitation.already_answered", "invitation.change_answer", "invitation.replay_animation", "invitation.close_envelope",
 	"gift.thank_you", "gift.thanks_message",
 	"badge.sold",
 	"btn.buy", "btn.copy", "btn.copied", "btn.cancel", "btn.confirm", "btn.close", "btn.add_to_calendar",
