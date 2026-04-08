@@ -20,7 +20,7 @@ import (
 const (
 	chatRateLimit          = 10 // requests per minute per IP
 	chatMaxMessageLen      = 500
-	chatMaxHistoryInPrompt = 10
+	chatMaxHistoryInPrompt = 20
 	chatMaxHistoryInReq    = 20
 	chatMaxReplyTokens     = 300
 )
@@ -169,7 +169,8 @@ func ChatStream(c *fiber.Ctx) error {
 			"- Spotify playlists: %s\n"+
 			"- Places of our story: %s\n\n"+
 			"- Accommodation suggestions: %s\n\n"+
-			"IDENTITY RULE: Never assume who you are talking to. If the conversation requires knowing who the user is (e.g. personalised answers, checking RSVPs, addressing someone by name), kindly and warmly ask who they are first before proceeding.\n\n"+
+			"MEMORY RULE: The conversation history below is your memory. You must read it before replying. Do not ask the user to repeat information that is already present in earlier messages.\n\n"+
+			"IDENTITY RULE: Never assume who you are talking to, but if the user already identified themselves anywhere in the conversation history, treat that identity as known and do not ask again. Only ask who they are when the conversation requires their identity and it is genuinely missing or ambiguous in the chat history.\n\n"+
 			"SCOPE RULE: You only answer questions related to the wedding (date, location, logistics, couple, gifts, music, story, etc.). If someone asks about anything unrelated, politely decline and gently redirect the conversation back to the wedding.\n\n"+
 			"Reply in the same language the user writes in. Preferred language hint: %s.\n"+
 			"Keep replies warm, personal, and concise.",
