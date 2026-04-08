@@ -190,6 +190,8 @@ var translations = map[string]map[string]string{
 		"invitation.confirm":          "Send Confirmation",
 		"invitation.already_answered": "You have already sent your confirmation.",
 		"invitation.change_answer":    "Change my answer",
+		"invitation.poll_notes":       "Notes",
+		"placeholder.poll_notes":      "Add a note",
 
 		// setup guard
 		"setup.not_ready":       "This wedding hasn't been set up yet.",
@@ -407,6 +409,8 @@ var translations = map[string]map[string]string{
 		"invitation.confirm":          "Invio conferma",
 		"invitation.already_answered": "Avete già inviato la vostra conferma.",
 		"invitation.change_answer":    "Modifica risposta",
+		"invitation.poll_notes":       "Note",
+		"placeholder.poll_notes":      "Aggiungi una nota",
 
 		// setup guard
 		"setup.not_ready":       "Questo matrimonio non è ancora stato configurato.",

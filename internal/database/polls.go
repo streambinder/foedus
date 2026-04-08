@@ -90,7 +90,7 @@ func GetAllPolls() ([]models.Poll, error) {
 	return polls, nil
 }
 
-func SavePollAnswers(guestID int, answers map[int]bool) error {
+func SavePollAnswers(guestID int, answers map[int]models.PollAnswer) error {
 	if len(answers) == 0 {
 		return nil
 	}
@@ -99,15 +99,15 @@ func SavePollAnswers(guestID int, answers map[int]bool) error {
 	var placeholders []string
 	var args []any
 	for pollID, answer := range answers {
-		placeholders = append(placeholders, "(?, ?, ?)")
+		placeholders = append(placeholders, "(?, ?, ?, ?)")
 		answerInt := 0
-		if answer {
+		if answer.Answer {
 			answerInt = 1
 		}
-		args = append(args, pollID, guestID, answerInt)
+		args = append(args, pollID, guestID, answerInt, answer.Notes)
 	}
 	_, err := DB.Exec(
-		fmt.Sprintf(`INSERT OR REPLACE INTO poll_answers (poll_id, guest_id, answer) VALUES %s`, strings.Join(placeholders, ",")),
+		fmt.Sprintf(`INSERT OR REPLACE INTO poll_answers (poll_id, guest_id, answer, notes) VALUES %s`, strings.Join(placeholders, ",")),
 		args...,
 	)
 	return err
@@ -126,7 +126,7 @@ func GetPollAnswersForGuests(guestIDs []int) (map[int][]models.PollAnswer, error
 	}
 
 	rows, err := DB.Query(
-		fmt.Sprintf(`SELECT guest_id, poll_id, answer FROM poll_answers WHERE guest_id IN (%s)`, strings.Join(placeholders, ",")),
+		fmt.Sprintf(`SELECT guest_id, poll_id, answer, notes FROM poll_answers WHERE guest_id IN (%s)`, strings.Join(placeholders, ",")),
 		args...,
 	)
 	if err != nil {
@@ -137,10 +137,11 @@ func GetPollAnswersForGuests(guestIDs []int) (map[int][]models.PollAnswer, error
 	result := make(map[int][]models.PollAnswer)
 	for rows.Next() {
 		var guestID, pollID, answer int
-		if err := rows.Scan(&guestID, &pollID, &answer); err != nil {
+		var notes string
+		if err := rows.Scan(&guestID, &pollID, &answer, &notes); err != nil {
 			return nil, err
 		}
-		result[guestID] = append(result[guestID], models.PollAnswer{PollID: pollID, Answer: answer == 1})
+		result[guestID] = append(result[guestID], models.PollAnswer{PollID: pollID, Answer: answer == 1, Notes: notes})
 	}
 	return result, nil
 }

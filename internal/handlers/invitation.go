@@ -7,6 +7,7 @@ import (
 
 	"github.com/streambinder/foedus/internal/database"
 	"github.com/streambinder/foedus/internal/i18n"
+	"github.com/streambinder/foedus/internal/models"
 	"github.com/streambinder/foedus/templates"
 	"github.com/gofiber/fiber/v2"
 )
@@ -84,10 +85,16 @@ func UpdateInvitationRSVP(c *fiber.Ctx) error {
 			return c.Status(500).SendString("failed to update RSVP")
 		}
 
-		// parse poll checkbox fields: poll_{pollID}_{guestID} = "1" if checked
-		answers := make(map[int]bool)
+		// parse poll switch fields: poll_{pollID}_{guestID} = "1" if checked
+		answers := make(map[int]models.PollAnswer)
 		for _, p := range polls {
-			answers[p.ID] = c.FormValue("poll_"+strconv.Itoa(p.ID)+"_"+strconv.Itoa(g.ID)) == "1"
+			fieldSuffix := strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID)
+			answer := c.FormValue("poll_" + fieldSuffix) == "1"
+			notes := ""
+			if answer {
+				notes = strings.TrimSpace(c.FormValue("poll_notes_" + fieldSuffix))
+			}
+			answers[p.ID] = models.PollAnswer{PollID: p.ID, Answer: answer, Notes: notes}
 		}
 		if err := database.SavePollAnswers(g.ID, answers); err != nil {
 			return c.Status(500).SendString("failed to save poll answers")

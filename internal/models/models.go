@@ -73,6 +73,7 @@ type Poll struct {
 type PollAnswer struct {
 	PollID int
 	Answer bool
+	Notes  string
 }
 
 type Invitation struct {

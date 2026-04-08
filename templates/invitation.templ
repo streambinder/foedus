@@ -15,6 +15,15 @@ func guestAnsweredYes(g models.Guest, pollID int) bool {
 	return false
 }
 
+func guestPollNotes(g models.Guest, pollID int) string {
+	for _, a := range g.PollAnswers {
+		if a.PollID == pollID {
+			return a.Notes
+		}
+	}
+	return ""
+}
+
 func invitationAnswered(inv models.Invitation) bool {
 	for _, g := range inv.Guests {
 		if g.ConfirmedCeremony != nil || g.ConfirmedReception != nil {
@@ -161,14 +170,46 @@ templ Invitation(inv models.Invitation, settings models.WeddingSettings, polls [
 						if len(polls) > 0 {
 							<div class="rsvp-polls">
 								for _, p := range polls {
-									<label>
-										if guestAnsweredYes(g, p.ID) {
-											<input type="checkbox" name={ "poll_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) } value="1" checked/>
-										} else {
-											<input type="checkbox" name={ "poll_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) } value="1"/>
-										}
-										{ p.Question }
-									</label>
+									<div class="rsvp-poll-item">
+										<div class="rsvp-poll-header">
+											<label class="rsvp-poll-label" for={ "poll_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }>
+												{ p.Question }
+											</label>
+											if guestAnsweredYes(g, p.ID) {
+												<input
+													type="checkbox"
+													role="switch"
+													id={ "poll_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }
+													name={ "poll_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }
+													value="1"
+													checked
+													data-poll-toggle="true"
+													data-notes-target={ "poll_notes_wrap_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }
+													data-notes-input={ "poll_notes_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }/>
+											} else {
+												<input
+													type="checkbox"
+													role="switch"
+													id={ "poll_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }
+													name={ "poll_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }
+													value="1"
+													data-poll-toggle="true"
+													data-notes-target={ "poll_notes_wrap_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }
+													data-notes-input={ "poll_notes_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }/>
+											}
+										</div>
+										<div
+											class="rsvp-poll-notes"
+											id={ "poll_notes_wrap_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }
+											hidden?={ !guestAnsweredYes(g, p.ID) }>
+											<textarea
+												name={ "poll_notes_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }
+												id={ "poll_notes_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }
+												placeholder={ t("placeholder.poll_notes") }
+												aria-label={ t("invitation.poll_notes") }
+												disabled?={ !guestAnsweredYes(g, p.ID) }>{ guestPollNotes(g, p.ID) }</textarea>
+										</div>
+									</div>
 								}
 							</div>
 						}
@@ -209,5 +250,28 @@ templ Invitation(inv models.Invitation, settings models.WeddingSettings, polls [
 				})();
 			</script>
 		}
+		<script>
+			(function() {
+				function syncPollNotes(toggle) {
+					var targetId = toggle.getAttribute('data-notes-target');
+					var inputId = toggle.getAttribute('data-notes-input');
+					if (!targetId || !inputId) return;
+					var notesWrap = document.getElementById(targetId);
+					var notesInput = document.getElementById(inputId);
+					if (!notesWrap || !notesInput) return;
+					var enabled = toggle.checked;
+					notesWrap.hidden = !enabled;
+					notesInput.disabled = !enabled;
+					if (!enabled) notesInput.value = '';
+				}
+
+				document.querySelectorAll('[data-poll-toggle]').forEach(function(toggle) {
+					syncPollNotes(toggle);
+					toggle.addEventListener('change', function() {
+						syncPollNotes(toggle);
+					});
+				});
+			})();
+		</script>
 	}
 }

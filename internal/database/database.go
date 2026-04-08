@@ -2,6 +2,7 @@ package database
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 
 	_ "modernc.org/sqlite"
@@ -69,6 +70,7 @@ func migrate() {
 			poll_id  INTEGER NOT NULL REFERENCES polls(id),
 			guest_id INTEGER NOT NULL REFERENCES guests(id),
 			answer   INTEGER NOT NULL DEFAULT 0,
+			notes    TEXT NOT NULL DEFAULT '',
 			UNIQUE(poll_id, guest_id)
 		)`,
 	}
@@ -86,8 +88,43 @@ func migrate() {
 		if _, err := DB.Exec(`UPDATE gifts SET amount = CAST(amount / 100 AS INTEGER)`); err != nil {
 			log.Fatalf("failed to migrate gift amounts to integer euros: %v", err)
 		}
-		if _, err := DB.Exec(`PRAGMA user_version = 1`); err != nil {
-			log.Fatalf("failed to persist schema version: %v", err)
+		version = 1
+	}
+	if version < 2 {
+		hasNotes, err := tableHasColumn("poll_answers", "notes")
+		if err != nil {
+			log.Fatalf("failed to inspect poll_answers schema: %v", err)
+		}
+		if !hasNotes {
+			if _, err := DB.Exec(`ALTER TABLE poll_answers ADD COLUMN notes TEXT NOT NULL DEFAULT ''`); err != nil {
+				log.Fatalf("failed to add notes column to poll_answers: %v", err)
+			}
+		}
+		version = 2
+	}
+	if _, err := DB.Exec(fmt.Sprintf(`PRAGMA user_version = %d`, version)); err != nil {
+		log.Fatalf("failed to persist schema version: %v", err)
+	}
+}
+
+func tableHasColumn(tableName, columnName string) (bool, error) {
+	rows, err := DB.Query(fmt.Sprintf(`PRAGMA table_info(%s)`, tableName))
+	if err != nil {
+		return false, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var cid int
+		var name, columnType string
+		var notNull, pk int
+		var defaultValue any
+		if err := rows.Scan(&cid, &name, &columnType, &notNull, &defaultValue, &pk); err != nil {
+			return false, err
+		}
+		if name == columnName {
+			return true, nil
 		}
 	}
+	return false, rows.Err()
 }
