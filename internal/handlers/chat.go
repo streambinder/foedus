@@ -12,6 +12,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode"
+	"unicode/utf8"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/streambinder/foedus/internal/database"
@@ -133,6 +135,7 @@ func ChatStream(c *fiber.Ctx) error {
 	}
 
 	persona := settings.Impersonations[rand.IntN(len(settings.Impersonations))]
+	personaName := capitalizedPersonaName(persona.Codename)
 	log.Printf("chat: request ip=%s persona=%q (pool=%d) msgLen=%d historyLen=%d", ip, persona.Codename, len(settings.Impersonations), len(req.Message), len(req.History))
 
 	// build wedding context for system prompt
@@ -174,7 +177,7 @@ func ChatStream(c *fiber.Ctx) error {
 			"SCOPE RULE: You only answer questions related to the wedding (date, location, logistics, couple, gifts, music, story, etc.). If someone asks about anything unrelated, politely decline and gently redirect the conversation back to the wedding.\n\n"+
 			"Reply in the same language the user writes in. Preferred language hint: %s.\n"+
 			"Keep replies warm, personal, and concise.",
-		persona.Codename, persona.Profile, persona.Codename,
+		personaName, persona.Profile, personaName,
 		settings.Spouse1Name, settings.Spouse2Name,
 		settings.CeremonyDatetime, settings.CeremonyLocation, settings.CeremonyAddress,
 		settings.ReceptionLocation, settings.ReceptionAddress,
@@ -275,4 +278,18 @@ func i18nLangFromAccept(header string) string {
 		}
 	}
 	return "en"
+}
+
+func capitalizedPersonaName(name string) string {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return ""
+	}
+
+	r, size := utf8.DecodeRuneInString(name)
+	if r == utf8.RuneError && size == 0 {
+		return ""
+	}
+
+	return string(unicode.ToUpper(r)) + name[size:]
 }

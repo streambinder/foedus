@@ -113,7 +113,7 @@
     if (match) {
       var candidate = match[1].trim();
       if (candidate.length > 0 && candidate.length < 40) {
-        label = candidate;
+        label = capitalizePersonaLabel(candidate);
         display = text.slice(0, match.index).trim();
       }
     }
@@ -132,7 +132,7 @@
     if (replaying) return;
     history.push({ role: role, content: content });
     if (history.length > MAX_HISTORY) history = history.slice(-MAX_HISTORY);
-    try { localStorage.setItem(HISTORY_KEY, JSON.stringify(history)); } catch(e) {}
+    persistHistory();
   }
 
   function appendBubble(role, text, streaming) {
@@ -146,5 +146,16 @@
     msgs.appendChild(wrap);
     msgs.scrollTop = msgs.scrollHeight;
     return p;
+  }
+
+  function capitalizePersonaLabel(label) {
+    if (!label) return label;
+    return label.replace(/(^|[\s-])([A-Za-zÀ-ÖØ-öø-ÿ])/g, function(_, prefix, letter) {
+      return prefix + letter.toUpperCase();
+    });
+  }
+
+  function persistHistory() {
+    try { localStorage.setItem(HISTORY_KEY, JSON.stringify(history)); } catch(e) {}
   }
 })();

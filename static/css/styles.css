@@ -3110,6 +3110,7 @@ td [role="switch"] { margin: 0; }
   color: var(--sage-dark);
   margin-top: 2px;
   padding-left: 2px;
+  text-transform: capitalize;
 }
 
 #chat-form {
