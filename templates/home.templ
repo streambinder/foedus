@@ -76,7 +76,7 @@ func prevSectionBeforeRegistry(places []models.Place, playlists []string) string
 	return "#venues"
 }
 
-func nextSectionAfterVenues(playlists []string, places []models.Place, bankConfigured bool, accommodations []models.AccommodationSuggestion) string {
+func nextSectionAfterVenues(playlists []string, places []models.Place, bankConfigured bool) string {
 	if len(playlists) > 0 {
 		return "#soundtrack"
 	}
@@ -86,46 +86,24 @@ func nextSectionAfterVenues(playlists []string, places []models.Place, bankConfi
 	if bankConfigured {
 		return "#registry"
 	}
-	if len(accommodations) > 0 {
-		return "#accommodations"
-	}
 	return ""
 }
 
-func nextSectionAfterSoundtrack(places []models.Place, bankConfigured bool, accommodations []models.AccommodationSuggestion) string {
+func nextSectionAfterSoundtrack(places []models.Place, bankConfigured bool) string {
 	if len(places) > 0 {
 		return "#places"
 	}
 	if bankConfigured {
 		return "#registry"
 	}
-	if len(accommodations) > 0 {
-		return "#accommodations"
-	}
 	return ""
 }
 
-func nextSectionAfterPlaces(bankConfigured bool, accommodations []models.AccommodationSuggestion) string {
+func nextSectionAfterPlaces(bankConfigured bool) string {
 	if bankConfigured {
 		return "#registry"
-	}
-	if len(accommodations) > 0 {
-		return "#accommodations"
 	}
 	return ""
-}
-
-func prevSectionBeforeAccommodations(bankConfigured bool, places []models.Place, playlists []string) string {
-	if bankConfigured {
-		return "#registry"
-	}
-	if len(places) > 0 {
-		return "#places"
-	}
-	if len(playlists) > 0 {
-		return "#soundtrack"
-	}
-	return "#venues"
 }
 
 // progress percentage (0-100) for a partially-claimed item
@@ -230,14 +208,19 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 						</div>
 					}
 				</div>
-				if calendarEnabled(settings) {
+				if calendarEnabled(settings) || len(settings.AccommodationSuggestions) > 0 {
 					<div class="calendar-cta calendar-cta--venues">
-						<a href="#" class="calendar-btn calendar-btn--secondary" data-add-to-calendar>{ t("btn.add_to_calendar") }</a>
+						if calendarEnabled(settings) {
+							<a href="#" class="calendar-btn calendar-btn--secondary" data-add-to-calendar>{ t("btn.add_to_calendar") }</a>
+						}
+						if len(settings.AccommodationSuggestions) > 0 {
+							<button type="button" class="calendar-btn calendar-btn--secondary" data-open-accommodations>{ t("home.accommodations") }</button>
+						}
 					</div>
 				}
 			</div>
-			if nextSectionAfterVenues(settings.SpotifyPlaylists, settings.Places, bankConfigured, settings.AccommodationSuggestions) != "" {
-				<a href={ templ.SafeURL(nextSectionAfterVenues(settings.SpotifyPlaylists, settings.Places, bankConfigured, settings.AccommodationSuggestions)) } class="vp-arrow vp-arrow--down" aria-label={ t("home.registry") }>
+			if nextSectionAfterVenues(settings.SpotifyPlaylists, settings.Places, bankConfigured) != "" {
+				<a href={ templ.SafeURL(nextSectionAfterVenues(settings.SpotifyPlaylists, settings.Places, bankConfigured)) } class="vp-arrow vp-arrow--down" aria-label={ t("home.registry") }>
 					<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
 				</a>
 			}
@@ -269,8 +252,8 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 						}
 					</div>
 				</div>
-				if nextSectionAfterSoundtrack(settings.Places, bankConfigured, settings.AccommodationSuggestions) != "" {
-					<a href={ templ.SafeURL(nextSectionAfterSoundtrack(settings.Places, bankConfigured, settings.AccommodationSuggestions)) } class="vp-arrow vp-arrow--down">
+				if nextSectionAfterSoundtrack(settings.Places, bankConfigured) != "" {
+					<a href={ templ.SafeURL(nextSectionAfterSoundtrack(settings.Places, bankConfigured)) } class="vp-arrow vp-arrow--down">
 						<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
 					</a>
 				}
@@ -309,8 +292,8 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 					</div>
 				</div>
 				<div id="places-data" style="display:none">{ placesJSON(settings.Places) }</div>
-				if nextSectionAfterPlaces(bankConfigured, settings.AccommodationSuggestions) != "" {
-					<a href={ templ.SafeURL(nextSectionAfterPlaces(bankConfigured, settings.AccommodationSuggestions)) } class="vp-arrow vp-arrow--down">
+				if nextSectionAfterPlaces(bankConfigured) != "" {
+					<a href={ templ.SafeURL(nextSectionAfterPlaces(bankConfigured)) } class="vp-arrow vp-arrow--down">
 						<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
 					</a>
 				}
@@ -381,36 +364,6 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 						</div>
 					</div>
 				</div>
-				if len(settings.AccommodationSuggestions) > 0 {
-					<a href="#accommodations" class="vp-arrow vp-arrow--down" aria-label={ t("home.accommodations") }>
-						<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-					</a>
-				}
-			</section>
-		}
-		<!-- section: accommodation suggestions -->
-		if len(settings.AccommodationSuggestions) > 0 {
-			<section id="accommodations" class="vp-section vp-accommodations">
-				<a href={ templ.SafeURL(prevSectionBeforeAccommodations(bankConfigured, settings.Places, settings.SpotifyPlaylists)) } class="vp-arrow vp-arrow--up" aria-label={ t("home.accommodations") }>
-					<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
-				</a>
-				<div class="vp-section-inner">
-					<h2 class="section-title">{ t("home.accommodations") }</h2>
-					<p class="section-subtitle">{ t("home.accommodations_description") }</p>
-					<div class="accommodation-grid">
-						for _, suggestion := range settings.AccommodationSuggestions {
-							<article class="accommodation-tile">
-								<h3>{ suggestion.Name }</h3>
-								if suggestion.Description != "" {
-									<p>{ suggestion.Description }</p>
-								}
-								if suggestion.URL != "" {
-									<a href={ templ.SafeURL(suggestion.URL) } target="_blank" rel="noreferrer">{ suggestion.URL }</a>
-								}
-							</article>
-						}
-					</div>
-				</div>
 			</section>
 		}
 		<!-- nav dots -->
@@ -425,9 +378,6 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 			}
 			if bankConfigured {
 				<a href="#registry" class="vp-dot" aria-label={ t("home.registry") }></a>
-			}
-			if len(settings.AccommodationSuggestions) > 0 {
-				<a href="#accommodations" class="vp-dot" aria-label={ t("home.accommodations") }></a>
 			}
 		</nav>
 		if calendarEnabled(settings) {
@@ -444,6 +394,33 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 				data-date-label={ i18n.FormatDatetime(settings.CeremonyDatetime, lang) }
 				data-filename="wedding.ics"
 			></div>
+		}
+		if len(settings.AccommodationSuggestions) > 0 {
+			<div id="accommodations-modal" class="modal-overlay" style="display:none">
+				<div class="modal-box accommodation-modal-box">
+					<h3>{ t("home.accommodations") }</h3>
+					<p class="modal-intro">{ t("home.accommodations_description") }</p>
+					<div class="accommodation-grid">
+						for _, suggestion := range settings.AccommodationSuggestions {
+							<article class="accommodation-tile">
+								<h3>{ suggestion.Name }</h3>
+								if suggestion.Description != "" {
+									<p>{ suggestion.Description }</p>
+								}
+								if suggestion.URL != "" {
+									<a href={ templ.SafeURL(suggestion.URL) } target="_blank" rel="noreferrer">
+										<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L11 4"/><path d="M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L13 19"/></svg>
+										<span>{ suggestion.URL }</span>
+									</a>
+								}
+							</article>
+						}
+					</div>
+					<div class="modal-actions">
+						<button type="button" id="accommodations-close" class="outline secondary">{ t("btn.close") }</button>
+					</div>
+				</div>
+			</div>
 		}
 		<!-- transfer modal -->
 		if bankConfigured {
@@ -643,6 +620,41 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 				});
 			}
 
+			function closeModal(m) {
+				if (!m) return;
+				m.classList.add('is-closing');
+				m.addEventListener('animationend', function() {
+					m.style.display = 'none';
+					m.classList.remove('is-closing');
+				}, { once: true });
+			}
+
+			function openModal(m) {
+				if (!m) return;
+				m.classList.remove('is-closing');
+				m.style.display = '';
+			}
+
+			var accommodationsModal = document.getElementById('accommodations-modal');
+			if (accommodationsModal) {
+				document.querySelectorAll('[data-open-accommodations]').forEach(function(btn) {
+					btn.addEventListener('click', function() {
+						openModal(accommodationsModal);
+					});
+				});
+
+				var accommodationsClose = document.getElementById('accommodations-close');
+				if (accommodationsClose) {
+					accommodationsClose.addEventListener('click', function() {
+						closeModal(accommodationsModal);
+					});
+				}
+
+				accommodationsModal.addEventListener('click', function(e) {
+					if (e.target === accommodationsModal) closeModal(accommodationsModal);
+				});
+			}
+
 			var cfg = document.getElementById('transfer-cfg');
 			if (!cfg) return;
 			var spouse1 = cfg.dataset.spouse1;
@@ -657,14 +669,6 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 			var transferModal = document.getElementById('transfer-modal');
 			var pctModal = document.getElementById('pct-modal');
 			if (!transferModal) return;
-
-			function closeModal(m) {
-				m.classList.add('is-closing');
-				m.addEventListener('animationend', function() {
-					m.style.display = 'none';
-					m.classList.remove('is-closing');
-				}, { once: true });
-			}
 
 			// copy buttons
 			document.querySelectorAll('.copy-btn').forEach(function(btn) {

@@ -239,6 +239,8 @@ html:has(.vp-section) body {
 }
 
 .calendar-btn {
+  appearance: none;
+  -webkit-appearance: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -252,8 +254,12 @@ html:has(.vp-section) body {
   font-family: 'Inter', sans-serif;
   font-size: var(--fs-sm);
   font-weight: 500;
+  line-height: 1;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+  margin: 0;
   transition: transform var(--duration) var(--ease),
               background var(--duration) var(--ease),
               border-color var(--duration) var(--ease),
@@ -725,6 +731,35 @@ body:has(.hero) {
 
 .calendar-cta--venues {
   margin-top: var(--sp-5);
+  width: min(100%, 30rem);
+  margin-left: auto;
+  margin-right: auto;
+  flex-wrap: nowrap;
+  gap: 0;
+}
+
+.calendar-cta--venues .calendar-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  border-radius: 0;
+}
+
+.calendar-cta--venues .calendar-btn:first-child {
+  border-radius: 999px 0 0 999px;
+}
+
+.calendar-cta--venues .calendar-btn:last-child {
+  border-radius: 0 999px 999px 0;
+}
+
+.calendar-cta--venues .calendar-btn + .calendar-btn {
+  margin-left: -1px;
+}
+
+.calendar-cta--venues .calendar-btn:only-child {
+  flex: 0 0 auto;
+  min-width: 13rem;
+  border-radius: 999px;
 }
 
 /* ---------------------------------------------------------------
@@ -1295,6 +1330,7 @@ a[href="/dashboard"]:not(footer a):hover {
   font-size: var(--fs-base);
   font-weight: 500;
   cursor: pointer;
+  margin: 0;
   height: auto;
   min-height: 2.75rem;
   width: auto;
@@ -1323,6 +1359,22 @@ a[href="/dashboard"]:not(footer a):hover {
 .thanks-box h3 { font-size: var(--fs-xl); margin-bottom: var(--sp-2); }
 .thanks-box p { color: var(--sage-dark); }
 .thanks-box .modal-actions { justify-content: center; }
+
+.accommodation-modal-box {
+  max-width: 42rem;
+  padding: var(--sp-6);
+}
+
+.accommodation-modal-box .accommodation-grid {
+  margin-top: var(--sp-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+.accommodation-modal-box .accommodation-tile {
+  width: 100%;
+}
 
 /* ---------------------------------------------------------------
    percentage selector modal
@@ -2520,12 +2572,6 @@ td [role="switch"] { margin: 0; }
   background: var(--white);
 }
 
-.vp-accommodations {
-  background:
-    radial-gradient(circle at top left, rgba(214, 160, 134, 0.16), transparent 32%),
-    linear-gradient(180deg, var(--ivory-deep) 0%, var(--white) 100%);
-}
-
 .places-layout {
   display: flex;
   flex-direction: column;
@@ -2670,6 +2716,9 @@ td [role="switch"] { margin: 0; }
 }
 
 .accommodation-tile a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
   font-size: var(--fs-sm);
   overflow-wrap: anywhere;
 }
