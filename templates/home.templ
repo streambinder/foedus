@@ -34,8 +34,17 @@ func placesJSON(places []models.Place) string {
 	return string(b)
 }
 
-// nextSection computes the href for the down-arrow after venues
-func nextSectionAfterVenues(playlists []string, places []models.Place, bankConfigured bool) string {
+func prevSectionBeforeRegistry(places []models.Place, playlists []string) string {
+	if len(places) > 0 {
+		return "#places"
+	}
+	if len(playlists) > 0 {
+		return "#soundtrack"
+	}
+	return "#venues"
+}
+
+func nextSectionAfterVenues(playlists []string, places []models.Place, bankConfigured bool, accommodations []models.AccommodationSuggestion) string {
 	if len(playlists) > 0 {
 		return "#soundtrack"
 	}
@@ -45,10 +54,39 @@ func nextSectionAfterVenues(playlists []string, places []models.Place, bankConfi
 	if bankConfigured {
 		return "#registry"
 	}
+	if len(accommodations) > 0 {
+		return "#accommodations"
+	}
 	return ""
 }
 
-func prevSectionBeforeRegistry(places []models.Place, playlists []string) string {
+func nextSectionAfterSoundtrack(places []models.Place, bankConfigured bool, accommodations []models.AccommodationSuggestion) string {
+	if len(places) > 0 {
+		return "#places"
+	}
+	if bankConfigured {
+		return "#registry"
+	}
+	if len(accommodations) > 0 {
+		return "#accommodations"
+	}
+	return ""
+}
+
+func nextSectionAfterPlaces(bankConfigured bool, accommodations []models.AccommodationSuggestion) string {
+	if bankConfigured {
+		return "#registry"
+	}
+	if len(accommodations) > 0 {
+		return "#accommodations"
+	}
+	return ""
+}
+
+func prevSectionBeforeAccommodations(bankConfigured bool, places []models.Place, playlists []string) string {
+	if bankConfigured {
+		return "#registry"
+	}
 	if len(places) > 0 {
 		return "#places"
 	}
@@ -156,8 +194,8 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 					}
 				</div>
 			</div>
-			if nextSectionAfterVenues(settings.SpotifyPlaylists, settings.Places, bankConfigured) != "" {
-				<a href={ templ.SafeURL(nextSectionAfterVenues(settings.SpotifyPlaylists, settings.Places, bankConfigured)) } class="vp-arrow vp-arrow--down" aria-label={ t("home.registry") }>
+			if nextSectionAfterVenues(settings.SpotifyPlaylists, settings.Places, bankConfigured, settings.AccommodationSuggestions) != "" {
+				<a href={ templ.SafeURL(nextSectionAfterVenues(settings.SpotifyPlaylists, settings.Places, bankConfigured, settings.AccommodationSuggestions)) } class="vp-arrow vp-arrow--down" aria-label={ t("home.registry") }>
 					<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
 				</a>
 			}
@@ -189,12 +227,8 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 						}
 					</div>
 				</div>
-				if len(settings.Places) > 0 {
-					<a href="#places" class="vp-arrow vp-arrow--down">
-						<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-					</a>
-				} else if bankConfigured {
-					<a href="#registry" class="vp-arrow vp-arrow--down">
+				if nextSectionAfterSoundtrack(settings.Places, bankConfigured, settings.AccommodationSuggestions) != "" {
+					<a href={ templ.SafeURL(nextSectionAfterSoundtrack(settings.Places, bankConfigured, settings.AccommodationSuggestions)) } class="vp-arrow vp-arrow--down">
 						<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
 					</a>
 				}
@@ -233,8 +267,8 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 					</div>
 				</div>
 				<div id="places-data" style="display:none">{ placesJSON(settings.Places) }</div>
-				if bankConfigured {
-					<a href="#registry" class="vp-arrow vp-arrow--down">
+				if nextSectionAfterPlaces(bankConfigured, settings.AccommodationSuggestions) != "" {
+					<a href={ templ.SafeURL(nextSectionAfterPlaces(bankConfigured, settings.AccommodationSuggestions)) } class="vp-arrow vp-arrow--down">
 						<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
 					</a>
 				}
@@ -305,6 +339,36 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 						</div>
 					</div>
 				</div>
+				if len(settings.AccommodationSuggestions) > 0 {
+					<a href="#accommodations" class="vp-arrow vp-arrow--down" aria-label={ t("home.accommodations") }>
+						<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+					</a>
+				}
+			</section>
+		}
+		<!-- section: accommodation suggestions -->
+		if len(settings.AccommodationSuggestions) > 0 {
+			<section id="accommodations" class="vp-section vp-accommodations">
+				<a href={ templ.SafeURL(prevSectionBeforeAccommodations(bankConfigured, settings.Places, settings.SpotifyPlaylists)) } class="vp-arrow vp-arrow--up" aria-label={ t("home.accommodations") }>
+					<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
+				</a>
+				<div class="vp-section-inner">
+					<h2 class="section-title">{ t("home.accommodations") }</h2>
+					<p class="section-subtitle">{ t("home.accommodations_description") }</p>
+					<div class="accommodation-grid">
+						for _, suggestion := range settings.AccommodationSuggestions {
+							<article class="accommodation-tile">
+								<h3>{ suggestion.Name }</h3>
+								if suggestion.Description != "" {
+									<p>{ suggestion.Description }</p>
+								}
+								if suggestion.URL != "" {
+									<a href={ templ.SafeURL(suggestion.URL) } target="_blank" rel="noreferrer">{ suggestion.URL }</a>
+								}
+							</article>
+						}
+					</div>
+				</div>
 			</section>
 		}
 		<!-- nav dots -->
@@ -319,6 +383,9 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 			}
 			if bankConfigured {
 				<a href="#registry" class="vp-dot" aria-label={ t("home.registry") }></a>
+			}
+			if len(settings.AccommodationSuggestions) > 0 {
+				<a href="#accommodations" class="vp-dot" aria-label={ t("home.accommodations") }></a>
 			}
 		</nav>
 		<!-- transfer modal -->

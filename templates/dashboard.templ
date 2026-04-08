@@ -202,6 +202,37 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 					}
 				</div>
 				<button type="button" id="add-place-btn" class="add-entry-btn">+ { t("btn.add_place") }</button>
+				<!-- accommodation suggestions -->
+				<hr/>
+				<label>{ t("dashboard.accommodations") }</label>
+				<p class="muted" style="margin-top:-0.5rem;margin-bottom:0.75rem">{ t("dashboard.accommodations_description") }</p>
+				<div id="accommodations-container">
+					if len(settings.AccommodationSuggestions) > 0 {
+						for idx, suggestion := range settings.AccommodationSuggestions {
+							<div class="accommodation-card">
+								<div class="accommodation-card-header">
+									<span class="accommodation-number">{ strconv.Itoa(idx + 1) }</span>
+									<button type="button" class="accommodation-remove outline secondary" aria-label={ t("btn.delete") }>&times;</button>
+								</div>
+								<div class="grid">
+									<div>
+										<label>{ t("label.accommodation_name") }</label>
+										<input type="text" name={ fmt.Sprintf("accommodation_name_%d", idx) } value={ suggestion.Name } placeholder={ t("placeholder.accommodation_name") }/>
+									</div>
+									<div>
+										<label>{ t("label.accommodation_url") }</label>
+										<input type="url" name={ fmt.Sprintf("accommodation_url_%d", idx) } value={ suggestion.URL } placeholder={ t("placeholder.accommodation_url") }/>
+									</div>
+								</div>
+								<div>
+									<label>{ t("label.accommodation_description") }</label>
+									<textarea name={ fmt.Sprintf("accommodation_description_%d", idx) } rows="3" placeholder={ t("placeholder.accommodation_description") }>{ suggestion.Description }</textarea>
+								</div>
+							</div>
+						}
+					}
+				</div>
+				<button type="button" id="add-accommodation-btn" class="add-entry-btn">+ { t("btn.add_accommodation") }</button>
 				<!-- impersonations -->
 				<hr/>
 				<label>{ t("dashboard.impersonations") }</label>
@@ -229,7 +260,7 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 					<details>
 						<summary style="cursor:pointer;font-weight:600;text-transform:uppercase;letter-spacing:.05em">{ lang }</summary>
 						<div style="margin-top:0.75rem">
-							@homepageLabelGroup(lang, "home", []string{"home.getting_married","home.ceremony","home.reception","home.soundtrack","home.soundtrack_description","home.places","home.places_description","home.registry","home.registry_description","home.generic_gift","home.generic_gift_description","home.remaining"}, settings.HomepageLabels, i18n.Defaults(lang))
+							@homepageLabelGroup(lang, "home", []string{"home.getting_married","home.ceremony","home.reception","home.soundtrack","home.soundtrack_description","home.places","home.places_description","home.accommodations","home.accommodations_description","home.registry","home.registry_description","home.generic_gift","home.generic_gift_description","home.remaining"}, settings.HomepageLabels, i18n.Defaults(lang))
 							<hr/>
 							@homepageLabelGroup(lang, "invitation", []string{"invitation.title","invitation.rsvp","invitation.rsvp_description","invitation.confirm","invitation.already_answered","invitation.change_answer"}, settings.HomepageLabels, i18n.Defaults(lang))
 							<hr/>

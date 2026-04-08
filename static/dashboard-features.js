@@ -132,6 +132,66 @@
   }
 
   // ---------------------------------------------------------------
+  // accommodation suggestions management
+  // ---------------------------------------------------------------
+  var accommodationsContainer = document.getElementById("accommodations-container");
+  var addAccommodationBtn = document.getElementById("add-accommodation-btn");
+
+  if (accommodationsContainer && addAccommodationBtn) {
+    addAccommodationBtn.addEventListener("click", function () {
+      addAccommodationCard();
+      reindexAccommodations();
+    });
+
+    accommodationsContainer.addEventListener("click", function (e) {
+      if (e.target.classList.contains("accommodation-remove")) {
+        e.target.closest(".accommodation-card").remove();
+        reindexAccommodations();
+      }
+    });
+  }
+
+  function addAccommodationCard() {
+    var idx = accommodationsContainer.querySelectorAll(".accommodation-card").length;
+    var card = document.createElement("div");
+    card.className = "accommodation-card";
+    card.innerHTML =
+      '<div class="accommodation-card-header">' +
+        '<span class="accommodation-number">' + (idx + 1) + "</span>" +
+        '<button type="button" class="accommodation-remove outline secondary" aria-label="Remove">&times;</button>' +
+      "</div>" +
+      '<div class="grid">' +
+        "<div>" +
+          "<label>Name</label>" +
+          '<input type="text" name="accommodation_name_' + idx + '" placeholder="e.g. Agriturismo Il Gelsomino"/>' +
+        "</div>" +
+        "<div>" +
+          "<label>Link</label>" +
+          '<input type="url" name="accommodation_url_' + idx + '" placeholder="https://..."/>' +
+        "</div>" +
+      "</div>" +
+      "<div>" +
+        "<label>Description</label>" +
+        '<textarea name="accommodation_description_' + idx + '" rows="3" placeholder="Optional note for guests"></textarea>' +
+      "</div>";
+    accommodationsContainer.appendChild(card);
+  }
+
+  function reindexAccommodations() {
+    var cards = accommodationsContainer.querySelectorAll(".accommodation-card");
+    cards.forEach(function (card, idx) {
+      var num = card.querySelector(".accommodation-number");
+      if (num) num.textContent = idx + 1;
+      var name = card.querySelector('input[name^="accommodation_name_"]');
+      if (name) name.name = "accommodation_name_" + idx;
+      var url = card.querySelector('input[name^="accommodation_url_"]');
+      if (url) url.name = "accommodation_url_" + idx;
+      var description = card.querySelector('textarea[name^="accommodation_description_"]');
+      if (description) description.name = "accommodation_description_" + idx;
+    });
+  }
+
+  // ---------------------------------------------------------------
   // place autocomplete (reuses Nominatim, same pattern as autocomplete.js)
   // ---------------------------------------------------------------
   function initPlaceAutocomplete(card) {

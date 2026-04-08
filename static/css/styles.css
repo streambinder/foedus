@@ -2466,6 +2466,12 @@ td [role="switch"] { margin: 0; }
   background: var(--white);
 }
 
+.vp-accommodations {
+  background:
+    radial-gradient(circle at top left, rgba(214, 160, 134, 0.16), transparent 32%),
+    linear-gradient(180deg, var(--ivory-deep) 0%, var(--white) 100%);
+}
+
 .places-layout {
   display: flex;
   flex-direction: column;
@@ -2583,6 +2589,38 @@ td [role="switch"] { margin: 0; }
 }
 
 /* ---------------------------------------------------------------
+   accommodation suggestions section
+   --------------------------------------------------------------- */
+.accommodation-grid {
+  display: grid;
+  gap: var(--sp-4);
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.accommodation-tile {
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(122, 140, 120, 0.18);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: var(--sp-5);
+  backdrop-filter: blur(6px);
+}
+
+.accommodation-tile h3 {
+  margin-bottom: var(--sp-2);
+}
+
+.accommodation-tile p {
+  margin-bottom: var(--sp-3);
+  color: var(--sage-dark);
+}
+
+.accommodation-tile a {
+  font-size: var(--fs-sm);
+  overflow-wrap: anywhere;
+}
+
+/* ---------------------------------------------------------------
    dashboard: playlist rows
    --------------------------------------------------------------- */
 .playlist-row {
@@ -2657,6 +2695,44 @@ td [role="switch"] { margin: 0; }
 .place-coords code {
   color: var(--sage-dark);
   font-size: var(--fs-xs);
+}
+
+/* ---------------------------------------------------------------
+   dashboard: accommodation cards
+   --------------------------------------------------------------- */
+.accommodation-card {
+  border: 1px solid var(--sage-light);
+  border-radius: var(--radius-md);
+  padding: var(--sp-4);
+  margin-bottom: var(--sp-4);
+  background: var(--white);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.accommodation-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.accommodation-number {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--sage-dark);
+  background: var(--ivory-deep);
+  border-radius: 50%;
+  width: 1.5rem;
+  height: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.accommodation-card input,
+.accommodation-card textarea {
+  margin-bottom: 0;
 }
 
 /* ---------------------------------------------------------------

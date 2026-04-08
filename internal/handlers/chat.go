@@ -148,6 +148,14 @@ func ChatStream(c *fiber.Ctx) error {
 	if len(placeParts) > 0 {
 		placeList = strings.Join(placeParts, ", ")
 	}
+	var accommodationParts []string
+	for _, suggestion := range settings.AccommodationSuggestions {
+		accommodationParts = append(accommodationParts, suggestion.Name)
+	}
+	accommodationList := "none"
+	if len(accommodationParts) > 0 {
+		accommodationList = strings.Join(accommodationParts, ", ")
+	}
 
 	lang := i18nLangFromAccept(c.Get("Accept-Language"))
 	systemPrompt := fmt.Sprintf(
@@ -160,6 +168,7 @@ func ChatStream(c *fiber.Ctx) error {
 			"- Bank account (IBAN): %s, holder: %s\n"+
 			"- Spotify playlists: %s\n"+
 			"- Places of our story: %s\n\n"+
+			"- Accommodation suggestions: %s\n\n"+
 			"IDENTITY RULE: Never assume who you are talking to. If the conversation requires knowing who the user is (e.g. personalised answers, checking RSVPs, addressing someone by name), kindly and warmly ask who they are first before proceeding.\n\n"+
 			"SCOPE RULE: You only answer questions related to the wedding (date, location, logistics, couple, gifts, music, story, etc.). If someone asks about anything unrelated, politely decline and gently redirect the conversation back to the wedding.\n\n"+
 			"Reply in the same language the user writes in. Preferred language hint: %s.\n"+
@@ -169,7 +178,7 @@ func ChatStream(c *fiber.Ctx) error {
 		settings.CeremonyDatetime, settings.CeremonyLocation, settings.CeremonyAddress,
 		settings.ReceptionLocation, settings.ReceptionAddress,
 		settings.BankAccountIBAN, settings.BankAccountHolder,
-		playlistList, placeList, lang,
+		playlistList, placeList, accommodationList, lang,
 	)
 
 	history := req.History

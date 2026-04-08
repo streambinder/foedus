@@ -11,7 +11,7 @@ var settingsKeys = []string{
 	"ceremony_address", "ceremony_location", "ceremony_image",
 	"reception_address", "reception_location", "reception_image",
 	"bank_account_iban", "bank_account_holder",
-	"spotify_playlists", "places", "impersonations", "homepage_labels",
+	"spotify_playlists", "places", "accommodation_suggestions", "impersonations", "homepage_labels",
 	"share_preview_image",
 }
 
@@ -48,6 +48,11 @@ func GetAllSettings() (models.WeddingSettings, error) {
 		json.Unmarshal([]byte(raw), &places)
 	}
 
+	var accommodationSuggestions []models.AccommodationSuggestion
+	if raw := m["accommodation_suggestions"]; raw != "" {
+		json.Unmarshal([]byte(raw), &accommodationSuggestions)
+	}
+
 	var impersonations []models.Impersonation
 	if raw := m["impersonations"]; raw != "" {
 		json.Unmarshal([]byte(raw), &impersonations)
@@ -59,22 +64,23 @@ func GetAllSettings() (models.WeddingSettings, error) {
 	}
 
 	return models.WeddingSettings{
-		Spouse1Name:       m["spouse1_name"],
-		Spouse2Name:       m["spouse2_name"],
-		CeremonyAddress:   m["ceremony_address"],
-		CeremonyLocation:  m["ceremony_location"],
-		CeremonyImage:     m["ceremony_image"],
-		CeremonyDatetime:  m["ceremony_datetime"],
-		ReceptionAddress:  m["reception_address"],
-		ReceptionLocation: m["reception_location"],
-		ReceptionImage:    m["reception_image"],
-		BankAccountIBAN:   m["bank_account_iban"],
-		BankAccountHolder: m["bank_account_holder"],
-		SpotifyPlaylists:  playlists,
-		Places:            places,
-		Impersonations:    impersonations,
-		HomepageLabels:    homepageLabels,
-		SharePreviewImage: m["share_preview_image"],
+		Spouse1Name:              m["spouse1_name"],
+		Spouse2Name:              m["spouse2_name"],
+		CeremonyAddress:          m["ceremony_address"],
+		CeremonyLocation:         m["ceremony_location"],
+		CeremonyImage:            m["ceremony_image"],
+		CeremonyDatetime:         m["ceremony_datetime"],
+		ReceptionAddress:         m["reception_address"],
+		ReceptionLocation:        m["reception_location"],
+		ReceptionImage:           m["reception_image"],
+		BankAccountIBAN:          m["bank_account_iban"],
+		BankAccountHolder:        m["bank_account_holder"],
+		SpotifyPlaylists:         playlists,
+		Places:                   places,
+		AccommodationSuggestions: accommodationSuggestions,
+		Impersonations:           impersonations,
+		HomepageLabels:           homepageLabels,
+		SharePreviewImage:        m["share_preview_image"],
 	}, nil
 }
 

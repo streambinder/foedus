@@ -11,11 +11,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gofiber/fiber/v2"
 	"github.com/streambinder/foedus/internal/database"
 	"github.com/streambinder/foedus/internal/i18n"
 	"github.com/streambinder/foedus/internal/models"
 	"github.com/streambinder/foedus/templates"
-	"github.com/gofiber/fiber/v2"
 )
 
 func setFlash(c *fiber.Ctx, msg string) {
@@ -159,6 +159,24 @@ func SaveSettings(c *fiber.Ctx) error {
 	}
 	placesJSON, _ := json.Marshal(places)
 	if err := database.UpdateSetting("places", string(placesJSON)); err != nil {
+		return c.Status(500).SendString("failed to save settings")
+	}
+
+	// accommodation suggestions: collect name + description + url entries
+	var accommodationSuggestions []models.AccommodationSuggestion
+	for i := 0; ; i++ {
+		name := strings.TrimSpace(c.FormValue(fmt.Sprintf("accommodation_name_%d", i)))
+		if name == "" {
+			break
+		}
+		accommodationSuggestions = append(accommodationSuggestions, models.AccommodationSuggestion{
+			Name:        name,
+			Description: strings.TrimSpace(c.FormValue(fmt.Sprintf("accommodation_description_%d", i))),
+			URL:         strings.TrimSpace(c.FormValue(fmt.Sprintf("accommodation_url_%d", i))),
+		})
+	}
+	accommodationSuggestionsJSON, _ := json.Marshal(accommodationSuggestions)
+	if err := database.UpdateSetting("accommodation_suggestions", string(accommodationSuggestionsJSON)); err != nil {
 		return c.Status(500).SendString("failed to save settings")
 	}
 

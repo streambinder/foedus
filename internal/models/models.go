@@ -20,23 +20,30 @@ type Impersonation struct {
 	Profile  string `json:"profile"`
 }
 
+type AccommodationSuggestion struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	URL         string `json:"url"`
+}
+
 type WeddingSettings struct {
-	Spouse1Name       string
-	Spouse2Name       string
-	CeremonyAddress   string
-	CeremonyLocation  string
-	CeremonyDatetime  string
-	ReceptionAddress  string
-	ReceptionLocation string
-	CeremonyImage     string
-	ReceptionImage    string
-	BankAccountIBAN   string
-	BankAccountHolder string
-	SpotifyPlaylists  []string
-	Places            []Place
-	Impersonations    []Impersonation
-	HomepageLabels    map[string]map[string]string
-	SharePreviewImage string
+	Spouse1Name              string
+	Spouse2Name              string
+	CeremonyAddress          string
+	CeremonyLocation         string
+	CeremonyDatetime         string
+	ReceptionAddress         string
+	ReceptionLocation        string
+	CeremonyImage            string
+	ReceptionImage           string
+	BankAccountIBAN          string
+	BankAccountHolder        string
+	SpotifyPlaylists         []string
+	Places                   []Place
+	AccommodationSuggestions []AccommodationSuggestion
+	Impersonations           []Impersonation
+	HomepageLabels           map[string]map[string]string
+	SharePreviewImage        string
 }
 
 func (s WeddingSettings) IsConfigured() bool {
