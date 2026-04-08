@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/streambinder/foedus/internal/i18n"
 	"github.com/streambinder/foedus/internal/models"
@@ -32,6 +33,37 @@ func spotifyEmbedURL(rawURL string) string {
 func placesJSON(places []models.Place) string {
 	b, _ := json.Marshal(places)
 	return string(b)
+}
+
+func calendarVenue(address, location string) string {
+	address = strings.TrimSpace(address)
+	location = strings.TrimSpace(location)
+	if address != "" && location != "" {
+		return address + ", " + location
+	}
+	if address != "" {
+		return address
+	}
+	return location
+}
+
+func calendarEnabled(settings models.WeddingSettings) bool {
+	return settings.CeremonyDatetime != "" && calendarVenue(settings.CeremonyAddress, settings.CeremonyLocation) != ""
+}
+
+func calendarTitle(settings models.WeddingSettings, t i18n.T) string {
+	spouse1 := strings.TrimSpace(settings.Spouse1Name)
+	spouse2 := strings.TrimSpace(settings.Spouse2Name)
+	if spouse1 != "" && spouse2 != "" {
+		return t("calendar.wedding") + " " + spouse1 + " " + t("calendar.and") + " " + spouse2
+	}
+	if spouse1 != "" {
+		return t("calendar.wedding") + " " + spouse1
+	}
+	if spouse2 != "" {
+		return t("calendar.wedding") + " " + spouse2
+	}
+	return t("calendar.wedding")
 }
 
 func prevSectionBeforeRegistry(places []models.Place, playlists []string) string {
@@ -124,6 +156,11 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 				if settings.CeremonyDatetime != "" {
 					<p class="muted">{ i18n.FormatDatetime(settings.CeremonyDatetime, lang) }</p>
 				}
+				if calendarEnabled(settings) {
+					<div class="calendar-cta calendar-cta--hero">
+						<a href="#" class="calendar-btn" data-add-to-calendar>{ t("btn.add_to_calendar") }</a>
+					</div>
+				}
 			</div>
 			<a href="#venues" class="vp-arrow vp-arrow--down" aria-label={ t("home.ceremony") }>
 				<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
@@ -193,6 +230,11 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 						</div>
 					}
 				</div>
+				if calendarEnabled(settings) {
+					<div class="calendar-cta calendar-cta--venues">
+						<a href="#" class="calendar-btn calendar-btn--secondary" data-add-to-calendar>{ t("btn.add_to_calendar") }</a>
+					</div>
+				}
 			</div>
 			if nextSectionAfterVenues(settings.SpotifyPlaylists, settings.Places, bankConfigured, settings.AccommodationSuggestions) != "" {
 				<a href={ templ.SafeURL(nextSectionAfterVenues(settings.SpotifyPlaylists, settings.Places, bankConfigured, settings.AccommodationSuggestions)) } class="vp-arrow vp-arrow--down" aria-label={ t("home.registry") }>
@@ -388,6 +430,21 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 				<a href="#accommodations" class="vp-dot" aria-label={ t("home.accommodations") }></a>
 			}
 		</nav>
+		if calendarEnabled(settings) {
+			<div
+				id="calendar-cfg"
+				style="display:none"
+				data-title={ calendarTitle(settings, t) }
+				data-start={ settings.CeremonyDatetime }
+				data-location={ calendarVenue(settings.CeremonyAddress, settings.CeremonyLocation) }
+				data-ceremony-label={ t("home.ceremony") }
+				data-ceremony-location={ calendarVenue(settings.CeremonyAddress, settings.CeremonyLocation) }
+				data-reception-label={ t("home.reception") }
+				data-reception-location={ calendarVenue(settings.ReceptionAddress, settings.ReceptionLocation) }
+				data-date-label={ i18n.FormatDatetime(settings.CeremonyDatetime, lang) }
+				data-filename="wedding.ics"
+			></div>
+		}
 		<!-- transfer modal -->
 		if bankConfigured {
 			<div
@@ -485,6 +542,105 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 					});
 				}, { threshold: 0.5 });
 				sections.forEach(function(s) { observer.observe(s); });
+			}
+
+			var calendarCfg = document.getElementById('calendar-cfg');
+			if (calendarCfg) {
+				function escapeICSValue(value) {
+					return String(value || '')
+						.replace(/\\/g, '\\\\')
+						.replace(/\r?\n/g, '\\n')
+						.replace(/,/g, '\\,')
+						.replace(/;/g, '\\;');
+				}
+
+				function formatICSDate(value) {
+					if (!value) return null;
+					if (value.indexOf('T') === -1) {
+						return { field: 'DTSTART;VALUE=DATE', value: value.replace(/-/g, '') };
+					}
+
+					var parts = value.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/);
+					if (!parts) return null;
+
+					return {
+						field: 'DTSTART',
+						value: parts[1] + parts[2] + parts[3] + 'T' + parts[4] + parts[5] + '00'
+					};
+				}
+
+				function timestampNowUTC() {
+					var now = new Date();
+					function pad(num) { return String(num).padStart(2, '0'); }
+					return now.getUTCFullYear() +
+						pad(now.getUTCMonth() + 1) +
+						pad(now.getUTCDate()) + 'T' +
+						pad(now.getUTCHours()) +
+						pad(now.getUTCMinutes()) +
+						pad(now.getUTCSeconds()) + 'Z';
+				}
+
+				function buildCalendarDescription() {
+					var lines = [];
+					if (calendarCfg.dataset.dateLabel) {
+						lines.push(calendarCfg.dataset.dateLabel);
+					}
+					if (calendarCfg.dataset.ceremonyLocation) {
+						lines.push(calendarCfg.dataset.ceremonyLabel + ': ' + calendarCfg.dataset.ceremonyLocation);
+					}
+					if (calendarCfg.dataset.receptionLocation) {
+						lines.push(calendarCfg.dataset.receptionLabel + ': ' + calendarCfg.dataset.receptionLocation);
+					}
+					return lines.join('\n');
+				}
+
+				function buildICSFile() {
+					var start = formatICSDate(calendarCfg.dataset.start);
+					if (!start) return '';
+
+					var uid = [
+						calendarCfg.dataset.start || 'event',
+						calendarCfg.dataset.title || 'wedding',
+						(window.location.host || 'foedus')
+					].join('-').replace(/[^a-zA-Z0-9]/g, '');
+
+					var lines = [
+						'BEGIN:VCALENDAR',
+						'VERSION:2.0',
+						'PRODID:-//Foedus//Wedding Calendar//EN',
+						'CALSCALE:GREGORIAN',
+						'BEGIN:VEVENT',
+						'UID:' + uid,
+						'DTSTAMP:' + timestampNowUTC(),
+						start.field + ':' + start.value,
+						'SUMMARY:' + escapeICSValue(calendarCfg.dataset.title),
+						'LOCATION:' + escapeICSValue(calendarCfg.dataset.location),
+						'DESCRIPTION:' + escapeICSValue(buildCalendarDescription()),
+						'END:VEVENT',
+						'END:VCALENDAR'
+					];
+
+					return lines.join('\r\n');
+				}
+
+				document.querySelectorAll('[data-add-to-calendar]').forEach(function(btn) {
+					btn.addEventListener('click', function(event) {
+						event.preventDefault();
+
+						var ics = buildICSFile();
+						if (!ics) return;
+
+						var blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+						var url = URL.createObjectURL(blob);
+						var link = document.createElement('a');
+						link.href = url;
+						link.download = calendarCfg.dataset.filename || 'wedding.ics';
+						document.body.appendChild(link);
+						link.click();
+						link.remove();
+						setTimeout(function() { URL.revokeObjectURL(url); }, 0);
+					});
+				});
 			}
 
 			var cfg = document.getElementById('transfer-cfg');

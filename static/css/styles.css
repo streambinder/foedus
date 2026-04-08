@@ -232,6 +232,56 @@ html:has(.vp-section) body {
   font-weight: 300;
 }
 
+.calendar-cta {
+  margin-top: var(--sp-6);
+  display: flex;
+  justify-content: center;
+}
+
+.calendar-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 13rem;
+  padding: 0.9rem 1.4rem;
+  border-radius: 999px;
+  border: 1px solid var(--charcoal-dark);
+  background: var(--charcoal-dark);
+  color: var(--white);
+  text-decoration: none;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  transition: transform var(--duration) var(--ease),
+              background var(--duration) var(--ease),
+              border-color var(--duration) var(--ease),
+              color var(--duration) var(--ease),
+              box-shadow var(--duration) var(--ease);
+  box-shadow: var(--shadow-md);
+}
+
+.calendar-btn:hover {
+  color: var(--white);
+  background: var(--dusty-rose-dark);
+  border-color: var(--dusty-rose-dark);
+  transform: translateY(-1px);
+  text-decoration: none;
+}
+
+.calendar-btn--secondary {
+  background: var(--white);
+  color: var(--charcoal-dark);
+  border-color: var(--sage-light);
+}
+
+.calendar-btn--secondary:hover {
+  color: var(--charcoal-dark);
+  background: var(--ivory);
+  border-color: var(--dusty-rose);
+}
+
 /* nav arrows */
 .vp-arrow {
   position: absolute;
@@ -671,6 +721,10 @@ body:has(.hero) {
   box-shadow: var(--shadow-md);
   aspect-ratio: 16 / 10;
   object-fit: cover;
+}
+
+.calendar-cta--venues {
+  margin-top: var(--sp-5);
 }
 
 /* ---------------------------------------------------------------
