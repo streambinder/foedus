@@ -1898,7 +1898,9 @@ body.invitation-opening {
   position: relative;
   width: 100vw;
   min-height: 100dvh;
-  background: var(--white);
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.68' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='256' height='256' filter='url(%23n)' opacity='0.22'/%3E%3C/svg%3E"),
+    var(--white);
   border: 0;
   border-radius: 0;
   box-shadow: none;
@@ -1972,9 +1974,9 @@ body.invitation-opening {
   z-index: 220;
   padding: env(safe-area-inset-top, 0) env(safe-area-inset-right, 0) env(safe-area-inset-bottom, 0) env(safe-area-inset-left, 0);
   background:
-    radial-gradient(circle at 82% 18%, rgba(188, 48, 46, 0.08), transparent 16%),
-    radial-gradient(circle at top, rgba(255, 252, 246, 0.94), transparent 34%),
-    linear-gradient(180deg, #f7f1e7 0%, #efe4d3 48%, #e2d3bc 100%);
+    radial-gradient(circle at 82% 18%, rgba(100, 80, 55, 0.08), transparent 18%),
+    radial-gradient(circle at top, rgba(245, 240, 232, 0.90), transparent 38%),
+    linear-gradient(180deg, #ede6da 0%, #e2d9cc 48%, #d6ccbc 100%);
   overflow: hidden;
 }
 
@@ -2070,7 +2072,7 @@ body.invitation-opening {
   inset: auto 8% 3%;
   height: 12%;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(66, 48, 34, 0.22), rgba(66, 48, 34, 0));
+  background: radial-gradient(circle, rgba(40, 28, 14, 0.22), rgba(40, 28, 14, 0));
   z-index: 0;
   filter: blur(10px);
 }
@@ -2083,37 +2085,13 @@ body.invitation-opening {
   transform: none;
   border-radius: 0;
   background:
-    radial-gradient(circle at 16% 24%, rgba(255,255,255,0.22), transparent 15%),
-    radial-gradient(circle at 78% 76%, rgba(164, 131, 88, 0.08), transparent 18%),
-    linear-gradient(180deg, #efe4d0 0%, #e6d7bf 48%, #d9c7aa 100%);
-  box-shadow: inset 0 0 0 1px rgba(125, 102, 73, 0.18), 0 24px 50px rgba(42, 52, 57, 0.08);
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.68' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='256' height='256' filter='url(%23n)' opacity='0.25'/%3E%3C/svg%3E"),
+    radial-gradient(ellipse at 22% 18%, rgba(200, 185, 160, 0.28), transparent 30%),
+    radial-gradient(ellipse at 74% 80%, rgba(80, 65, 45, 0.10), transparent 28%),
+    linear-gradient(160deg, #b8a080 0%, #a89070 35%, #9a8262 65%, #8e7858 100%);
+  box-shadow: inset 0 0 0 1px rgba(50, 38, 22, 0.22), 0 24px 50px rgba(40, 30, 15, 0.10);
   overflow: hidden;
   z-index: 0;
-}
-
-.envelope-back::before,
-.envelope-back::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background:
-    repeating-linear-gradient(
-      110deg,
-      rgba(255,255,255,0.1) 0 1px,
-      rgba(209, 191, 163, 0.08) 1px 3px,
-      transparent 3px 10px
-    ),
-    linear-gradient(90deg, rgba(255,255,255,0.18), transparent 38%, transparent 62%, rgba(120, 95, 66, 0.06)),
-    linear-gradient(180deg, rgba(255,255,255,0.12), transparent 42%, rgba(120, 95, 66, 0.05));
-  mix-blend-mode: multiply;
-}
-
-.envelope-back::before {
-  clip-path: polygon(0 0, 50% 50%, 0 100%);
-}
-
-.envelope-back::after {
-  clip-path: polygon(100% 0, 50% 50%, 100% 100%);
 }
 
 .envelope-flap {
@@ -2143,14 +2121,9 @@ body.invitation-opening {
   height: 57.25%;
   transform: translateX(-50%);
   background:
-    repeating-linear-gradient(
-      112deg,
-      rgba(255,255,255,0.035) 0 1px,
-      rgba(153, 123, 85, 0.05) 1px 2px,
-      transparent 2px 8px
-    ),
-    radial-gradient(circle at 50% 86%, rgba(255,255,255,0.22), transparent 24%),
-    linear-gradient(180deg, #cdb88f 0%, #dcc8a6 58%, #ecdcc3 100%);
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.68' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='256' height='256' filter='url(%23n)' opacity='0.25'/%3E%3C/svg%3E"),
+    radial-gradient(ellipse at 50% 86%, rgba(175, 158, 128, 0.20), transparent 30%),
+    linear-gradient(180deg, #967858 0%, #a68868 45%, #b89878 100%);
   transform-origin: 50% 0%;
   z-index: 5;
   clip-path: polygon(0 0, 100% 0, 51.4% 98%, 48.6% 98%);
@@ -2158,7 +2131,7 @@ body.invitation-opening {
 }
 
 .envelope-flap-top::after {
-  background: linear-gradient(180deg, rgba(75, 56, 39, 0.22), rgba(75, 56, 39, 0));
+  background: linear-gradient(180deg, rgba(58, 34, 10, 0.32), rgba(58, 34, 10, 0) 72%);
 }
 
 .envelope-flap-right {
@@ -2169,14 +2142,9 @@ body.invitation-opening {
   height: 100%;
   transform: translateY(-50%);
   background:
-    repeating-linear-gradient(
-      68deg,
-      rgba(255,255,255,0.05) 0 1px,
-      rgba(153, 123, 85, 0.04) 1px 2px,
-      transparent 2px 8px
-    ),
-    linear-gradient(90deg, rgba(255,255,255,0.12), transparent 18%),
-    linear-gradient(90deg, #f1e5d1 0%, #dfcfb3 58%, #cfbb99 100%);
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.68' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='256' height='256' filter='url(%23n)' opacity='0.25'/%3E%3C/svg%3E"),
+    linear-gradient(90deg, rgba(160, 145, 112, 0.16), transparent 22%),
+    linear-gradient(90deg, #ac8c6c 0%, #9e7e5e 55%, #907050 100%);
   transform-origin: 100% 50%;
   z-index: 3;
   clip-path: polygon(100% 0, 2% 48.6%, 2% 51.4%, 100% 100%);
@@ -2184,7 +2152,7 @@ body.invitation-opening {
 }
 
 .envelope-flap-right::after {
-  background: linear-gradient(90deg, rgba(75, 56, 39, 0.18), rgba(75, 56, 39, 0));
+  background: linear-gradient(90deg, rgba(58, 34, 10, 0.28), rgba(58, 34, 10, 0) 68%);
 }
 
 .envelope-flap-bottom {
@@ -2195,14 +2163,9 @@ body.invitation-opening {
   height: 57.25%;
   transform: translateX(-50%);
   background:
-    repeating-linear-gradient(
-      112deg,
-      rgba(255,255,255,0.045) 0 1px,
-      rgba(147, 117, 81, 0.045) 1px 2px,
-      transparent 2px 8px
-    ),
-    radial-gradient(circle at 50% 14%, rgba(255,255,255,0.2), transparent 22%),
-    linear-gradient(180deg, #eadcc6 0%, #d6c29f 58%, #c7b08b 100%);
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.68' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='256' height='256' filter='url(%23n)' opacity='0.25'/%3E%3C/svg%3E"),
+    radial-gradient(ellipse at 50% 14%, rgba(175, 158, 128, 0.18), transparent 28%),
+    linear-gradient(180deg, #b09070 0%, #9e8060 55%, #8e7050 100%);
   transform-origin: 50% 100%;
   z-index: 4;
   clip-path: polygon(0 100%, 48.6% 2%, 51.4% 2%, 100% 100%);
@@ -2210,7 +2173,7 @@ body.invitation-opening {
 }
 
 .envelope-flap-bottom::after {
-  background: linear-gradient(0deg, rgba(75, 56, 39, 0.18), rgba(75, 56, 39, 0));
+  background: linear-gradient(0deg, rgba(58, 34, 10, 0.32), rgba(58, 34, 10, 0) 72%);
 }
 
 .envelope-flap-left {
@@ -2220,14 +2183,9 @@ body.invitation-opening {
   height: 100%;
   transform: translateY(-50%);
   background:
-    repeating-linear-gradient(
-      68deg,
-      rgba(255,255,255,0.05) 0 1px,
-      rgba(153, 123, 85, 0.04) 1px 2px,
-      transparent 2px 8px
-    ),
-    linear-gradient(90deg, transparent 82%, rgba(255,255,255,0.12)),
-    linear-gradient(90deg, #cfbb99 0%, #dfcfb3 42%, #f1e5d1 100%);
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.68' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='256' height='256' filter='url(%23n)' opacity='0.25'/%3E%3C/svg%3E"),
+    linear-gradient(90deg, transparent 78%, rgba(160, 145, 112, 0.14)),
+    linear-gradient(90deg, #907050 0%, #9e7e5e 45%, #ac8c6c 100%);
   transform-origin: 0 50%;
   z-index: 3;
   clip-path: polygon(0 0, 98% 48.6%, 98% 51.4%, 0 100%);
@@ -2235,7 +2193,7 @@ body.invitation-opening {
 }
 
 .envelope-flap-left::after {
-  background: linear-gradient(270deg, rgba(75, 56, 39, 0.18), rgba(75, 56, 39, 0));
+  background: linear-gradient(270deg, rgba(58, 34, 10, 0.28), rgba(58, 34, 10, 0) 68%);
 }
 
 #envelope-overlay.opening .envelope-flap-top {
