@@ -1,4 +1,4 @@
-(function () {
+function initDashboardFeatures() {
   "use strict";
 
   // ---------------------------------------------------------------
@@ -7,7 +7,8 @@
   var playlistsContainer = document.getElementById("playlists-container");
   var addPlaylistBtn = document.getElementById("add-playlist-btn");
 
-  if (playlistsContainer && addPlaylistBtn) {
+  if (playlistsContainer && addPlaylistBtn && !playlistsContainer.dataset.bound) {
+    playlistsContainer.dataset.bound = "true";
     addPlaylistBtn.addEventListener("click", function () {
       addPlaylistRow("");
       reindexPlaylists();
@@ -45,7 +46,8 @@
   var placesContainer = document.getElementById("places-container");
   var addPlaceBtn = document.getElementById("add-place-btn");
 
-  if (placesContainer && addPlaceBtn) {
+  if (placesContainer && addPlaceBtn && !placesContainer.dataset.bound) {
+    placesContainer.dataset.bound = "true";
     addPlaceBtn.addEventListener("click", function () {
       addPlaceCard();
       reindexPlaces();
@@ -137,7 +139,8 @@
   var accommodationsContainer = document.getElementById("accommodations-container");
   var addAccommodationBtn = document.getElementById("add-accommodation-btn");
 
-  if (accommodationsContainer && addAccommodationBtn) {
+  if (accommodationsContainer && addAccommodationBtn && !accommodationsContainer.dataset.bound) {
+    accommodationsContainer.dataset.bound = "true";
     addAccommodationBtn.addEventListener("click", function () {
       addAccommodationCard();
       reindexAccommodations();
@@ -345,7 +348,8 @@
   var impersonationsContainer = document.getElementById("impersonations-container");
   var addImpersonationBtn = document.getElementById("add-impersonation-btn");
 
-  if (impersonationsContainer && addImpersonationBtn) {
+  if (impersonationsContainer && addImpersonationBtn && !impersonationsContainer.dataset.bound) {
+    impersonationsContainer.dataset.bound = "true";
     addImpersonationBtn.addEventListener("click", function () {
       addImpersonationCard();
       reindexImpersonations();
@@ -384,4 +388,7 @@
       if (profile) profile.name = "impersonation_profile_" + idx;
     });
   }
-})();
+}
+
+window.initDashboardFeatures = initDashboardFeatures;
+initDashboardFeatures();

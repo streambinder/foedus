@@ -57,7 +57,7 @@ func getLang(c *fiber.Ctx) string {
 	return "en"
 }
 
-const guestsPerPage = 20
+const guestsPerPage = 10
 
 func DashboardIndex(c *fiber.Ctx) error {
 	settings, err := database.GetAllSettings()

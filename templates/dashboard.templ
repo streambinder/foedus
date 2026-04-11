@@ -2,11 +2,11 @@ package templates
 
 import (
 	"fmt"
-	"net/url"
-	"strings"
 	"github.com/streambinder/foedus/internal/i18n"
 	"github.com/streambinder/foedus/internal/models"
+	"net/url"
 	"strconv"
+	"strings"
 )
 
 // helper to build the combined "name, address" display value for autocomplete fields
@@ -77,14 +77,31 @@ func invitationGuestNames(inv models.Invitation) string {
 }
 
 templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []models.Gift, registryItems []models.RegistryItem, invitations []models.Invitation, polls []models.Poll, confirmedCeremony int, confirmedReception int, pendingGuests int, total int, page int, totalPages int, search string, csrfToken string, flash string, t i18n.T, lang string) {
-	@Layout(pageTitle(t("title.dashboard"), settings.Spouse1Name, settings.Spouse2Name), lang, t, OGMeta{}) {
-		if flash != "" {
-			<div class="flash-success">{ flash }</div>
-		}
+	@DashboardLayout(pageTitle(t("title.dashboard"), settings.Spouse1Name, settings.Spouse2Name), lang) {
+		<div id="dashboard-flash">
+			if flash != "" {
+				<div class="flash-success">{ flash }</div>
+			}
+		</div>
+		<!-- counters -->
+		<div id="dashboard-counters" class="counters-row">
+			<div class="counter-card">
+				<span class="counter-value">{ strconv.Itoa(confirmedCeremony) }<small>/{ strconv.Itoa(total) }</small></span>
+				<span class="counter-label">{ t("counter.ceremony") }</span>
+			</div>
+			<div class="counter-card">
+				<span class="counter-value">{ strconv.Itoa(confirmedReception) }<small>/{ strconv.Itoa(total) }</small></span>
+				<span class="counter-label">{ t("counter.reception") }</span>
+			</div>
+			<div class="counter-card">
+				<span class="counter-value">{ strconv.Itoa(pendingGuests) }<small>/{ strconv.Itoa(total) }</small></span>
+				<span class="counter-label">{ t("counter.pending") }</span>
+			</div>
+		</div>
 		<!-- details -->
-		<article>
+		<article id="dashboard-settings">
 			<h2>{ t("dashboard.details") }</h2>
-			<form method="POST" action="/dashboard/settings">
+			<form class="dashboard-settings-form" method="POST" action="/dashboard/settings">
 				<input type="hidden" name="_csrf" value={ csrfToken }/>
 				<label>{ t("label.spouses") }</label>
 				<div class="grid">
@@ -145,156 +162,189 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 						<button type="button" id="share-preview-remove" class="outline secondary" style="margin-top:0.5rem;display:none">Remove</button>
 					}
 				</div>
-				<!-- playlists -->
-				<hr/>
-				<label>{ t("dashboard.playlists") }</label>
-				<p class="muted" style="margin-top:-0.5rem;margin-bottom:0.75rem">{ t("dashboard.playlists_description") }</p>
-				<div id="playlists-container">
-					if len(settings.SpotifyPlaylists) > 0 {
-						for idx, url := range settings.SpotifyPlaylists {
-							<div class="playlist-row">
-								<input type="text" name={ fmt.Sprintf("spotify_playlist_%d", idx) } value={ url } placeholder={ t("placeholder.playlist_url") }/>
-								<button type="button" class="outline secondary remove-playlist-btn" aria-label={ t("btn.delete") }>&times;</button>
+				<div class="accordion dashboard-accordion" id="dashboard-settings-accordion">
+					<div class="accordion-item settings-section">
+						<h2 class="accordion-header" id="settings-playlists-heading">
+							<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#settings-playlists-panel" aria-expanded="false" aria-controls="settings-playlists-panel">
+								<span class="settings-section-title">{ t("dashboard.playlists") }</span>
+								<span class="settings-section-description">{ t("dashboard.playlists_description") }</span>
+							</button>
+						</h2>
+						<div id="settings-playlists-panel" class="accordion-collapse collapse" data-dashboard-key="settings-playlists" aria-labelledby="settings-playlists-heading">
+							<div class="accordion-body settings-section-body">
+								<div id="playlists-container">
+									if len(settings.SpotifyPlaylists) > 0 {
+										for idx, url := range settings.SpotifyPlaylists {
+											<div class="playlist-row">
+												<input type="text" name={ fmt.Sprintf("spotify_playlist_%d", idx) } value={ url } placeholder={ t("placeholder.playlist_url") }/>
+												<button type="button" class="outline secondary remove-playlist-btn" aria-label={ t("btn.delete") }>&times;</button>
+											</div>
+										}
+									}
+								</div>
+								<button type="button" id="add-playlist-btn" class="add-entry-btn">+ { t("btn.add_playlist") }</button>
 							</div>
-						}
-					}
-				</div>
-				<button type="button" id="add-playlist-btn" class="add-entry-btn">+ { t("btn.add_playlist") }</button>
-				<!-- places -->
-				<hr/>
-				<label>{ t("dashboard.places") }</label>
-				<p class="muted" style="margin-top:-0.5rem;margin-bottom:0.75rem">{ t("dashboard.places_description") }</p>
-				<div id="places-container">
-					if len(settings.Places) > 0 {
-						for idx, place := range settings.Places {
-							<div class="place-card" data-index={ strconv.Itoa(idx) }>
-								<div class="place-card-header">
-									<span class="place-number">{ strconv.Itoa(idx + 1) }</span>
-									<div class="place-card-actions">
-										<button type="button" class="place-move-up" aria-label="Move up">&uarr;</button>
-										<button type="button" class="place-move-down" aria-label="Move down">&darr;</button>
-										<button type="button" class="place-remove outline secondary" aria-label={ t("btn.delete") }>&times;</button>
-									</div>
+						</div>
+					</div>
+					<div class="accordion-item settings-section">
+						<h2 class="accordion-header" id="settings-places-heading">
+							<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#settings-places-panel" aria-expanded="false" aria-controls="settings-places-panel">
+								<span class="settings-section-title">{ t("dashboard.places") }</span>
+								<span class="settings-section-description">{ t("dashboard.places_description") }</span>
+							</button>
+						</h2>
+						<div id="settings-places-panel" class="accordion-collapse collapse" data-dashboard-key="settings-places" aria-labelledby="settings-places-heading">
+							<div class="accordion-body settings-section-body">
+								<div id="places-container">
+									if len(settings.Places) > 0 {
+										for idx, place := range settings.Places {
+											<div class="place-card" data-index={ strconv.Itoa(idx) }>
+												<div class="place-card-header">
+													<div class="place-card-meta">
+														<span class="place-number">{ strconv.Itoa(idx + 1) }</span>
+														if place.Lat != 0 || place.Lng != 0 {
+															<div class="place-coords">
+																<span class="place-coords-check">&#10003;</span>
+																<code>{ fmt.Sprintf("%.4f, %.4f", place.Lat, place.Lng) }</code>
+															</div>
+														}
+													</div>
+													<div class="place-card-actions">
+														<button type="button" class="place-move-up" aria-label="Move up">&uarr;</button>
+														<button type="button" class="place-move-down" aria-label="Move down">&darr;</button>
+														<button type="button" class="place-remove outline secondary" aria-label={ t("btn.delete") }>&times;</button>
+													</div>
+												</div>
+												<div class="grid">
+													<div>
+														<label>{ t("label.place_label") }</label>
+														<input type="text" name={ fmt.Sprintf("place_label_%d", idx) } value={ place.Label } placeholder={ t("placeholder.place_label") }/>
+													</div>
+													<div style="position:relative">
+														<label>{ t("label.place_location") }</label>
+														<input type="text" class="place-location-input" value={ locationDisplay(place.Name, place.Address) } autocomplete="off" placeholder={ t("placeholder.place_location") }/>
+														<div class="autocomplete-dropdown place-dropdown"></div>
+														<input type="hidden" name={ fmt.Sprintf("place_name_%d", idx) } class="place-name-hidden" value={ place.Name }/>
+														<input type="hidden" name={ fmt.Sprintf("place_address_%d", idx) } class="place-address-hidden" value={ place.Address }/>
+														<input type="hidden" name={ fmt.Sprintf("place_lat_%d", idx) } class="place-lat-hidden" value={ fmt.Sprintf("%f", place.Lat) }/>
+														<input type="hidden" name={ fmt.Sprintf("place_lng_%d", idx) } class="place-lng-hidden" value={ fmt.Sprintf("%f", place.Lng) }/>
+													</div>
+												</div>
+											</div>
+										}
+									}
 								</div>
-								<div class="grid">
-									<div>
-										<label>{ t("label.place_label") }</label>
-										<input type="text" name={ fmt.Sprintf("place_label_%d", idx) } value={ place.Label } placeholder={ t("placeholder.place_label") }/>
-									</div>
-									<div style="position:relative">
-										<label>{ t("label.place_location") }</label>
-										<input type="text" class="place-location-input" value={ locationDisplay(place.Name, place.Address) } autocomplete="off" placeholder={ t("placeholder.place_location") }/>
-										<div class="autocomplete-dropdown place-dropdown"></div>
-										<input type="hidden" name={ fmt.Sprintf("place_name_%d", idx) } class="place-name-hidden" value={ place.Name }/>
-										<input type="hidden" name={ fmt.Sprintf("place_address_%d", idx) } class="place-address-hidden" value={ place.Address }/>
-										<input type="hidden" name={ fmt.Sprintf("place_lat_%d", idx) } class="place-lat-hidden" value={ fmt.Sprintf("%f", place.Lat) }/>
-										<input type="hidden" name={ fmt.Sprintf("place_lng_%d", idx) } class="place-lng-hidden" value={ fmt.Sprintf("%f", place.Lng) }/>
-									</div>
+								<button type="button" id="add-place-btn" class="add-entry-btn">+ { t("btn.add_place") }</button>
+							</div>
+						</div>
+					</div>
+					<div class="accordion-item settings-section">
+						<h2 class="accordion-header" id="settings-accommodations-heading">
+							<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#settings-accommodations-panel" aria-expanded="false" aria-controls="settings-accommodations-panel">
+								<span class="settings-section-title">{ t("dashboard.accommodations") }</span>
+								<span class="settings-section-description">{ t("dashboard.accommodations_description") }</span>
+							</button>
+						</h2>
+						<div id="settings-accommodations-panel" class="accordion-collapse collapse" data-dashboard-key="settings-accommodations" aria-labelledby="settings-accommodations-heading">
+							<div class="accordion-body settings-section-body">
+								<div id="accommodations-container">
+									if len(settings.AccommodationSuggestions) > 0 {
+										for idx, suggestion := range settings.AccommodationSuggestions {
+											<div class="accommodation-card">
+												<div class="accommodation-card-header">
+													<span class="accommodation-number">{ strconv.Itoa(idx + 1) }</span>
+													<button type="button" class="accommodation-remove outline secondary" aria-label={ t("btn.delete") }>&times;</button>
+												</div>
+												<div class="grid">
+													<div>
+														<label>{ t("label.accommodation_name") }</label>
+														<input type="text" name={ fmt.Sprintf("accommodation_name_%d", idx) } value={ suggestion.Name } placeholder={ t("placeholder.accommodation_name") }/>
+													</div>
+													<div>
+														<label>{ t("label.accommodation_url") }</label>
+														<input type="url" name={ fmt.Sprintf("accommodation_url_%d", idx) } value={ suggestion.URL } placeholder={ t("placeholder.accommodation_url") }/>
+													</div>
+												</div>
+												<div>
+													<label>{ t("label.accommodation_description") }</label>
+													<textarea name={ fmt.Sprintf("accommodation_description_%d", idx) } rows="3" placeholder={ t("placeholder.accommodation_description") }>{ suggestion.Description }</textarea>
+												</div>
+											</div>
+										}
+									}
 								</div>
-								if place.Lat != 0 || place.Lng != 0 {
-									<div class="place-coords">
-										<span class="place-coords-check">&#10003;</span>
-										<code>{ fmt.Sprintf("%.4f, %.4f", place.Lat, place.Lng) }</code>
+								<button type="button" id="add-accommodation-btn" class="add-entry-btn">+ { t("btn.add_accommodation") }</button>
+							</div>
+						</div>
+					</div>
+					<div class="accordion-item settings-section">
+						<h2 class="accordion-header" id="settings-impersonations-heading">
+							<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#settings-impersonations-panel" aria-expanded="false" aria-controls="settings-impersonations-panel">
+								<span class="settings-section-title">{ t("dashboard.impersonations") }</span>
+								<span class="settings-section-description">{ t("dashboard.impersonations_description") }</span>
+							</button>
+						</h2>
+						<div id="settings-impersonations-panel" class="accordion-collapse collapse" data-dashboard-key="settings-impersonations" aria-labelledby="settings-impersonations-heading">
+							<div class="accordion-body settings-section-body">
+								<div id="impersonations-container">
+									if len(settings.Impersonations) > 0 {
+										for idx, imp := range settings.Impersonations {
+											<div class="impersonation-card">
+												<div class="impersonation-card-header">
+													<span class="impersonation-number">{ strconv.Itoa(idx + 1) }</span>
+													<button type="button" class="impersonation-remove outline secondary" aria-label={ t("btn.delete") }>&times;</button>
+												</div>
+												<input type="text" name={ fmt.Sprintf("impersonation_codename_%d", idx) } value={ imp.Codename } placeholder={ t("placeholder.impersonation_codename") }/>
+												<textarea name={ fmt.Sprintf("impersonation_profile_%d", idx) } rows="3" placeholder={ t("placeholder.impersonation_profile") }>{ imp.Profile }</textarea>
+											</div>
+										}
+									}
+								</div>
+								<button type="button" id="add-impersonation-btn" class="add-entry-btn">+ { t("btn.add_impersonation") }</button>
+							</div>
+						</div>
+					</div>
+					<div class="accordion-item settings-section">
+						<h2 class="accordion-header" id="settings-homepage-labels-heading">
+							<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#settings-homepage-labels-panel" aria-expanded="false" aria-controls="settings-homepage-labels-panel">
+								<span class="settings-section-title">Homepage Labels</span>
+								<span class="settings-section-description">Override guest-facing text on the homepage and invitation pages.</span>
+							</button>
+						</h2>
+						<div id="settings-homepage-labels-panel" class="accordion-collapse collapse" data-dashboard-key="settings-homepage-labels" aria-labelledby="settings-homepage-labels-heading">
+							<div class="accordion-body settings-section-body settings-section-body--labels">
+								for _, lang := range []string{"en", "it"} {
+									<div class="accordion dashboard-subaccordion">
+										<div class="accordion-item settings-subsection">
+											<h3 class="accordion-header" id={ "settings-homepage-labels-" + lang + "-heading" }>
+												<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target={ "#" + "settings-homepage-labels-" + lang + "-panel" } aria-expanded="false" aria-controls={ "settings-homepage-labels-" + lang + "-panel" }>
+													{ lang }
+												</button>
+											</h3>
+											<div id={ "settings-homepage-labels-" + lang + "-panel" } class="accordion-collapse collapse" data-dashboard-key={ "settings-homepage-labels-" + lang } aria-labelledby={ "settings-homepage-labels-" + lang + "-heading" }>
+												<div class="accordion-body settings-subsection-body">
+													<div class="homepage-label-groups">
+														@homepageLabelGroup(lang, "home", []string{"home.getting_married", "home.ceremony", "home.reception", "home.soundtrack", "home.soundtrack_description", "home.places", "home.places_description", "home.accommodations", "home.accommodations_description", "home.registry", "home.registry_description", "home.generic_gift", "home.generic_gift_description", "home.remaining"}, settings.HomepageLabels, i18n.Defaults(lang))
+														@homepageLabelGroup(lang, "invitation", []string{"invitation.title", "invitation.rsvp", "invitation.rsvp_description", "invitation.confirm", "invitation.already_answered", "invitation.change_answer"}, settings.HomepageLabels, i18n.Defaults(lang))
+														@homepageLabelGroup(lang, "gift / badge", []string{"gift.thank_you", "gift.thanks_message", "badge.sold"}, settings.HomepageLabels, i18n.Defaults(lang))
+														@homepageLabelGroup(lang, "buttons", []string{"btn.buy", "btn.copy", "btn.copied", "btn.cancel", "btn.confirm", "btn.close"}, settings.HomepageLabels, i18n.Defaults(lang))
+														@homepageLabelGroup(lang, "modal", []string{"modal.transfer_intro", "modal.iban", "modal.owner", "modal.reason", "modal.transfer_confirm_text"}, settings.HomepageLabels, i18n.Defaults(lang))
+														@homepageLabelGroup(lang, "placeholders / chat / misc", []string{"placeholder.custom_amount", "placeholder.donor", "chat.title", "chat.placeholder", "chat.send", "chat.error", "chat.rate_limited", "rsvp.yes", "rsvp.no", "th.amount", "th.ceremony", "th.reception", "link.dashboard"}, settings.HomepageLabels, i18n.Defaults(lang))
+													</div>
+												</div>
+											</div>
+										</div>
 									</div>
 								}
 							</div>
-						}
-					}
-				</div>
-				<button type="button" id="add-place-btn" class="add-entry-btn">+ { t("btn.add_place") }</button>
-				<!-- accommodation suggestions -->
-				<hr/>
-				<label>{ t("dashboard.accommodations") }</label>
-				<p class="muted" style="margin-top:-0.5rem;margin-bottom:0.75rem">{ t("dashboard.accommodations_description") }</p>
-				<div id="accommodations-container">
-					if len(settings.AccommodationSuggestions) > 0 {
-						for idx, suggestion := range settings.AccommodationSuggestions {
-							<div class="accommodation-card">
-								<div class="accommodation-card-header">
-									<span class="accommodation-number">{ strconv.Itoa(idx + 1) }</span>
-									<button type="button" class="accommodation-remove outline secondary" aria-label={ t("btn.delete") }>&times;</button>
-								</div>
-								<div class="grid">
-									<div>
-										<label>{ t("label.accommodation_name") }</label>
-										<input type="text" name={ fmt.Sprintf("accommodation_name_%d", idx) } value={ suggestion.Name } placeholder={ t("placeholder.accommodation_name") }/>
-									</div>
-									<div>
-										<label>{ t("label.accommodation_url") }</label>
-										<input type="url" name={ fmt.Sprintf("accommodation_url_%d", idx) } value={ suggestion.URL } placeholder={ t("placeholder.accommodation_url") }/>
-									</div>
-								</div>
-								<div>
-									<label>{ t("label.accommodation_description") }</label>
-									<textarea name={ fmt.Sprintf("accommodation_description_%d", idx) } rows="3" placeholder={ t("placeholder.accommodation_description") }>{ suggestion.Description }</textarea>
-								</div>
-							</div>
-						}
-					}
-				</div>
-				<button type="button" id="add-accommodation-btn" class="add-entry-btn">+ { t("btn.add_accommodation") }</button>
-				<!-- impersonations -->
-				<hr/>
-				<label>{ t("dashboard.impersonations") }</label>
-				<p class="muted" style="margin-top:-0.5rem;margin-bottom:0.75rem">{ t("dashboard.impersonations_description") }</p>
-				<div id="impersonations-container">
-					if len(settings.Impersonations) > 0 {
-						for idx, imp := range settings.Impersonations {
-							<div class="impersonation-card">
-								<div class="impersonation-card-header">
-									<span class="impersonation-number">{ strconv.Itoa(idx + 1) }</span>
-									<button type="button" class="impersonation-remove outline secondary" aria-label={ t("btn.delete") }>&times;</button>
-								</div>
-								<input type="text" name={ fmt.Sprintf("impersonation_codename_%d", idx) } value={ imp.Codename } placeholder={ t("placeholder.impersonation_codename") }/>
-								<textarea name={ fmt.Sprintf("impersonation_profile_%d", idx) } rows="3" placeholder={ t("placeholder.impersonation_profile") }>{ imp.Profile }</textarea>
-							</div>
-						}
-					}
-				</div>
-				<button type="button" id="add-impersonation-btn" class="add-entry-btn">+ { t("btn.add_impersonation") }</button>
-				<!-- homepage labels -->
-				<hr/>
-				<label>Homepage Labels</label>
-				<p class="muted" style="margin-top:-0.5rem;margin-bottom:0.75rem">Override guest-facing text on the homepage and invitation pages.</p>
-				for _, lang := range []string{"en", "it"} {
-					<details>
-						<summary style="cursor:pointer;font-weight:600;text-transform:uppercase;letter-spacing:.05em">{ lang }</summary>
-						<div style="margin-top:0.75rem">
-							@homepageLabelGroup(lang, "home", []string{"home.getting_married","home.ceremony","home.reception","home.soundtrack","home.soundtrack_description","home.places","home.places_description","home.accommodations","home.accommodations_description","home.registry","home.registry_description","home.generic_gift","home.generic_gift_description","home.remaining"}, settings.HomepageLabels, i18n.Defaults(lang))
-							<hr/>
-							@homepageLabelGroup(lang, "invitation", []string{"invitation.title","invitation.rsvp","invitation.rsvp_description","invitation.confirm","invitation.already_answered","invitation.change_answer"}, settings.HomepageLabels, i18n.Defaults(lang))
-							<hr/>
-							@homepageLabelGroup(lang, "gift / badge", []string{"gift.thank_you","gift.thanks_message","badge.sold"}, settings.HomepageLabels, i18n.Defaults(lang))
-							<hr/>
-							@homepageLabelGroup(lang, "buttons", []string{"btn.buy","btn.copy","btn.copied","btn.cancel","btn.confirm","btn.close"}, settings.HomepageLabels, i18n.Defaults(lang))
-							<hr/>
-							@homepageLabelGroup(lang, "modal", []string{"modal.transfer_intro","modal.iban","modal.owner","modal.reason","modal.transfer_confirm_text"}, settings.HomepageLabels, i18n.Defaults(lang))
-							<hr/>
-							@homepageLabelGroup(lang, "placeholders / chat / misc", []string{"placeholder.custom_amount","placeholder.donor","chat.title","chat.placeholder","chat.send","chat.error","chat.rate_limited","rsvp.yes","rsvp.no","th.amount","th.ceremony","th.reception","link.dashboard"}, settings.HomepageLabels, i18n.Defaults(lang))
 						</div>
-					</details>
-				}
-				<hr/>
+					</div>
+				</div>
 				<button type="submit" class="save-btn">{ t("btn.save_settings") }</button>
 			</form>
 		</article>
-		<!-- counters -->
-		<div class="counters-row">
-			<div class="counter-card">
-				<span class="counter-value">{ strconv.Itoa(confirmedCeremony) }<small>/{ strconv.Itoa(total) }</small></span>
-				<span class="counter-label">{ t("counter.ceremony") }</span>
-			</div>
-			<div class="counter-card">
-				<span class="counter-value">{ strconv.Itoa(confirmedReception) }<small>/{ strconv.Itoa(total) }</small></span>
-				<span class="counter-label">{ t("counter.reception") }</span>
-			</div>
-			<div class="counter-card">
-				<span class="counter-value">{ strconv.Itoa(pendingGuests) }<small>/{ strconv.Itoa(total) }</small></span>
-				<span class="counter-label">{ t("counter.pending") }</span>
-			</div>
-		</div>
 		<!-- guests -->
-		<article>
+		<article id="dashboard-guests">
 			<h2>{ t("dashboard.guests") }</h2>
 			<div class="guest-forms-row">
 				<form class="add-guest-form" method="POST" action="/dashboard/guests">
@@ -306,18 +356,23 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 				<form class="import-csv-form" method="POST" action="/dashboard/guests/import" enctype="multipart/form-data">
 					<input type="hidden" name="_csrf" value={ csrfToken }/>
 					<input type="file" name="csv_file" accept=".csv"/>
+					<pre class="csv-format-hint">Marco Rossi</pre>
 					<button type="submit">{ t("btn.import_csv") }</button>
 				</form>
 			</div>
-			<input type="search" id="guest-search" name="q" value={ search } placeholder={ t("placeholder.search") } autocomplete="off"/>
+			<div class="guest-search-row">
+				<input type="search" id="guest-search" name="q" value={ search } placeholder={ t("placeholder.search") } autocomplete="off"/>
+				if len(guests) > 0 {
+					<form id="invitation-form" method="POST" action="/dashboard/invitations">
+						<input type="hidden" name="_csrf" value={ csrfToken }/>
+						<input type="hidden" name="guest_ids" id="guest-ids-input"/>
+						<div class="invitation-bar">
+							<button type="submit" id="create-invitation-btn" disabled>{ t("btn.create_invitation") }</button>
+						</div>
+					</form>
+				}
+			</div>
 			if len(guests) > 0 {
-				<form id="invitation-form" method="POST" action="/dashboard/invitations">
-					<input type="hidden" name="_csrf" value={ csrfToken }/>
-					<input type="hidden" name="guest_ids" id="guest-ids-input"/>
-					<div class="invitation-bar">
-						<button type="submit" id="create-invitation-btn" disabled>{ t("btn.create_invitation") }</button>
-					</div>
-				</form>
 				<div class="overflow-auto">
 					<table>
 						<thead>
@@ -349,11 +404,11 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 										<form method="POST" action={ templ.SafeURL("/dashboard/guests/" + strconv.Itoa(g.ID) + "/confirm/ceremony") }>
 											<input type="hidden" name="_csrf" value={ csrfToken }/>
 											if g.ConfirmedCeremony == nil {
-												<input type="checkbox" role="switch" class="toggle-null" onchange="this.form.submit()"/>
+												<input type="checkbox" role="switch" class="toggle-null" onchange="window.dashboardSubmitForm ? window.dashboardSubmitForm(this.form) : this.form.requestSubmit()"/>
 											} else if *g.ConfirmedCeremony {
-												<input type="checkbox" role="switch" checked onchange="this.form.submit()"/>
+												<input type="checkbox" role="switch" checked onchange="window.dashboardSubmitForm ? window.dashboardSubmitForm(this.form) : this.form.requestSubmit()"/>
 											} else {
-												<input type="checkbox" role="switch" onchange="this.form.submit()"/>
+												<input type="checkbox" role="switch" onchange="window.dashboardSubmitForm ? window.dashboardSubmitForm(this.form) : this.form.requestSubmit()"/>
 											}
 										</form>
 									</td>
@@ -361,11 +416,11 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 										<form method="POST" action={ templ.SafeURL("/dashboard/guests/" + strconv.Itoa(g.ID) + "/confirm/reception") }>
 											<input type="hidden" name="_csrf" value={ csrfToken }/>
 											if g.ConfirmedReception == nil {
-												<input type="checkbox" role="switch" class="toggle-null" onchange="this.form.submit()"/>
+												<input type="checkbox" role="switch" class="toggle-null" onchange="window.dashboardSubmitForm ? window.dashboardSubmitForm(this.form) : this.form.requestSubmit()"/>
 											} else if *g.ConfirmedReception {
-												<input type="checkbox" role="switch" checked onchange="this.form.submit()"/>
+												<input type="checkbox" role="switch" checked onchange="window.dashboardSubmitForm ? window.dashboardSubmitForm(this.form) : this.form.requestSubmit()"/>
 											} else {
-												<input type="checkbox" role="switch" onchange="this.form.submit()"/>
+												<input type="checkbox" role="switch" onchange="window.dashboardSubmitForm ? window.dashboardSubmitForm(this.form) : this.form.requestSubmit()"/>
 											}
 										</form>
 									</td>
@@ -399,9 +454,9 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 			}
 		</article>
 		<!-- invitations -->
-		if len(invitations) > 0 {
-			<article>
-				<h2>{ t("dashboard.invitations") }</h2>
+		<article id="dashboard-invitations">
+			<h2>{ t("dashboard.invitations") }</h2>
+			if len(invitations) > 0 {
 				<div class="overflow-auto">
 					<table>
 						<thead>
@@ -417,10 +472,7 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 							for _, inv := range invitations {
 								<tr>
 									<td data-label={ t("th.code") }>
-										<span class="copyable">
-											<code class="invitation-code">{ inv.Code }</code>
-											<button type="button" class="copy-btn" data-code={ inv.Code } onclick="copyInvitationURL(this)">{ t("btn.copy") }</button>
-										</span>
+										<code class="invitation-code">{ inv.Code }</code>
 									</td>
 									<td data-label={ t("th.guests") }>{ invitationGuestNames(inv) }</td>
 									<td data-label={ t("th.viewed") }>
@@ -432,6 +484,7 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 									</td>
 									<td data-label={ t("th.created") }>{ i18n.FormatDate(inv.CreatedAt, lang) }</td>
 									<td class="actions">
+										<button type="button" class="copy-btn" data-code={ inv.Code } onclick="copyInvitationURL(this)">{ t("btn.copy") }</button>
 										<form method="POST" action={ templ.SafeURL("/dashboard/invitations/" + strconv.Itoa(inv.ID) + "/delete") } data-confirm={ t("confirm.delete_invitation") } onsubmit="return confirm(this.dataset.confirm)">
 											<input type="hidden" name="_csrf" value={ csrfToken }/>
 											<button type="submit" class="outline secondary">{ t("btn.delete") }</button>
@@ -442,71 +495,80 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 						</tbody>
 					</table>
 				</div>
-			</article>
-		}
-		<!-- polls -->
-		<article>
-			<h2>{ t("dashboard.polls") }</h2>
-			<form class="add-poll-form" method="POST" action="/dashboard/polls">
-				<input type="hidden" name="_csrf" value={ csrfToken }/>
-				<div class="grid">
-					<input type="text" name="question" placeholder={ t("placeholder.question") } required/>
-					<button type="submit">{ t("btn.add") }</button>
-				</div>
-			</form>
-			if len(polls) > 0 {
-				<div class="overflow-auto">
-					<table>
-						<thead>
-							<tr>
-								<th>{ t("th.question") }</th>
-								<th>{ t("th.yes") }</th>
-								<th>{ t("th.actions") }</th>
-							</tr>
-						</thead>
-						<tbody>
-							for _, p := range polls {
-								<tr>
-									<td data-label={ t("th.question") }>{ p.Question }</td>
-									<td data-label={ t("th.yes") }>
-										if len(p.YesVoters) > 0 {
-											<a href="#" class="poll-yes-link" data-poll-id={ strconv.Itoa(p.ID) }>{ strconv.Itoa(len(p.YesVoters)) }<small>/{ strconv.Itoa(p.TotalCount) }</small></a>
-										} else {
-											{ strconv.Itoa(len(p.YesVoters)) }<small>/{ strconv.Itoa(p.TotalCount) }</small>
-										}
-									</td>
-									<td class="actions">
-										<form method="POST" action={ templ.SafeURL("/dashboard/polls/" + strconv.Itoa(p.ID) + "/delete") } data-confirm={ t("confirm.delete_poll") } onsubmit="return confirm(this.dataset.confirm)">
-											<input type="hidden" name="_csrf" value={ csrfToken }/>
-											<button type="submit" class="outline secondary">{ t("btn.delete") }</button>
-										</form>
-									</td>
-								</tr>
-							}
-						</tbody>
-					</table>
-				</div>
-				for _, p := range polls {
-					if len(p.YesVoters) > 0 {
-						<div id={ "poll-modal-" + strconv.Itoa(p.ID) } class="modal-overlay" style="display:none" onclick="if(event.target===this)this.style.display='none'">
-							<div class="modal-box">
-								<h3>{ p.Question }</h3>
-								<ul>
-									for _, name := range p.YesVoters {
-										<li>{ name }</li>
-									}
-								</ul>
-								<div class="modal-actions">
-									<button type="button" class="outline secondary" onclick="this.closest('.modal-overlay').style.display='none'">{ t("btn.close") }</button>
-								</div>
-							</div>
-						</div>
-					}
-				}
 			}
+			<div class="accordion dashboard-accordion dashboard-subsection-accordion">
+				<div class="accordion-item dashboard-subsection">
+					<h2 class="accordion-header" id="invitations-polls-heading">
+						<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#invitations-polls-panel" aria-expanded="false" aria-controls="invitations-polls-panel">
+							<span class="dashboard-subsection-title">{ t("dashboard.polls") }</span>
+						</button>
+					</h2>
+					<div id="invitations-polls-panel" class="accordion-collapse collapse" data-dashboard-key="invitations-polls" aria-labelledby="invitations-polls-heading">
+						<div class="accordion-body dashboard-subsection-body">
+							<form class="add-poll-form" method="POST" action="/dashboard/polls">
+								<input type="hidden" name="_csrf" value={ csrfToken }/>
+								<div class="grid">
+									<input type="text" name="question" placeholder={ t("placeholder.question") } required/>
+									<button type="submit">{ t("btn.add") }</button>
+								</div>
+							</form>
+							if len(polls) > 0 {
+								<div class="overflow-auto">
+									<table>
+										<thead>
+											<tr>
+												<th>{ t("th.question") }</th>
+												<th>{ t("th.yes") }</th>
+												<th>{ t("th.actions") }</th>
+											</tr>
+										</thead>
+										<tbody>
+											for _, p := range polls {
+												<tr>
+													<td data-label={ t("th.question") }>{ p.Question }</td>
+													<td data-label={ t("th.yes") }>
+														if len(p.YesVoters) > 0 {
+															<a href="#" class="poll-yes-link" data-poll-id={ strconv.Itoa(p.ID) }>{ strconv.Itoa(len(p.YesVoters)) }<small>/{ strconv.Itoa(p.TotalCount) }</small></a>
+														} else {
+															{ strconv.Itoa(len(p.YesVoters)) }<small>/{ strconv.Itoa(p.TotalCount) }</small>
+														}
+													</td>
+													<td class="actions">
+														<form method="POST" action={ templ.SafeURL("/dashboard/polls/" + strconv.Itoa(p.ID) + "/delete") } data-confirm={ t("confirm.delete_poll") } onsubmit="return confirm(this.dataset.confirm)">
+															<input type="hidden" name="_csrf" value={ csrfToken }/>
+															<button type="submit" class="outline secondary">{ t("btn.delete") }</button>
+														</form>
+													</td>
+												</tr>
+											}
+										</tbody>
+									</table>
+								</div>
+								for _, p := range polls {
+									if len(p.YesVoters) > 0 {
+										<div id={ "poll-modal-" + strconv.Itoa(p.ID) } class="modal-overlay" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+											<div class="modal-box">
+												<h3>{ p.Question }</h3>
+												<ul>
+													for _, name := range p.YesVoters {
+														<li>{ name }</li>
+													}
+												</ul>
+												<div class="modal-actions">
+													<button type="button" class="outline secondary" onclick="this.closest('.modal-overlay').style.display='none'">{ t("btn.close") }</button>
+												</div>
+											</div>
+										</div>
+									}
+								}
+							}
+						</div>
+					</div>
+				</div>
+			</div>
 		</article>
 		<!-- registry -->
-		<article>
+		<article id="dashboard-registry">
 			<h2>{ t("dashboard.registry") }</h2>
 			<form class="registry-add-form" method="POST" action="/dashboard/registry" enctype="multipart/form-data">
 				<input type="hidden" name="_csrf" value={ csrfToken }/>
@@ -551,167 +613,74 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 					</table>
 				</div>
 			}
-		</article>
-		<!-- gifts -->
-		if len(gifts) > 0 {
-			<article>
-				<h2>{ t("dashboard.gifts") }</h2>
-				<div class="overflow-auto">
-					<table>
-						<thead>
-							<tr>
-								<th>{ t("th.donor") }</th>
-								<th>{ t("th.amount") }</th>
-								<th>{ t("th.registry_item") }</th>
-								<th>{ t("th.date") }</th>
-							</tr>
-						</thead>
-						<tbody>
-							for _, g := range gifts {
-								<tr>
-									<td data-label={ t("th.donor") }>{ g.Donor }</td>
-									<td data-label={ t("th.amount") }>{ formatGiftAmount(g.Amount) }</td>
-									<td data-label={ t("th.registry_item") }>{ registryItemName(registryItems, g.RegistryItemID) }</td>
-									<td data-label={ t("th.date") }>{ i18n.FormatDate(g.CreatedAt, lang) }</td>
-								</tr>
-							}
-						</tbody>
-					</table>
+			if len(gifts) > 0 {
+				<div class="accordion dashboard-accordion dashboard-subsection-accordion">
+					<div class="accordion-item dashboard-subsection">
+						<h2 class="accordion-header" id="registry-gifts-heading">
+							<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#registry-gifts-panel" aria-expanded="false" aria-controls="registry-gifts-panel">
+								<span class="dashboard-subsection-title">{ t("dashboard.gifts") }</span>
+							</button>
+						</h2>
+						<div id="registry-gifts-panel" class="accordion-collapse collapse" data-dashboard-key="registry-gifts" aria-labelledby="registry-gifts-heading">
+							<div class="accordion-body dashboard-subsection-body">
+								<div class="overflow-auto">
+									<table>
+										<thead>
+											<tr>
+												<th>{ t("th.donor") }</th>
+												<th>{ t("th.amount") }</th>
+												<th>{ t("th.registry_item") }</th>
+												<th>{ t("th.date") }</th>
+											</tr>
+										</thead>
+										<tbody>
+											for _, g := range gifts {
+												<tr>
+													<td data-label={ t("th.donor") }>{ g.Donor }</td>
+													<td data-label={ t("th.amount") }>{ formatGiftAmount(g.Amount) }</td>
+													<td data-label={ t("th.registry_item") }>{ registryItemName(registryItems, g.RegistryItemID) }</td>
+													<td data-label={ t("th.date") }>{ i18n.FormatDate(g.CreatedAt, lang) }</td>
+												</tr>
+											}
+										</tbody>
+									</table>
+								</div>
+							</div>
+						</div>
+					</div>
 				</div>
-			</article>
-		}
+			}
+		</article>
+		<div id="dashboard-modal-root"></div>
 		<script>
 			// poll yes-voters modal
-			document.addEventListener('click', function(e) {
-				var link = e.target.closest('.poll-yes-link');
+			document.addEventListener("click", function (e) {
+				var link = e.target.closest(".poll-yes-link");
 				if (!link) return;
 				e.preventDefault();
-				document.getElementById('poll-modal-' + link.dataset.pollId).style.display = '';
+				document.getElementById(
+					"poll-modal-" + link.dataset.pollId,
+				).style.display = "";
 			});
 		</script>
 		<script>
 			// copy invitation URL to clipboard
 			function copyInvitationURL(btn) {
 				const code = btn.dataset.code;
-				const url = window.location.protocol + '//' + window.location.host + '/' + code;
-				navigator.clipboard.writeText(url).then(function() {
+				const url =
+					window.location.protocol + "//" + window.location.host + "/" + code;
+				navigator.clipboard.writeText(url).then(function () {
 					const orig = btn.textContent;
-					btn.textContent = '\u2713';
-					setTimeout(function() { btn.textContent = orig; }, 1500);
+					btn.textContent = "\u2713";
+					setTimeout(function () {
+						btn.textContent = orig;
+					}, 1500);
 				});
 			}
-		</script>
-		<script>
-			// invitation checkbox logic
-			(function() {
-				const btn = document.getElementById('create-invitation-btn');
-				const hidden = document.getElementById('guest-ids-input');
-				if (!btn || !hidden) return;
-				document.addEventListener('change', function(e) {
-					if (!e.target.classList.contains('guest-checkbox')) return;
-					const checked = document.querySelectorAll('.guest-checkbox:checked');
-					const ids = Array.from(checked).map(cb => cb.value);
-					hidden.value = ids.join(',');
-					btn.disabled = ids.length === 0;
-				});
-			})();
 		</script>
 		<script src="/static/autocomplete.js"></script>
 		<script src="/static/dashboard-features.js"></script>
-		<script>
-			(function() {
-				const input = document.getElementById('guest-search');
-				if (!input) return;
-				if (input.value) {
-					input.focus();
-					input.setSelectionRange(input.value.length, input.value.length);
-				}
-				let timeout;
-				input.addEventListener('input', function() {
-					clearTimeout(timeout);
-					timeout = setTimeout(function() {
-						const url = new URL(window.location);
-						if (input.value) {
-							url.searchParams.set('q', input.value);
-						} else {
-							url.searchParams.delete('q');
-						}
-						url.searchParams.delete('page');
-						window.location = url;
-					}, 300);
-				});
-			})();
-		</script>
-		<script>
-			// shared image resize: compress to 400x400 max, format defaults to image/png
-			function resizeImageToDataURI(fileInput, dataInput, previewImg, format, quality) {
-				fileInput.addEventListener('change', function() {
-					const file = this.files[0];
-					if (!file) return;
-					const img = new Image();
-					img.onload = function() {
-						const max = 400;
-						let w = img.width, h = img.height;
-						if (w > max || h > max) {
-							const ratio = Math.min(max / w, max / h);
-							w = Math.round(w * ratio);
-							h = Math.round(h * ratio);
-						}
-						const canvas = document.createElement('canvas');
-						canvas.width = w;
-						canvas.height = h;
-						canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-						dataInput.value = canvas.toDataURL(format || 'image/png', quality);
-						if (previewImg) {
-							previewImg.src = dataInput.value;
-							previewImg.style.display = '';
-						}
-					};
-					img.src = URL.createObjectURL(file);
-				});
-			}
-			// registry (png only)
-			(function() {
-				const f = document.getElementById('registry-file');
-				const d = document.getElementById('registry-image-data');
-				if (f && d) resizeImageToDataURI(f, d);
-			})();
-			// ceremony (jpeg, 0.7 quality for smaller payloads)
-			(function() {
-				const f = document.getElementById('ceremony-file');
-				const d = document.getElementById('ceremony-image-data');
-				const p = document.getElementById('ceremony-preview');
-				if (f && d) resizeImageToDataURI(f, d, p, 'image/jpeg', 0.7);
-			})();
-			// reception (jpeg, 0.7 quality for smaller payloads)
-			(function() {
-				const f = document.getElementById('reception-file');
-				const d = document.getElementById('reception-image-data');
-				const p = document.getElementById('reception-preview');
-				if (f && d) resizeImageToDataURI(f, d, p, 'image/jpeg', 0.7);
-			})();
-			// share preview image (png, for og:image)
-			(function() {
-				const f = document.getElementById('share-preview-file');
-				const d = document.getElementById('share-preview-image-data');
-				const p = document.getElementById('share-preview-preview');
-				const removeBtn = document.getElementById('share-preview-remove');
-				if (f && d) {
-					resizeImageToDataURI(f, d, p);
-					f.addEventListener('change', function() {
-						if (removeBtn) removeBtn.style.display = '';
-					});
-				}
-				if (removeBtn) {
-					removeBtn.addEventListener('click', function() {
-						d.value = '';
-						if (p) { p.src = ''; p.style.display = 'none'; }
-						removeBtn.style.display = 'none';
-						if (f) f.value = '';
-					});
-				}
-			})();
-		</script>
+		<script src="/static/dashboard-spa.js"></script>
 		<hr class="footer-separator"/>
 		<footer>
 			<a href="/">{ t("link.home") }</a>
@@ -720,7 +689,7 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 }
 
 templ EditGuest(guest models.Guest, settings models.WeddingSettings, csrfToken string, t i18n.T, lang string) {
-	@Layout(pageTitle(t("title.edit_guest"), settings.Spouse1Name, settings.Spouse2Name), lang, t, OGMeta{}) {
+	@DashboardLayout(pageTitle(t("title.edit_guest"), settings.Spouse1Name, settings.Spouse2Name), lang) {
 		<a href="/dashboard">&larr; { t("btn.back") }</a>
 		<h1>{ t("title.edit_guest") }</h1>
 		<article>
@@ -749,10 +718,12 @@ templ homepageLabelGroup(lang, groupLabel string, keys []string, overrides map[s
 	for _, key := range keys {
 		<label style="font-size:.85rem">
 			{ key }
-			<input type="text"
+			<input
+				type="text"
 				name={ "homepage_label_" + lang + "_" + key }
 				placeholder={ defaults[key] }
-				value={ overrides[lang][key] }/>
+				value={ overrides[lang][key] }
+			/>
 		</label>
 	}
 }

@@ -55,3 +55,43 @@ templ Layout(title string, lang string, t i18n.T, ogMeta OGMeta) {
 		</body>
 	</html>
 }
+
+templ DashboardLayout(title string, lang string) {
+	<!DOCTYPE html>
+	<html lang={ lang } data-bs-theme="light">
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<title>{ title }</title>
+			<link rel="icon" type="image/svg+xml" href="/static/favicon.svg"/>
+			<link
+				rel="stylesheet"
+				href="https://cdn.jsdelivr.net/npm/@tabler/core@1.4.0/dist/css/tabler.min.css"
+			/>
+			<link rel="stylesheet" href="/static/css/dashboard.css"/>
+		</head>
+		<body class="dashboard-page">
+			<div class="page">
+				<div class="page-wrapper">
+					<div class="page-header d-print-none">
+						<div class="container-xl">
+							<div class="row g-2 align-items-center">
+								<div class="col">
+									<h2 class="page-title">{ title }</h2>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="page-body">
+						<div class="container-xl">
+							<div class="dashboard-stack">
+								{ children... }
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.4.0/dist/js/tabler.min.js"></script>
+		</body>
+	</html>
+}
