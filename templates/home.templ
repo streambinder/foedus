@@ -152,21 +152,29 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 			<div class="vp-section-inner">
 				<div class="venues-pair">
 					if settings.CeremonyAddress != "" || settings.CeremonyLocation != "" {
-						<div class="venue">
+						<div class="venue venue-ceremony">
 							<h2>{ t("home.ceremony") }</h2>
 							<a href={ templ.SafeURL(mapsURL(settings.CeremonyAddress, settings.CeremonyLocation)) } target="_blank" class="venue-link">
 								if settings.CeremonyImage != "" {
 									<div class="venue-image-wrapper">
 										<img class="venue-image" src={ settings.CeremonyImage } alt={ t("home.ceremony") }/>
-									<div class="venue-overlay">
-										<span class="venue-overlay-label">{ t("home.ceremony") }</span>
-										if settings.CeremonyAddress != "" {
-											<strong>{ settings.CeremonyAddress }</strong>
-										}
-										if settings.CeremonyLocation != "" {
-											<span>{ settings.CeremonyLocation }</span>
-										}
-									</div>
+										<div class="venue-overlay venue-overlay-top">
+											<div class="venue-overlay-badge">
+												<span class="venue-overlay-icon" aria-hidden="true"></span>
+												<strong>{ t("home.ceremony") }</strong>
+											</div>
+										</div>
+										<div class="venue-overlay venue-overlay-bottom">
+											if settings.CeremonyAddress != "" {
+												<strong>{ settings.CeremonyAddress }</strong>
+											}
+											if settings.CeremonyLocation != "" {
+												<div class="venue-address-line">
+													<span class="venue-address-icon" aria-hidden="true"></span>
+													<span>{ settings.CeremonyLocation }</span>
+												</div>
+											}
+										</div>
 									</div>
 								} else {
 									if settings.CeremonyAddress != "" {
@@ -180,21 +188,29 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 						</div>
 					}
 					if settings.ReceptionAddress != "" || settings.ReceptionLocation != "" {
-						<div class="venue">
+						<div class="venue venue-reception">
 							<h2>{ t("home.reception") }</h2>
 							<a href={ templ.SafeURL(mapsURL(settings.ReceptionAddress, settings.ReceptionLocation)) } target="_blank" class="venue-link">
 								if settings.ReceptionImage != "" {
 									<div class="venue-image-wrapper">
 										<img class="venue-image" src={ settings.ReceptionImage } alt={ t("home.reception") }/>
-									<div class="venue-overlay">
-										<span class="venue-overlay-label">{ t("home.reception") }</span>
-										if settings.ReceptionAddress != "" {
-											<strong>{ settings.ReceptionAddress }</strong>
-										}
-										if settings.ReceptionLocation != "" {
-											<span>{ settings.ReceptionLocation }</span>
-										}
-									</div>
+										<div class="venue-overlay venue-overlay-top">
+											<div class="venue-overlay-badge">
+												<span class="venue-overlay-icon" aria-hidden="true"></span>
+												<strong>{ t("home.reception") }</strong>
+											</div>
+										</div>
+										<div class="venue-overlay venue-overlay-bottom">
+											if settings.ReceptionAddress != "" {
+												<strong>{ settings.ReceptionAddress }</strong>
+											}
+											if settings.ReceptionLocation != "" {
+												<div class="venue-address-line">
+													<span class="venue-address-icon" aria-hidden="true"></span>
+													<span>{ settings.ReceptionLocation }</span>
+												</div>
+											}
+										</div>
 									</div>
 								} else {
 									if settings.ReceptionAddress != "" {
@@ -503,56 +519,72 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 			</div>
 		}
 		<script>
-		(function() {
-			// nav dots: highlight active section on scroll
-			var dots = document.querySelectorAll('.vp-dot');
-			var sections = document.querySelectorAll('.vp-section');
-			var prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+			(function() {
+				// nav dots: highlight active section on scroll
+				var dots = document.querySelectorAll('.vp-dot');
+				var sections = document.querySelectorAll('.vp-section');
+				var prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-			function scrollToSectionHash(hash, historyMode) {
-				if (!hash || hash.charAt(0) !== '#') return false;
-				var target = document.getElementById(hash.slice(1));
-				if (!target) return false;
+				function setActiveSection(id) {
+					if (!id) return;
 
-				target.scrollIntoView({
-					behavior: prefersReducedMotion ? 'auto' : 'smooth',
-					block: 'start'
-				});
+					dots.forEach(function(d) {
+						d.classList.toggle('active', d.getAttribute('href') === '#' + id);
+					});
 
-				if (window.history && window.history[historyMode]) {
-					window.history[historyMode](null, '', hash);
+					if (window.history && window.history.replaceState && window.location.hash !== '#' + id) {
+						window.history.replaceState(null, '', '#' + id);
+					}
 				}
 
-				return true;
-			}
+				function scrollToSectionHash(hash, historyMode) {
+					if (!hash || hash.charAt(0) !== '#') return false;
+					var target = document.getElementById(hash.slice(1));
+					if (!target) return false;
 
-			document.querySelectorAll('.vp-arrow[href^="#"], .vp-dot[href^="#"]').forEach(function(link) {
-				link.addEventListener('click', function(event) {
-					if (!scrollToSectionHash(link.getAttribute('href'), 'pushState')) return;
-					event.preventDefault();
-				});
-			});
-
-			if (window.location.hash) {
-				scrollToSectionHash(window.location.hash, 'replaceState');
-			}
-
-			if (dots.length && sections.length) {
-				var observer = new IntersectionObserver(function(entries) {
-					entries.forEach(function(entry) {
-						if (entry.isIntersecting) {
-							var id = entry.target.id;
-							dots.forEach(function(d) {
-								d.classList.toggle('active', d.getAttribute('href') === '#' + id);
-							});
-						}
+					target.scrollIntoView({
+						behavior: prefersReducedMotion ? 'auto' : 'smooth',
+						block: 'start'
 					});
-				}, { threshold: 0.5 });
-				sections.forEach(function(s) { observer.observe(s); });
-			}
 
-			var calendarCfg = document.getElementById('calendar-cfg');
-			if (calendarCfg) {
+					if (window.history && window.history[historyMode]) {
+						window.history[historyMode](null, '', hash);
+					}
+
+					return true;
+				}
+
+				document.querySelectorAll('.vp-arrow[href^="#"], .vp-dot[href^="#"]').forEach(function(link) {
+					link.addEventListener('click', function(event) {
+						if (!scrollToSectionHash(link.getAttribute('href'), 'pushState')) return;
+						event.preventDefault();
+					});
+				});
+
+				if (window.location.hash) {
+					scrollToSectionHash(window.location.hash, 'replaceState');
+				}
+
+				if (sections.length) {
+					var observer = new IntersectionObserver(function(entries) {
+						var activeEntry = null;
+
+						entries.forEach(function(entry) {
+							if (!entry.isIntersecting) return;
+							if (!activeEntry || entry.intersectionRatio > activeEntry.intersectionRatio) {
+								activeEntry = entry;
+							}
+						});
+
+						if (activeEntry) {
+							setActiveSection(activeEntry.target.id);
+						}
+					}, { threshold: 0.5, rootMargin: '-15% 0px -15% 0px' });
+					sections.forEach(function(s) { observer.observe(s); });
+				}
+
+				var calendarCfg = document.getElementById('calendar-cfg');
+				if (calendarCfg) {
 				function escapeICSValue(value) {
 					return String(value || '')
 						.replace(/\\/g, '\\\\')
