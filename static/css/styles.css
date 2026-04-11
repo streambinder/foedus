@@ -3417,14 +3417,14 @@ td [role="switch"] { margin: 0; }
 
 #chat-panel {
   position: fixed;
-  bottom: 96px;
+  bottom: 24px;
   right: 24px;
   width: 360px;
   max-height: 500px;
   background: var(--white);
   border-radius: 12px;
   box-shadow: 0 8px 32px rgba(0,0,0,0.16);
-  z-index: 150;
+  z-index: 151;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -3563,7 +3563,7 @@ td [role="switch"] { margin: 0; }
     left: 12px;
     right: 12px;
     width: auto;
-    bottom: 88px;
+    bottom: 20px;
     border-radius: 12px;
     max-height: 70vh;
   }
@@ -3583,6 +3583,6 @@ td [role="switch"] { margin: 0; }
 
   #chat-panel {
     right: 56px;
-    bottom: 120px;
+    bottom: 56px;
   }
 }
