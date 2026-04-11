@@ -40,6 +40,7 @@
     chatPanel.style.display = "";
     chatPanel.classList.remove("chat-panel--closing");
     chatPanel.classList.add("chat-panel--opening");
+    bubble.classList.add("chat-bubble--covered");
     input.focus();
     msgs.scrollTop = msgs.scrollHeight;
   }
@@ -50,6 +51,7 @@
     chatPanel.addEventListener("animationend", function hide() {
       chatPanel.style.display = "none";
       chatPanel.classList.remove("chat-panel--closing");
+      bubble.classList.remove("chat-bubble--covered");
       chatPanel.removeEventListener("animationend", hide);
     });
   }
