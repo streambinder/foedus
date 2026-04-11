@@ -160,9 +160,15 @@ func ChatStream(c *fiber.Ctx) error {
 		accommodationList = strings.Join(accommodationParts, ", ")
 	}
 
-	lang := i18nLangFromAccept(c.Get("Accept-Language"))
+	history := req.History
+	if len(history) > chatMaxHistoryInPrompt {
+		history = history[len(history)-chatMaxHistoryInPrompt:]
+	}
 	systemPrompt := fmt.Sprintf(
-		"You are %s. You MUST write and behave exactly as described below:\n%s\n\n"+
+		"You are %s.\n\n"+
+			"PERSONA STYLE RULE: The profile below is tone reference only. It defines persona, rhythm, and attitude, but it is not a language instruction. Apply its style in the language chosen from the user's latest message; never copy the profile's language just because it appears there.\n"+
+			"STYLE TRANSFER RULE: Extract abstract style traits from the profile, such as energy, warmth, brevity, humor, pacing, and directness, then re-express those traits natively in the inbound message language. Treat the profile as foreign-language source material for style only: keep its meaning, discard its wording. Do not import slang, filler words, catchphrases, or sentence fragments from the profile into another language unless the user used them first.\n"+
+			"<persona_profile>\n%s\n</persona_profile>\n\n"+
 			"You MUST sign every message with your name \"— %s\" at the very end.\n\n"+
 			"Here is context about the wedding you can use to answer questions:\n"+
 			"- Couple: %s & %s\n"+
@@ -175,29 +181,32 @@ func ChatStream(c *fiber.Ctx) error {
 			"MEMORY RULE: The conversation history below is your memory. You must read it before replying. Do not ask the user to repeat information that is already present in earlier messages.\n\n"+
 			"IDENTITY RULE: Never assume who you are talking to, but if the user already identified themselves anywhere in the conversation history, treat that identity as known and do not ask again. Only ask who they are when the conversation requires their identity and it is genuinely missing or ambiguous in the chat history.\n\n"+
 			"SCOPE RULE: You only answer questions related to the wedding (date, location, logistics, couple, gifts, music, story, etc.). If someone asks about anything unrelated, politely decline and gently redirect the conversation back to the wedding.\n\n"+
-			"Reply in the same language the user writes in. Preferred language hint: %s.\n"+
+			"LANGUAGE RULE: Always reply in the same language as the most recent user message. Use only the current inbound message to determine reply language. Never use past user messages, past assistant messages, or any other context to infer reply language.\n"+
+			"CONTEXT RULE: The conversation context below contains past messages that have already been handled. Use it only as memory and factual reference. Do not reply to those messages again, and do not use them for language inference.\n"+
+			"INBOUND RULE: There is exactly one current inbound user message to answer now. Reply only to that message.\n\n"+
+			"PAST CONTEXT ALREADY HANDLED:\n<conversation_context>\n%s\n</conversation_context>\n\n"+
+			"CURRENT INBOUND MESSAGE TO ANSWER:\n<inbound_message>\n%s\n</inbound_message>\n\n"+
+			"FINAL INSTRUCTION: Read only the inbound message as the message that needs a reply. Use the past context only for reference.\n"+
+			"Follow this procedure silently before answering:\n"+
+			"1. Identify the language of the inbound message from its text.\n"+
+			"2. If the inbound message language is ambiguous from the inbound message alone, ask a very short clarification instead of guessing from prior context.\n"+
+			"3. Otherwise, write the reply only in the inbound message language.\n"+
+			"4. Audit the draft and rewrite it if it contains words from another language, except names, quoted user text, fixed place names, or the required signature.\n"+
+			"5. Output only the final reply.\n"+
+			"Do not code-switch. Do not mix languages. Do not use prior messages to decide the reply language. The visible reply must be entirely in the inbound message language except for the allowed exceptions above. End the reply with the exact signature \"— %s\".\n"+
 			"Keep replies warm, personal, and concise.",
 		personaName, persona.Profile, personaName,
 		settings.Spouse1Name, settings.Spouse2Name,
 		settings.CeremonyDatetime, settings.CeremonyLocation, settings.CeremonyAddress,
 		settings.ReceptionLocation, settings.ReceptionAddress,
 		settings.BankAccountIBAN, settings.BankAccountHolder,
-		playlistList, placeList, accommodationList, lang,
+		playlistList, placeList, accommodationList, formatConversationContext(history), req.Message, personaName,
 	)
 
-	history := req.History
-	if len(history) > chatMaxHistoryInPrompt {
-		history = history[len(history)-chatMaxHistoryInPrompt:]
+	messages := []map[string]string{
+		{"role": "system", "content": systemPrompt},
+		{"role": "user", "content": req.Message},
 	}
-
-	messages := []map[string]string{{"role": "system", "content": systemPrompt}}
-	for _, m := range history {
-		if m.Role != "user" && m.Role != "assistant" {
-			continue
-		}
-		messages = append(messages, map[string]string{"role": m.Role, "content": m.Content})
-	}
-	messages = append(messages, map[string]string{"role": "user", "content": req.Message})
 
 	payload, _ := json.Marshal(map[string]any{
 		"model":      openrouterModel,
@@ -292,4 +301,30 @@ func capitalizedPersonaName(name string) string {
 	}
 
 	return string(unicode.ToUpper(r)) + name[size:]
+}
+
+func formatConversationContext(history []chatMessage) string {
+	if len(history) == 0 {
+		return "(none)"
+	}
+
+	var lines []string
+	for idx, m := range history {
+		if m.Role != "user" && m.Role != "assistant" {
+			continue
+		}
+
+		content := strings.TrimSpace(m.Content)
+		if content == "" {
+			continue
+		}
+
+		lines = append(lines, fmt.Sprintf("%d. [%s][already handled] %s", idx+1, m.Role, content))
+	}
+
+	if len(lines) == 0 {
+		return "(none)"
+	}
+
+	return strings.Join(lines, "\n")
 }
