@@ -32,14 +32,28 @@ templ Layout(title string, lang string, t i18n.T, ogMeta OGMeta) {
 			<meta charset="UTF-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 			<title>{ title }</title>
+			<meta name="theme-color" content="#2A3439"/>
 			if ogMeta.Title != "" {
+				if ogMeta.Description != "" {
+					<meta name="description" content={ ogMeta.Description }/>
+				}
 				<meta property="og:title" content={ ogMeta.Title }/>
 				<meta property="og:description" content={ ogMeta.Description }/>
 				<meta property="og:image" content={ ogMeta.ImageURL }/>
+				<meta property="og:image:secure_url" content={ ogMeta.ImageURL }/>
+				<meta property="og:image:type" content="image/png"/>
+				<meta property="og:image:width" content="512"/>
+				<meta property="og:image:height" content="512"/>
 				<meta property="og:type" content="website"/>
 				<meta property="og:url" content={ ogMeta.URL }/>
+				<meta name="twitter:card" content="summary_large_image"/>
+				<meta name="twitter:title" content={ ogMeta.Title }/>
+				<meta name="twitter:description" content={ ogMeta.Description }/>
+				<meta name="twitter:image" content={ ogMeta.ImageURL }/>
 			}
 			<link rel="icon" type="image/svg+xml" href="/static/favicon.svg"/>
+			<link rel="icon" type="image/png" sizes="512x512" href="/static/favicon.png"/>
+			<link rel="apple-touch-icon" sizes="512x512" href="/static/favicon.png"/>
 			<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css"/>
 			<link rel="preconnect" href="https://fonts.googleapis.com"/>
 			<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -63,7 +77,10 @@ templ DashboardLayout(title string, lang string) {
 			<meta charset="UTF-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 			<title>{ title }</title>
+			<meta name="theme-color" content="#2A3439"/>
 			<link rel="icon" type="image/svg+xml" href="/static/favicon.svg"/>
+			<link rel="icon" type="image/png" sizes="512x512" href="/static/favicon.png"/>
+			<link rel="apple-touch-icon" sizes="512x512" href="/static/favicon.png"/>
 			<link
 				rel="stylesheet"
 				href="https://cdn.jsdelivr.net/npm/@tabler/core@1.4.0/dist/css/tabler.min.css"
