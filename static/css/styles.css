@@ -3009,17 +3009,14 @@ td [role="switch"] { margin: 0; }
 }
 
 .playlist-card {
+  display: block;
   width: 100%;
   max-width: 340px;
+  height: 152px;
+  border: 0;
   border-radius: var(--radius-lg);
-  overflow: hidden;
   box-shadow: var(--shadow-md);
-  background: var(--white);
-}
-
-.playlist-card iframe {
-  display: block;
-  height: clamp(220px, 40dvh, 280px);
+  background: transparent;
 }
 
 @media (min-width: 480px) {
@@ -3029,10 +3026,7 @@ td [role="switch"] { margin: 0; }
 
   .playlist-card {
     max-width: 380px;
-  }
-
-  .playlist-card iframe {
-    height: 320px;
+    height: 232px;
   }
 }
 
@@ -3337,9 +3331,6 @@ td [role="switch"] { margin: 0; }
 @media (min-width: 768px) {
   .playlist-card {
     max-width: 400px;
-  }
-
-  .playlist-card iframe {
     height: 352px;
   }
 

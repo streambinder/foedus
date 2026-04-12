@@ -250,23 +250,21 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 				<div class="vp-section-inner">
 					<h2 class="section-title">{ t("home.soundtrack") }</h2>
 					<p class="section-subtitle">{ t("home.soundtrack_description") }</p>
-					<div class="playlist-grid">
-						for _, url := range settings.SpotifyPlaylists {
-							if spotifyEmbedURL(url) != "" {
-								<div class="playlist-card">
+						<div class="playlist-grid">
+							for _, url := range settings.SpotifyPlaylists {
+								if spotifyEmbedURL(url) != "" {
 									<iframe
-										style="border-radius:12px"
+										class="playlist-card"
 										src={ spotifyEmbedURL(url) }
 										width="100%"
-										height="352"
+										height="152"
 										frameBorder="0"
 										allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
 										loading="lazy"
 									></iframe>
-								</div>
+								}
 							}
-						}
-					</div>
+						</div>
 				</div>
 				if nextSectionAfterSoundtrack(settings.Places, bankConfigured) != "" {
 					<a href={ templ.SafeURL(nextSectionAfterSoundtrack(settings.Places, bankConfigured)) } class="vp-arrow vp-arrow--down">
@@ -582,6 +580,18 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 					}, { threshold: 0.5, rootMargin: '-15% 0px -15% 0px' });
 					sections.forEach(function(s) { observer.observe(s); });
 				}
+
+				function syncPlaylistEmbedHeights() {
+					document.querySelectorAll('.playlist-card').forEach(function(embed) {
+						var height = Math.round(parseFloat(window.getComputedStyle(embed).height));
+						if (height > 0 && embed.getAttribute('height') !== String(height)) {
+							embed.setAttribute('height', String(height));
+						}
+					});
+				}
+
+				syncPlaylistEmbedHeights();
+				window.addEventListener('resize', syncPlaylistEmbedHeights);
 
 				var calendarCfg = document.getElementById('calendar-cfg');
 				if (calendarCfg) {
