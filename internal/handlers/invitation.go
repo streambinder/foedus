@@ -5,11 +5,11 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/gofiber/fiber/v2"
 	"github.com/streambinder/foedus/internal/database"
 	"github.com/streambinder/foedus/internal/i18n"
 	"github.com/streambinder/foedus/internal/models"
 	"github.com/streambinder/foedus/templates"
-	"github.com/gofiber/fiber/v2"
 )
 
 func ViewInvitation(c *fiber.Ctx) error {
@@ -44,12 +44,13 @@ func ViewInvitation(c *fiber.Ctx) error {
 	if settings.CeremonyLocation != "" {
 		ogDescParts = append(ogDescParts, settings.CeremonyLocation)
 	}
-	ogMeta := templates.OGMeta{
-		Title:       settings.Spouse1Name + " & " + settings.Spouse2Name,
-		Description: strings.Join(ogDescParts, " · "),
-		URL:         baseURL + "/" + code,
-		ImageURL:    baseURL + "/og-image",
-	}
+	ogMeta := BuildOGMeta(
+		baseURL,
+		baseURL+"/"+code,
+		settings.Spouse1Name+" & "+settings.Spouse2Name,
+		strings.Join(ogDescParts, " · "),
+		settings,
+	)
 	return Render(c, templates.Invitation(inv, settings, polls, inv.ViewedAt != nil, i18n.NewTWithOverrides(lang, settings.HomepageLabels[lang]), lang, ogMeta))
 }
 
@@ -89,7 +90,7 @@ func UpdateInvitationRSVP(c *fiber.Ctx) error {
 		answers := make(map[int]models.PollAnswer)
 		for _, p := range polls {
 			fieldSuffix := strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID)
-			answer := c.FormValue("poll_" + fieldSuffix) == "1"
+			answer := c.FormValue("poll_"+fieldSuffix) == "1"
 			notes := ""
 			if answer {
 				notes = strings.TrimSpace(c.FormValue("poll_notes_" + fieldSuffix))

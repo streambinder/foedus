@@ -3,10 +3,10 @@ package handlers
 import (
 	"strings"
 
+	"github.com/gofiber/fiber/v2"
 	"github.com/streambinder/foedus/internal/database"
 	"github.com/streambinder/foedus/internal/i18n"
 	"github.com/streambinder/foedus/templates"
-	"github.com/gofiber/fiber/v2"
 )
 
 func Home(c *fiber.Ctx) error {
@@ -36,11 +36,12 @@ func Home(c *fiber.Ctx) error {
 	if settings.CeremonyLocation != "" {
 		ogDescParts = append(ogDescParts, settings.CeremonyLocation)
 	}
-	ogMeta := templates.OGMeta{
-		Title:       settings.Spouse1Name + " & " + settings.Spouse2Name,
-		Description: strings.Join(ogDescParts, " · "),
-		URL:         baseURL + "/",
-		ImageURL:    baseURL + "/og-image",
-	}
+	ogMeta := BuildOGMeta(
+		baseURL,
+		baseURL+"/",
+		settings.Spouse1Name+" & "+settings.Spouse2Name,
+		strings.Join(ogDescParts, " · "),
+		settings,
+	)
 	return Render(c, templates.Home(settings, registryItems, claimedAmounts, bankConfigured, chatEnabled, i18n.NewTWithOverrides(lang, settings.HomepageLabels[lang]), lang, ogMeta))
 }
