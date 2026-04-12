@@ -6,11 +6,11 @@ import (
 	"log"
 	"os"
 
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/csrf"
 	"github.com/streambinder/foedus/internal/database"
 	"github.com/streambinder/foedus/internal/handlers"
 	"github.com/streambinder/foedus/internal/middleware"
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/csrf"
 )
 
 func main() {
@@ -58,6 +58,9 @@ func main() {
 	admin.Post("/guests/:id/confirm/:field", handlers.CycleConfirmed)
 	admin.Post("/registry", handlers.AddRegistryItem)
 	admin.Post("/registry/:id/delete", handlers.DeleteRegistryItem)
+	admin.Get("/gifts/:id/edit", handlers.EditGiftPage)
+	admin.Post("/gifts/:id", handlers.UpdateGift)
+	admin.Post("/gifts/:id/delete", handlers.DeleteGift)
 	admin.Post("/invitations", handlers.CreateInvitation)
 	admin.Post("/invitations/:id/delete", handlers.DeleteInvitation)
 	admin.Post("/polls", handlers.AddPoll)

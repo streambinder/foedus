@@ -89,6 +89,7 @@ type Gift struct {
 	Amount         int    // whole currency units (e.g. euros), no cents
 	Donor          string // who sent the gift
 	RegistryItemID *int   // fk to registry_items, nil for generic gifts
+	Confirmed      bool
 	CreatedAt      time.Time
 }
 

@@ -76,6 +76,10 @@ func invitationGuestNames(inv models.Invitation) string {
 	return strings.Join(names, ", ")
 }
 
+func registryItemSelected(selectedID *int, itemID int) bool {
+	return selectedID != nil && *selectedID == itemID
+}
+
 templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []models.Gift, registryItems []models.RegistryItem, invitations []models.Invitation, polls []models.Poll, confirmedCeremony int, confirmedReception int, pendingGuests int, total int, page int, totalPages int, search string, csrfToken string, flash string, t i18n.T, lang string) {
 	@DashboardLayout(pageTitle(t("title.dashboard"), settings.Spouse1Name, settings.Spouse2Name), lang) {
 		<div id="dashboard-flash">
@@ -630,7 +634,9 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 												<th>{ t("th.donor") }</th>
 												<th>{ t("th.amount") }</th>
 												<th>{ t("th.registry_item") }</th>
+												<th>{ t("th.confirmed") }</th>
 												<th>{ t("th.date") }</th>
+												<th>{ t("th.actions") }</th>
 											</tr>
 										</thead>
 										<tbody>
@@ -639,7 +645,21 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 													<td data-label={ t("th.donor") }>{ g.Donor }</td>
 													<td data-label={ t("th.amount") }>{ formatGiftAmount(g.Amount) }</td>
 													<td data-label={ t("th.registry_item") }>{ registryItemName(registryItems, g.RegistryItemID) }</td>
+													<td data-label={ t("th.confirmed") }>
+														if g.Confirmed {
+															{ t("status.confirmed") }
+														} else {
+															{ t("status.pending_confirmation") }
+														}
+													</td>
 													<td data-label={ t("th.date") }>{ i18n.FormatDate(g.CreatedAt, lang) }</td>
+													<td class="actions" data-label={ t("th.actions") }>
+														<a href={ templ.SafeURL("/dashboard/gifts/" + strconv.Itoa(g.ID) + "/edit") }>{ t("btn.edit") }</a>
+														<form method="POST" action={ templ.SafeURL("/dashboard/gifts/" + strconv.Itoa(g.ID) + "/delete") } data-confirm={ t("confirm.delete_gift") } onsubmit="return confirm(this.dataset.confirm)">
+															<input type="hidden" name="_csrf" value={ csrfToken }/>
+															<button type="submit" class="outline secondary">{ t("btn.delete") }</button>
+														</form>
+													</td>
 												</tr>
 											}
 										</tbody>
@@ -700,6 +720,50 @@ templ EditGuest(guest models.Guest, settings models.WeddingSettings, csrfToken s
 					@settingInput("last_name", t("label.last_name"), guest.LastName)
 				</div>
 				<button type="submit">{ t("btn.update_guest") }</button>
+			</form>
+		</article>
+	}
+}
+
+templ EditGift(gift models.Gift, registryItems []models.RegistryItem, settings models.WeddingSettings, csrfToken string, t i18n.T, lang string) {
+	@DashboardLayout(pageTitle(t("title.edit_gift"), settings.Spouse1Name, settings.Spouse2Name), lang) {
+		<a href="/dashboard">&larr; { t("btn.back") }</a>
+		<h1>{ t("title.edit_gift") }</h1>
+		<article>
+			<form method="POST" action={ templ.SafeURL("/dashboard/gifts/" + strconv.Itoa(gift.ID)) }>
+				<input type="hidden" name="_csrf" value={ csrfToken }/>
+				<div class="grid">
+					<label>
+						{ t("label.amount") }
+						<input type="number" name="amount" min="1" step="1" value={ strconv.Itoa(gift.Amount) } required/>
+					</label>
+					<label>
+						{ t("label.donor") }
+						<input type="text" name="donor" value={ gift.Donor }/>
+					</label>
+					<label>
+						{ t("label.registry_item") }
+						<select name="registry_item_id">
+							<option value="">{ t("option.no_registry_item") }</option>
+							for _, item := range registryItems {
+								if registryItemSelected(gift.RegistryItemID, item.ID) {
+									<option value={ strconv.Itoa(item.ID) } selected>{ item.Name }</option>
+								} else {
+									<option value={ strconv.Itoa(item.ID) }>{ item.Name }</option>
+								}
+							}
+						</select>
+					</label>
+					<label>
+						{ t("label.confirmed") }
+						if gift.Confirmed {
+							<input type="checkbox" name="confirmed" checked/>
+						} else {
+							<input type="checkbox" name="confirmed"/>
+						}
+					</label>
+				</div>
+				<button type="submit">{ t("btn.update_gift") }</button>
 			</form>
 		</article>
 	}

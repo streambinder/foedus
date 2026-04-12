@@ -30,6 +30,7 @@ var translations = map[string]map[string]string{
 		// layout
 		"title.dashboard":  "Dashboard",
 		"title.edit_guest": "Edit Guest",
+		"title.edit_gift":  "Edit Gift",
 		"title.setup":      "Setup Required",
 
 		// dashboard - sections
@@ -56,14 +57,19 @@ var translations = map[string]map[string]string{
 		"placeholder.search":            "Search...",
 
 		// dashboard - guest form labels
-		"label.first_name": "First Name",
-		"label.last_name":  "Last Name",
+		"label.first_name":    "First Name",
+		"label.last_name":     "Last Name",
+		"label.amount":        "Amount",
+		"label.donor":         "Donor",
+		"label.registry_item": "Registry Item",
+		"label.confirmed":     "Confirmed",
 		// dashboard - table headers
 		"th.first_name": "First Name",
 		"th.last_name":  "Last Name",
 		"th.ceremony":   "Ceremony",
 		"th.reception":  "Reception",
 		"th.actions":    "Actions",
+		"th.confirmed":  "Confirmed",
 
 		// rsvp radio labels
 		"rsvp.yes": "Yes",
@@ -74,6 +80,7 @@ var translations = map[string]map[string]string{
 		"btn.add":           "Add",
 		"btn.import_csv":    "Import CSV",
 		"btn.update_guest":  "Update Guest",
+		"btn.update_gift":   "Update Gift",
 		"btn.edit":          "Edit",
 		"btn.delete":        "Delete",
 		"btn.back":          "Back to Dashboard",
@@ -89,6 +96,8 @@ var translations = map[string]map[string]string{
 		"flash.guests_imported": "guests imported.",
 		"flash.guest_updated":   "Guest updated.",
 		"flash.guest_deleted":   "Guest deleted.",
+		"flash.gift_updated":    "Gift updated.",
+		"flash.gift_deleted":    "Gift deleted.",
 
 		// home
 		"home.getting_married":  "Together, forever",
@@ -118,20 +127,24 @@ var translations = map[string]map[string]string{
 		"th.date":         "Date",
 
 		// registry
-		"dashboard.registry":        "Wish List",
-		"home.registry":             "A Gift for Us",
-		"home.registry_description": "If you'd like to join us on this new journey",
-		"placeholder.item_name":     "Item name",
-		"placeholder.item_price":    "Price",
-		"btn.add_item":              "Add Item",
-		"btn.buy":                   "Give",
-		"badge.sold":                "Gifted",
-		"th.item_name":              "Name",
-		"th.item_price":             "Price",
-		"th.item_image":             "Image",
-		"flash.item_added":          "Item added.",
-		"flash.item_deleted":        "Item deleted.",
-		"confirm.delete_item":       "Delete this item?",
+		"dashboard.registry":          "Wish List",
+		"home.registry":               "A Gift for Us",
+		"home.registry_description":   "If you'd like to join us on this new journey",
+		"placeholder.item_name":       "Item name",
+		"placeholder.item_price":      "Price",
+		"btn.add_item":                "Add Item",
+		"btn.buy":                     "Give",
+		"badge.sold":                  "Gifted",
+		"th.item_name":                "Name",
+		"th.item_price":               "Price",
+		"th.item_image":               "Image",
+		"flash.item_added":            "Item added.",
+		"flash.item_deleted":          "Item deleted.",
+		"confirm.delete_item":         "Delete this item?",
+		"confirm.delete_gift":         "Delete this gift?",
+		"status.confirmed":            "Yes",
+		"status.pending_confirmation": "No",
+		"option.no_registry_item":     "No linked registry item",
 
 		// bank transfer modal
 		"modal.transfer_intro":          "Make a bank transfer with the details below to claim this gift.",
@@ -248,6 +261,7 @@ var translations = map[string]map[string]string{
 		// layout
 		"title.dashboard":  "Pannello",
 		"title.edit_guest": "Modifica Invitato",
+		"title.edit_gift":  "Modifica Dono",
 		"title.setup":      "Configurazione necessaria",
 
 		// dashboard - sections
@@ -274,14 +288,19 @@ var translations = map[string]map[string]string{
 		"placeholder.search":            "Cerca tra gli invitati...",
 
 		// dashboard - guest form labels
-		"label.first_name": "Nome",
-		"label.last_name":  "Cognome",
+		"label.first_name":    "Nome",
+		"label.last_name":     "Cognome",
+		"label.amount":        "Importo",
+		"label.donor":         "Da",
+		"label.registry_item": "Articolo lista",
+		"label.confirmed":     "Confermato",
 		// dashboard - table headers
 		"th.first_name": "Nome",
 		"th.last_name":  "Cognome",
 		"th.ceremony":   "Cerimonia",
 		"th.reception":  "Ricevimento",
 		"th.actions":    "Azioni",
+		"th.confirmed":  "Confermato",
 
 		// rsvp radio labels
 		"rsvp.yes": "Sì",
@@ -292,6 +311,7 @@ var translations = map[string]map[string]string{
 		"btn.add":           "Aggiungi",
 		"btn.import_csv":    "Importa CSV",
 		"btn.update_guest":  "Aggiorna Invitato",
+		"btn.update_gift":   "Aggiorna Dono",
 		"btn.edit":          "Modifica",
 		"btn.delete":        "Elimina",
 		"btn.back":          "Torna al Pannello",
@@ -307,6 +327,8 @@ var translations = map[string]map[string]string{
 		"flash.guests_imported": "invitati importati.",
 		"flash.guest_updated":   "Invitato aggiornato.",
 		"flash.guest_deleted":   "Invitato eliminato.",
+		"flash.gift_updated":    "Dono aggiornato.",
+		"flash.gift_deleted":    "Dono eliminato.",
 
 		// home
 		"home.getting_married":  "Insieme per sempre",
@@ -336,20 +358,24 @@ var translations = map[string]map[string]string{
 		"th.date":         "Data",
 
 		// registry
-		"dashboard.registry":        "Lista dei desideri",
-		"home.registry":             "Un Pensiero per Noi",
-		"home.registry_description": "Se desiderate accompagnarci in questo nuovo cammino",
-		"placeholder.item_name":     "Nome articolo",
-		"placeholder.item_price":    "Prezzo",
-		"btn.add_item":              "Aggiungi",
-		"btn.buy":                   "Dona",
-		"badge.sold":                "Offerto",
-		"th.item_name":              "Nome",
-		"th.item_price":             "Prezzo",
-		"th.item_image":             "Immagine",
-		"flash.item_added":          "Articolo aggiunto.",
-		"flash.item_deleted":        "Articolo eliminato.",
-		"confirm.delete_item":       "Eliminare questo articolo?",
+		"dashboard.registry":          "Lista dei desideri",
+		"home.registry":               "Un Pensiero per Noi",
+		"home.registry_description":   "Se desiderate accompagnarci in questo nuovo cammino",
+		"placeholder.item_name":       "Nome articolo",
+		"placeholder.item_price":      "Prezzo",
+		"btn.add_item":                "Aggiungi",
+		"btn.buy":                     "Dona",
+		"badge.sold":                  "Offerto",
+		"th.item_name":                "Nome",
+		"th.item_price":               "Prezzo",
+		"th.item_image":               "Immagine",
+		"flash.item_added":            "Articolo aggiunto.",
+		"flash.item_deleted":          "Articolo eliminato.",
+		"confirm.delete_item":         "Eliminare questo articolo?",
+		"confirm.delete_gift":         "Eliminare questo dono?",
+		"status.confirmed":            "Sì",
+		"status.pending_confirmation": "No",
+		"option.no_registry_item":     "Nessun articolo collegato",
 
 		// bank transfer modal
 		"modal.transfer_intro":          "Effettua un bonifico con i dati seguenti per prenotare questo regalo.",

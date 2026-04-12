@@ -410,6 +410,103 @@ func DeleteRegistryItem(c *fiber.Ctx) error {
 	return c.Redirect("/dashboard")
 }
 
+func EditGiftPage(c *fiber.Ctx) error {
+	id, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		return c.Status(400).SendString("invalid id")
+	}
+	gift, err := database.GetGift(id)
+	if err != nil {
+		return c.Status(404).SendString("gift not found")
+	}
+	registryItems, err := database.GetAllRegistryItems()
+	if err != nil {
+		return c.Status(500).SendString("failed to load registry items")
+	}
+	settings, err := database.GetAllSettings()
+	if err != nil {
+		return c.Status(500).SendString("failed to load settings")
+	}
+	csrfToken, _ := c.Locals("csrf").(string)
+	return Render(c, templates.EditGift(gift, registryItems, settings, csrfToken, getT(c), getLang(c)))
+}
+
+func UpdateGift(c *fiber.Ctx) error {
+	id, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		return c.Status(400).SendString("invalid id")
+	}
+	if _, err := database.GetGift(id); err != nil {
+		return c.Status(404).SendString("gift not found")
+	}
+
+	amount, err := strconv.Atoi(c.FormValue("amount"))
+	if err != nil || amount < 1 {
+		return c.Status(400).SendString("invalid amount")
+	}
+	registryItemID, err := parseGiftRegistryItemID(c.FormValue("registry_item_id"))
+	if err != nil {
+		return c.Status(400).SendString(err.Error())
+	}
+	if err := validateGiftAssignment(amount, registryItemID, id); err != nil {
+		return c.Status(err.Code).SendString(err.Message)
+	}
+
+	if err := database.UpdateGift(
+		id,
+		amount,
+		strings.TrimSpace(c.FormValue("donor")),
+		registryItemID,
+		c.FormValue("confirmed") == "on",
+	); err != nil {
+		return c.Status(500).SendString("failed to update gift")
+	}
+	setFlash(c, getT(c)("flash.gift_updated"))
+	return c.Redirect("/dashboard")
+}
+
+func DeleteGift(c *fiber.Ctx) error {
+	id, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		return c.Status(400).SendString("invalid id")
+	}
+	if err := database.DeleteGift(id); err != nil {
+		return c.Status(500).SendString("failed to delete gift")
+	}
+	setFlash(c, getT(c)("flash.gift_deleted"))
+	return c.Redirect("/dashboard")
+}
+
+func parseGiftRegistryItemID(raw string) (*int, error) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return nil, nil
+	}
+	id, err := strconv.Atoi(raw)
+	if err != nil {
+		return nil, fiber.NewError(400, "invalid registry item")
+	}
+	return &id, nil
+}
+
+func validateGiftAssignment(amount int, registryItemID *int, excludeGiftID int) *fiber.Error {
+	if registryItemID == nil {
+		return nil
+	}
+	item, err := database.GetRegistryItem(*registryItemID)
+	if err != nil {
+		return fiber.NewError(404, "item not found")
+	}
+	claimed, err := database.GetClaimedAmountsByItemExcludingGift(excludeGiftID)
+	if err != nil {
+		return fiber.NewError(500, "failed to validate gift")
+	}
+	if amount > item.Price-claimed[item.ID] {
+		return fiber.NewError(400, "amount exceeds remaining")
+	}
+	return nil
+}
+
 func CreateInvitation(c *fiber.Ctx) error {
 	raw := c.FormValue("guest_ids")
 	if raw == "" {

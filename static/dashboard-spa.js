@@ -33,10 +33,10 @@
   }
 
   function handleClick(event) {
-    var editLink = event.target.closest('.actions a[href^="/dashboard/guests/"][href$="/edit"]');
+    var editLink = event.target.closest('.actions a[href^="/dashboard/"][href$="/edit"]');
     if (editLink) {
       event.preventDefault();
-      openGuestEditModal(editLink.href);
+      openDashboardEditModal(editLink.href);
       return;
     }
 
@@ -86,12 +86,8 @@
   function handleSubmit(event) {
     var form = event.target;
     if (!(form instanceof HTMLFormElement)) return;
+    if (event.defaultPrevented) return;
     if (!isDashboardForm(form)) return;
-
-    if (form.dataset.confirm && !window.confirm(form.dataset.confirm)) {
-      event.preventDefault();
-      return;
-    }
 
     event.preventDefault();
     submitForm(form).catch(function (err) {
@@ -150,6 +146,9 @@
     if (/\/dashboard\/polls(\/\d+\/delete)?$/.test(action)) {
       return ["dashboard-flash", "dashboard-invitations"];
     }
+    if (/\/dashboard\/gifts\/\d+(\/delete)?$/.test(action)) {
+      return ["dashboard-flash", "dashboard-registry"];
+    }
     if (/\/dashboard\/registry(\/\d+\/delete)?$/.test(action)) {
       return ["dashboard-flash", "dashboard-registry"];
     }
@@ -179,7 +178,9 @@
     initDashboardFeatures();
     initImageResizers();
     syncGuestSelectionUI();
-    focusGuestSearchIfPresent();
+    if (sectionIds.indexOf("dashboard-guests") !== -1) {
+      focusGuestSearchIfPresent();
+    }
   }
 
   async function fetchDocument(url) {
@@ -245,7 +246,7 @@
     });
   }
 
-  async function openGuestEditModal(url) {
+  async function openDashboardEditModal(url) {
     var doc = await fetchDocument(url);
     var title = doc.querySelector("h1");
     var article = doc.querySelector("article");

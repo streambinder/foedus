@@ -45,6 +45,7 @@ func migrate() {
 			amount           INTEGER NOT NULL,
 			donor            TEXT NOT NULL DEFAULT '',
 			registry_item_id INTEGER REFERENCES registry_items(id),
+			confirmed        INTEGER NOT NULL DEFAULT 0,
 			created_at       DATETIME DEFAULT CURRENT_TIMESTAMP
 		)`,
 		`CREATE TABLE IF NOT EXISTS registry_items (
@@ -101,6 +102,18 @@ func migrate() {
 			}
 		}
 		version = 2
+	}
+	if version < 3 {
+		hasConfirmed, err := tableHasColumn("gifts", "confirmed")
+		if err != nil {
+			log.Fatalf("failed to inspect gifts schema: %v", err)
+		}
+		if !hasConfirmed {
+			if _, err := DB.Exec(`ALTER TABLE gifts ADD COLUMN confirmed INTEGER NOT NULL DEFAULT 0`); err != nil {
+				log.Fatalf("failed to add confirmed column to gifts: %v", err)
+			}
+		}
+		version = 3
 	}
 	if _, err := DB.Exec(fmt.Sprintf(`PRAGMA user_version = %d`, version)); err != nil {
 		log.Fatalf("failed to persist schema version: %v", err)
