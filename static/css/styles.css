@@ -159,6 +159,7 @@ html:has(.vp-section) body {
   height: 100dvh;
   overflow-y: scroll;
   scroll-snap-type: y mandatory;
+  scroll-behavior: smooth;
 }
 
 /* ---------------------------------------------------------------
@@ -324,7 +325,10 @@ html:has(.vp-section) body {
   background: rgba(252, 248, 243, 0.7);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
-  transition: all var(--duration) var(--ease);
+  transition: transform var(--duration) var(--ease),
+              color var(--duration) var(--ease),
+              border-color var(--duration) var(--ease),
+              background-color var(--duration) var(--ease);
   z-index: 10;
 }
 
@@ -369,7 +373,9 @@ html:has(.vp-section) body {
   border: 1.5px solid var(--sage);
   background: transparent;
   text-decoration: none;
-  transition: all var(--duration) var(--ease);
+  transition: transform var(--duration) var(--ease),
+              border-color var(--duration) var(--ease),
+              background-color var(--duration) var(--ease);
   position: relative;
 }
 
@@ -3017,6 +3023,33 @@ td [role="switch"] { margin: 0; }
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
   background: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html,
+  html:has(.vp-section) body {
+    scroll-behavior: auto;
+  }
+
+  .vp-arrow--down,
+  .vp-arrow--up {
+    animation: none;
+  }
+
+  .vp-arrow,
+  .vp-dot,
+  .modal-overlay,
+  .modal-box,
+  .timeline-item,
+  .calendar-btn,
+  a {
+    transition-duration: 0.01ms;
+  }
+
+  .modal-overlay.is-closing,
+  .modal-overlay.is-closing .modal-box {
+    animation: none;
+  }
 }
 
 @media (min-width: 480px) {

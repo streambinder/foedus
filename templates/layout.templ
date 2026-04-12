@@ -17,7 +17,7 @@ func pageTitle(title, spouse1, spouse2 string) string {
 }
 
 templ SetupGuard(lang string, t i18n.T) {
-	@Layout(t("title.setup"), lang, t, OGMeta{}) {
+	@Layout(t("title.setup"), lang, t, OGMeta{}, false) {
 		<div class="setup-guard">
 			<h1>{ t("setup.not_ready") }</h1>
 			<p><a href="/dashboard">{ t("setup.go_to_dashboard") }</a></p>
@@ -25,7 +25,7 @@ templ SetupGuard(lang string, t i18n.T) {
 	}
 }
 
-templ Layout(title string, lang string, t i18n.T, ogMeta OGMeta) {
+templ Layout(title string, lang string, t i18n.T, ogMeta OGMeta, includeLeaflet bool) {
 	<!DOCTYPE html>
 	<html lang={ lang } data-theme="light">
 		<head>
@@ -58,8 +58,10 @@ templ Layout(title string, lang string, t i18n.T, ogMeta OGMeta) {
 			<link rel="preconnect" href="https://fonts.googleapis.com"/>
 			<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 			<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
-			<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
-			<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+			if includeLeaflet {
+				<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+				<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="" defer></script>
+			}
 			<link rel="stylesheet" href="/static/css/styles.css"/>
 		</head>
 		<body>

@@ -91,7 +91,7 @@ func claimedPercent(item models.RegistryItem, claimed map[int]int) int {
 }
 
 templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem, claimedAmounts map[int]int, bankConfigured bool, chatEnabled bool, t i18n.T, lang string, ogMeta OGMeta) {
-	@Layout(settings.Spouse1Name + " & " + settings.Spouse2Name, lang, t, ogMeta) {
+	@Layout(settings.Spouse1Name + " & " + settings.Spouse2Name, lang, t, ogMeta, len(settings.Places) > 0) {
 		<!-- section 1: title -->
 		<section id="landing" class="vp-section vp-hero">
 			<div class="vp-section-inner">
@@ -466,7 +466,11 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 				// nav dots: highlight active section on scroll
 				var dots = document.querySelectorAll('.vp-dot');
 				var sections = document.querySelectorAll('.vp-section');
-				var prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+				var reducedMotionQuery = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
+
+				function prefersReducedMotion() {
+					return !!(reducedMotionQuery && reducedMotionQuery.matches);
+				}
 
 				function setActiveSection(id) {
 					if (!id) return;
@@ -480,33 +484,15 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 					}
 				}
 
-				function scrollToSectionHash(hash, historyMode) {
-					if (!hash || hash.charAt(0) !== '#') return false;
-					var target = document.getElementById(hash.slice(1));
-					if (!target) return false;
-
-					target.scrollIntoView({
-						behavior: prefersReducedMotion ? 'auto' : 'smooth',
-						block: 'start'
-					});
-
-					if (window.history && window.history[historyMode]) {
-						window.history[historyMode](null, '', hash);
-					}
-
-					return true;
-				}
-
-				document.querySelectorAll('.vp-arrow[href^="#"], .vp-dot[href^="#"]').forEach(function(link) {
-					link.addEventListener('click', function(event) {
-						if (!scrollToSectionHash(link.getAttribute('href'), 'pushState')) return;
-						event.preventDefault();
-					});
-				});
-
 				if (window.location.hash) {
-					scrollToSectionHash(window.location.hash, 'replaceState');
+					setActiveSection(window.location.hash.slice(1));
+				} else if (sections.length) {
+					setActiveSection(sections[0].id);
 				}
+
+				window.addEventListener('hashchange', function() {
+					if (window.location.hash) setActiveSection(window.location.hash.slice(1));
+				});
 
 				if (sections.length) {
 					var observer = new IntersectionObserver(function(entries) {
@@ -526,25 +512,28 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 					sections.forEach(function(s) { observer.observe(s); });
 				}
 
-				function syncPlaylistEmbedHeights() {
-					document.querySelectorAll('.playlist-card').forEach(function(embed) {
-						var height = Math.round(parseFloat(window.getComputedStyle(embed).height));
-						if (height > 0 && embed.getAttribute('height') !== String(height)) {
-							embed.setAttribute('height', String(height));
-						}
-					});
-				}
-
-				syncPlaylistEmbedHeights();
-				window.addEventListener('resize', syncPlaylistEmbedHeights);
+			function finishModalClose(m) {
+				m.style.display = 'none';
+				m.classList.remove('is-closing');
+			}
 
 			function closeModal(m) {
 				if (!m) return;
+				if (prefersReducedMotion()) {
+					finishModalClose(m);
+					return;
+				}
+
 				m.classList.add('is-closing');
-				m.addEventListener('animationend', function() {
-					m.style.display = 'none';
-					m.classList.remove('is-closing');
-				}, { once: true });
+				var closed = false;
+				function onClose() {
+					if (closed) return;
+					closed = true;
+					finishModalClose(m);
+				}
+
+				m.addEventListener('animationend', onClose, { once: true });
+				window.setTimeout(onClose, 260);
 			}
 
 			function openModal(m) {
@@ -625,7 +614,7 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 					document.getElementById('pct-custom').step = '1';
 					document.getElementById('pct-next').disabled = true;
 					currentAmount = 0;
-					pctModal.style.display = '';
+					openModal(pctModal);
 				});
 			});
 
@@ -686,7 +675,7 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 					document.getElementById('pct-custom').step = '1';
 					document.getElementById('pct-custom').removeAttribute('max');
 					document.getElementById('pct-next').disabled = true;
-					pctModal.style.display = '';
+					openModal(pctModal);
 				});
 			}
 
@@ -696,7 +685,7 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 				document.getElementById('modal-reason').textContent = reason;
 				document.getElementById('modal-amount').textContent = currentAmount + ' €';
 				document.getElementById('modal-donor').value = '';
-				transferModal.style.display = '';
+				openModal(transferModal);
 			}
 
 			// transfer modal cancel
@@ -715,7 +704,7 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 				}).then(function(res) {
 					if (res.ok) {
 						closeModal(transferModal);
-						document.getElementById('thanks-modal').style.display = '';
+						openModal(document.getElementById('thanks-modal'));
 					} else {
 						res.json().then(function(data) { alert(data.error || 'Error'); });
 					}
@@ -738,7 +727,9 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 			});
 		})();
 		</script>
-		<script src="/static/places.js"></script>
+		if len(settings.Places) > 0 {
+			<script src="/static/places.js" defer></script>
+		}
 		if chatEnabled {
 			<div id="chat-bubble" title={ t("chat.title") }>
 				<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
