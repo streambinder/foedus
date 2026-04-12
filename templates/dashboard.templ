@@ -166,6 +166,193 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 						<button type="button" id="share-preview-remove" class="outline secondary" style="margin-top:0.5rem;display:none">Remove</button>
 					}
 				</div>
+				<div class="accordion dashboard-accordion hero-gallery-accordion">
+					<div class="accordion-item settings-section">
+						<h2 class="accordion-header" id="settings-homepage-backgrounds-heading">
+							<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#settings-homepage-backgrounds-panel" aria-expanded="false" aria-controls="settings-homepage-backgrounds-panel">
+								<span class="settings-section-title">Homepage Landing Backgrounds</span>
+								<span class="settings-section-description">Upload image pairs for the landing section. One set is picked at random on each homepage load.</span>
+							</button>
+						</h2>
+						<div id="settings-homepage-backgrounds-panel" class="accordion-collapse collapse" data-dashboard-key="settings-homepage-backgrounds" aria-labelledby="settings-homepage-backgrounds-heading">
+							<div class="accordion-body settings-section-body">
+								<p class="muted">Use one horizontal image for desktop and one vertical image for mobile for the same photo or moment. If only one side is uploaded, it falls back to the available image.</p>
+								<input type="hidden" name="homepage_hero_background_count" id="homepage-hero-background-count" value={ strconv.Itoa(len(settings.HomepageHeroBackgrounds)) }/>
+								<div id="homepage-hero-backgrounds-container">
+									if len(settings.HomepageHeroBackgrounds) > 0 {
+										for idx, bg := range settings.HomepageHeroBackgrounds {
+											<div class="hero-background-card">
+												<div class="hero-background-card-header">
+													<span class="hero-background-number">{ strconv.Itoa(idx + 1) }</span>
+													<button type="button" class="hero-background-remove outline secondary" aria-label={ t("btn.delete") } onclick="return window.removeHomepageHeroBackground ? window.removeHomepageHeroBackground(this) : false">&times;</button>
+												</div>
+												<div class="grid hero-background-grid">
+													<div>
+														<label>Desktop / horizontal</label>
+														<div class="managed-image-field">
+															<input
+																type="file"
+																accept="image/*"
+																class="managed-image-file"
+																data-target-input={ "homepage-hero-background-desktop-data-" + strconv.Itoa(idx) }
+																data-preview-target={ "homepage-hero-background-desktop-preview-" + strconv.Itoa(idx) }
+																data-format="image/jpeg"
+																data-quality="0.78"
+																data-max-width="1600"
+																data-max-height="900"
+															/>
+															<input type="hidden" name={ fmt.Sprintf("homepage_hero_background_desktop_%d", idx) } id={ "homepage-hero-background-desktop-data-" + strconv.Itoa(idx) } value={ bg.DesktopImage }/>
+															if bg.DesktopImage != "" {
+																<img class="hero-background-preview" id={ "homepage-hero-background-desktop-preview-" + strconv.Itoa(idx) } src={ bg.DesktopImage } alt="desktop background preview"/>
+															} else {
+																<img class="hero-background-preview" id={ "homepage-hero-background-desktop-preview-" + strconv.Itoa(idx) } style="display:none" alt="desktop background preview"/>
+															}
+														</div>
+													</div>
+													<div>
+														<label>Mobile / vertical</label>
+														<div class="managed-image-field">
+															<input
+																type="file"
+																accept="image/*"
+																class="managed-image-file"
+																data-target-input={ "homepage-hero-background-mobile-data-" + strconv.Itoa(idx) }
+																data-preview-target={ "homepage-hero-background-mobile-preview-" + strconv.Itoa(idx) }
+																data-format="image/jpeg"
+																data-quality="0.78"
+																data-max-width="1080"
+																data-max-height="1440"
+															/>
+															<input type="hidden" name={ fmt.Sprintf("homepage_hero_background_mobile_%d", idx) } id={ "homepage-hero-background-mobile-data-" + strconv.Itoa(idx) } value={ bg.MobileImage }/>
+															if bg.MobileImage != "" {
+																<img class="hero-background-preview hero-background-preview--portrait" id={ "homepage-hero-background-mobile-preview-" + strconv.Itoa(idx) } src={ bg.MobileImage } alt="mobile background preview"/>
+															} else {
+																<img class="hero-background-preview hero-background-preview--portrait" id={ "homepage-hero-background-mobile-preview-" + strconv.Itoa(idx) } style="display:none" alt="mobile background preview"/>
+															}
+														</div>
+													</div>
+												</div>
+											</div>
+										}
+										}
+									</div>
+								<button type="button" id="add-homepage-hero-background-btn" class="add-entry-btn" onclick="return window.addHomepageHeroBackground ? window.addHomepageHeroBackground() : false">+ Add background set</button>
+								<template id="homepage-hero-background-card-template">
+									<div class="hero-background-card">
+										<div class="hero-background-card-header">
+											<span class="hero-background-number">1</span>
+											<button type="button" class="hero-background-remove outline secondary" aria-label={ t("btn.delete") } onclick="return window.removeHomepageHeroBackground ? window.removeHomepageHeroBackground(this) : false">&times;</button>
+										</div>
+										<div class="grid hero-background-grid">
+											<div>
+												<label>Desktop / horizontal</label>
+												<div class="managed-image-field">
+													<input
+														type="file"
+														accept="image/*"
+														class="managed-image-file"
+														data-target-input="homepage-hero-background-desktop-data-__INDEX__"
+														data-preview-target="homepage-hero-background-desktop-preview-__INDEX__"
+														data-format="image/jpeg"
+														data-quality="0.78"
+														data-max-width="1600"
+														data-max-height="900"
+													/>
+													<input type="hidden" name="homepage_hero_background_desktop___INDEX__" id="homepage-hero-background-desktop-data-__INDEX__"/>
+													<img class="hero-background-preview" id="homepage-hero-background-desktop-preview-__INDEX__" style="display:none" alt="desktop background preview"/>
+												</div>
+											</div>
+											<div>
+												<label>Mobile / vertical</label>
+												<div class="managed-image-field">
+													<input
+														type="file"
+														accept="image/*"
+														class="managed-image-file"
+														data-target-input="homepage-hero-background-mobile-data-__INDEX__"
+														data-preview-target="homepage-hero-background-mobile-preview-__INDEX__"
+														data-format="image/jpeg"
+														data-quality="0.78"
+														data-max-width="1080"
+														data-max-height="1440"
+													/>
+													<input type="hidden" name="homepage_hero_background_mobile___INDEX__" id="homepage-hero-background-mobile-data-__INDEX__"/>
+													<img class="hero-background-preview hero-background-preview--portrait" id="homepage-hero-background-mobile-preview-__INDEX__" style="display:none" alt="mobile background preview"/>
+												</div>
+											</div>
+										</div>
+									</div>
+								</template>
+								<script>
+									(function () {
+										function getHeroBackgroundsContainer() {
+											return document.getElementById("homepage-hero-backgrounds-container");
+										}
+
+										function reindexHeroBackgrounds() {
+											var container = getHeroBackgroundsContainer();
+											var countInput = document.getElementById("homepage-hero-background-count");
+											if (!container || !countInput) return;
+											var cards = container.querySelectorAll(".hero-background-card");
+											cards.forEach(function (card, idx) {
+												var number = card.querySelector(".hero-background-number");
+												if (number) number.textContent = idx + 1;
+
+												var desktopFile = card.querySelector('.managed-image-file[data-target-input^="homepage-hero-background-desktop-data-"]');
+												var desktopHidden = card.querySelector('input[type="hidden"][name^="homepage_hero_background_desktop_"]');
+												var desktopPreview = card.querySelector('.hero-background-preview[id^="homepage-hero-background-desktop-preview-"]');
+												if (desktopFile && desktopHidden && desktopPreview) {
+													desktopFile.dataset.targetInput = "homepage-hero-background-desktop-data-" + idx;
+													desktopFile.dataset.previewTarget = "homepage-hero-background-desktop-preview-" + idx;
+													desktopHidden.name = "homepage_hero_background_desktop_" + idx;
+													desktopHidden.id = "homepage-hero-background-desktop-data-" + idx;
+													desktopPreview.id = "homepage-hero-background-desktop-preview-" + idx;
+												}
+
+												var mobileFile = card.querySelector('.managed-image-file[data-target-input^="homepage-hero-background-mobile-data-"]');
+												var mobileHidden = card.querySelector('input[type="hidden"][name^="homepage_hero_background_mobile_"]');
+												var mobilePreview = card.querySelector('.hero-background-preview[id^="homepage-hero-background-mobile-preview-"]');
+												if (mobileFile && mobileHidden && mobilePreview) {
+													mobileFile.dataset.targetInput = "homepage-hero-background-mobile-data-" + idx;
+													mobileFile.dataset.previewTarget = "homepage-hero-background-mobile-preview-" + idx;
+													mobileHidden.name = "homepage_hero_background_mobile_" + idx;
+													mobileHidden.id = "homepage-hero-background-mobile-data-" + idx;
+													mobilePreview.id = "homepage-hero-background-mobile-preview-" + idx;
+												}
+											});
+											countInput.value = cards.length;
+										}
+
+										window.addHomepageHeroBackground = function () {
+											var container = getHeroBackgroundsContainer();
+											var template = document.getElementById("homepage-hero-background-card-template");
+											if (!container || !template) return false;
+											var idx = container.querySelectorAll(".hero-background-card").length;
+											var html = template.innerHTML.replaceAll("__INDEX__", String(idx));
+											container.insertAdjacentHTML("beforeend", html);
+											var card = container.lastElementChild;
+											reindexHeroBackgrounds();
+											if (card && window.initDashboardImageResizers) {
+												window.initDashboardImageResizers(card);
+											}
+											return false;
+										};
+
+										window.removeHomepageHeroBackground = function (button) {
+											var card = button && button.closest ? button.closest(".hero-background-card") : null;
+											if (!card) return false;
+											card.remove();
+											reindexHeroBackgrounds();
+											return false;
+										};
+
+										reindexHeroBackgrounds();
+									})();
+								</script>
+							</div>
+						</div>
+					</div>
+				</div>
 				<div class="accordion dashboard-accordion" id="dashboard-settings-accordion">
 					<div class="accordion-item settings-section">
 						<h2 class="accordion-header" id="settings-playlists-heading">

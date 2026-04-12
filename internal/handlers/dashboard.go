@@ -216,6 +216,35 @@ func SaveSettings(c *fiber.Ctx) error {
 		return c.Status(500).SendString("failed to save settings")
 	}
 
+	// homepage hero backgrounds: collect desktop/mobile pairs
+	backgroundCount, _ := strconv.Atoi(c.FormValue("homepage_hero_background_count"))
+	var homepageHeroBackgrounds []models.HomepageHeroBackground
+	for i := 0; i < backgroundCount; i++ {
+		desktopImage := strings.TrimSpace(c.FormValue(fmt.Sprintf("homepage_hero_background_desktop_%d", i)))
+		mobileImage := strings.TrimSpace(c.FormValue(fmt.Sprintf("homepage_hero_background_mobile_%d", i)))
+		if desktopImage == "" && mobileImage == "" {
+			continue
+		}
+		if desktopImage != "" {
+			if err := validateBase64ImageAny(desktopImage); err != nil {
+				return c.Status(400).SendString(err.Error())
+			}
+		}
+		if mobileImage != "" {
+			if err := validateBase64ImageAny(mobileImage); err != nil {
+				return c.Status(400).SendString(err.Error())
+			}
+		}
+		homepageHeroBackgrounds = append(homepageHeroBackgrounds, models.HomepageHeroBackground{
+			DesktopImage: desktopImage,
+			MobileImage:  mobileImage,
+		})
+	}
+	homepageHeroBackgroundsJSON, _ := json.Marshal(homepageHeroBackgrounds)
+	if err := database.UpdateSetting("homepage_hero_backgrounds", string(homepageHeroBackgroundsJSON)); err != nil {
+		return c.Status(500).SendString("failed to save settings")
+	}
+
 	setFlash(c, getT(c)("flash.settings_saved"))
 	return c.Redirect("/dashboard")
 }
@@ -339,7 +368,7 @@ func DeleteGuest(c *fiber.Ctx) error {
 	return c.Redirect("/dashboard")
 }
 
-const maxImageBytes = 150 * 1024 // 150KB
+const maxImageBytes = 600 * 1024 // 600KB
 
 // validateBase64Image checks a base64 data URI for PNG prefix and size
 func validateBase64Image(image string) error {

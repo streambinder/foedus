@@ -26,6 +26,11 @@ type AccommodationSuggestion struct {
 	URL         string `json:"url"`
 }
 
+type HomepageHeroBackground struct {
+	DesktopImage string `json:"desktop_image"`
+	MobileImage  string `json:"mobile_image"`
+}
+
 type WeddingSettings struct {
 	Spouse1Name              string
 	Spouse2Name              string
@@ -43,6 +48,7 @@ type WeddingSettings struct {
 	AccommodationSuggestions []AccommodationSuggestion
 	Impersonations           []Impersonation
 	HomepageLabels           map[string]map[string]string
+	HomepageHeroBackgrounds  []HomepageHeroBackground
 	SharePreviewImage        string
 }
 

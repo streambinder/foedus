@@ -12,6 +12,7 @@ var settingsKeys = []string{
 	"reception_address", "reception_location", "reception_image",
 	"bank_account_iban", "bank_account_holder",
 	"spotify_playlists", "places", "accommodation_suggestions", "impersonations", "homepage_labels",
+	"homepage_hero_backgrounds",
 	"share_preview_image",
 }
 
@@ -63,6 +64,11 @@ func GetAllSettings() (models.WeddingSettings, error) {
 		json.Unmarshal([]byte(raw), &homepageLabels)
 	}
 
+	var homepageHeroBackgrounds []models.HomepageHeroBackground
+	if raw := m["homepage_hero_backgrounds"]; raw != "" {
+		json.Unmarshal([]byte(raw), &homepageHeroBackgrounds)
+	}
+
 	return models.WeddingSettings{
 		Spouse1Name:              m["spouse1_name"],
 		Spouse2Name:              m["spouse2_name"],
@@ -80,6 +86,7 @@ func GetAllSettings() (models.WeddingSettings, error) {
 		AccommodationSuggestions: accommodationSuggestions,
 		Impersonations:           impersonations,
 		HomepageLabels:           homepageLabels,
+		HomepageHeroBackgrounds:  homepageHeroBackgrounds,
 		SharePreviewImage:        m["share_preview_image"],
 	}, nil
 }

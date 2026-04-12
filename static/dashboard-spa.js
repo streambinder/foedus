@@ -277,6 +277,7 @@
     bindImageResize("ceremony-file", "ceremony-image-data", "ceremony-preview", "image/jpeg", 0.7);
     bindImageResize("reception-file", "reception-image-data", "reception-preview", "image/jpeg", 0.7);
     bindImageResize("share-preview-file", "share-preview-image-data", "share-preview-preview", null, null, true);
+    bindManagedImageResizers();
   }
 
   function bindImageResize(fileId, dataId, previewId, format, quality, withRemove) {
@@ -333,6 +334,46 @@
     }
   }
 
+  function bindManagedImageResizers(root) {
+    var scope = root instanceof Element ? root : document;
+    scope.querySelectorAll(".managed-image-file").forEach(function (fileInput) {
+      if (fileInput.dataset.resizeBound === "true") return;
+      fileInput.dataset.resizeBound = "true";
+      fileInput.addEventListener("change", function () {
+        var file = fileInput.files && fileInput.files[0];
+        if (!file) return;
+        var targetInput = document.getElementById(fileInput.dataset.targetInput || "");
+        var previewImg = document.getElementById(fileInput.dataset.previewTarget || "");
+        if (!targetInput) return;
+
+        var img = new Image();
+        img.onload = function () {
+          var w = img.width;
+          var h = img.height;
+          var maxWidth = parseInt(fileInput.dataset.maxWidth || "0", 10);
+          var maxHeight = parseInt(fileInput.dataset.maxHeight || "0", 10);
+          if (maxWidth > 0 || maxHeight > 0) {
+            var widthRatio = maxWidth > 0 ? maxWidth / w : 1;
+            var heightRatio = maxHeight > 0 ? maxHeight / h : 1;
+            var ratio = Math.min(widthRatio, heightRatio, 1);
+            w = Math.max(1, Math.round(w * ratio));
+            h = Math.max(1, Math.round(h * ratio));
+          }
+          var canvas = document.createElement("canvas");
+          canvas.width = w;
+          canvas.height = h;
+          canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+          targetInput.value = canvas.toDataURL(fileInput.dataset.format || "image/png", parseFloat(fileInput.dataset.quality || "0.92"));
+          if (previewImg) {
+            previewImg.src = targetInput.value;
+            previewImg.style.display = "";
+          }
+        };
+        img.src = URL.createObjectURL(file);
+      });
+    });
+  }
+
   function escapeHtml(str) {
     var div = document.createElement("div");
     div.textContent = str;
@@ -345,6 +386,7 @@
       window.alert("Dashboard request failed.");
     });
   };
+  window.initDashboardImageResizers = bindManagedImageResizers;
 
   init();
 })();

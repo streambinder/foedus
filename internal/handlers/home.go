@@ -1,13 +1,39 @@
 package handlers
 
 import (
+	"math/rand/v2"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/streambinder/foedus/internal/database"
 	"github.com/streambinder/foedus/internal/i18n"
+	"github.com/streambinder/foedus/internal/models"
 	"github.com/streambinder/foedus/templates"
 )
+
+func pickHomepageHeroBackground(backgrounds []models.HomepageHeroBackground) models.HomepageHeroBackground {
+	if len(backgrounds) == 0 {
+		return models.HomepageHeroBackground{}
+	}
+
+	valid := make([]models.HomepageHeroBackground, 0, len(backgrounds))
+	for _, bg := range backgrounds {
+		if bg.DesktopImage == "" && bg.MobileImage == "" {
+			continue
+		}
+		if bg.DesktopImage == "" {
+			bg.DesktopImage = bg.MobileImage
+		}
+		if bg.MobileImage == "" {
+			bg.MobileImage = bg.DesktopImage
+		}
+		valid = append(valid, bg)
+	}
+	if len(valid) == 0 {
+		return models.HomepageHeroBackground{}
+	}
+	return valid[rand.IntN(len(valid))]
+}
 
 func Home(c *fiber.Ctx) error {
 	settings, err := database.GetAllSettings()
@@ -43,5 +69,6 @@ func Home(c *fiber.Ctx) error {
 		strings.Join(ogDescParts, " · "),
 		settings,
 	)
-	return Render(c, templates.Home(settings, registryItems, claimedAmounts, bankConfigured, chatEnabled, i18n.NewTWithOverrides(lang, settings.HomepageLabels[lang]), lang, ogMeta))
+	heroBackground := pickHomepageHeroBackground(settings.HomepageHeroBackgrounds)
+	return Render(c, templates.Home(settings, heroBackground, registryItems, claimedAmounts, bankConfigured, chatEnabled, i18n.NewTWithOverrides(lang, settings.HomepageLabels[lang]), lang, ogMeta))
 }

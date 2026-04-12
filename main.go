@@ -27,7 +27,9 @@ func main() {
 	}
 	handlers.InitChat(openrouterKey, openrouterModel)
 
-	app := fiber.New()
+	app := fiber.New(fiber.Config{
+		BodyLimit: 16 * 1024 * 1024,
+	})
 
 	app.Use(middleware.LangDetect())
 	app.Static("/static", "./static")

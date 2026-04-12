@@ -90,10 +90,23 @@ func claimedPercent(item models.RegistryItem, claimed map[int]int) int {
 	return pct
 }
 
-templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem, claimedAmounts map[int]int, bankConfigured bool, chatEnabled bool, t i18n.T, lang string, ogMeta OGMeta) {
+func heroBackgroundStyle(image string) templ.SafeCSS {
+	return templ.SafeCSS("background-image:url(" + image + ");")
+}
+
+templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBackground, registryItems []models.RegistryItem, claimedAmounts map[int]int, bankConfigured bool, chatEnabled bool, t i18n.T, lang string, ogMeta OGMeta) {
 	@Layout(settings.Spouse1Name + " & " + settings.Spouse2Name, lang, t, ogMeta, len(settings.Places) > 0) {
 		<!-- section 1: title -->
-		<section id="landing" class="vp-section vp-hero">
+		<section id="landing" class={ templ.Classes("vp-section", "vp-hero", templ.KV("vp-hero--with-background", heroBackground.DesktopImage != "" || heroBackground.MobileImage != "")) }>
+			if heroBackground.DesktopImage != "" {
+				<div class="vp-hero-background-layer vp-hero-background-layer--desktop" style={ heroBackgroundStyle(heroBackground.DesktopImage) } aria-hidden="true"></div>
+			}
+			if heroBackground.MobileImage != "" {
+				<div class="vp-hero-background-layer vp-hero-background-layer--mobile" style={ heroBackgroundStyle(heroBackground.MobileImage) } aria-hidden="true"></div>
+			}
+			if heroBackground.DesktopImage != "" || heroBackground.MobileImage != "" {
+				<div class="vp-hero-background-wash" aria-hidden="true"></div>
+			}
 			<div class="vp-section-inner">
 				<p class="hero-kicker">{ t("home.getting_married") }</p>
 				<h1>
@@ -478,6 +491,11 @@ templ Home(settings models.WeddingSettings, registryItems []models.RegistryItem,
 					dots.forEach(function(d) {
 						d.classList.toggle('active', d.getAttribute('href') === '#' + id);
 					});
+
+					var chatBubble = document.getElementById('chat-bubble');
+					if (chatBubble) {
+						chatBubble.classList.toggle('chat-bubble--hidden-on-landing', id === 'landing');
+					}
 
 					if (window.history && window.history.replaceState && window.location.hash !== '#' + id) {
 						window.history.replaceState(null, '', '#' + id);
