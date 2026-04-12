@@ -9,6 +9,8 @@ type Setting struct {
 
 type Place struct {
 	Label   string  `json:"label"`
+	Date    string  `json:"date"`
+	Image   string  `json:"image"`
 	Name    string  `json:"name"`
 	Address string  `json:"address"`
 	Lat     float64 `json:"lat"`

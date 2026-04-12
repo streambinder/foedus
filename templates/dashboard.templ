@@ -411,14 +411,52 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 														<label>{ t("label.place_label") }</label>
 														<input type="text" name={ fmt.Sprintf("place_label_%d", idx) } value={ place.Label } placeholder={ t("placeholder.place_label") }/>
 													</div>
+													<div>
+														<label>{ t("label.place_date") }</label>
+														<input type="date" name={ fmt.Sprintf("place_date_%d", idx) } value={ place.Date }/>
+													</div>
+												</div>
+												<div class="grid">
 													<div style="position:relative">
-														<label>{ t("label.place_location") }</label>
-														<input type="text" class="place-location-input" value={ locationDisplay(place.Name, place.Address) } autocomplete="off" placeholder={ t("placeholder.place_location") }/>
+														<label>{ t("label.place_address") }</label>
+														<input type="text" class="place-location-input" value={ locationDisplay(place.Name, place.Address) } autocomplete="off" placeholder={ t("placeholder.place_address") }/>
 														<div class="autocomplete-dropdown place-dropdown"></div>
 														<input type="hidden" name={ fmt.Sprintf("place_name_%d", idx) } class="place-name-hidden" value={ place.Name }/>
 														<input type="hidden" name={ fmt.Sprintf("place_address_%d", idx) } class="place-address-hidden" value={ place.Address }/>
 														<input type="hidden" name={ fmt.Sprintf("place_lat_%d", idx) } class="place-lat-hidden" value={ fmt.Sprintf("%f", place.Lat) }/>
 														<input type="hidden" name={ fmt.Sprintf("place_lng_%d", idx) } class="place-lng-hidden" value={ fmt.Sprintf("%f", place.Lng) }/>
+													</div>
+													<div>
+														<label>{ t("label.place_image") }</label>
+														<div class="managed-image-field">
+															<input
+																type="file"
+																accept="image/*"
+																class="managed-image-file"
+																data-target-input={ fmt.Sprintf("place-image-data-%d", idx) }
+																data-preview-target={ fmt.Sprintf("place-image-preview-%d", idx) }
+																data-format="image/jpeg"
+																data-quality="0.82"
+																data-max-width="640"
+																data-max-height="640"
+															/>
+															<input type="hidden" name={ fmt.Sprintf("place_image_%d", idx) } id={ fmt.Sprintf("place-image-data-%d", idx) } class="place-image-hidden" value={ place.Image }/>
+															if place.Image != "" {
+																<img
+																	class="venue-image-preview place-image-preview"
+																	id={ fmt.Sprintf("place-image-preview-%d", idx) }
+																	src={ place.Image }
+																	alt={ place.Label }
+																/>
+															} else {
+																<img
+																	class="venue-image-preview place-image-preview"
+																	id={ fmt.Sprintf("place-image-preview-%d", idx) }
+																	style="display:none"
+																	alt={ place.Label }
+																/>
+															}
+														</div>
 													</div>
 												</div>
 											</div>

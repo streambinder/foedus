@@ -221,11 +221,13 @@ var translations = map[string]map[string]string{
 		"home.places":                  "Where It All Happened",
 		"home.places_description":      "The coordinates of us",
 		"dashboard.places":             "Places",
-		"dashboard.places_description": "Locations that mark your story, shown in order on the homepage",
+		"dashboard.places_description": "Photos and locations that mark your story, shown on the homepage map",
 		"label.place_label":            "Label",
-		"label.place_location":         "Location",
+		"label.place_address":          "Address",
+		"label.place_date":             "Date",
+		"label.place_image":            "Image",
 		"placeholder.place_label":      "e.g. First date",
-		"placeholder.place_location":   "Search for a place...",
+		"placeholder.place_address":    "Search for an address...",
 		"btn.add_place":                "Add place",
 
 		// accommodation suggestions
@@ -452,11 +454,13 @@ var translations = map[string]map[string]string{
 		"home.places":                  "Dove Tutto è Successo",
 		"home.places_description":      "Le coordinate di noi",
 		"dashboard.places":             "Luoghi",
-		"dashboard.places_description": "I luoghi che segnano la vostra storia, mostrati in ordine nella homepage",
+		"dashboard.places_description": "Foto e luoghi che segnano la vostra storia, mostrati nella mappa in homepage",
 		"label.place_label":            "Etichetta",
-		"label.place_location":         "Luogo",
+		"label.place_address":          "Indirizzo",
+		"label.place_date":             "Data",
+		"label.place_image":            "Immagine",
 		"placeholder.place_label":      "es. Primo appuntamento",
-		"placeholder.place_location":   "Cerca un luogo...",
+		"placeholder.place_address":    "Cerca un indirizzo...",
 		"btn.add_place":                "Aggiungi luogo",
 
 		// accommodation suggestions

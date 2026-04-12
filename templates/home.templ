@@ -29,8 +29,21 @@ func spotifyEmbedURL(rawURL string) string {
 	return "https://open.spotify.com/embed/playlist/" + m[1] + "?utm_source=generator&theme=0"
 }
 
-func placesJSON(places []models.Place) string {
-	b, _ := json.Marshal(places)
+func placesJSON(places []models.Place, lang string) string {
+	payload := make([]map[string]any, 0, len(places))
+	for _, place := range places {
+		payload = append(payload, map[string]any{
+			"label":          place.Label,
+			"date":           place.Date,
+			"formatted_date": i18n.FormatDatetime(place.Date, lang),
+			"image":          place.Image,
+			"name":           place.Name,
+			"address":        place.Address,
+			"lat":            place.Lat,
+			"lng":            place.Lng,
+		})
+	}
+	b, _ := json.Marshal(payload)
 	return string(b)
 }
 
@@ -258,27 +271,29 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 						<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
 					</a>
 				}
-				<div class="vp-section-inner">
-					<h2 class="section-title">{ t("home.places") }</h2>
-					<p class="section-subtitle">{ t("home.places_description") }</p>
-					<div class="places-layout">
-						<div id="places-map" class="places-map"></div>
-						<div class="places-timeline">
-							for idx, place := range settings.Places {
-								<div class="timeline-item" data-index={ strconv.Itoa(idx) }>
-									<span class="timeline-number">{ strconv.Itoa(idx + 1) }</span>
-									<div class="timeline-content">
-										<strong>{ place.Label }</strong>
-										if place.Name != "" {
-											<span class="timeline-address">{ place.Name }</span>
-										}
-									</div>
-								</div>
-							}
+				<div class="places-map-background">
+					<div id="places-map" class="places-map"></div>
+				</div>
+				<div id="places-pins" class="places-pins-layer"></div>
+				<div class="vp-section-inner places-stage">
+					<div class="places-map-copy">
+						<h2 class="section-title">{ t("home.places") }</h2>
+						<p class="section-subtitle">{ t("home.places_description") }</p>
+					</div>
+				</div>
+				<div id="places-data" style="display:none">{ placesJSON(settings.Places, lang) }</div>
+				<div id="places-modal" class="modal-overlay" style="display:none">
+					<div class="modal-box places-modal-box">
+						<button type="button" id="places-modal-close" class="places-modal-close" aria-label={ t("btn.close") }>&times;</button>
+						<div class="places-modal-media">
+							<img id="places-modal-image" src="" alt=""/>
+						</div>
+						<div class="places-modal-caption">
+							<h3 id="places-modal-label"></h3>
+							<p id="places-modal-date"></p>
 						</div>
 					</div>
 				</div>
-				<div id="places-data" style="display:none">{ placesJSON(settings.Places) }</div>
 				if nextSectionAfterPlaces(bankConfigured) != "" {
 					<a href={ templ.SafeURL(nextSectionAfterPlaces(bankConfigured)) } class="vp-arrow vp-arrow--down">
 						<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>

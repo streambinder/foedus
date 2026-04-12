@@ -143,16 +143,27 @@ func SaveSettings(c *fiber.Ctx) error {
 	// places: collect ordered place entries
 	var places []models.Place
 	for i := 0; ; i++ {
-		name := c.FormValue(fmt.Sprintf("place_name_%d", i))
-		if name == "" {
+		label := strings.TrimSpace(c.FormValue(fmt.Sprintf("place_label_%d", i)))
+		name := strings.TrimSpace(c.FormValue(fmt.Sprintf("place_name_%d", i)))
+		address := strings.TrimSpace(c.FormValue(fmt.Sprintf("place_address_%d", i)))
+		date := strings.TrimSpace(c.FormValue(fmt.Sprintf("place_date_%d", i)))
+		image := c.FormValue(fmt.Sprintf("place_image_%d", i))
+		if label == "" && name == "" && address == "" && date == "" && image == "" {
 			break
+		}
+		if image != "" {
+			if err := validateBase64ImageAny(image); err != nil {
+				return c.Status(400).SendString(err.Error())
+			}
 		}
 		lat, _ := strconv.ParseFloat(c.FormValue(fmt.Sprintf("place_lat_%d", i)), 64)
 		lng, _ := strconv.ParseFloat(c.FormValue(fmt.Sprintf("place_lng_%d", i)), 64)
 		places = append(places, models.Place{
-			Label:   strings.TrimSpace(c.FormValue(fmt.Sprintf("place_label_%d", i))),
-			Name:    strings.TrimSpace(name),
-			Address: strings.TrimSpace(c.FormValue(fmt.Sprintf("place_address_%d", i))),
+			Label:   label,
+			Date:    date,
+			Image:   image,
+			Name:    name,
+			Address: address,
 			Lat:     lat,
 			Lng:     lng,
 		})

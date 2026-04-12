@@ -88,7 +88,9 @@ function initDashboardFeatures() {
     card.dataset.index = idx;
     card.innerHTML =
       '<div class="place-card-header">' +
-        '<span class="place-number">' + (idx + 1) + "</span>" +
+        '<div class="place-card-meta">' +
+          '<span class="place-number">' + (idx + 1) + "</span>" +
+        "</div>" +
         '<div class="place-card-actions">' +
           '<button type="button" class="place-move-up" aria-label="Move up">&uarr;</button>' +
           '<button type="button" class="place-move-down" aria-label="Move down">&darr;</button>' +
@@ -100,18 +102,35 @@ function initDashboardFeatures() {
           "<label>Label</label>" +
           '<input type="text" name="place_label_' + idx + '" placeholder="e.g. First date"/>' +
         "</div>" +
+        "<div>" +
+          "<label>Date</label>" +
+          '<input type="date" name="place_date_' + idx + '"/>' +
+        "</div>" +
+      "</div>" +
+      '<div class="grid">' +
         '<div style="position:relative">' +
-          "<label>Location</label>" +
-          '<input type="text" class="place-location-input" autocomplete="off" placeholder="Search place..."/>' +
+          "<label>Address</label>" +
+          '<input type="text" class="place-location-input" autocomplete="off" placeholder="Search for an address..."/>' +
           '<div class="autocomplete-dropdown place-dropdown"></div>' +
           '<input type="hidden" name="place_name_' + idx + '" class="place-name-hidden"/>' +
           '<input type="hidden" name="place_address_' + idx + '" class="place-address-hidden"/>' +
           '<input type="hidden" name="place_lat_' + idx + '" class="place-lat-hidden" value="0"/>' +
           '<input type="hidden" name="place_lng_' + idx + '" class="place-lng-hidden" value="0"/>' +
         "</div>" +
+        "<div>" +
+          "<label>Image</label>" +
+          '<div class="managed-image-field">' +
+            '<input type="file" accept="image/*" class="managed-image-file" data-target-input="place-image-data-' + idx + '" data-preview-target="place-image-preview-' + idx + '" data-format="image/jpeg" data-quality="0.82" data-max-width="640" data-max-height="640"/>' +
+            '<input type="hidden" name="place_image_' + idx + '" id="place-image-data-' + idx + '" class="place-image-hidden"/>' +
+            '<img class="venue-image-preview place-image-preview" id="place-image-preview-' + idx + '" style="display:none" alt="Place preview"/>' +
+          "</div>" +
+        "</div>" +
       "</div>";
     placesContainer.appendChild(card);
     initPlaceAutocomplete(card);
+    if (window.initDashboardImageResizers) {
+      window.initDashboardImageResizers(card);
+    }
   }
 
   function reindexPlaces() {
@@ -122,6 +141,8 @@ function initDashboardFeatures() {
       if (num) num.textContent = idx + 1;
       var label = card.querySelector('input[name^="place_label_"]');
       if (label) label.name = "place_label_" + idx;
+      var date = card.querySelector('input[name^="place_date_"]');
+      if (date) date.name = "place_date_" + idx;
       var name = card.querySelector(".place-name-hidden");
       if (name) name.name = "place_name_" + idx;
       var addr = card.querySelector(".place-address-hidden");
@@ -130,6 +151,18 @@ function initDashboardFeatures() {
       if (lat) lat.name = "place_lat_" + idx;
       var lng = card.querySelector(".place-lng-hidden");
       if (lng) lng.name = "place_lng_" + idx;
+      var image = card.querySelector(".place-image-hidden");
+      if (image) {
+        image.name = "place_image_" + idx;
+        image.id = "place-image-data-" + idx;
+      }
+      var imageFile = card.querySelector(".managed-image-file");
+      if (imageFile) {
+        imageFile.dataset.targetInput = "place-image-data-" + idx;
+        imageFile.dataset.previewTarget = "place-image-preview-" + idx;
+      }
+      var imagePreview = card.querySelector(".place-image-preview");
+      if (imagePreview) imagePreview.id = "place-image-preview-" + idx;
     });
   }
 
