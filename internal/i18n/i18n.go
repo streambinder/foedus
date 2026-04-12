@@ -144,13 +144,10 @@ var translations = map[string]map[string]string{
 		"btn.copy":                      "Copy",
 		"btn.copied":                    "Copied!",
 		"btn.close":                     "Close",
-		"btn.add_to_calendar":           "Add to calendar",
 		"home.generic_gift":             "A Gift of Your Choice",
 		"home.generic_gift_description": "Choose your amount",
 		"placeholder.custom_amount":     "Custom amount",
 		"home.remaining":                "remaining",
-		"calendar.wedding":              "Wedding",
-		"calendar.and":                  "and",
 
 		// bank settings
 		"label.bank_account_iban":         "IBAN",
@@ -365,13 +362,10 @@ var translations = map[string]map[string]string{
 		"btn.copy":                      "Copia",
 		"btn.copied":                    "Copiato!",
 		"btn.close":                     "Chiudi",
-		"btn.add_to_calendar":           "Aggiungi al calendario",
 		"home.generic_gift":             "Dono Libero",
 		"home.generic_gift_description": "Scegliete voi l'importo",
 		"placeholder.custom_amount":     "Importo personalizzato",
 		"home.remaining":                "rimanenti",
-		"calendar.wedding":              "Matrimonio",
-		"calendar.and":                  "e",
 
 		// bank settings
 		"label.bank_account_iban":         "IBAN",
@@ -482,7 +476,7 @@ var HomepageKeys = []string{
 	"invitation.confirm", "invitation.already_answered", "invitation.change_answer", "invitation.replay_animation", "invitation.close_envelope",
 	"gift.thank_you", "gift.thanks_message",
 	"badge.sold",
-	"btn.buy", "btn.copy", "btn.copied", "btn.cancel", "btn.confirm", "btn.close", "btn.add_to_calendar",
+	"btn.buy", "btn.copy", "btn.copied", "btn.cancel", "btn.confirm", "btn.close",
 	"modal.transfer_intro", "modal.iban", "modal.owner", "modal.reason", "modal.transfer_confirm_text",
 	"placeholder.custom_amount", "placeholder.donor",
 	"chat.title", "chat.placeholder", "chat.send", "chat.error", "chat.rate_limited",
