@@ -100,12 +100,14 @@ var translations = map[string]map[string]string{
 		"flash.gift_deleted":    "Gift deleted.",
 
 		// home
-		"home.getting_married":  "Together, forever",
-		"home.ceremony":         "The Ceremony",
-		"home.reception":        "The Celebration",
-		"home.guest_list":       "Guest List",
-		"home.gift":             "Gift",
-		"home.gift_description": "If you'd like to honour us with a gift, choose an amount",
+		"home.getting_married":    "Together, forever",
+		"home.venues":             "Ceremony & Celebration",
+		"home.venues_description": "Where to be, and when",
+		"home.ceremony":           "The Ceremony",
+		"home.reception":          "The Celebration",
+		"home.guest_list":         "Guest List",
+		"home.gift":               "Gift",
+		"home.gift_description":   "If you'd like to honour us with a gift, choose an amount",
 
 		// gift form
 		"placeholder.donor":        "Your name (optional)",
@@ -231,7 +233,7 @@ var translations = map[string]map[string]string{
 		"btn.add_place":                "Add place",
 
 		// accommodation suggestions
-		"home.accommodations":                   "Where to Stay",
+		"home.accommodations":                   "Accommodations",
 		"home.accommodations_description":       "Looking for a place to stay and not sure where to start? You can start with these suggestions below.",
 		"dashboard.accommodations":              "Guest Accommodation Suggestions",
 		"dashboard.accommodations_description":  "Suggestions shown at the end of the homepage for guests looking for a place to stay",
@@ -333,12 +335,14 @@ var translations = map[string]map[string]string{
 		"flash.gift_deleted":    "Dono eliminato.",
 
 		// home
-		"home.getting_married":  "Insieme per sempre",
-		"home.ceremony":         "Il Rito",
-		"home.reception":        "I Festeggiamenti",
-		"home.guest_list":       "Lista Invitati",
-		"home.gift":             "Regalo",
-		"home.gift_description": "Se desiderate onorarci con un dono, scegliete un importo",
+		"home.getting_married":    "Insieme per sempre",
+		"home.venues":             "Rito e Festeggiamenti",
+		"home.venues_description": "Dove trovarci, e quando",
+		"home.ceremony":           "Il Rito",
+		"home.reception":          "I Festeggiamenti",
+		"home.guest_list":         "Lista Invitati",
+		"home.gift":               "Regalo",
+		"home.gift_description":   "Se desiderate onorarci con un dono, scegliete un importo",
 
 		// gift form
 		"placeholder.donor":        "Il vostro nome (facoltativo)",
@@ -464,7 +468,7 @@ var translations = map[string]map[string]string{
 		"btn.add_place":                "Aggiungi luogo",
 
 		// accommodation suggestions
-		"home.accommodations":                   "Dove Dormire",
+		"home.accommodations":                   "Alloggi",
 		"home.accommodations_description":       "Se state cercando un alloggio e non sapete da dove partire, potete iniziare da questi suggerimenti.",
 		"dashboard.accommodations":              "Suggerimenti alloggi per gli ospiti",
 		"dashboard.accommodations_description":  "Suggerimenti mostrati alla fine della homepage per gli ospiti che cercano dove dormire",
@@ -496,7 +500,7 @@ var translations = map[string]map[string]string{
 
 // HomepageKeys is the ordered list of i18n keys overridable from the dashboard.
 var HomepageKeys = []string{
-	"home.getting_married", "home.ceremony", "home.reception",
+	"home.getting_married", "home.venues", "home.venues_description", "home.ceremony", "home.reception",
 	"home.soundtrack", "home.soundtrack_description",
 	"home.places", "home.places_description",
 	"home.accommodations", "home.accommodations_description",

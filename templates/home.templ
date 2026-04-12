@@ -139,6 +139,10 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 				<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
 			</a>
 			<div class="vp-section-inner">
+				<div class="section-heading">
+					<h2 class="section-title">{ t("home.venues") }</h2>
+					<p class="section-subtitle">{ t("home.venues_description") }</p>
+				</div>
 				<div class="venues-pair">
 					if settings.CeremonyAddress != "" || settings.CeremonyLocation != "" {
 						<div class="venue venue-ceremony">
@@ -234,23 +238,25 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 					<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
 				</a>
 				<div class="vp-section-inner">
-					<h2 class="section-title">{ t("home.soundtrack") }</h2>
-					<p class="section-subtitle">{ t("home.soundtrack_description") }</p>
-						<div class="playlist-grid">
-							for _, url := range settings.SpotifyPlaylists {
-								if spotifyEmbedURL(url) != "" {
-									<iframe
-										class="playlist-card"
-										src={ spotifyEmbedURL(url) }
-										width="100%"
-										height="152"
-										frameBorder="0"
-										allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-										loading="lazy"
-									></iframe>
-								}
+					<div class="section-heading">
+						<h2 class="section-title">{ t("home.soundtrack") }</h2>
+						<p class="section-subtitle">{ t("home.soundtrack_description") }</p>
+					</div>
+					<div class="playlist-grid">
+						for _, url := range settings.SpotifyPlaylists {
+							if spotifyEmbedURL(url) != "" {
+								<iframe
+									class="playlist-card"
+									src={ spotifyEmbedURL(url) }
+									width="100%"
+									height="152"
+									frameBorder="0"
+									allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+									loading="lazy"
+								></iframe>
 							}
-						</div>
+						}
+					</div>
 				</div>
 				if nextSectionAfterSoundtrack(settings.Places, bankConfigured) != "" {
 					<a href={ templ.SafeURL(nextSectionAfterSoundtrack(settings.Places, bankConfigured)) } class="vp-arrow vp-arrow--down">
@@ -276,7 +282,7 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 				</div>
 				<div id="places-pins" class="places-pins-layer"></div>
 				<div class="vp-section-inner places-stage">
-					<div class="places-map-copy">
+					<div class="places-map-copy section-heading">
 						<h2 class="section-title">{ t("home.places") }</h2>
 						<p class="section-subtitle">{ t("home.places_description") }</p>
 					</div>
@@ -309,8 +315,10 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 				</a>
 				<div class="vp-section-inner">
 					<div class="registry-v2">
-						<h2>{ t("home.registry") }</h2>
-						<p class="registry-v2-subtitle">{ t("home.registry_description") }</p>
+						<div class="section-heading">
+							<h2 class="section-title">{ t("home.registry") }</h2>
+							<p class="section-subtitle">{ t("home.registry_description") }</p>
+						</div>
 						<div class="registry-v2-carousel">
 							for _, item := range registryItems {
 								<div class={ "gift-tile", templ.KV("gift-tile--gifted", remainingAmount(item, claimedAmounts) <= 0) }>
@@ -369,7 +377,7 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 			</section>
 		}
 		<!-- nav dots -->
-		<nav class="vp-dots" aria-label="Sections">
+		<nav class="vp-dots vp-dots--hidden" aria-label="Sections">
 			<a href="#landing" class="vp-dot active" aria-label={ settings.Spouse1Name + " & " + settings.Spouse2Name }></a>
 			<a href="#venues" class="vp-dot" aria-label={ t("home.ceremony") }></a>
 			if len(settings.SpotifyPlaylists) > 0 {
@@ -492,6 +500,7 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 		<script>
 			(function() {
 				// nav dots: highlight active section on scroll
+				var dotsNav = document.querySelector('.vp-dots');
 				var dots = document.querySelectorAll('.vp-dot');
 				var sections = document.querySelectorAll('.vp-section');
 				var reducedMotionQuery = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
@@ -502,6 +511,10 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 
 				function setActiveSection(id) {
 					if (!id) return;
+
+					if (dotsNav) {
+						dotsNav.classList.toggle('vp-dots--hidden', id === 'landing');
+					}
 
 					dots.forEach(function(d) {
 						d.classList.toggle('active', d.getAttribute('href') === '#' + id);
