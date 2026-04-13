@@ -41,48 +41,74 @@ function initDashboardFeatures() {
   }
 
   // ---------------------------------------------------------------
-  // places management
+  // places / honeymoon management
   // ---------------------------------------------------------------
-  var placesContainer = document.getElementById("places-container");
-  var addPlaceBtn = document.getElementById("add-place-btn");
+  bindLocationCollection({
+    container: document.getElementById("places-container"),
+    addButton: document.getElementById("add-place-btn"),
+    prefix: "place",
+    imageIdPrefix: "place-image",
+    imageFormat: "image/jpeg",
+    imageMaxWidth: 640,
+    imageMaxHeight: 640,
+    imageMaxBytes: 0,
+    imageAlt: "Place preview",
+    includeDate: true
+  });
 
-  if (placesContainer && addPlaceBtn && !placesContainer.dataset.bound) {
-    placesContainer.dataset.bound = "true";
-    addPlaceBtn.addEventListener("click", function () {
-      addPlaceCard();
-      reindexPlaces();
+  bindLocationCollection({
+    container: document.getElementById("honeymoon-container"),
+    addButton: document.getElementById("add-honeymoon-btn"),
+    prefix: "honeymoon",
+    imageIdPrefix: "honeymoon-image",
+    imageFormat: "image/png",
+    imageMaxWidth: 900,
+    imageMaxHeight: 900,
+    imageMaxBytes: 614400,
+    imageAlt: "Honeymoon preview",
+    includeDate: false
+  });
+
+  function bindLocationCollection(config) {
+    var container = config.container;
+    var addButton = config.addButton;
+    if (!container || !addButton || container.dataset.bound) return;
+
+    container.dataset.bound = "true";
+    addButton.addEventListener("click", function () {
+      addLocationCard(container, config);
+      reindexLocationCards(container, config);
     });
 
-    placesContainer.addEventListener("click", function (e) {
+    container.addEventListener("click", function (e) {
       var target = e.target;
       if (target.classList.contains("place-remove")) {
         target.closest(".place-card").remove();
-        reindexPlaces();
+        reindexLocationCards(container, config);
       } else if (target.classList.contains("place-move-up")) {
         var card = target.closest(".place-card");
         var prev = card.previousElementSibling;
         if (prev) {
-          placesContainer.insertBefore(card, prev);
-          reindexPlaces();
+          container.insertBefore(card, prev);
+          reindexLocationCards(container, config);
         }
       } else if (target.classList.contains("place-move-down")) {
-        var card = target.closest(".place-card");
-        var next = card.nextElementSibling;
+        var movingCard = target.closest(".place-card");
+        var next = movingCard.nextElementSibling;
         if (next) {
-          placesContainer.insertBefore(next, card);
-          reindexPlaces();
+          container.insertBefore(next, movingCard);
+          reindexLocationCards(container, config);
         }
       }
     });
 
-    // initialize autocomplete on existing place cards
-    placesContainer.querySelectorAll(".place-card").forEach(function (card) {
+    container.querySelectorAll(".place-card").forEach(function (card) {
       initPlaceAutocomplete(card);
     });
   }
 
-  function addPlaceCard() {
-    var idx = placesContainer.querySelectorAll(".place-card").length;
+  function addLocationCard(container, config) {
+    var idx = container.querySelectorAll(".place-card").length;
     var card = document.createElement("div");
     card.className = "place-card";
     card.dataset.index = idx;
@@ -97,72 +123,81 @@ function initDashboardFeatures() {
           '<button type="button" class="place-remove outline secondary" aria-label="Remove">&times;</button>' +
         "</div>" +
       "</div>" +
-      '<div class="grid">' +
-        "<div>" +
-          "<label>Label</label>" +
-          '<input type="text" name="place_label_' + idx + '" placeholder="e.g. First date"/>' +
-        "</div>" +
-        "<div>" +
-          "<label>Date</label>" +
-          '<input type="date" name="place_date_' + idx + '"/>' +
-        "</div>" +
-      "</div>" +
+      (
+        config.includeDate
+          ? '<div class="grid">' +
+              "<div>" +
+                "<label>Label</label>" +
+                '<input type="text" name="' + config.prefix + '_label_' + idx + '" placeholder="e.g. First date"/>' +
+              "</div>" +
+              "<div>" +
+                "<label>Date</label>" +
+                '<input type="date" name="' + config.prefix + '_date_' + idx + '"/>' +
+              "</div>" +
+            "</div>"
+          : "<div>" +
+              "<label>Label</label>" +
+              '<input type="text" name="' + config.prefix + '_label_' + idx + '" placeholder="e.g. First date"/>' +
+            "</div>"
+      ) +
       '<div class="grid">' +
         '<div style="position:relative">' +
           "<label>Address</label>" +
           '<input type="text" class="place-location-input" autocomplete="off" placeholder="Search for an address..."/>' +
           '<div class="autocomplete-dropdown place-dropdown"></div>' +
-          '<input type="hidden" name="place_name_' + idx + '" class="place-name-hidden"/>' +
-          '<input type="hidden" name="place_address_' + idx + '" class="place-address-hidden"/>' +
-          '<input type="hidden" name="place_lat_' + idx + '" class="place-lat-hidden" value="0"/>' +
-          '<input type="hidden" name="place_lng_' + idx + '" class="place-lng-hidden" value="0"/>' +
+          '<input type="hidden" name="' + config.prefix + '_name_' + idx + '" class="place-name-hidden"/>' +
+          '<input type="hidden" name="' + config.prefix + '_address_' + idx + '" class="place-address-hidden"/>' +
+          '<input type="hidden" name="' + config.prefix + '_lat_' + idx + '" class="place-lat-hidden" value="0"/>' +
+          '<input type="hidden" name="' + config.prefix + '_lng_' + idx + '" class="place-lng-hidden" value="0"/>' +
         "</div>" +
         "<div>" +
           "<label>Image</label>" +
           '<div class="managed-image-field">' +
-            '<input type="file" accept="image/*" class="managed-image-file" data-target-input="place-image-data-' + idx + '" data-preview-target="place-image-preview-' + idx + '" data-format="image/jpeg" data-quality="0.82" data-max-width="640" data-max-height="640"/>' +
-            '<input type="hidden" name="place_image_' + idx + '" id="place-image-data-' + idx + '" class="place-image-hidden"/>' +
-            '<img class="venue-image-preview place-image-preview" id="place-image-preview-' + idx + '" style="display:none" alt="Place preview"/>' +
+            '<input type="file" accept="image/*" class="managed-image-file" data-target-input="' + config.imageIdPrefix + '-data-' + idx + '" data-preview-target="' + config.imageIdPrefix + '-preview-' + idx + '" data-format="' + escapeAttr(config.imageFormat || "image/jpeg") + '" data-quality="0.82" data-max-width="' + config.imageMaxWidth + '" data-max-height="' + config.imageMaxHeight + '" data-max-bytes="' + (config.imageMaxBytes || 0) + '"/>' +
+            '<input type="hidden" name="' + config.prefix + '_image_' + idx + '" id="' + config.imageIdPrefix + '-data-' + idx + '" class="place-image-hidden"/>' +
+            '<img class="venue-image-preview place-image-preview" id="' + config.imageIdPrefix + '-preview-' + idx + '" style="display:none" alt="' + escapeAttr(config.imageAlt) + '"/>' +
           "</div>" +
         "</div>" +
       "</div>";
-    placesContainer.appendChild(card);
+    container.appendChild(card);
     initPlaceAutocomplete(card);
     if (window.initDashboardImageResizers) {
       window.initDashboardImageResizers(card);
     }
   }
 
-  function reindexPlaces() {
-    var cards = placesContainer.querySelectorAll(".place-card");
+  function reindexLocationCards(container, config) {
+    var cards = container.querySelectorAll(".place-card");
     cards.forEach(function (card, idx) {
       card.dataset.index = idx;
       var num = card.querySelector(".place-number");
       if (num) num.textContent = idx + 1;
-      var label = card.querySelector('input[name^="place_label_"]');
-      if (label) label.name = "place_label_" + idx;
-      var date = card.querySelector('input[name^="place_date_"]');
-      if (date) date.name = "place_date_" + idx;
+      var label = card.querySelector('input[name^="' + config.prefix + '_label_"]');
+      if (label) label.name = config.prefix + "_label_" + idx;
+      var date = card.querySelector('input[name^="' + config.prefix + '_date_"]');
+      if (date) date.name = config.prefix + "_date_" + idx;
       var name = card.querySelector(".place-name-hidden");
-      if (name) name.name = "place_name_" + idx;
+      if (name) name.name = config.prefix + "_name_" + idx;
       var addr = card.querySelector(".place-address-hidden");
-      if (addr) addr.name = "place_address_" + idx;
+      if (addr) addr.name = config.prefix + "_address_" + idx;
       var lat = card.querySelector(".place-lat-hidden");
-      if (lat) lat.name = "place_lat_" + idx;
+      if (lat) lat.name = config.prefix + "_lat_" + idx;
       var lng = card.querySelector(".place-lng-hidden");
-      if (lng) lng.name = "place_lng_" + idx;
+      if (lng) lng.name = config.prefix + "_lng_" + idx;
       var image = card.querySelector(".place-image-hidden");
       if (image) {
-        image.name = "place_image_" + idx;
-        image.id = "place-image-data-" + idx;
+        image.name = config.prefix + "_image_" + idx;
+        image.id = config.imageIdPrefix + "-data-" + idx;
       }
       var imageFile = card.querySelector(".managed-image-file");
       if (imageFile) {
-        imageFile.dataset.targetInput = "place-image-data-" + idx;
-        imageFile.dataset.previewTarget = "place-image-preview-" + idx;
+        imageFile.dataset.targetInput = config.imageIdPrefix + "-data-" + idx;
+        imageFile.dataset.previewTarget = config.imageIdPrefix + "-preview-" + idx;
+        imageFile.dataset.format = config.imageFormat || "image/jpeg";
+        imageFile.dataset.maxBytes = String(config.imageMaxBytes || 0);
       }
       var imagePreview = card.querySelector(".place-image-preview");
-      if (imagePreview) imagePreview.id = "place-image-preview-" + idx;
+      if (imagePreview) imagePreview.id = config.imageIdPrefix + "-preview-" + idx;
     });
   }
 
@@ -289,17 +324,7 @@ function initDashboardFeatures() {
       latHidden.value = item.lat || "0";
       lngHidden.value = item.lon || "0";
       input.value = name + (address ? ", " + address : "");
-      // show coords confirmation
-      var existing = card.querySelector(".place-coords");
-      if (existing) existing.remove();
-      if (item.lat && item.lon) {
-        var coordsDiv = document.createElement("div");
-        coordsDiv.className = "place-coords";
-        coordsDiv.innerHTML =
-          '<span class="place-coords-check">&#10003;</span>' +
-          "<code>" + parseFloat(item.lat).toFixed(4) + ", " + parseFloat(item.lon).toFixed(4) + "</code>";
-        card.appendChild(coordsDiv);
-      }
+      renderCoordsBadge(card, item.lat, item.lon);
       hide();
     }
 
@@ -320,6 +345,7 @@ function initDashboardFeatures() {
       addressHidden.value = "";
       latHidden.value = "0";
       lngHidden.value = "0";
+      renderCoordsBadge(card, "", "");
       clearTimeout(debounceTimer);
       var q = input.value.trim();
       if (q.length < 3) { hide(); return; }
@@ -353,6 +379,22 @@ function initDashboardFeatures() {
   function extractName(item) {
     if (item.namedetails && item.namedetails.name) return item.namedetails.name;
     return item.display_name;
+  }
+
+  function renderCoordsBadge(card, lat, lng) {
+    var meta = card.querySelector(".place-card-meta");
+    if (!meta) return;
+
+    var existing = meta.querySelector(".place-coords");
+    if (existing) existing.remove();
+    if (!lat || !lng) return;
+
+    var coordsDiv = document.createElement("div");
+    coordsDiv.className = "place-coords";
+    coordsDiv.innerHTML =
+      '<span class="place-coords-check">&#10003;</span>' +
+      "<code>" + parseFloat(lat).toFixed(4) + ", " + parseFloat(lng).toFixed(4) + "</code>";
+    meta.appendChild(coordsDiv);
   }
 
   function extractAddress(item, name) {

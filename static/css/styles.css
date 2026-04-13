@@ -3150,19 +3150,68 @@ td [role="switch"] { margin: 0; }
 /* ---------------------------------------------------------------
    places section
    --------------------------------------------------------------- */
-.vp-places {
-  background:
-    radial-gradient(circle at top left, rgba(212, 165, 154, 0.24), transparent 30%),
-    linear-gradient(180deg, #f8f3ee 0%, #eef2ec 100%);
-  overflow: hidden;
-  justify-content: flex-start;
+.timeline-story {
+  position: relative;
+  z-index: 0;
 }
 
-.vp-places::after {
+.timeline-story-map-shell {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  margin-bottom: -100vh;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.timeline-story > .vp-places,
+.timeline-story > .vp-honeymoon {
+  z-index: 2;
+  pointer-events: none;
+}
+
+.timeline-story > .vp-places > *,
+.timeline-story > .vp-honeymoon > * {
+  pointer-events: auto;
+}
+
+.timeline-story-map-shell > .places-map-background,
+.timeline-story-map-shell > .places-pins-layer,
+.timeline-story-map-shell > .places-filter-defs {
+  position: absolute;
+  inset: 0;
+}
+
+.timeline-story-map-shell > .places-map-background {
+  z-index: 0;
+}
+
+.timeline-story-map-shell > .places-pins-layer {
+  z-index: 2;
+}
+
+.vp-places,
+.vp-honeymoon {
+  overflow: hidden;
+  justify-content: flex-start;
+  background: transparent;
+}
+
+.timeline-story > .vp-places::before,
+.timeline-story > .vp-honeymoon::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.vp-places::after,
+.vp-honeymoon::after {
   z-index: 1;
 }
 
-.vp-places > .places-map-background {
+.timeline-story-map-shell > .places-map-background {
   position: absolute;
   inset: 0;
   z-index: 0;
@@ -3170,7 +3219,7 @@ td [role="switch"] { margin: 0; }
   filter: grayscale(0.04) brightness(0.88) saturate(0.92);
 }
 
-.vp-places > .places-map-background::after {
+.timeline-story-map-shell > .places-map-background::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -3178,7 +3227,7 @@ td [role="switch"] { margin: 0; }
   pointer-events: none;
 }
 
-.vp-places > .places-pins-layer {
+.timeline-story-map-shell > .places-pins-layer {
   position: absolute;
   inset: 0;
   z-index: 2;
@@ -3188,7 +3237,10 @@ td [role="switch"] { margin: 0; }
 .vp-places > .vp-arrow,
 .vp-places > .vp-section-inner,
 .vp-places > #places-data,
-.vp-places > #places-modal {
+.vp-places > #places-modal,
+.vp-honeymoon > .vp-arrow,
+.vp-honeymoon > .vp-section-inner,
+.vp-honeymoon > #honeymoon-data {
   z-index: 3;
 }
 
@@ -3258,7 +3310,7 @@ td [role="switch"] { margin: 0; }
   transform: translate(-50%, -50%) scale(1);
 }
 
-#places-pins > button > img {
+.places-pin:not(.places-pin--honeymoon) > img {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -3277,6 +3329,112 @@ td [role="switch"] { margin: 0; }
   font-size: 1rem;
   font-weight: 700;
   letter-spacing: 0.08em;
+}
+
+.places-pin--honeymoon {
+  width: clamp(11rem, 20vw, 16rem);
+  height: clamp(11rem, 20vw, 16rem);
+  overflow: visible;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  transform: translate(-50%, -50%);
+  transition: opacity 400ms ease;
+  cursor: default;
+  pointer-events: none;
+  opacity: 1;
+}
+
+.places-pin-media {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+  background: transparent;
+}
+
+.places-pin-media img {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto;
+  filter:
+    url(#places-pin-photo-filter)
+    sepia(0.34)
+    saturate(0.82)
+    contrast(1.08)
+    brightness(0.88)
+    drop-shadow(0 14px 28px rgba(42, 52, 57, 0.2));
+}
+
+.places-pin-media--transparent {
+  background: transparent;
+}
+
+.places-pin-media--transparent img {
+  object-fit: contain;
+  filter:
+    url(#places-pin-photo-filter)
+    sepia(0.34)
+    saturate(0.82)
+    contrast(1.08)
+    brightness(0.88)
+    drop-shadow(0 12px 24px rgba(42, 52, 57, 0.18));
+}
+
+.places-pin-media--placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: rgba(255, 250, 244, 0.96);
+  font-family: 'Playfair Display', serif;
+  font-size: 2rem;
+  letter-spacing: 0.08em;
+  border-radius: 1.5rem;
+  background: linear-gradient(135deg, rgba(217, 198, 178, 0.92), rgba(142, 106, 77, 0.45));
+  box-shadow: 0 18px 38px rgba(42, 52, 57, 0.18);
+}
+
+.places-pin-overlay {
+  position: absolute;
+  left: 50%;
+  bottom: 0.8rem;
+  display: flex;
+  justify-content: center;
+  transform: translateX(-50%);
+  width: calc(100% - 1.5rem);
+}
+
+.places-pin-overlay h3 {
+  margin: 0;
+  max-width: 100%;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  background: rgba(18, 22, 25, 0.48);
+  color: rgba(255, 250, 244, 0.98);
+  font-size: 0.9rem;
+  line-height: 1.2;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 8px 20px rgba(18, 22, 25, 0.18);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+}
+
+.timeline-route {
+  filter: drop-shadow(0 8px 18px rgba(42, 52, 57, 0.16));
 }
 
 .places-modal-box {
@@ -3450,6 +3608,13 @@ td [role="switch"] { margin: 0; }
   font-weight: 400;
 }
 
+.place-card-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+}
+
 .place-card-actions {
   display: flex;
   gap: var(--sp-1);
@@ -3465,7 +3630,6 @@ td [role="switch"] { margin: 0; }
   display: flex;
   align-items: center;
   gap: var(--sp-2);
-  margin-top: var(--sp-2);
   font-size: var(--fs-xs);
 }
 
@@ -3554,11 +3718,21 @@ td [role="switch"] { margin: 0; }
   .playlist-grid {
     gap: var(--sp-8);
   }
+
+  .places-pin--honeymoon {
+    width: clamp(12rem, 18vw, 17rem);
+    height: clamp(12rem, 18vw, 17rem);
+  }
 }
 
 @media (min-width: 1024px) {
   .places-map-copy {
     max-width: 26rem;
+  }
+
+  .places-pin--honeymoon {
+    width: clamp(13rem, 16vw, 18rem);
+    height: clamp(13rem, 16vw, 18rem);
   }
 }
 

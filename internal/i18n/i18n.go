@@ -222,8 +222,12 @@ var translations = map[string]map[string]string{
 		// places
 		"home.places":                  "Where It All Happened",
 		"home.places_description":      "The coordinates of us",
+		"home.honeymoon":               "Honeymoon",
+		"home.honeymoon_description":   "The route we will take next",
 		"dashboard.places":             "Places",
 		"dashboard.places_description": "Photos and locations that mark your story, shown on the homepage map",
+		"dashboard.honeymoon":          "Honeymoon",
+		"dashboard.honeymoon_description": "Locations, labels, and photos for the honeymoon journey shown on the homepage map",
 		"label.place_label":            "Label",
 		"label.place_address":          "Address",
 		"label.place_date":             "Date",
@@ -231,6 +235,7 @@ var translations = map[string]map[string]string{
 		"placeholder.place_label":      "e.g. First date",
 		"placeholder.place_address":    "Search for an address...",
 		"btn.add_place":                "Add place",
+		"btn.add_honeymoon_location":   "Add honeymoon stop",
 
 		// accommodation suggestions
 		"home.accommodations":                   "Accommodations",
@@ -457,8 +462,12 @@ var translations = map[string]map[string]string{
 		// places
 		"home.places":                  "Dove Tutto è Successo",
 		"home.places_description":      "Le coordinate di noi",
+		"home.honeymoon":               "Luna di Miele",
+		"home.honeymoon_description":   "La rotta del nostro prossimo viaggio",
 		"dashboard.places":             "Luoghi",
 		"dashboard.places_description": "Foto e luoghi che segnano la vostra storia, mostrati nella mappa in homepage",
+		"dashboard.honeymoon":          "Luna di miele",
+		"dashboard.honeymoon_description": "Luoghi, etichette e foto del viaggio di nozze mostrati nella mappa in homepage",
 		"label.place_label":            "Etichetta",
 		"label.place_address":          "Indirizzo",
 		"label.place_date":             "Data",
@@ -466,6 +475,7 @@ var translations = map[string]map[string]string{
 		"placeholder.place_label":      "es. Primo appuntamento",
 		"placeholder.place_address":    "Cerca un indirizzo...",
 		"btn.add_place":                "Aggiungi luogo",
+		"btn.add_honeymoon_location":   "Aggiungi tappa",
 
 		// accommodation suggestions
 		"home.accommodations":                   "Alloggi",
@@ -503,6 +513,7 @@ var HomepageKeys = []string{
 	"home.getting_married", "home.venues", "home.venues_description", "home.ceremony", "home.reception",
 	"home.soundtrack", "home.soundtrack_description",
 	"home.places", "home.places_description",
+	"home.honeymoon", "home.honeymoon_description",
 	"home.accommodations", "home.accommodations_description",
 	"home.registry", "home.registry_description",
 	"home.generic_gift", "home.generic_gift_description", "home.remaining",

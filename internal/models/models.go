@@ -47,6 +47,7 @@ type WeddingSettings struct {
 	BankAccountHolder        string
 	SpotifyPlaylists         []string
 	Places                   []Place
+	HoneymoonLocations       []Place
 	AccommodationSuggestions []AccommodationSuggestion
 	Impersonations           []Impersonation
 	HomepageLabels           map[string]map[string]string

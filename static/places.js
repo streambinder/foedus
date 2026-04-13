@@ -1,113 +1,383 @@
 (function () {
   "use strict";
 
-  var dataEl = document.getElementById("places-data");
-  var mapEl = document.getElementById("places-map");
-  var pinsEl = document.getElementById("places-pins");
-  var modalEl = document.getElementById("places-modal");
-  if (!dataEl || !mapEl || !pinsEl || !modalEl) return;
+  var storyRoot = document.getElementById("story-map-root");
+  var mapEl = document.getElementById("story-map");
+  var pinsEl = document.getElementById("story-pins");
+  if (!storyRoot || !mapEl || !pinsEl) return;
 
-  var modalImage = document.getElementById("places-modal-image");
-  var modalLabel = document.getElementById("places-modal-label");
-  var modalDate = document.getElementById("places-modal-date");
-  var modalClose = document.getElementById("places-modal-close");
+  var sections = {
+    places: document.getElementById("places"),
+    honeymoon: document.getElementById("honeymoon")
+  };
 
-  var places;
-  try {
-    places = JSON.parse(dataEl.textContent);
-  } catch (e) {
-    return;
-  }
-  if (!Array.isArray(places) || places.length === 0) return;
+  var datasets = {
+    places: parseTimelineData(sections.places && sections.places.querySelector("#places-data")),
+    honeymoon: parseTimelineData(sections.honeymoon && sections.honeymoon.querySelector("#honeymoon-data"))
+  };
+
+  var modalEl = sections.places ? sections.places.querySelector("#places-modal") : null;
+  var modalImage = modalEl ? modalEl.querySelector("#places-modal-image") : null;
+  var modalLabel = modalEl ? modalEl.querySelector("#places-modal-label") : null;
+  var modalDate = modalEl ? modalEl.querySelector("#places-modal-date") : null;
+  var modalClose = modalEl ? modalEl.querySelector("#places-modal-close") : null;
 
   var map = null;
-  var activePin = null;
-  var pinEntries = [];
   var mapInitialized = false;
+  var activePin = null;
+  var activeMode = datasets.places.length ? "places" : "honeymoon";
+  var routeLine = null;
+  var entriesByMode = { places: [], honeymoon: [] };
+  var modeLockUntil = 0;
+
+  observeMapLifecycle();
+  bindModal();
+  observeSections();
+  bindStoryNav();
+
+  function observeMapLifecycle() {
+    if ("IntersectionObserver" in window) {
+      var rootObserver = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (!entry.isIntersecting) return;
+          initMap();
+          rootObserver.disconnect();
+        });
+      }, { rootMargin: "240px 0px" });
+
+      rootObserver.observe(storyRoot);
+    } else {
+      initMap();
+    }
+  }
+
+  function observeSections() {
+    var observedSections = Object.keys(sections)
+      .map(function (key) { return sections[key]; })
+      .filter(Boolean);
+    if (!observedSections.length) return;
+
+    function activateFromHash() {
+      var id = window.location.hash ? window.location.hash.slice(1) : "";
+      if ((id === "places" || id === "honeymoon") && sections[id]) {
+        lockModeSelection(900);
+        setActiveMode(id, true);
+      }
+    }
+
+    activateFromHash();
+    window.addEventListener("hashchange", activateFromHash);
+
+    if (!("IntersectionObserver" in window)) return;
+
+    var sectionObserver = new IntersectionObserver(function (entries) {
+      var best = null;
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) return;
+        if (!best || entry.intersectionRatio > best.intersectionRatio) {
+          best = entry;
+        }
+      });
+      if (!best) return;
+
+      var mode = best.target.getAttribute("data-story-map-section");
+      if (isModeSelectionLocked()) return;
+      if (mode) setActiveMode(mode, false);
+    }, { threshold: [0.25, 0.45, 0.6], rootMargin: "-10% 0px -10% 0px" });
+
+    observedSections.forEach(function (section) {
+      sectionObserver.observe(section);
+    });
+  }
+
+  function bindStoryNav() {
+    document.querySelectorAll('.vp-dot[href="#places"], .vp-dot[href="#honeymoon"]').forEach(function (link) {
+      link.addEventListener("click", function () {
+        var href = link.getAttribute("href") || "";
+        var mode = href.charAt(0) === "#" ? href.slice(1) : href;
+        if (mode !== "places" && mode !== "honeymoon") return;
+        lockModeSelection(900);
+        setActiveMode(mode, true);
+      });
+    });
+  }
 
   function initMap() {
     if (mapInitialized || typeof L === "undefined") return;
     mapInitialized = true;
 
-    map = L.map("places-map", {
+    map = L.map(mapEl, {
       scrollWheelZoom: false,
       zoomControl: false,
-      attributionControl: true,
+      attributionControl: true
     });
 
     L.tileLayer("https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png", {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
       subdomains: "abcd",
-      maxZoom: 19,
+      maxZoom: 19
     }).addTo(map);
 
     L.tileLayer("https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png", {
       attribution: "",
       subdomains: "abcd",
       maxZoom: 19,
-      pane: "overlayPane",
+      pane: "overlayPane"
     }).addTo(map);
 
-    var latlngs = [];
+    entriesByMode.places = buildEntries("places", datasets.places);
+    entriesByMode.honeymoon = buildEntries("honeymoon", datasets.honeymoon);
 
-    places.forEach(function (place, idx) {
+    if (entriesByMode.honeymoon.length > 1) {
+      routeLine = L.polyline(createCurvedRoute(entriesByMode.honeymoon.map(function (entry) {
+        return entry.latlng;
+      })), {
+        color: "#8a6a4d",
+        weight: 3,
+        opacity: 0,
+        lineCap: "round",
+        lineJoin: "round",
+        dashArray: "2 12",
+        interactive: false,
+        className: "timeline-route timeline-route--active"
+      }).addTo(map);
+    }
+
+    map.on("move zoom resize load", renderPins);
+    map.on("resize", function () {
+      setMapViewForMode(activeMode, true);
+    });
+
+    storyRoot.dataset.activeStoryMap = activeMode;
+    setMapViewForMode(activeMode, true);
+
+    window.setTimeout(function () {
+      map.invalidateSize();
+      setMapViewForMode(activeMode, true);
+      renderPins();
+    }, 120);
+  }
+
+  function buildEntries(mode, items) {
+    var entries = [];
+
+    items.forEach(function (place, idx) {
       if (typeof place.lat !== "number" || typeof place.lng !== "number" || (!place.lat && !place.lng)) {
         return;
       }
 
       var latlng = L.latLng(place.lat, place.lng);
-      latlngs.push(latlng);
+      var pin = buildPin(place, idx, mode);
+      if (!pin) return;
 
-      var pin = document.createElement("button");
-      pin.type = "button";
-      pin.className = "places-pin";
-      pin.dataset.placeIndex = String(idx);
-      if (!place.image) {
-        pin.classList.add("places-pin--placeholder");
-        pin.innerHTML = '<span>' + escapeHtml(initials(place.label || place.name || "P")) + "</span>";
-      } else {
-        pin.innerHTML = '<img src="' + place.image + '" alt="' + escapeHtml(place.label || "Place") + '"/>';
+      if (mode === "places") {
+        pin.addEventListener("click", function () {
+          openPlace(place, pin);
+        });
       }
-      pin.addEventListener("click", function () {
-        openPlace(place, pin);
-      });
 
       pinsEl.appendChild(pin);
-      pinEntries.push({ place: place, latlng: latlng, element: pin });
+      entries.push({ place: place, latlng: latlng, element: pin, mode: mode });
     });
 
-    if (latlngs.length > 1) {
-      map.fitBounds(latlngs, { padding: [80, 80], maxZoom: 14 });
-    } else if (latlngs.length === 1) {
-      map.setView(latlngs[0], 13);
+    return entries;
+  }
+
+  function buildPin(place, idx, mode) {
+    var pin;
+    if (mode === "honeymoon") {
+      pin = document.createElement("article");
+      pin.className = "places-pin places-pin--honeymoon";
+      pin.dataset.placeIndex = String(idx);
+      pin.innerHTML = renderHoneymoonPin(place);
+      return pin;
     }
 
-    map.on("move zoom resize load", renderPins);
+    pin = document.createElement("button");
+    pin.type = "button";
+    pin.className = "places-pin";
+    pin.dataset.placeIndex = String(idx);
+    if (!place.image) {
+      pin.classList.add("places-pin--placeholder");
+      pin.innerHTML = '<span>' + escapeHtml(initials(place.label || place.name || "P")) + "</span>";
+    } else {
+      pin.innerHTML = '<img src="' + place.image + '" alt="' + escapeHtml(place.label || "Place") + '"/>';
+    }
+    return pin;
+  }
 
-    window.setTimeout(function () {
-      map.invalidateSize();
-      renderPins();
-    }, 120);
+  function renderHoneymoonPin(place) {
+    var title = escapeHtml(place.label || place.name || "Stop");
+    var transparentClass = supportsTransparency(place.image) ? " places-pin-media--transparent" : "";
+    return place.image
+      ? '<div class="places-pin-media' + transparentClass + '"><img src="' + place.image + '" alt="' + title + '"/><div class="places-pin-overlay"><h3>' + title + '</h3></div></div>'
+      : '<div class="places-pin-media places-pin-media--placeholder"><span>' + escapeHtml(initials(place.label || place.name || "H")) + '</span><div class="places-pin-overlay"><h3>' + title + '</h3></div></div>';
+  }
+
+  function setActiveMode(mode, immediate) {
+    if (!sections[mode] && mode !== "places" && mode !== "honeymoon") return;
+    activeMode = mode;
+    storyRoot.dataset.activeStoryMap = mode;
+    if (!mapInitialized) return;
+
+    if (routeLine) {
+      routeLine.setStyle({ opacity: mode === "honeymoon" ? 0.95 : 0 });
+    }
+    if (mode !== "places") {
+      setActivePin(null);
+    }
+    setMapViewForMode(mode, immediate);
+    renderPins();
+  }
+
+  function lockModeSelection(durationMs) {
+    modeLockUntil = Date.now() + durationMs;
+  }
+
+  function isModeSelectionLocked() {
+    return Date.now() < modeLockUntil;
+  }
+
+  function setMapViewForMode(mode, immediate) {
+    if (!map) return;
+    var entries = entriesByMode[mode] || [];
+    if (!entries.length) return;
+
+    if (mode === "places") {
+      fitEntries(entries, {
+        padding: [80, 80],
+        maxZoom: 14,
+        immediate: immediate
+      });
+      return;
+    }
+
+    fitEntries(entries, {
+      paddingTopLeft: [
+        Math.max(36, Math.round(mapEl.clientWidth * 0.08)),
+        Math.max(32, Math.round(mapEl.clientHeight * 0.08))
+      ],
+      paddingBottomRight: [
+        Math.max(36, Math.round(mapEl.clientWidth * 0.08)),
+        Math.max(120, Math.round(mapEl.clientHeight * 0.18))
+      ],
+      maxZoom: entries.length > 1 ? 8 : 8,
+      immediate: immediate
+    });
+  }
+
+  function fitEntries(entries, options) {
+    var immediate = options.immediate || prefersReducedMotion();
+    if (entries.length === 1) {
+      var singleZoom = Math.min(options.maxZoom || 13, 13);
+      if (immediate) {
+        map.setView(entries[0].latlng, singleZoom, { animate: false });
+      } else {
+        map.setView(entries[0].latlng, singleZoom, { animate: true });
+      }
+      return;
+    }
+
+    var bounds = L.latLngBounds(entries.map(function (entry) { return entry.latlng; }));
+    if (immediate) {
+      map.fitBounds(bounds, {
+        padding: options.padding,
+        paddingTopLeft: options.paddingTopLeft,
+        paddingBottomRight: options.paddingBottomRight,
+        maxZoom: options.maxZoom,
+        animate: false
+      });
+      return;
+    }
+
+    map.fitBounds(bounds, {
+      padding: options.padding,
+      paddingTopLeft: options.paddingTopLeft,
+      paddingBottomRight: options.paddingBottomRight,
+      maxZoom: options.maxZoom,
+      animate: true
+    });
   }
 
   function renderPins() {
     if (!map) return;
 
-    pinEntries.forEach(function (entry) {
-      var point = map.latLngToContainerPoint(entry.latlng);
-      var isVisible =
-        point.x >= -80 &&
-        point.y >= -80 &&
-        point.x <= mapEl.clientWidth + 80 &&
-        point.y <= mapEl.clientHeight + 80;
+    ["places", "honeymoon"].forEach(function (mode) {
+      (entriesByMode[mode] || []).forEach(function (entry, idx) {
+        var isActiveMode = mode === activeMode;
+        if (!isActiveMode) {
+          entry.element.style.display = "none";
+          return;
+        }
 
-      entry.element.style.display = isVisible ? "" : "none";
-      entry.element.style.left = point.x + "px";
-      entry.element.style.top = point.y + "px";
+        var point = map.latLngToContainerPoint(entry.latlng);
+        var overflow = mode === "honeymoon" ? 240 : 80;
+        var isVisible =
+          point.x >= -overflow &&
+          point.y >= -overflow &&
+          point.x <= mapEl.clientWidth + overflow &&
+          point.y <= mapEl.clientHeight + overflow;
+
+        entry.element.style.display = isVisible ? "" : "none";
+        entry.element.style.left = point.x + "px";
+        entry.element.style.top = point.y + "px";
+        entry.element.classList.toggle("places-pin--active", mode === "places" && idx === getActivePlaceIndex());
+      });
     });
   }
 
+  function createCurvedRoute(latlngs) {
+    if (latlngs.length < 2) return latlngs;
+
+    var curve = [latlngs[0]];
+    for (var i = 0; i < latlngs.length - 1; i++) {
+      var start = latlngs[i];
+      var end = latlngs[i + 1];
+      var dx = end.lng - start.lng;
+      var dy = end.lat - start.lat;
+      var length = Math.sqrt(dx * dx + dy * dy) || 1;
+      var normalLat = -dx / length;
+      var normalLng = dy / length;
+      var sign = i % 2 === 0 ? 1 : -1;
+      var offset = length * 0.26;
+      var control1 = L.latLng(
+        start.lat + dy * 0.22 + normalLat * offset * sign,
+        start.lng + dx * 0.22 + normalLng * offset * sign
+      );
+      var control2 = L.latLng(
+        start.lat + dy * 0.78 + normalLat * offset * sign,
+        start.lng + dx * 0.78 + normalLng * offset * sign
+      );
+      var sampled = sampleBezier(start, control1, control2, end, 14);
+      for (var j = 1; j < sampled.length; j++) {
+        curve.push(sampled[j]);
+      }
+    }
+    return curve;
+  }
+
+  function sampleBezier(start, control1, control2, end, steps) {
+    var points = [];
+    for (var i = 0; i <= steps; i++) {
+      var t = i / steps;
+      var oneMinusT = 1 - t;
+      var lat =
+        oneMinusT * oneMinusT * oneMinusT * start.lat +
+        3 * oneMinusT * oneMinusT * t * control1.lat +
+        3 * oneMinusT * t * t * control2.lat +
+        t * t * t * end.lat;
+      var lng =
+        oneMinusT * oneMinusT * oneMinusT * start.lng +
+        3 * oneMinusT * oneMinusT * t * control1.lng +
+        3 * oneMinusT * t * t * control2.lng +
+        t * t * t * end.lng;
+      points.push(L.latLng(lat, lng));
+    }
+    return points;
+  }
+
   function openPlace(place, pin) {
+    if (!modalEl) return;
     if (modalImage) {
       modalImage.src = place.image || "";
       modalImage.alt = place.label || "Place";
@@ -122,7 +392,24 @@
     document.body.style.overflow = "hidden";
   }
 
+  function bindModal() {
+    if (modalClose) {
+      modalClose.addEventListener("click", closeModal);
+    }
+    if (modalEl) {
+      modalEl.addEventListener("click", function (event) {
+        if (event.target === modalEl) closeModal();
+      });
+    }
+    document.addEventListener("keydown", function (event) {
+      if (event.key === "Escape" && modalEl && modalEl.style.display !== "none") {
+        closeModal();
+      }
+    });
+  }
+
   function closeModal() {
+    if (!modalEl) return;
     if (prefersReducedMotion()) {
       finishModalClose();
       return;
@@ -140,6 +427,14 @@
     window.setTimeout(onClose, 260);
   }
 
+  function finishModalClose() {
+    if (!modalEl) return;
+    modalEl.style.display = "none";
+    modalEl.classList.remove("is-closing");
+    document.body.style.overflow = "";
+    setActivePin(null);
+  }
+
   function setActivePin(pin) {
     if (activePin) {
       activePin.classList.remove("places-pin--active");
@@ -150,41 +445,23 @@
     }
   }
 
-  function finishModalClose() {
-    modalEl.style.display = "none";
-    modalEl.classList.remove("is-closing");
-    document.body.style.overflow = "";
-    setActivePin(null);
+  function getActivePlaceIndex() {
+    if (!activePin) return -1;
+    return parseInt(activePin.dataset.placeIndex || "-1", 10);
+  }
+
+  function parseTimelineData(el) {
+    if (!el) return [];
+    try {
+      var parsed = JSON.parse(el.textContent);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      return [];
+    }
   }
 
   function prefersReducedMotion() {
     return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  }
-
-  if (modalClose) {
-    modalClose.addEventListener("click", closeModal);
-  }
-  modalEl.addEventListener("click", function (event) {
-    if (event.target === modalEl) closeModal();
-  });
-  document.addEventListener("keydown", function (event) {
-    if (event.key === "Escape" && modalEl.style.display !== "none") {
-      closeModal();
-    }
-  });
-
-  if ("IntersectionObserver" in window) {
-    var observer = new IntersectionObserver(function (entries) {
-      entries.forEach(function (entry) {
-        if (!entry.isIntersecting) return;
-        initMap();
-        observer.disconnect();
-      });
-    }, { rootMargin: "240px 0px" });
-
-    observer.observe(mapEl);
-  } else {
-    initMap();
   }
 
   function escapeHtml(str) {
@@ -200,5 +477,10 @@
       .slice(0, 2)
       .map(function (part) { return part.charAt(0).toUpperCase(); })
       .join("");
+  }
+
+  function supportsTransparency(image) {
+    if (!image) return false;
+    return /^data:image\/png/i.test(image) || /\.png(?:$|[?#])/i.test(image);
   }
 })();

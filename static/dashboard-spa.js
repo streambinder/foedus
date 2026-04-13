@@ -350,6 +350,9 @@
         img.onload = function () {
           var w = img.width;
           var h = img.height;
+          var format = fileInput.dataset.format || "image/png";
+          var quality = parseFloat(fileInput.dataset.quality || "0.92");
+          var maxBytes = parseInt(fileInput.dataset.maxBytes || "0", 10);
           var maxWidth = parseInt(fileInput.dataset.maxWidth || "0", 10);
           var maxHeight = parseInt(fileInput.dataset.maxHeight || "0", 10);
           if (maxWidth > 0 || maxHeight > 0) {
@@ -363,7 +366,7 @@
           canvas.width = w;
           canvas.height = h;
           canvas.getContext("2d").drawImage(img, 0, 0, w, h);
-          targetInput.value = canvas.toDataURL(fileInput.dataset.format || "image/png", parseFloat(fileInput.dataset.quality || "0.92"));
+          targetInput.value = encodeManagedImage(canvas, format, quality, maxBytes);
           if (previewImg) {
             previewImg.src = targetInput.value;
             previewImg.style.display = "";
@@ -378,6 +381,40 @@
     var div = document.createElement("div");
     div.textContent = str;
     return div.innerHTML;
+  }
+
+  function encodeManagedImage(canvas, format, quality, maxBytes) {
+    var dataUrl = canvas.toDataURL(format || "image/png", quality);
+    if (!maxBytes || estimateDataURLBytes(dataUrl) <= maxBytes) {
+      return dataUrl;
+    }
+
+    var workCanvas = document.createElement("canvas");
+    var workCtx = workCanvas.getContext("2d");
+    var currentWidth = canvas.width;
+    var currentHeight = canvas.height;
+
+    while (estimateDataURLBytes(dataUrl) > maxBytes && currentWidth > 80 && currentHeight > 80) {
+      currentWidth = Math.max(80, Math.round(currentWidth * 0.85));
+      currentHeight = Math.max(80, Math.round(currentHeight * 0.85));
+      workCanvas.width = currentWidth;
+      workCanvas.height = currentHeight;
+      workCtx.clearRect(0, 0, currentWidth, currentHeight);
+      workCtx.drawImage(canvas, 0, 0, currentWidth, currentHeight);
+      dataUrl = workCanvas.toDataURL(format || "image/png", quality);
+    }
+
+    return dataUrl;
+  }
+
+  function estimateDataURLBytes(dataUrl) {
+    var idx = dataUrl.indexOf(",");
+    if (idx === -1) return 0;
+    var base64 = dataUrl.slice(idx + 1);
+    var padding = 0;
+    if (base64.endsWith("==")) padding = 2;
+    else if (base64.endsWith("=")) padding = 1;
+    return Math.floor(base64.length * 3 / 4) - padding;
   }
 
   window.dashboardSubmitForm = function (form) {

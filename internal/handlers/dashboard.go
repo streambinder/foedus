@@ -173,6 +173,39 @@ func SaveSettings(c *fiber.Ctx) error {
 		return c.Status(500).SendString("failed to save settings")
 	}
 
+	// honeymoon locations: collect ordered location entries
+	var honeymoonLocations []models.Place
+	for i := 0; ; i++ {
+		label := strings.TrimSpace(c.FormValue(fmt.Sprintf("honeymoon_label_%d", i)))
+		name := strings.TrimSpace(c.FormValue(fmt.Sprintf("honeymoon_name_%d", i)))
+		address := strings.TrimSpace(c.FormValue(fmt.Sprintf("honeymoon_address_%d", i)))
+		date := strings.TrimSpace(c.FormValue(fmt.Sprintf("honeymoon_date_%d", i)))
+		image := c.FormValue(fmt.Sprintf("honeymoon_image_%d", i))
+		if label == "" && name == "" && address == "" && date == "" && image == "" {
+			break
+		}
+		if image != "" {
+			if err := validateBase64ImageAny(image); err != nil {
+				return c.Status(400).SendString(err.Error())
+			}
+		}
+		lat, _ := strconv.ParseFloat(c.FormValue(fmt.Sprintf("honeymoon_lat_%d", i)), 64)
+		lng, _ := strconv.ParseFloat(c.FormValue(fmt.Sprintf("honeymoon_lng_%d", i)), 64)
+		honeymoonLocations = append(honeymoonLocations, models.Place{
+			Label:   label,
+			Date:    date,
+			Image:   image,
+			Name:    name,
+			Address: address,
+			Lat:     lat,
+			Lng:     lng,
+		})
+	}
+	honeymoonLocationsJSON, _ := json.Marshal(honeymoonLocations)
+	if err := database.UpdateSetting("honeymoon_locations", string(honeymoonLocationsJSON)); err != nil {
+		return c.Status(500).SendString("failed to save settings")
+	}
+
 	// accommodation suggestions: collect name + description + url entries
 	var accommodationSuggestions []models.AccommodationSuggestion
 	for i := 0; ; i++ {

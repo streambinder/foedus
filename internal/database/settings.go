@@ -11,7 +11,7 @@ var settingsKeys = []string{
 	"ceremony_address", "ceremony_location", "ceremony_image",
 	"reception_address", "reception_location", "reception_image",
 	"bank_account_iban", "bank_account_holder",
-	"spotify_playlists", "places", "accommodation_suggestions", "impersonations", "homepage_labels",
+	"spotify_playlists", "places", "honeymoon_locations", "accommodation_suggestions", "impersonations", "homepage_labels",
 	"homepage_hero_backgrounds",
 	"share_preview_image",
 }
@@ -49,6 +49,11 @@ func GetAllSettings() (models.WeddingSettings, error) {
 		json.Unmarshal([]byte(raw), &places)
 	}
 
+	var honeymoonLocations []models.Place
+	if raw := m["honeymoon_locations"]; raw != "" {
+		json.Unmarshal([]byte(raw), &honeymoonLocations)
+	}
+
 	var accommodationSuggestions []models.AccommodationSuggestion
 	if raw := m["accommodation_suggestions"]; raw != "" {
 		json.Unmarshal([]byte(raw), &accommodationSuggestions)
@@ -83,6 +88,7 @@ func GetAllSettings() (models.WeddingSettings, error) {
 		BankAccountHolder:        m["bank_account_holder"],
 		SpotifyPlaylists:         playlists,
 		Places:                   places,
+		HoneymoonLocations:       honeymoonLocations,
 		AccommodationSuggestions: accommodationSuggestions,
 		Impersonations:           impersonations,
 		HomepageLabels:           homepageLabels,
