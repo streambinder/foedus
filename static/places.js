@@ -77,12 +77,6 @@
     });
 
     if (latlngs.length > 1) {
-      L.polyline(latlngs, {
-        color: "#c98e83",
-        weight: 2,
-        dashArray: "3 10",
-        opacity: 0.55,
-      }).addTo(map);
       map.fitBounds(latlngs, { padding: [80, 80], maxZoom: 14 });
     } else if (latlngs.length === 1) {
       map.setView(latlngs[0], 13);
