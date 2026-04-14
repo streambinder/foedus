@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"crypto/sha256"
 	"encoding/base64"
 	"encoding/csv"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -104,23 +106,116 @@ func DashboardIndex(c *fiber.Ctx) error {
 	return Render(c, templates.Dashboard(settings, guests, gifts, registryItems, invitations, polls, confirmedCeremony, confirmedReception, pendingGuests, totalGuests, page, totalPages, search, csrfToken, getFlash(c), getT(c), getLang(c)))
 }
 
+func imageToken(image string) string {
+	if image == "" {
+		return ""
+	}
+	sum := sha256.Sum256([]byte(image))
+	return hex.EncodeToString(sum[:])
+}
+
+func resolveExistingImage(rawImage, rawToken, existingImage string) (string, error) {
+	image := strings.TrimSpace(rawImage)
+	if image != "" {
+		if err := validateBase64ImageAny(image); err != nil {
+			return "", err
+		}
+		return image, nil
+	}
+	if rawToken != "" && rawToken == imageToken(existingImage) {
+		return existingImage, nil
+	}
+	if rawToken != "" {
+		return "", fiber.NewError(400, "invalid image token")
+	}
+	return "", nil
+}
+
+func buildExistingImageMap(settings models.WeddingSettings) map[string]string {
+	images := make(map[string]string)
+	add := func(image string) {
+		if image == "" {
+			return
+		}
+		images[imageToken(image)] = image
+	}
+
+	add(settings.CeremonyImage)
+	add(settings.ReceptionImage)
+	add(settings.SharePreviewImage)
+	for _, place := range settings.Places {
+		add(place.Image)
+	}
+	for _, place := range settings.HoneymoonLocations {
+		add(place.Image)
+	}
+	for _, bg := range settings.HomepageHeroBackgrounds {
+		add(bg.DesktopImage)
+		add(bg.MobileImage)
+	}
+	return images
+}
+
+func resolveMappedImage(rawImage, rawToken string, existingImages map[string]string) (string, error) {
+	image := strings.TrimSpace(rawImage)
+	if image != "" {
+		if err := validateBase64ImageAny(image); err != nil {
+			return "", err
+		}
+		return image, nil
+	}
+	if rawToken == "" {
+		return "", nil
+	}
+	image, ok := existingImages[rawToken]
+	if !ok {
+		return "", fiber.NewError(400, "invalid image token")
+	}
+	return image, nil
+}
+
 func SaveSettings(c *fiber.Ctx) error {
+	settings, err := database.GetAllSettings()
+	if err != nil {
+		return c.Status(500).SendString("failed to load settings")
+	}
+	existingImages := buildExistingImageMap(settings)
+
 	keys := []string{
 		"spouse1_name", "spouse2_name", "ceremony_datetime",
-		"ceremony_address", "ceremony_location", "ceremony_image",
-		"reception_address", "reception_location", "reception_image",
-		"bank_account_iban", "bank_account_holder", "share_preview_image",
+		"ceremony_address", "ceremony_location",
+		"reception_address", "reception_location",
+		"bank_account_iban", "bank_account_holder",
 	}
 	for _, key := range keys {
 		val := c.FormValue(key)
-		if (key == "ceremony_image" || key == "reception_image" || key == "share_preview_image") && val != "" {
-			if err := validateBase64ImageAny(val); err != nil {
-				return c.Status(400).SendString(err.Error())
-			}
-		}
 		if err := database.UpdateSetting(key, val); err != nil {
 			return c.Status(500).SendString("failed to save settings")
 		}
+	}
+
+	ceremonyImage, err := resolveExistingImage(c.FormValue("ceremony_image"), c.FormValue("ceremony_image_token"), settings.CeremonyImage)
+	if err != nil {
+		return c.Status(400).SendString(err.Error())
+	}
+	if err := database.UpdateSetting("ceremony_image", ceremonyImage); err != nil {
+		return c.Status(500).SendString("failed to save settings")
+	}
+
+	receptionImage, err := resolveExistingImage(c.FormValue("reception_image"), c.FormValue("reception_image_token"), settings.ReceptionImage)
+	if err != nil {
+		return c.Status(400).SendString(err.Error())
+	}
+	if err := database.UpdateSetting("reception_image", receptionImage); err != nil {
+		return c.Status(500).SendString("failed to save settings")
+	}
+
+	sharePreviewImage, err := resolveExistingImage(c.FormValue("share_preview_image"), c.FormValue("share_preview_image_token"), settings.SharePreviewImage)
+	if err != nil {
+		return c.Status(400).SendString(err.Error())
+	}
+	if err := database.UpdateSetting("share_preview_image", sharePreviewImage); err != nil {
+		return c.Status(500).SendString("failed to save settings")
 	}
 
 	// spotify playlist: store as a single-entry JSON array for backward compatibility
@@ -141,14 +236,12 @@ func SaveSettings(c *fiber.Ctx) error {
 		name := strings.TrimSpace(c.FormValue(fmt.Sprintf("place_name_%d", i)))
 		address := strings.TrimSpace(c.FormValue(fmt.Sprintf("place_address_%d", i)))
 		date := strings.TrimSpace(c.FormValue(fmt.Sprintf("place_date_%d", i)))
-		image := c.FormValue(fmt.Sprintf("place_image_%d", i))
-		if label == "" && name == "" && address == "" && date == "" && image == "" {
-			break
+		image, err := resolveMappedImage(c.FormValue(fmt.Sprintf("place_image_%d", i)), c.FormValue(fmt.Sprintf("place_image_token_%d", i)), existingImages)
+		if err != nil {
+			return c.Status(400).SendString(err.Error())
 		}
-		if image != "" {
-			if err := validateBase64ImageAny(image); err != nil {
-				return c.Status(400).SendString(err.Error())
-			}
+		if label == "" && name == "" && address == "" && date == "" && image == "" && c.FormValue(fmt.Sprintf("place_image_token_%d", i)) == "" {
+			break
 		}
 		lat, _ := strconv.ParseFloat(c.FormValue(fmt.Sprintf("place_lat_%d", i)), 64)
 		lng, _ := strconv.ParseFloat(c.FormValue(fmt.Sprintf("place_lng_%d", i)), 64)
@@ -174,14 +267,12 @@ func SaveSettings(c *fiber.Ctx) error {
 		name := strings.TrimSpace(c.FormValue(fmt.Sprintf("honeymoon_name_%d", i)))
 		address := strings.TrimSpace(c.FormValue(fmt.Sprintf("honeymoon_address_%d", i)))
 		date := strings.TrimSpace(c.FormValue(fmt.Sprintf("honeymoon_date_%d", i)))
-		image := c.FormValue(fmt.Sprintf("honeymoon_image_%d", i))
-		if label == "" && name == "" && address == "" && date == "" && image == "" {
-			break
+		image, err := resolveMappedImage(c.FormValue(fmt.Sprintf("honeymoon_image_%d", i)), c.FormValue(fmt.Sprintf("honeymoon_image_token_%d", i)), existingImages)
+		if err != nil {
+			return c.Status(400).SendString(err.Error())
 		}
-		if image != "" {
-			if err := validateBase64ImageAny(image); err != nil {
-				return c.Status(400).SendString(err.Error())
-			}
+		if label == "" && name == "" && address == "" && date == "" && image == "" && c.FormValue(fmt.Sprintf("honeymoon_image_token_%d", i)) == "" {
+			break
 		}
 		lat, _ := strconv.ParseFloat(c.FormValue(fmt.Sprintf("honeymoon_lat_%d", i)), 64)
 		lng, _ := strconv.ParseFloat(c.FormValue(fmt.Sprintf("honeymoon_lng_%d", i)), 64)
@@ -258,20 +349,16 @@ func SaveSettings(c *fiber.Ctx) error {
 	backgroundCount, _ := strconv.Atoi(c.FormValue("homepage_hero_background_count"))
 	var homepageHeroBackgrounds []models.HomepageHeroBackground
 	for i := 0; i < backgroundCount; i++ {
-		desktopImage := strings.TrimSpace(c.FormValue(fmt.Sprintf("homepage_hero_background_desktop_%d", i)))
-		mobileImage := strings.TrimSpace(c.FormValue(fmt.Sprintf("homepage_hero_background_mobile_%d", i)))
+		desktopImage, err := resolveMappedImage(c.FormValue(fmt.Sprintf("homepage_hero_background_desktop_%d", i)), c.FormValue(fmt.Sprintf("homepage_hero_background_desktop_token_%d", i)), existingImages)
+		if err != nil {
+			return c.Status(400).SendString(err.Error())
+		}
+		mobileImage, err := resolveMappedImage(c.FormValue(fmt.Sprintf("homepage_hero_background_mobile_%d", i)), c.FormValue(fmt.Sprintf("homepage_hero_background_mobile_token_%d", i)), existingImages)
+		if err != nil {
+			return c.Status(400).SendString(err.Error())
+		}
 		if desktopImage == "" && mobileImage == "" {
 			continue
-		}
-		if desktopImage != "" {
-			if err := validateBase64ImageAny(desktopImage); err != nil {
-				return c.Status(400).SendString(err.Error())
-			}
-		}
-		if mobileImage != "" {
-			if err := validateBase64ImageAny(mobileImage); err != nil {
-				return c.Status(400).SendString(err.Error())
-			}
 		}
 		homepageHeroBackgrounds = append(homepageHeroBackgrounds, models.HomepageHeroBackground{
 			DesktopImage: desktopImage,

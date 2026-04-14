@@ -289,15 +289,16 @@
 
   function initImageResizers() {
     bindImageResize("registry-file", "registry-image-data", null, null, null);
-    bindImageResize("ceremony-file", "ceremony-image-data", "ceremony-preview", "image/jpeg", 0.7);
-    bindImageResize("reception-file", "reception-image-data", "reception-preview", "image/jpeg", 0.7);
-    bindImageResize("share-preview-file", "share-preview-image-data", "share-preview-preview", null, null, true);
+    bindImageResize("ceremony-file", "ceremony-image-data", "ceremony-preview", "image/jpeg", 0.7, false, "ceremony-image-token");
+    bindImageResize("reception-file", "reception-image-data", "reception-preview", "image/jpeg", 0.7, false, "reception-image-token");
+    bindImageResize("share-preview-file", "share-preview-image-data", "share-preview-preview", null, null, true, "share-preview-image-token");
     bindManagedImageResizers();
   }
 
-  function bindImageResize(fileId, dataId, previewId, format, quality, withRemove) {
+  function bindImageResize(fileId, dataId, previewId, format, quality, withRemove, tokenId) {
     var fileInput = document.getElementById(fileId);
     var dataInput = document.getElementById(dataId);
+    var tokenInput = tokenId ? document.getElementById(tokenId) : null;
     var previewImg = previewId ? document.getElementById(previewId) : null;
     if (!fileInput || !dataInput || fileInput.dataset.resizeBound === "true") return;
     fileInput.dataset.resizeBound = "true";
@@ -320,6 +321,7 @@
         canvas.height = h;
         canvas.getContext("2d").drawImage(img, 0, 0, w, h);
         dataInput.value = canvas.toDataURL(format || "image/png", quality);
+        if (tokenInput) tokenInput.value = "";
         if (previewImg) {
           previewImg.src = dataInput.value;
           previewImg.style.display = "";
@@ -338,6 +340,7 @@
         removeBtn.dataset.bound = "true";
         removeBtn.addEventListener("click", function () {
           dataInput.value = "";
+          if (tokenInput) tokenInput.value = "";
           if (previewImg) {
             previewImg.src = "";
             previewImg.style.display = "none";
@@ -358,6 +361,7 @@
         var file = fileInput.files && fileInput.files[0];
         if (!file) return;
         var targetInput = document.getElementById(fileInput.dataset.targetInput || "");
+        var tokenInput = document.getElementById(fileInput.dataset.tokenInput || "");
         var previewImg = document.getElementById(fileInput.dataset.previewTarget || "");
         if (!targetInput) return;
 
@@ -382,6 +386,7 @@
           canvas.height = h;
           canvas.getContext("2d").drawImage(img, 0, 0, w, h);
           targetInput.value = encodeManagedImage(canvas, format, quality, maxBytes);
+          if (tokenInput) tokenInput.value = "";
           if (previewImg) {
             previewImg.src = targetInput.value;
             previewImg.style.display = "";
@@ -399,7 +404,10 @@
   }
 
   function encodeManagedImage(canvas, format, quality, maxBytes) {
-    var dataUrl = canvas.toDataURL(format || "image/png", quality);
+    var mimeType = format || "image/png";
+    var currentQuality = normalizeQuality(quality);
+    var supportsQuality = mimeType === "image/jpeg" || mimeType === "image/webp";
+    var dataUrl = canvas.toDataURL(mimeType, currentQuality);
     if (!maxBytes || estimateDataURLBytes(dataUrl) <= maxBytes) {
       return dataUrl;
     }
@@ -410,16 +418,35 @@
     var currentHeight = canvas.height;
 
     while (estimateDataURLBytes(dataUrl) > maxBytes && currentWidth > 80 && currentHeight > 80) {
+      if (supportsQuality) {
+        for (var nextQuality = currentQuality - 0.07; nextQuality >= 0.45; nextQuality -= 0.07) {
+          dataUrl = renderManagedImage(canvas, workCanvas, workCtx, currentWidth, currentHeight, mimeType, nextQuality);
+          if (estimateDataURLBytes(dataUrl) <= maxBytes) {
+            return dataUrl;
+          }
+        }
+      }
+
       currentWidth = Math.max(80, Math.round(currentWidth * 0.85));
       currentHeight = Math.max(80, Math.round(currentHeight * 0.85));
-      workCanvas.width = currentWidth;
-      workCanvas.height = currentHeight;
-      workCtx.clearRect(0, 0, currentWidth, currentHeight);
-      workCtx.drawImage(canvas, 0, 0, currentWidth, currentHeight);
-      dataUrl = workCanvas.toDataURL(format || "image/png", quality);
+      dataUrl = renderManagedImage(canvas, workCanvas, workCtx, currentWidth, currentHeight, mimeType, currentQuality);
     }
 
     return dataUrl;
+  }
+
+  function renderManagedImage(sourceCanvas, targetCanvas, targetContext, width, height, format, quality) {
+    targetCanvas.width = width;
+    targetCanvas.height = height;
+    targetContext.clearRect(0, 0, width, height);
+    targetContext.drawImage(sourceCanvas, 0, 0, width, height);
+    return targetCanvas.toDataURL(format || "image/png", quality);
+  }
+
+  function normalizeQuality(quality) {
+    var parsed = typeof quality === "number" ? quality : parseFloat(quality || "0.92");
+    if (!isFinite(parsed)) return 0.92;
+    return Math.min(Math.max(parsed, 0.1), 0.92);
   }
 
   function estimateDataURLBytes(dataUrl) {
