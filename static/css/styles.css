@@ -3401,10 +3401,13 @@ td [role="switch"] { margin: 0; }
 }
 
 .vp-places > .vp-arrow,
+.vp-honeymoon > .vp-arrow {
+  z-index: 4;
+}
+
 .vp-places > .vp-section-inner,
 .vp-places > #places-data,
 .vp-places > #places-modal,
-.vp-honeymoon > .vp-arrow,
 .vp-honeymoon > .vp-section-inner,
 .vp-honeymoon > #honeymoon-data {
   z-index: 3;
