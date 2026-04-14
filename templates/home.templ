@@ -174,7 +174,9 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 			<div class="vp-section-inner">
 				<div class="section-heading">
 					<h2 class="section-title">{ t("home.venues") }</h2>
-					<p class="section-subtitle">{ t("home.venues_description") }</p>
+					if t("home.venues_description") != "" {
+						<p class="section-subtitle">{ t("home.venues_description") }</p>
+					}
 				</div>
 				<div class="venues-pair">
 					if settings.CeremonyAddress != "" || settings.CeremonyLocation != "" {
@@ -282,7 +284,9 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 				<div class="soundtrack-overlay">
 					<div class="section-heading soundtrack-heading">
 						<h2 class="section-title">{ t("home.soundtrack") }</h2>
-						<p class="section-subtitle">{ t("home.soundtrack_description") }</p>
+						if t("home.soundtrack_description") != "" {
+							<p class="section-subtitle">{ t("home.soundtrack_description") }</p>
+						}
 					</div>
 				</div>
 				if nextSectionAfterSoundtrack(settings.Places, settings.HoneymoonLocations, bankConfigured) != "" {
@@ -325,7 +329,9 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 						<div class="vp-section-inner places-stage">
 							<div class="places-map-copy section-heading">
 								<h2 class="section-title">{ t("home.places") }</h2>
-								<p class="section-subtitle">{ t("home.places_description") }</p>
+								if t("home.places_description") != "" {
+									<p class="section-subtitle">{ t("home.places_description") }</p>
+								}
 							</div>
 						</div>
 						<div id="places-data" class="timeline-data" style="display:none">{ locationTimelineJSON(settings.Places, lang) }</div>
@@ -356,7 +362,9 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 						<div class="vp-section-inner places-stage">
 							<div class="places-map-copy section-heading">
 								<h2 class="section-title">{ t("home.honeymoon") }</h2>
-								<p class="section-subtitle">{ t("home.honeymoon_description") }</p>
+								if t("home.honeymoon_description") != "" {
+									<p class="section-subtitle">{ t("home.honeymoon_description") }</p>
+								}
 							</div>
 						</div>
 						<div id="honeymoon-data" class="timeline-data" style="display:none">{ locationTimelineJSON(settings.HoneymoonLocations, lang) }</div>
@@ -379,7 +387,9 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 					<div class="registry-v2">
 						<div class="section-heading">
 							<h2 class="section-title">{ t("home.registry") }</h2>
-							<p class="section-subtitle">{ t("home.registry_description") }</p>
+							if t("home.registry_description") != "" {
+								<p class="section-subtitle">{ t("home.registry_description") }</p>
+							}
 						</div>
 						<div class="registry-v2-carousel">
 							for _, item := range registryItems {

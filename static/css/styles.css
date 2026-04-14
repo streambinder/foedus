@@ -3256,6 +3256,11 @@ td [role="switch"] { margin: 0; }
   margin: 0;
   font-size: clamp(var(--fs-xl), 3vw, var(--fs-2xl));
   letter-spacing: -0.01em;
+  text-shadow: 0 1px 6px rgba(10, 14, 16, 0.12);
+}
+
+.section-subtitle {
+  text-shadow: 0 1px 6px rgba(10, 14, 16, 0.1);
 }
 
 .soundtrack-overlay {
@@ -3474,7 +3479,6 @@ td [role="switch"] { margin: 0; }
 .places-map-copy .section-title,
 .places-map-copy .section-subtitle {
   color: rgba(42, 52, 57, 0.96);
-  text-shadow: 0 3px 12px rgba(255, 250, 244, 0.22);
 }
 
 .places-map-copy .section-subtitle {

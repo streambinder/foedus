@@ -101,8 +101,8 @@ var translations = map[string]map[string]string{
 
 		// home
 		"home.getting_married":    "Together, forever",
-		"home.venues":             "Ceremony & Celebration",
-		"home.venues_description": "Where to be, and when",
+		"home.venues":             "Location",
+		"home.venues_description": "",
 		"home.ceremony":           "The Ceremony",
 		"home.reception":          "The Celebration",
 		"home.guest_list":         "Guest List",
@@ -130,8 +130,8 @@ var translations = map[string]map[string]string{
 
 		// registry
 		"dashboard.registry":          "Wish List",
-		"home.registry":               "A Gift for Us",
-		"home.registry_description":   "If you'd like to join us on this new journey",
+		"home.registry":               "Wedding List",
+		"home.registry_description":   "no ideas? got you covered.",
 		"placeholder.item_name":       "Item name",
 		"placeholder.item_price":      "Price",
 		"btn.add_item":                "Add Item",
@@ -213,17 +213,17 @@ var translations = map[string]map[string]string{
 
 		// spotify playlists
 		"home.soundtrack":                 "Soundtrack",
-		"home.soundtrack_description":     "A collaborative playlist everyone can add to before the party",
+		"home.soundtrack_description":     "Help us out building the playlist for the big day by collaborating on Spotify!",
 		"dashboard.playlists":             "Collaborative Playlist",
 		"dashboard.playlists_description": "Set the Spotify collaborative playlist embedded in the homepage soundtrack section",
 		"label.playlist_url":              "Spotify playlist URL",
 		"placeholder.playlist_url":        "https://open.spotify.com/playlist/...",
 
 		// places
-		"home.places":                     "Where It All Happened",
-		"home.places_description":         "The coordinates of us",
+		"home.places":                     "Our places",
+		"home.places_description":         "",
 		"home.honeymoon":                  "Honeymoon",
-		"home.honeymoon_description":      "The route we will take next",
+		"home.honeymoon_description":      "",
 		"dashboard.places":                "Places",
 		"dashboard.places_description":    "Photos and locations that mark your story, shown on the homepage map",
 		"dashboard.honeymoon":             "Honeymoon",
@@ -341,8 +341,8 @@ var translations = map[string]map[string]string{
 
 		// home
 		"home.getting_married":    "Insieme per sempre",
-		"home.venues":             "Rito e Festeggiamenti",
-		"home.venues_description": "Dove trovarci, e quando",
+		"home.venues":             "Location",
+		"home.venues_description": "",
 		"home.ceremony":           "Il Rito",
 		"home.reception":          "I Festeggiamenti",
 		"home.guest_list":         "Lista Invitati",
@@ -370,8 +370,8 @@ var translations = map[string]map[string]string{
 
 		// registry
 		"dashboard.registry":          "Lista dei desideri",
-		"home.registry":               "Un Pensiero per Noi",
-		"home.registry_description":   "Se desiderate accompagnarci in questo nuovo cammino",
+		"home.registry":               "Lista nozze",
+		"home.registry_description":   "Nessuna idea? Ci pensiamo noi.",
 		"placeholder.item_name":       "Nome articolo",
 		"placeholder.item_price":      "Prezzo",
 		"btn.add_item":                "Aggiungi",
@@ -452,18 +452,18 @@ var translations = map[string]map[string]string{
 		"setup.go_to_dashboard": "Vai al pannello per iniziare.",
 
 		// spotify playlists
-		"home.soundtrack":                 "Colonna Sonora",
-		"home.soundtrack_description":     "Una playlist collaborativa a cui tutti possono aggiungere brani prima della festa",
+		"home.soundtrack":                 "Colonna sonora",
+		"home.soundtrack_description":     "Dateci una mano a creare la playlist del grande giorno collaborando su Spotify!",
 		"dashboard.playlists":             "Playlist Collaborativa",
 		"dashboard.playlists_description": "Imposta la playlist collaborativa di Spotify incorporata nella sezione soundtrack della homepage",
 		"label.playlist_url":              "URL playlist Spotify",
 		"placeholder.playlist_url":        "https://open.spotify.com/playlist/...",
 
 		// places
-		"home.places":                     "Dove Tutto è Successo",
-		"home.places_description":         "Le coordinate di noi",
-		"home.honeymoon":                  "Luna di Miele",
-		"home.honeymoon_description":      "La rotta del nostro prossimo viaggio",
+		"home.places":                     "I nostri luoghi",
+		"home.places_description":         "",
+		"home.honeymoon":                  "Luna di miele",
+		"home.honeymoon_description":      "",
 		"dashboard.places":                "Luoghi",
 		"dashboard.places_description":    "Foto e luoghi che segnano la vostra storia, mostrati nella mappa in homepage",
 		"dashboard.honeymoon":             "Luna di miele",
