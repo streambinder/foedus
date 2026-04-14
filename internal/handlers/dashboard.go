@@ -465,6 +465,57 @@ func AddRegistryItem(c *fiber.Ctx) error {
 	return c.Redirect("/dashboard")
 }
 
+func EditRegistryItemPage(c *fiber.Ctx) error {
+	id, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		return c.Status(400).SendString("invalid id")
+	}
+	item, err := database.GetRegistryItem(id)
+	if err != nil {
+		return c.Status(404).SendString("item not found")
+	}
+	settings, err := database.GetAllSettings()
+	if err != nil {
+		return c.Status(500).SendString("failed to load settings")
+	}
+	csrfToken, _ := c.Locals("csrf").(string)
+	return Render(c, templates.EditRegistryItem(item, settings, csrfToken, getT(c), getLang(c)))
+}
+
+func UpdateRegistryItem(c *fiber.Ctx) error {
+	id, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		return c.Status(400).SendString("invalid id")
+	}
+	item, err := database.GetRegistryItem(id)
+	if err != nil {
+		return c.Status(404).SendString("item not found")
+	}
+
+	name := strings.TrimSpace(c.FormValue("name"))
+	if name == "" {
+		return c.Status(400).SendString("name is required")
+	}
+	price, err := strconv.Atoi(c.FormValue("price"))
+	if err != nil || price < 1 {
+		return c.Status(400).SendString("invalid price")
+	}
+	image := c.FormValue("image")
+	if image == "" {
+		image = item.Image
+	}
+	if image != "" {
+		if err := validateBase64ImageAny(image); err != nil {
+			return c.Status(400).SendString(err.Error())
+		}
+	}
+	if err := database.UpdateRegistryItem(id, name, price, image); err != nil {
+		return c.Status(500).SendString("failed to update item")
+	}
+	setFlash(c, getT(c)("flash.item_updated"))
+	return c.Redirect("/dashboard")
+}
+
 func DeleteRegistryItem(c *fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {

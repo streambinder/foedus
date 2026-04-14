@@ -909,6 +909,7 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 									<td data-label={ t("th.item_name") }>{ item.Name }</td>
 									<td data-label={ t("th.item_price") }>{ formatPrice(item.Price) }</td>
 									<td class="actions">
+										<a href={ templ.SafeURL("/dashboard/registry/" + strconv.Itoa(item.ID) + "/edit") }>{ t("btn.edit") }</a>
 										<form method="POST" action={ templ.SafeURL("/dashboard/registry/" + strconv.Itoa(item.ID) + "/delete") } data-confirm={ t("confirm.delete_item") } onsubmit="return confirm(this.dataset.confirm)">
 											<input type="hidden" name="_csrf" value={ csrfToken }/>
 											<button type="submit" class="outline secondary">{ t("btn.delete") }</button>
@@ -1023,6 +1024,47 @@ templ EditGuest(guest models.Guest, settings models.WeddingSettings, csrfToken s
 					@settingInput("last_name", t("label.last_name"), guest.LastName)
 				</div>
 				<button type="submit">{ t("btn.update_guest") }</button>
+			</form>
+		</article>
+	}
+}
+
+templ EditRegistryItem(item models.RegistryItem, settings models.WeddingSettings, csrfToken string, t i18n.T, lang string) {
+	@DashboardLayout(pageTitle(t("title.edit_item"), settings.Spouse1Name, settings.Spouse2Name), lang) {
+		<a href="/dashboard">&larr; { t("btn.back") }</a>
+		<h1>{ t("title.edit_item") }</h1>
+		<article>
+			<form method="POST" action={ templ.SafeURL("/dashboard/registry/" + strconv.Itoa(item.ID)) }>
+				<input type="hidden" name="_csrf" value={ csrfToken }/>
+				<div class="grid">
+					<label>
+						{ t("th.item_name") }
+						<input type="text" name="name" value={ item.Name } required/>
+					</label>
+					<label>
+						{ t("th.item_price") }
+						<input type="number" name="price" min="1" step="1" value={ strconv.Itoa(item.Price) } required/>
+					</label>
+				</div>
+				<label>
+					{ t("th.item_image") }
+					<div class="managed-image-field">
+						<input
+							type="file"
+							accept="image/*"
+							class="managed-image-file"
+							data-target-input={ "registry-image-data-" + strconv.Itoa(item.ID) }
+							data-preview-target={ "registry-image-preview-" + strconv.Itoa(item.ID) }
+						/>
+						<input type="hidden" name="image" id={ "registry-image-data-" + strconv.Itoa(item.ID) } value={ item.Image }/>
+						if item.Image != "" {
+							<img class="registry-thumb" id={ "registry-image-preview-" + strconv.Itoa(item.ID) } src={ item.Image } alt={ item.Name }/>
+						} else {
+							<img class="registry-thumb" id={ "registry-image-preview-" + strconv.Itoa(item.ID) } style="display:none" alt={ item.Name }/>
+						}
+					</div>
+				</label>
+				<button type="submit">{ t("btn.update_item") }</button>
 			</form>
 		</article>
 	}

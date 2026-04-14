@@ -36,6 +36,14 @@ func GetRegistryItem(id int) (models.RegistryItem, error) {
 	return item, err
 }
 
+func UpdateRegistryItem(id int, name string, price int, image string) error {
+	_, err := DB.Exec(
+		`UPDATE registry_items SET name = ?, price = ?, image = ? WHERE id = ?`,
+		name, price, image, id,
+	)
+	return err
+}
+
 func DeleteRegistryItem(id int) error {
 	_, err := DB.Exec(`DELETE FROM registry_items WHERE id = ?`, id)
 	return err

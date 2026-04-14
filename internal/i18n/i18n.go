@@ -30,6 +30,7 @@ var translations = map[string]map[string]string{
 		// layout
 		"title.dashboard":  "Dashboard",
 		"title.edit_guest": "Edit Guest",
+		"title.edit_item":  "Edit Item",
 		"title.edit_gift":  "Edit Gift",
 		"title.setup":      "Setup Required",
 
@@ -80,6 +81,7 @@ var translations = map[string]map[string]string{
 		"btn.add":           "Add",
 		"btn.import_csv":    "Import CSV",
 		"btn.update_guest":  "Update Guest",
+		"btn.update_item":   "Update Item",
 		"btn.update_gift":   "Update Gift",
 		"btn.edit":          "Edit",
 		"btn.delete":        "Delete",
@@ -96,6 +98,7 @@ var translations = map[string]map[string]string{
 		"flash.guests_imported": "guests imported.",
 		"flash.guest_updated":   "Guest updated.",
 		"flash.guest_deleted":   "Guest deleted.",
+		"flash.item_updated":    "Item updated.",
 		"flash.gift_updated":    "Gift updated.",
 		"flash.gift_deleted":    "Gift deleted.",
 
@@ -270,6 +273,7 @@ var translations = map[string]map[string]string{
 		// layout
 		"title.dashboard":  "Pannello",
 		"title.edit_guest": "Modifica Invitato",
+		"title.edit_item":  "Modifica Articolo",
 		"title.edit_gift":  "Modifica Dono",
 		"title.setup":      "Configurazione necessaria",
 
@@ -320,6 +324,7 @@ var translations = map[string]map[string]string{
 		"btn.add":           "Aggiungi",
 		"btn.import_csv":    "Importa CSV",
 		"btn.update_guest":  "Aggiorna Invitato",
+		"btn.update_item":   "Aggiorna Articolo",
 		"btn.update_gift":   "Aggiorna Dono",
 		"btn.edit":          "Modifica",
 		"btn.delete":        "Elimina",
@@ -336,6 +341,7 @@ var translations = map[string]map[string]string{
 		"flash.guests_imported": "invitati importati.",
 		"flash.guest_updated":   "Invitato aggiornato.",
 		"flash.guest_deleted":   "Invitato eliminato.",
+		"flash.item_updated":    "Articolo aggiornato.",
 		"flash.gift_updated":    "Dono aggiornato.",
 		"flash.gift_deleted":    "Dono eliminato.",
 
