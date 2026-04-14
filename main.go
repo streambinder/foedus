@@ -45,7 +45,12 @@ func main() {
 
 	// csrf for all dashboard routes — token extracted from form field "_csrf"
 	admin.Use(csrf.New(csrf.Config{
-		KeyLookup:      "form:_csrf",
+		Extractor: func(c *fiber.Ctx) (string, error) {
+			if token := c.Get("X-Csrf-Token"); token != "" {
+				return token, nil
+			}
+			return c.FormValue("_csrf"), nil
+		},
 		ContextKey:     "csrf",
 		CookieSameSite: "Strict",
 	}))

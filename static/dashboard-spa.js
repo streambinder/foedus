@@ -111,11 +111,12 @@
     var action = form.getAttribute("action") || window.location.pathname;
     var method = (form.getAttribute("method") || "GET").toUpperCase();
     var formData = new FormData(form);
+    var csrfToken = getCsrfToken(form);
     var response = await fetch(action, {
       method: method,
       body: method === "GET" ? null : formData,
       credentials: "same-origin",
-      headers: { "X-Requested-With": "fetch" }
+      headers: buildRequestHeaders(csrfToken)
     });
     if (!response.ok) {
       throw new Error("Request failed: " + response.status);
@@ -131,6 +132,19 @@
 
     await refreshSections(window.location.href, getRefreshSections(action, form));
     closeDashboardModal();
+  }
+
+  function getCsrfToken(form) {
+    var input = form.querySelector('input[name="_csrf"]');
+    return input ? input.value : "";
+  }
+
+  function buildRequestHeaders(csrfToken) {
+    var headers = { "X-Requested-With": "fetch" };
+    if (csrfToken) {
+      headers["X-Csrf-Token"] = csrfToken;
+    }
+    return headers;
   }
 
   function getRefreshSections(action, form) {
