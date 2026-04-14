@@ -45,7 +45,7 @@ type WeddingSettings struct {
 	ReceptionImage           string
 	BankAccountIBAN          string
 	BankAccountHolder        string
-	SpotifyPlaylists         []string
+	SpotifyPlaylist          string
 	Places                   []Place
 	HoneymoonLocations       []Place
 	AccommodationSuggestions []AccommodationSuggestion

@@ -3230,12 +3230,14 @@ td [role="switch"] { margin: 0; }
 }
 
 /* ---------------------------------------------------------------
-   soundtrack section (spotify playlists)
+   soundtrack section
    --------------------------------------------------------------- */
 .vp-soundtrack {
-  background: var(--ivory-deep);
+  background: #0f1714;
   min-height: 100dvh;
   justify-content: center;
+  padding: 0;
+  overflow: hidden;
   scroll-snap-align: start;
   scroll-snap-stop: always;
 }
@@ -3256,22 +3258,53 @@ td [role="switch"] { margin: 0; }
   letter-spacing: -0.01em;
 }
 
-.playlist-grid {
+.soundtrack-overlay {
+  position: absolute;
+  inset: 0;
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--sp-4);
+  align-items: flex-end;
   justify-content: center;
+  padding: clamp(4.5rem, 9vw, 7rem) clamp(var(--sp-4), 4vw, var(--sp-8)) clamp(2.5rem, 6vw, 4.5rem);
+  pointer-events: none;
+  z-index: 2;
 }
 
-.playlist-card {
-  display: block;
+.soundtrack-heading {
+  margin: 0;
+  padding: clamp(var(--sp-3), 2vw, var(--sp-5)) clamp(var(--sp-4), 2.5vw, var(--sp-6));
+  border-radius: calc(var(--radius-xl) * 1.2);
+  background: linear-gradient(180deg, rgba(12, 18, 16, 0.82), rgba(12, 18, 16, 0.46));
+  box-shadow: 0 18px 40px rgba(6, 11, 10, 0.24);
+  backdrop-filter: blur(10px);
+}
+
+.soundtrack-heading .section-title,
+.soundtrack-heading .section-subtitle {
+  color: rgba(255, 255, 255, 0.96);
+}
+
+.soundtrack-heading .section-subtitle {
+  max-width: 32rem;
+}
+
+.soundtrack-embed {
+  position: absolute;
+  inset: 0;
   width: 100%;
-  max-width: 340px;
-  height: 152px;
+  height: 100%;
+  min-height: 100dvh;
+  display: block;
   border: 0;
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
   background: transparent;
+}
+
+.vp-soundtrack .vp-arrow {
+  z-index: 3;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.vp-soundtrack .vp-arrow:hover {
+  color: #fff;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -3302,14 +3335,14 @@ td [role="switch"] { margin: 0; }
   }
 }
 
-@media (min-width: 480px) {
-  .playlist-grid {
-    gap: var(--sp-5);
+@media (max-width: 640px) {
+  .soundtrack-overlay {
+    align-items: flex-end;
+    padding: 4.5rem var(--sp-3) 2.25rem;
   }
 
-  .playlist-card {
-    max-width: 380px;
-    height: 232px;
+  .soundtrack-heading {
+    width: min(100%, 24rem);
   }
 }
 
@@ -3730,26 +3763,10 @@ td [role="switch"] { margin: 0; }
 }
 
 /* ---------------------------------------------------------------
-   dashboard: playlist rows
+   dashboard: soundtrack field
    --------------------------------------------------------------- */
-.playlist-row {
-  display: flex;
-  gap: var(--sp-2);
-  align-items: center;
-  margin-bottom: var(--sp-2);
-}
-
-.playlist-row input[type="text"] {
-  flex: 1;
+.spotify-playlist-field input[type="text"] {
   margin-bottom: 0;
-}
-
-.playlist-row .remove-playlist-btn {
-  flex-shrink: 0;
-  padding: var(--sp-2) var(--sp-3);
-  margin-bottom: 0;
-  font-size: var(--fs-lg);
-  line-height: 1;
 }
 
 /* ---------------------------------------------------------------
@@ -3876,16 +3893,8 @@ td [role="switch"] { margin: 0; }
    responsive: places
    --------------------------------------------------------------- */
 @media (min-width: 768px) {
-  .playlist-card {
-    max-width: 400px;
-    height: 352px;
-  }
-
   .places-map-copy {
     max-width: 24rem;
-  }
-  .playlist-grid {
-    gap: var(--sp-8);
   }
 
   .places-pin--honeymoon {
@@ -3978,6 +3987,14 @@ td [role="switch"] { margin: 0; }
   opacity: 0;
   pointer-events: none;
   transform: scale(0.92);
+}
+
+@media (max-width: 640px) {
+  .vp-soundtrack .vp-arrow {
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.92);
+  }
 }
 
 #chat-panel {

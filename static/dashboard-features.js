@@ -2,45 +2,6 @@ function initDashboardFeatures() {
   "use strict";
 
   // ---------------------------------------------------------------
-  // playlists management
-  // ---------------------------------------------------------------
-  var playlistsContainer = document.getElementById("playlists-container");
-  var addPlaylistBtn = document.getElementById("add-playlist-btn");
-
-  if (playlistsContainer && addPlaylistBtn && !playlistsContainer.dataset.bound) {
-    playlistsContainer.dataset.bound = "true";
-    addPlaylistBtn.addEventListener("click", function () {
-      addPlaylistRow("");
-      reindexPlaylists();
-    });
-
-    playlistsContainer.addEventListener("click", function (e) {
-      if (e.target.classList.contains("remove-playlist-btn")) {
-        e.target.closest(".playlist-row").remove();
-        reindexPlaylists();
-      }
-    });
-  }
-
-  function addPlaylistRow(value) {
-    var idx = playlistsContainer.querySelectorAll(".playlist-row").length;
-    var row = document.createElement("div");
-    row.className = "playlist-row";
-    row.innerHTML =
-      '<input type="text" name="spotify_playlist_' + idx + '" value="' + escapeAttr(value) + '" placeholder="https://open.spotify.com/playlist/..."/>' +
-      '<button type="button" class="outline secondary remove-playlist-btn" aria-label="Remove">&times;</button>';
-    playlistsContainer.appendChild(row);
-  }
-
-  function reindexPlaylists() {
-    var rows = playlistsContainer.querySelectorAll(".playlist-row");
-    rows.forEach(function (row, idx) {
-      var input = row.querySelector('input[type="text"]');
-      if (input) input.name = "spotify_playlist_" + idx;
-    });
-  }
-
-  // ---------------------------------------------------------------
   // places / honeymoon management
   // ---------------------------------------------------------------
   bindLocationCollection({

@@ -363,17 +363,10 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 						</h2>
 						<div id="settings-playlists-panel" class="accordion-collapse collapse" data-dashboard-key="settings-playlists" aria-labelledby="settings-playlists-heading">
 							<div class="accordion-body settings-section-body">
-								<div id="playlists-container">
-									if len(settings.SpotifyPlaylists) > 0 {
-										for idx, url := range settings.SpotifyPlaylists {
-											<div class="playlist-row">
-												<input type="text" name={ fmt.Sprintf("spotify_playlist_%d", idx) } value={ url } placeholder={ t("placeholder.playlist_url") }/>
-												<button type="button" class="outline secondary remove-playlist-btn" aria-label={ t("btn.delete") }>&times;</button>
-											</div>
-										}
-									}
+								<div class="spotify-playlist-field">
+									<label for="spotify-playlist">{ t("label.playlist_url") }</label>
+									<input id="spotify-playlist" type="text" name="spotify_playlist" value={ settings.SpotifyPlaylist } placeholder={ t("placeholder.playlist_url") }/>
 								</div>
-								<button type="button" id="add-playlist-btn" class="add-entry-btn">+ { t("btn.add_playlist") }</button>
 							</div>
 						</div>
 					</div>

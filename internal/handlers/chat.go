@@ -140,8 +140,8 @@ func ChatStream(c *fiber.Ctx) error {
 
 	// build wedding context for system prompt
 	playlistList := "none"
-	if len(settings.SpotifyPlaylists) > 0 {
-		playlistList = strings.Join(settings.SpotifyPlaylists, ", ")
+	if settings.SpotifyPlaylist != "" {
+		playlistList = settings.SpotifyPlaylist
 	}
 	var placeParts []string
 	for _, p := range settings.Places {

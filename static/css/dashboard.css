@@ -362,7 +362,6 @@ button.outline.secondary:hover,
   margin-bottom: 0.7rem;
 }
 
-.playlist-row,
 .venue-image-row,
 .copyable {
   display: flex;
@@ -371,8 +370,23 @@ button.outline.secondary:hover,
   flex-wrap: wrap;
 }
 
-.playlist-row input[type="text"] {
-  flex: 1 1 16rem;
+.spotify-playlist-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+#spotify-playlist {
+  display: block;
+  width: 100%;
+  min-height: 0 !important;
+  height: 2.6rem !important;
+  max-height: 2.6rem;
+  padding: 0.625rem 0.875rem;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 input[type="file"] {

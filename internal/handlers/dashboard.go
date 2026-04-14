@@ -123,17 +123,11 @@ func SaveSettings(c *fiber.Ctx) error {
 		}
 	}
 
-	// spotify playlists: collect all non-empty playlist URL values
+	// spotify playlist: store as a single-entry JSON array for backward compatibility
+	playlist := strings.TrimSpace(c.FormValue("spotify_playlist"))
 	var playlists []string
-	for i := 0; ; i++ {
-		v := c.FormValue(fmt.Sprintf("spotify_playlist_%d", i))
-		if v == "" {
-			break
-		}
-		v = strings.TrimSpace(v)
-		if v != "" {
-			playlists = append(playlists, v)
-		}
+	if playlist != "" {
+		playlists = append(playlists, playlist)
 	}
 	playlistsJSON, _ := json.Marshal(playlists)
 	if err := database.UpdateSetting("spotify_playlists", string(playlistsJSON)); err != nil {

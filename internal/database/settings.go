@@ -2,6 +2,7 @@ package database
 
 import (
 	"encoding/json"
+	"strings"
 
 	"github.com/streambinder/foedus/internal/models"
 )
@@ -39,9 +40,22 @@ func GetAllSettings() (models.WeddingSettings, error) {
 		m[k] = v
 	}
 
-	var playlists []string
+	var playlist string
 	if raw := m["spotify_playlists"]; raw != "" {
-		json.Unmarshal([]byte(raw), &playlists)
+		raw = strings.TrimSpace(raw)
+		if strings.HasPrefix(raw, "[") {
+			var playlists []string
+			json.Unmarshal([]byte(raw), &playlists)
+			for _, candidate := range playlists {
+				candidate = strings.TrimSpace(candidate)
+				if candidate != "" {
+					playlist = candidate
+					break
+				}
+			}
+		} else {
+			playlist = raw
+		}
 	}
 
 	var places []models.Place
@@ -86,7 +100,7 @@ func GetAllSettings() (models.WeddingSettings, error) {
 		ReceptionImage:           m["reception_image"],
 		BankAccountIBAN:          m["bank_account_iban"],
 		BankAccountHolder:        m["bank_account_holder"],
-		SpotifyPlaylists:         playlists,
+		SpotifyPlaylist:          playlist,
 		Places:                   places,
 		HoneymoonLocations:       honeymoonLocations,
 		AccommodationSuggestions: accommodationSuggestions,
