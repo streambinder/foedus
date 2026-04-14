@@ -2321,7 +2321,7 @@ body.invitation-opening {
   }
   100% {
     transform: translateX(-50%) perspective(1800px) rotateX(-176deg);
-    opacity: 0.36;
+    opacity: 1;
   }
 }
 
@@ -2332,7 +2332,7 @@ body.invitation-opening {
   }
   100% {
     transform: translateY(-50%) perspective(1800px) rotateY(176deg);
-    opacity: 0.34;
+    opacity: 1;
   }
 }
 
@@ -2343,7 +2343,7 @@ body.invitation-opening {
   }
   100% {
     transform: translateX(-50%) perspective(1800px) rotateX(176deg);
-    opacity: 0.34;
+    opacity: 1;
   }
 }
 
@@ -2354,7 +2354,7 @@ body.invitation-opening {
   }
   100% {
     transform: translateY(-50%) perspective(1800px) rotateY(-176deg);
-    opacity: 0.34;
+    opacity: 1;
   }
 }
 
