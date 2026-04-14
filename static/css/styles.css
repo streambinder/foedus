@@ -697,6 +697,46 @@ body:has(.hero) {
   letter-spacing: -0.01em;
 }
 
+.invitation-page > .hero > h1 {
+  margin-top: var(--sp-2);
+}
+
+.invitation-page .venue {
+  margin-bottom: 0;
+}
+
+.invitation-page .venue:last-of-type {
+  margin-bottom: var(--sp-6);
+}
+
+.invitation-page .venue-link {
+  width: min(100%, 32rem);
+  margin: 0 auto;
+}
+
+.invitation-page .venue-image-wrapper {
+  margin: var(--sp-3) auto 0;
+}
+
+.invitation-page .venue-image {
+  aspect-ratio: 16 / 8.8;
+}
+
+.invitation-page .venue-ceremony:has(+ .venue-reception) .venue-image-wrapper {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.invitation-page .venue-reception {
+  margin-top: 0;
+}
+
+.invitation-page .venue-ceremony + .venue-reception .venue-image-wrapper {
+  margin-top: 0;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
 .hero .amp {
   font-weight: 400;
   color: var(--dusty-rose);
@@ -1996,8 +2036,11 @@ body.invitation-opening {
   padding: 0 var(--sp-4) var(--sp-4);
 }
 
-.invitation-replay button {
+.invitation-replay button,
+#rsvp-unlock-btn {
   margin: 0;
+  border: 0;
+  box-shadow: none;
   opacity: 0.58;
   border-color: rgba(138, 145, 120, 0.32);
   color: rgba(42, 52, 57, 0.72);
@@ -2006,7 +2049,9 @@ body.invitation-opening {
 }
 
 .invitation-replay button:hover,
-.invitation-replay button:focus-visible {
+.invitation-replay button:focus-visible,
+#rsvp-unlock-btn:hover,
+#rsvp-unlock-btn:focus-visible {
   opacity: 0.82;
   background: rgba(255, 255, 255, 0.48);
 }
@@ -2549,7 +2594,7 @@ body.invitation-opening {
 }
 
 .rsvp-guest {
-  padding: var(--sp-4) 0;
+  padding: var(--sp-4) var(--sp-2);
   border-bottom: 1px solid var(--cream);
 }
 
@@ -2567,26 +2612,30 @@ body.invitation-opening {
   padding: 0;
   margin: 0;
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: var(--sp-2);
+  gap: var(--sp-3);
 }
 
-.rsvp-radio-group legend {
+.rsvp-radio-group:focus-within {
+  outline: none;
+  box-shadow: none;
+}
+
+.rsvp-radio-legend {
   font-size: var(--fs-xs);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--sage-dark);
-  margin-bottom: 0;
-  float: none;
-  width: auto;
+  margin: 0;
+  text-align: left;
 }
 
 .rsvp-radio-options {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: var(--sp-2);
-  justify-content: center;
+  justify-content: flex-end;
 }
 
 .rsvp-radio-group label {
@@ -2616,11 +2665,28 @@ body.invitation-opening {
   accent-color: var(--dusty-rose);
 }
 
+.rsvp-radio-group input[type="radio"]:focus,
+.rsvp-radio-group input[type="radio"]:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
 .rsvp-name {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
   color: var(--charcoal-dark);
   font-weight: 500;
   font-family: 'Playfair Display', serif;
   font-size: var(--fs-md);
+}
+
+.rsvp-name-number {
+  color: var(--sage-dark);
+  font-family: 'Inter', sans-serif;
+  font-size: var(--fs-sm);
+  font-weight: 400;
+  flex-shrink: 0;
 }
 
 .rsvp-card button[type="submit"] {
@@ -2636,36 +2702,22 @@ body.invitation-opening {
   text-align: left;
   display: flex;
   flex-direction: column;
-  gap: var(--sp-3);
+  gap: var(--sp-4);
 }
 
 .rsvp-poll-item {
-  padding: var(--sp-3);
-  border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.7);
-  border: 1px solid rgba(122, 145, 129, 0.16);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
 }
 
-.rsvp-poll-header {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
+.rsvp-poll-group {
   gap: var(--sp-3);
 }
 
 .rsvp-poll-label {
-  display: flex;
-  align-items: center;
-  font-size: var(--fs-base);
-  color: var(--charcoal);
-  cursor: pointer;
-  min-height: 2.75rem;
-  margin-bottom: 0;
-}
-
-.rsvp-poll-header [role="switch"] {
-  margin: 0;
-  flex-shrink: 0;
+  min-height: 0;
 }
 
 .rsvp-poll-notes {
@@ -2683,13 +2735,15 @@ body.invitation-opening {
 
 .rsvp-answered-notice {
   color: var(--sage-dark);
-  font-style: italic;
 }
 
 #rsvp-unlock-btn {
   margin-top: var(--sp-3);
+  border: 0;
+  box-shadow: none;
   font-size: var(--fs-base);
   min-height: 2.75rem;
+  text-transform: lowercase;
 }
 
 /* ---------------------------------------------------------------
@@ -3000,12 +3054,12 @@ td [role="switch"] { margin: 0; }
   .rsvp-card { max-width: 32rem; }
 
   .rsvp-radio-group {
-    grid-template-columns: minmax(8rem, auto) auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     gap: var(--sp-4);
   }
 
   .rsvp-radio-options {
-    justify-content: center;
+    justify-content: flex-end;
   }
 
   .registry-v2-carousel {
