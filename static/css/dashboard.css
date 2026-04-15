@@ -682,6 +682,10 @@ input[role="switch"] {
   margin: 0;
 }
 
+.registry-order-actions {
+  justify-content: flex-start;
+}
+
 .invitation-badge {
   display: inline-flex;
   margin-left: 0.5rem;

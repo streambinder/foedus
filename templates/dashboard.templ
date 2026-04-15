@@ -769,12 +769,14 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 											}
 										</form>
 									</td>
-									<td class="actions">
-										<a href={ templ.SafeURL("/dashboard/guests/" + strconv.Itoa(g.ID) + "/edit") }>{ t("btn.edit") }</a>
-										<form method="POST" action={ templ.SafeURL("/dashboard/guests/" + strconv.Itoa(g.ID) + "/delete") } data-confirm={ t("confirm.delete_guest") } onsubmit="return confirm(this.dataset.confirm)">
-											<input type="hidden" name="_csrf" value={ csrfToken }/>
-											<button type="submit" class="outline secondary">{ t("btn.delete") }</button>
-										</form>
+									<td data-label={ t("th.actions") }>
+										<div class="actions">
+											<a href={ templ.SafeURL("/dashboard/guests/" + strconv.Itoa(g.ID) + "/edit") }>{ t("btn.edit") }</a>
+											<form method="POST" action={ templ.SafeURL("/dashboard/guests/" + strconv.Itoa(g.ID) + "/delete") } data-confirm={ t("confirm.delete_guest") } onsubmit="return confirm(this.dataset.confirm)">
+												<input type="hidden" name="_csrf" value={ csrfToken }/>
+												<button type="submit" class="outline secondary">{ t("btn.delete") }</button>
+											</form>
+										</div>
 									</td>
 								</tr>
 							}
@@ -828,12 +830,14 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 										}
 									</td>
 									<td data-label={ t("th.created") }>{ i18n.FormatDate(inv.CreatedAt, lang) }</td>
-									<td class="actions">
-										<button type="button" class="copy-btn" data-code={ inv.Code } onclick="copyInvitationURL(this)">{ t("btn.copy") }</button>
-										<form method="POST" action={ templ.SafeURL("/dashboard/invitations/" + strconv.Itoa(inv.ID) + "/delete") } data-confirm={ t("confirm.delete_invitation") } onsubmit="return confirm(this.dataset.confirm)">
-											<input type="hidden" name="_csrf" value={ csrfToken }/>
-											<button type="submit" class="outline secondary">{ t("btn.delete") }</button>
-										</form>
+									<td data-label={ t("th.actions") }>
+										<div class="actions">
+											<button type="button" class="copy-btn" data-code={ inv.Code } onclick="copyInvitationURL(this)">{ t("btn.copy") }</button>
+											<form method="POST" action={ templ.SafeURL("/dashboard/invitations/" + strconv.Itoa(inv.ID) + "/delete") } data-confirm={ t("confirm.delete_invitation") } onsubmit="return confirm(this.dataset.confirm)">
+												<input type="hidden" name="_csrf" value={ csrfToken }/>
+												<button type="submit" class="outline secondary">{ t("btn.delete") }</button>
+											</form>
+										</div>
 									</td>
 								</tr>
 							}
@@ -878,11 +882,13 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 															{ strconv.Itoa(len(p.YesVoters)) }<small>/{ strconv.Itoa(p.TotalCount) }</small>
 														}
 													</td>
-													<td class="actions">
-														<form method="POST" action={ templ.SafeURL("/dashboard/polls/" + strconv.Itoa(p.ID) + "/delete") } data-confirm={ t("confirm.delete_poll") } onsubmit="return confirm(this.dataset.confirm)">
-															<input type="hidden" name="_csrf" value={ csrfToken }/>
-															<button type="submit" class="outline secondary">{ t("btn.delete") }</button>
-														</form>
+													<td data-label={ t("th.actions") }>
+														<div class="actions">
+															<form method="POST" action={ templ.SafeURL("/dashboard/polls/" + strconv.Itoa(p.ID) + "/delete") } data-confirm={ t("confirm.delete_poll") } onsubmit="return confirm(this.dataset.confirm)">
+																<input type="hidden" name="_csrf" value={ csrfToken }/>
+																<button type="submit" class="outline secondary">{ t("btn.delete") }</button>
+															</form>
+														</div>
 													</td>
 												</tr>
 											}
@@ -930,6 +936,7 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 					<table>
 						<thead>
 							<tr>
+								<th>{ t("th.item_order") }</th>
 								<th>{ t("th.item_image") }</th>
 								<th>{ t("th.item_name") }</th>
 								<th>{ t("th.item_price") }</th>
@@ -937,8 +944,20 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 							</tr>
 						</thead>
 						<tbody>
-							for _, item := range registryItems {
+							for i, item := range registryItems {
 								<tr>
+									<td data-label={ t("th.item_order") }>
+										<div class="actions registry-order-actions">
+											<form method="POST" action={ templ.SafeURL("/dashboard/registry/" + strconv.Itoa(item.ID) + "/move/up") }>
+												<input type="hidden" name="_csrf" value={ csrfToken }/>
+												<button type="submit" class="outline secondary" aria-label={ t("btn.move_up") } disabled?={ i == 0 }>&uarr;</button>
+											</form>
+											<form method="POST" action={ templ.SafeURL("/dashboard/registry/" + strconv.Itoa(item.ID) + "/move/down") }>
+												<input type="hidden" name="_csrf" value={ csrfToken }/>
+												<button type="submit" class="outline secondary" aria-label={ t("btn.move_down") } disabled?={ i == len(registryItems)-1 }>&darr;</button>
+											</form>
+										</div>
+									</td>
 									<td data-label={ t("th.item_image") }>
 										if item.Image != "" {
 											<img class="registry-thumb" src={ item.Image } alt={ item.Name }/>
@@ -946,12 +965,14 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 									</td>
 									<td data-label={ t("th.item_name") }>{ item.Name }</td>
 									<td data-label={ t("th.item_price") }>{ formatPrice(item.Price) }</td>
-									<td class="actions">
-										<a href={ templ.SafeURL("/dashboard/registry/" + strconv.Itoa(item.ID) + "/edit") }>{ t("btn.edit") }</a>
-										<form method="POST" action={ templ.SafeURL("/dashboard/registry/" + strconv.Itoa(item.ID) + "/delete") } data-confirm={ t("confirm.delete_item") } onsubmit="return confirm(this.dataset.confirm)">
-											<input type="hidden" name="_csrf" value={ csrfToken }/>
-											<button type="submit" class="outline secondary">{ t("btn.delete") }</button>
-										</form>
+									<td data-label={ t("th.actions") }>
+										<div class="actions">
+											<a href={ templ.SafeURL("/dashboard/registry/" + strconv.Itoa(item.ID) + "/edit") }>{ t("btn.edit") }</a>
+											<form method="POST" action={ templ.SafeURL("/dashboard/registry/" + strconv.Itoa(item.ID) + "/delete") } data-confirm={ t("confirm.delete_item") } onsubmit="return confirm(this.dataset.confirm)">
+												<input type="hidden" name="_csrf" value={ csrfToken }/>
+												<button type="submit" class="outline secondary">{ t("btn.delete") }</button>
+											</form>
+										</div>
 									</td>
 								</tr>
 							}
@@ -995,12 +1016,14 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 														}
 													</td>
 													<td data-label={ t("th.date") }>{ i18n.FormatDate(g.CreatedAt, lang) }</td>
-													<td class="actions" data-label={ t("th.actions") }>
-														<a href={ templ.SafeURL("/dashboard/gifts/" + strconv.Itoa(g.ID) + "/edit") }>{ t("btn.edit") }</a>
-														<form method="POST" action={ templ.SafeURL("/dashboard/gifts/" + strconv.Itoa(g.ID) + "/delete") } data-confirm={ t("confirm.delete_gift") } onsubmit="return confirm(this.dataset.confirm)">
-															<input type="hidden" name="_csrf" value={ csrfToken }/>
-															<button type="submit" class="outline secondary">{ t("btn.delete") }</button>
-														</form>
+													<td data-label={ t("th.actions") }>
+														<div class="actions">
+															<a href={ templ.SafeURL("/dashboard/gifts/" + strconv.Itoa(g.ID) + "/edit") }>{ t("btn.edit") }</a>
+															<form method="POST" action={ templ.SafeURL("/dashboard/gifts/" + strconv.Itoa(g.ID) + "/delete") } data-confirm={ t("confirm.delete_gift") } onsubmit="return confirm(this.dataset.confirm)">
+																<input type="hidden" name="_csrf" value={ csrfToken }/>
+																<button type="submit" class="outline secondary">{ t("btn.delete") }</button>
+															</form>
+														</div>
 													</td>
 												</tr>
 											}

@@ -107,5 +107,6 @@ type RegistryItem struct {
 	Name      string
 	Price     int    // whole currency units (e.g. euros), no cents
 	Image     string // base64 data URI
+	SortOrder int
 	CreatedAt time.Time
 }

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"crypto/sha256"
+	"database/sql"
 	"encoding/base64"
 	"encoding/csv"
 	"encoding/hex"
@@ -612,6 +613,24 @@ func DeleteRegistryItem(c *fiber.Ctx) error {
 		return c.Status(500).SendString("failed to delete item")
 	}
 	setFlash(c, getT(c)("flash.item_deleted"))
+	return c.Redirect("/dashboard")
+}
+
+func MoveRegistryItem(c *fiber.Ctx) error {
+	id, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		return c.Status(400).SendString("invalid id")
+	}
+	direction := strings.TrimSpace(c.Params("direction"))
+	if direction != "up" && direction != "down" {
+		return c.Status(400).SendString("invalid direction")
+	}
+	if err := database.MoveRegistryItem(id, direction); err != nil {
+		if err == sql.ErrNoRows {
+			return c.Status(404).SendString("item not found")
+		}
+		return c.Status(500).SendString("failed to reorder item")
+	}
 	return c.Redirect("/dashboard")
 }
 

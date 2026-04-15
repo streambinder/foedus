@@ -163,7 +163,7 @@
     if (/\/dashboard\/gifts\/\d+(\/delete)?$/.test(action)) {
       return ["dashboard-flash", "dashboard-registry"];
     }
-    if (/\/dashboard\/registry(?:\/\d+(?:\/delete)?)?$/.test(action)) {
+    if (/\/dashboard\/registry(?:\/\d+(?:\/(?:move\/(?:up|down)|delete))?)?$/.test(action)) {
       return ["dashboard-flash", "dashboard-registry"];
     }
     if (/\/dashboard\/settings$/.test(action)) {

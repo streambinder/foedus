@@ -66,6 +66,7 @@ func main() {
 	admin.Post("/registry", handlers.AddRegistryItem)
 	admin.Get("/registry/:id/edit", handlers.EditRegistryItemPage)
 	admin.Post("/registry/:id", handlers.UpdateRegistryItem)
+	admin.Post("/registry/:id/move/:direction", handlers.MoveRegistryItem)
 	admin.Post("/registry/:id/delete", handlers.DeleteRegistryItem)
 	admin.Get("/gifts/:id/edit", handlers.EditGiftPage)
 	admin.Post("/gifts/:id", handlers.UpdateGift)

@@ -53,6 +53,7 @@ func migrate() {
 			name       TEXT NOT NULL,
 			price      INTEGER NOT NULL,
 			image      TEXT NOT NULL DEFAULT '',
+			sort_order INTEGER NOT NULL DEFAULT 0,
 			created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 		)`,
 		`CREATE TABLE IF NOT EXISTS invitations (
@@ -114,6 +115,40 @@ func migrate() {
 			}
 		}
 		version = 3
+	}
+	if version < 4 {
+		hasSortOrder, err := tableHasColumn("registry_items", "sort_order")
+		if err != nil {
+			log.Fatalf("failed to inspect registry_items schema: %v", err)
+		}
+		if !hasSortOrder {
+			if _, err := DB.Exec(`ALTER TABLE registry_items ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0`); err != nil {
+				log.Fatalf("failed to add sort_order column to registry_items: %v", err)
+			}
+		}
+
+		rows, err := DB.Query(`SELECT id FROM registry_items ORDER BY created_at DESC, id DESC`)
+		if err != nil {
+			log.Fatalf("failed to load registry_items for sort_order backfill: %v", err)
+		}
+		var ids []int
+		for rows.Next() {
+			var id int
+			if err := rows.Scan(&id); err != nil {
+				rows.Close()
+				log.Fatalf("failed to scan registry_items id for sort_order backfill: %v", err)
+			}
+			ids = append(ids, id)
+		}
+		if err := rows.Close(); err != nil {
+			log.Fatalf("failed to close registry_items rows for sort_order backfill: %v", err)
+		}
+		for idx, id := range ids {
+			if _, err := DB.Exec(`UPDATE registry_items SET sort_order = ? WHERE id = ?`, idx+1, id); err != nil {
+				log.Fatalf("failed to backfill registry_items sort_order: %v", err)
+			}
+		}
+		version = 4
 	}
 	if _, err := DB.Exec(fmt.Sprintf(`PRAGMA user_version = %d`, version)); err != nil {
 		log.Fatalf("failed to persist schema version: %v", err)
