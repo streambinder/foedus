@@ -322,6 +322,7 @@
 
         entry.element.style.display = isVisible ? "" : "none";
         setPinScale(entry, 1);
+        setPinOffset(entry, 0, 0);
 
         if (!isVisible) {
           return;
@@ -333,34 +334,43 @@
         visibleEntries.push(entry);
       });
 
-      applyOverlapScaling(visibleEntries, mode);
+      applyOverlapLayout(visibleEntries, mode);
     });
   }
 
-  function applyOverlapScaling(entries, mode) {
+  function applyOverlapLayout(entries, mode) {
     if (entries.length < 2) return;
 
     var minScale = mode === "honeymoon" ? 0.58 : 0.72;
     var overlapTarget = 0.25;
-    var scales = entries.map(function () { return 1; });
+    var maxOffset = mode === "honeymoon" ? 32 : 14;
+    var layouts = entries.map(function () {
+      return { scale: 1, offsetX: 0, offsetY: 0 };
+    });
 
-    for (var pass = 0; pass < 8; pass++) {
+    for (var pass = 0; pass < 10; pass++) {
       var changed = false;
 
       for (var i = 0; i < entries.length; i++) {
         for (var j = i + 1; j < entries.length; j++) {
-          var overlapRatio = getOverlapRatio(
-            buildPinRect(entries[i], scales[i]),
-            buildPinRect(entries[j], scales[j])
-          );
+          var overlapRatio = getOverlapRatio(buildPinRect(entries[i], layouts[i]), buildPinRect(entries[j], layouts[j]));
 
           if (overlapRatio <= overlapTarget) continue;
 
-          var nextScaleA = Math.max(minScale, scales[i] - 0.05);
-          var nextScaleB = Math.max(minScale, scales[j] - 0.05);
-          if (nextScaleA !== scales[i] || nextScaleB !== scales[j]) {
-            scales[i] = nextScaleA;
-            scales[j] = nextScaleB;
+          var nextScaleA = Math.max(minScale, layouts[i].scale - 0.05);
+          var nextScaleB = Math.max(minScale, layouts[j].scale - 0.05);
+          if (nextScaleA !== layouts[i].scale || nextScaleB !== layouts[j].scale) {
+            layouts[i].scale = nextScaleA;
+            layouts[j].scale = nextScaleB;
+            changed = true;
+          }
+
+          overlapRatio = getOverlapRatio(buildPinRect(entries[i], layouts[i]), buildPinRect(entries[j], layouts[j]));
+          if (overlapRatio <= overlapTarget) continue;
+
+          var separation = getSeparationVector(entries[i], entries[j], layouts[i], layouts[j], i, j);
+          var nudgeDistance = mode === "honeymoon" ? 8 : 5;
+          if (nudgeEntries(layouts[i], layouts[j], separation, nudgeDistance, maxOffset)) {
             changed = true;
           }
         }
@@ -370,22 +380,30 @@
     }
 
     entries.forEach(function (entry, index) {
-      setPinScale(entry, scales[index]);
+      setPinScale(entry, layouts[index].scale);
+      setPinOffset(entry, layouts[index].offsetX, layouts[index].offsetY);
     });
   }
 
-  function buildPinRect(entry, scale) {
-    var width = entry.element.offsetWidth * getPinVisualScale(entry, scale);
-    var height = entry.element.offsetHeight * getPinVisualScale(entry, scale);
-    var left = parseFloat(entry.element.style.left) || 0;
-    var top = parseFloat(entry.element.style.top) || 0;
+  function buildPinRect(entry, layout) {
+    var scale = getPinVisualScale(entry, layout.scale);
+    var width = entry.element.offsetWidth * scale;
+    var height = entry.element.offsetHeight * scale;
+    var center = getPinCenter(entry, layout);
 
     return {
-      left: left - width / 2,
-      top: top - height / 2,
-      right: left + width / 2,
-      bottom: top + height / 2,
+      left: center.x - width / 2,
+      top: center.y - height / 2,
+      right: center.x + width / 2,
+      bottom: center.y + height / 2,
       area: width * height
+    };
+  }
+
+  function getPinCenter(entry, layout) {
+    return {
+      x: (parseFloat(entry.element.style.left) || 0) + (layout.offsetX || 0),
+      y: (parseFloat(entry.element.style.top) || 0) + (layout.offsetY || 0)
     };
   }
 
@@ -403,6 +421,62 @@
 
   function setPinScale(entry, scale) {
     entry.element.style.setProperty("--places-pin-scale", String(scale));
+  }
+
+  function setPinOffset(entry, offsetX, offsetY) {
+    entry.element.style.setProperty("--places-pin-offset-x", offsetX + "px");
+    entry.element.style.setProperty("--places-pin-offset-y", offsetY + "px");
+  }
+
+  function getSeparationVector(entryA, entryB, layoutA, layoutB, indexA, indexB) {
+    var centerA = getPinCenter(entryA, layoutA);
+    var centerB = getPinCenter(entryB, layoutB);
+    var dx = centerB.x - centerA.x;
+    var dy = centerB.y - centerA.y;
+
+    if (dx || dy) {
+      return normalizeVector(dx, dy);
+    }
+
+    var angle = ((indexA + indexB + 1) * 137.5 * Math.PI) / 180;
+    return {
+      x: Math.cos(angle),
+      y: Math.sin(angle)
+    };
+  }
+
+  function normalizeVector(dx, dy) {
+    var length = Math.sqrt(dx * dx + dy * dy) || 1;
+    return {
+      x: dx / length,
+      y: dy / length
+    };
+  }
+
+  function nudgeEntries(layoutA, layoutB, separation, distance, maxOffset) {
+    var nextA = clampOffset(layoutA.offsetX - separation.x * distance, layoutA.offsetY - separation.y * distance, maxOffset);
+    var nextB = clampOffset(layoutB.offsetX + separation.x * distance, layoutB.offsetY + separation.y * distance, maxOffset);
+    var changed = nextA.x !== layoutA.offsetX || nextA.y !== layoutA.offsetY || nextB.x !== layoutB.offsetX || nextB.y !== layoutB.offsetY;
+
+    layoutA.offsetX = nextA.x;
+    layoutA.offsetY = nextA.y;
+    layoutB.offsetX = nextB.x;
+    layoutB.offsetY = nextB.y;
+
+    return changed;
+  }
+
+  function clampOffset(x, y, maxDistance) {
+    var distance = Math.sqrt(x * x + y * y);
+    if (distance <= maxDistance) {
+      return { x: x, y: y };
+    }
+
+    var ratio = maxDistance / distance;
+    return {
+      x: x * ratio,
+      y: y * ratio
+    };
   }
 
   function createCurvedRoute(latlngs) {
