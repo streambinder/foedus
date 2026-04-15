@@ -463,9 +463,10 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 																data-preview-target={ fmt.Sprintf("place-image-preview-%d", idx) }
 																data-token-input={ fmt.Sprintf("place-image-token-%d", idx) }
 																data-format="image/jpeg"
-																data-quality="0.82"
-																data-max-width="640"
-																data-max-height="640"
+																data-quality="0.88"
+																data-max-width="1200"
+																data-max-height="1200"
+																data-max-bytes="524288"
 															/>
 															<input type="hidden" name={ fmt.Sprintf("place_image_%d", idx) } id={ fmt.Sprintf("place-image-data-%d", idx) } class="place-image-hidden"/>
 															<input type="hidden" name={ fmt.Sprintf("place_image_token_%d", idx) } id={ fmt.Sprintf("place-image-token-%d", idx) } class="place-image-token-hidden" value={ imageToken(place.Image) }/>
