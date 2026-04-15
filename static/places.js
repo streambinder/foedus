@@ -303,10 +303,12 @@
     if (!map) return;
 
     ["places", "honeymoon"].forEach(function (mode) {
+      var visibleEntries = [];
       (entriesByMode[mode] || []).forEach(function (entry, idx) {
         var isActiveMode = mode === activeMode;
         if (!isActiveMode) {
           entry.element.style.display = "none";
+          setPinScale(entry, 1);
           return;
         }
 
@@ -319,11 +321,88 @@
           point.y <= mapEl.clientHeight + overflow;
 
         entry.element.style.display = isVisible ? "" : "none";
+        setPinScale(entry, 1);
+
+        if (!isVisible) {
+          return;
+        }
+
         entry.element.style.left = point.x + "px";
         entry.element.style.top = point.y + "px";
         entry.element.classList.toggle("places-pin--active", mode === "places" && idx === getActivePlaceIndex());
+        visibleEntries.push(entry);
       });
+
+      applyOverlapScaling(visibleEntries, mode);
     });
+  }
+
+  function applyOverlapScaling(entries, mode) {
+    if (entries.length < 2) return;
+
+    var minScale = mode === "honeymoon" ? 0.58 : 0.72;
+    var overlapTarget = 0.25;
+    var scales = entries.map(function () { return 1; });
+
+    for (var pass = 0; pass < 8; pass++) {
+      var changed = false;
+
+      for (var i = 0; i < entries.length; i++) {
+        for (var j = i + 1; j < entries.length; j++) {
+          var overlapRatio = getOverlapRatio(
+            buildPinRect(entries[i], scales[i]),
+            buildPinRect(entries[j], scales[j])
+          );
+
+          if (overlapRatio <= overlapTarget) continue;
+
+          var nextScaleA = Math.max(minScale, scales[i] - 0.05);
+          var nextScaleB = Math.max(minScale, scales[j] - 0.05);
+          if (nextScaleA !== scales[i] || nextScaleB !== scales[j]) {
+            scales[i] = nextScaleA;
+            scales[j] = nextScaleB;
+            changed = true;
+          }
+        }
+      }
+
+      if (!changed) break;
+    }
+
+    entries.forEach(function (entry, index) {
+      setPinScale(entry, scales[index]);
+    });
+  }
+
+  function buildPinRect(entry, scale) {
+    var width = entry.element.offsetWidth * getPinVisualScale(entry, scale);
+    var height = entry.element.offsetHeight * getPinVisualScale(entry, scale);
+    var left = parseFloat(entry.element.style.left) || 0;
+    var top = parseFloat(entry.element.style.top) || 0;
+
+    return {
+      left: left - width / 2,
+      top: top - height / 2,
+      right: left + width / 2,
+      bottom: top + height / 2,
+      area: width * height
+    };
+  }
+
+  function getPinVisualScale(entry, scale) {
+    return scale * (entry.element.classList.contains("places-pin--active") ? 1.12 : 1);
+  }
+
+  function getOverlapRatio(rectA, rectB) {
+    var overlapWidth = Math.min(rectA.right, rectB.right) - Math.max(rectA.left, rectB.left);
+    var overlapHeight = Math.min(rectA.bottom, rectB.bottom) - Math.max(rectA.top, rectB.top);
+    if (overlapWidth <= 0 || overlapHeight <= 0) return 0;
+
+    return (overlapWidth * overlapHeight) / Math.min(rectA.area, rectB.area);
+  }
+
+  function setPinScale(entry, scale) {
+    entry.element.style.setProperty("--places-pin-scale", String(scale));
   }
 
   function createCurvedRoute(latlngs) {
