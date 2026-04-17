@@ -3243,6 +3243,11 @@ td [role="switch"] { margin: 0; }
   scroll-snap-stop: always;
 }
 
+.vp-soundtrack::after {
+  z-index: 3;
+  opacity: 0.28;
+}
+
 .soundtrack-header {
   width: 100%;
   padding: 0;
