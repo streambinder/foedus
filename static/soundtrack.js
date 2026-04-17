@@ -15,8 +15,8 @@
   document.body.appendChild(results);
   function positionResults() {
     var rect = input.getBoundingClientRect();
-    results.style.bottom = (window.innerHeight - rect.top + 4) + "px";
-    results.style.top = "auto";
+    results.style.top = (rect.bottom + 4) + "px";
+    results.style.bottom = "auto";
     results.style.left = rect.left + "px";
     results.style.width = rect.width + "px";
     results.style.transform = "none";
@@ -46,17 +46,17 @@
     }
   });
 
-  input.addEventListener("blur", function () {
-    setTimeout(dismissResults, 150);
-  });
-
-  window.addEventListener("scroll", dismissResults, true);
-
   input.addEventListener("focus", function () {
     if (results.children.length > 0) {
       positionResults();
       results.style.display = "block";
     }
+  });
+
+  input.addEventListener("blur", function () {
+    setTimeout(function () {
+      dismissResults();
+    }, 150);
   });
 
   function search(query) {
