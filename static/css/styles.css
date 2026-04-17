@@ -3816,10 +3816,9 @@ td [role="switch"] { margin: 0; }
 
 .places-modal-box {
   position: relative;
-  width: min(90vw, 31rem);
-  height: min(82vh, 42rem);
+  width: auto;
   max-width: min(90vw, 31rem);
-  max-height: min(82vh, 42rem);
+  max-height: min(90vh, 48rem);
   padding: 0;
   border-radius: 1.6rem;
   overflow: hidden;
@@ -3861,15 +3860,16 @@ td [role="switch"] { margin: 0; }
 }
 
 .places-modal-media {
-  position: absolute;
-  inset: 0;
+  display: flex;
   background: linear-gradient(180deg, rgba(42, 52, 57, 0.06), rgba(42, 52, 57, 0.12));
 }
 
 .places-modal-media img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  max-width: min(90vw, 31rem);
+  max-height: min(90vh, 48rem);
+  width: auto;
+  height: auto;
+  object-fit: contain;
   display: block;
 }
 
