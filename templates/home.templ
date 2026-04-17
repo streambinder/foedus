@@ -316,86 +316,90 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 			</section>
 		}
 		if len(settings.Places) > 0 || len(settings.HoneymoonLocations) > 0 {
-			<div id="story-map-root" class="timeline-story">
-				<div class="timeline-story-map-shell" aria-hidden="true">
-					<div class="places-map-background timeline-map-background">
-						<div id="story-map" class="places-map timeline-map"></div>
-					</div>
-					<svg class="places-filter-defs" aria-hidden="true" focusable="false" width="0" height="0">
-						<filter id="places-pin-photo-filter">
-							<feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" stitchTiles="stitch" result="noise"></feTurbulence>
-							<feColorMatrix in="noise" type="saturate" values="0" result="grain"></feColorMatrix>
-							<feComponentTransfer in="grain" result="soft-grain">
-								<feFuncA type="table" tableValues="0 0.08"></feFuncA>
-							</feComponentTransfer>
-							<feBlend in="SourceGraphic" in2="soft-grain" mode="soft-light"></feBlend>
-						</filter>
-					</svg>
-					<div id="story-pins" class="places-pins-layer timeline-pins-layer"></div>
-				</div>
-				<!-- section: places -->
-				if len(settings.Places) > 0 {
-					<section id="places" class="vp-section vp-places" data-story-map-section="places">
-						if hasSpotifyPlaylist(settings.SpotifyPlaylist) {
-							<a href="#soundtrack" class="vp-arrow vp-arrow--up">
-								<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"></path></svg>
-							</a>
-						} else {
-							<a href="#venues" class="vp-arrow vp-arrow--up">
-								<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"></path></svg>
-							</a>
-						}
-						<div class="vp-section-inner places-stage">
-							<div class="places-map-copy section-heading">
-								<h2 class="section-title">{ t("home.places") }</h2>
-								if t("home.places_description") != "" {
-									<p class="section-subtitle">{ t("home.places_description") }</p>
-								}
-							</div>
-						</div>
-						<div id="places-data" class="timeline-data" style="display:none">{ locationTimelineJSON(settings.Places, lang) }</div>
-						<div id="places-modal" class="modal-overlay" style="display:none">
-							<div class="modal-box places-modal-box">
-								<button type="button" id="places-modal-close" class="places-modal-close" aria-label={ t("btn.close") }>&times;</button>
-								<div class="places-modal-media">
-									<img id="places-modal-image" src="" alt=""/>
-								</div>
-								<div class="places-modal-caption">
-									<h3 id="places-modal-label"></h3>
-									<p id="places-modal-date"></p>
-								</div>
-							</div>
-						</div>
-						if nextSectionAfterPlaces(settings.HoneymoonLocations, bankConfigured) != "" {
-							<a href={ templ.SafeURL(nextSectionAfterPlaces(settings.HoneymoonLocations, bankConfigured)) } class="vp-arrow vp-arrow--down">
-								<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
-							</a>
-						}
-					</section>
-				}
-				if len(settings.HoneymoonLocations) > 0 {
-					<section id="honeymoon" class="vp-section vp-honeymoon" data-story-map-section="honeymoon">
-						<a href={ templ.SafeURL(prevSectionBeforeHoneymoon(settings.Places, settings.SpotifyPlaylist)) } class="vp-arrow vp-arrow--up">
+				<svg class="places-filter-defs" aria-hidden="true" focusable="false" width="0" height="0">
+					<filter id="places-pin-photo-filter">
+						<feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" stitchTiles="stitch" result="noise"></feTurbulence>
+						<feColorMatrix in="noise" type="saturate" values="0" result="grain"></feColorMatrix>
+						<feComponentTransfer in="grain" result="soft-grain">
+							<feFuncA type="table" tableValues="0 0.08"></feFuncA>
+						</feComponentTransfer>
+						<feBlend in="SourceGraphic" in2="soft-grain" mode="soft-light"></feBlend>
+					</filter>
+				</svg>
+			}
+			<!-- section: places -->
+			if len(settings.Places) > 0 {
+				<section id="places" class="vp-section vp-places" data-story-map-section="places">
+					if hasSpotifyPlaylist(settings.SpotifyPlaylist) {
+						<a href="#soundtrack" class="vp-arrow vp-arrow--up">
 							<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"></path></svg>
 						</a>
-						<div class="vp-section-inner places-stage">
-							<div class="places-map-copy section-heading">
-								<h2 class="section-title">{ t("home.honeymoon") }</h2>
-								if t("home.honeymoon_description") != "" {
-									<p class="section-subtitle">{ t("home.honeymoon_description") }</p>
-								}
+					} else {
+						<a href="#venues" class="vp-arrow vp-arrow--up">
+							<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"></path></svg>
+						</a>
+					}
+					<div class="timeline-story-map-shell" aria-hidden="true">
+						<div class="places-map-background timeline-map-background">
+							<div class="timeline-map places-map"></div>
+						</div>
+						<div class="timeline-pins-layer places-pins-layer"></div>
+					</div>
+					<div class="vp-section-inner places-stage">
+						<div class="places-map-copy section-heading">
+							<h2 class="section-title">{ t("home.places") }</h2>
+							if t("home.places_description") != "" {
+								<p class="section-subtitle">{ t("home.places_description") }</p>
+							}
+						</div>
+					</div>
+					<div class="timeline-data" style="display:none">{ locationTimelineJSON(settings.Places, lang) }</div>
+					<div id="places-modal" class="modal-overlay" style="display:none">
+						<div class="modal-box places-modal-box">
+							<button type="button" id="places-modal-close" class="places-modal-close" aria-label={ t("btn.close") }>&times;</button>
+							<div class="places-modal-media">
+								<img id="places-modal-image" src="" alt=""/>
+							</div>
+							<div class="places-modal-caption">
+								<h3 id="places-modal-label"></h3>
+								<p id="places-modal-date"></p>
 							</div>
 						</div>
-						<div id="honeymoon-data" class="timeline-data" style="display:none">{ locationTimelineJSON(settings.HoneymoonLocations, lang) }</div>
-						if nextSectionAfterHoneymoon(bankConfigured) != "" {
-							<a href={ templ.SafeURL(nextSectionAfterHoneymoon(bankConfigured)) } class="vp-arrow vp-arrow--down">
-								<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
-							</a>
-						}
-					</section>
-				}
-			</div>
-		}
+					</div>
+					if nextSectionAfterPlaces(settings.HoneymoonLocations, bankConfigured) != "" {
+						<a href={ templ.SafeURL(nextSectionAfterPlaces(settings.HoneymoonLocations, bankConfigured)) } class="vp-arrow vp-arrow--down">
+							<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
+						</a>
+					}
+				</section>
+			}
+			if len(settings.HoneymoonLocations) > 0 {
+				<section id="honeymoon" class="vp-section vp-honeymoon" data-story-map-section="honeymoon">
+					<a href={ templ.SafeURL(prevSectionBeforeHoneymoon(settings.Places, settings.SpotifyPlaylist)) } class="vp-arrow vp-arrow--up">
+						<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"></path></svg>
+					</a>
+					<div class="timeline-story-map-shell" aria-hidden="true">
+						<div class="places-map-background timeline-map-background">
+							<div class="timeline-map places-map"></div>
+						</div>
+						<div class="timeline-pins-layer places-pins-layer"></div>
+					</div>
+					<div class="vp-section-inner places-stage">
+						<div class="places-map-copy section-heading">
+							<h2 class="section-title">{ t("home.honeymoon") }</h2>
+							if t("home.honeymoon_description") != "" {
+								<p class="section-subtitle">{ t("home.honeymoon_description") }</p>
+							}
+						</div>
+					</div>
+					<div class="timeline-data" style="display:none">{ locationTimelineJSON(settings.HoneymoonLocations, lang) }</div>
+					if nextSectionAfterHoneymoon(bankConfigured) != "" {
+						<a href={ templ.SafeURL(nextSectionAfterHoneymoon(bankConfigured)) } class="vp-arrow vp-arrow--down">
+							<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
+						</a>
+					}
+				</section>
+			}
 		<!-- section: registry / gifts -->
 		if bankConfigured {
 			<section id="registry" class="vp-section vp-registry">

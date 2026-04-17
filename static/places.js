@@ -1,170 +1,151 @@
 (function () {
   "use strict";
 
-  var storyRoot = document.getElementById("story-map-root");
-  var mapEl = document.getElementById("story-map");
-  var pinsEl = document.getElementById("story-pins");
-  if (!storyRoot || !mapEl || !pinsEl) return;
+  var placesSection = document.getElementById("places");
+  var honeymoonSection = document.getElementById("honeymoon");
+  if (!placesSection && !honeymoonSection) return;
 
-  var sections = {
-    places: document.getElementById("places"),
-    honeymoon: document.getElementById("honeymoon")
-  };
-
-  var datasets = {
-    places: parseTimelineData(sections.places && sections.places.querySelector("#places-data")),
-    honeymoon: parseTimelineData(sections.honeymoon && sections.honeymoon.querySelector("#honeymoon-data"))
-  };
-
-  var modalEl = sections.places ? sections.places.querySelector("#places-modal") : null;
+  var modalEl = placesSection ? placesSection.querySelector("#places-modal") : null;
   var modalImage = modalEl ? modalEl.querySelector("#places-modal-image") : null;
   var modalLabel = modalEl ? modalEl.querySelector("#places-modal-label") : null;
   var modalDate = modalEl ? modalEl.querySelector("#places-modal-date") : null;
   var modalClose = modalEl ? modalEl.querySelector("#places-modal-close") : null;
-
-  var map = null;
-  var mapInitialized = false;
   var activePin = null;
-  var activeMode = datasets.places.length ? "places" : "honeymoon";
-  var routeLine = null;
-  var entriesByMode = { places: [], honeymoon: [] };
-  var modeLockUntil = 0;
 
-  observeMapLifecycle();
+  if (placesSection) initSection(placesSection, "places");
+  if (honeymoonSection) initSection(honeymoonSection, "honeymoon");
   bindModal();
-  observeSections();
-  bindStoryNav();
 
-  function observeMapLifecycle() {
+  function initSection(sectionEl, mode) {
+    var mapEl = sectionEl.querySelector(".timeline-map");
+    var pinsEl = sectionEl.querySelector(".timeline-pins-layer");
+    var dataEl = sectionEl.querySelector(".timeline-data");
+    if (!mapEl || !pinsEl) return;
+
+    var items = parseTimelineData(dataEl);
+    if (!items.length) return;
+
+    var map = null;
+    var entries = [];
+
     if ("IntersectionObserver" in window) {
-      var rootObserver = new IntersectionObserver(function (entries) {
-        entries.forEach(function (entry) {
+      var observer = new IntersectionObserver(function (observed) {
+        observed.forEach(function (entry) {
           if (!entry.isIntersecting) return;
-          initMap();
-          rootObserver.disconnect();
+          init();
+          observer.disconnect();
         });
       }, { rootMargin: "240px 0px" });
-
-      rootObserver.observe(storyRoot);
+      observer.observe(sectionEl);
     } else {
-      initMap();
-    }
-  }
-
-  function observeSections() {
-    var observedSections = Object.keys(sections)
-      .map(function (key) { return sections[key]; })
-      .filter(Boolean);
-    if (!observedSections.length) return;
-
-    function activateFromHash() {
-      var id = window.location.hash ? window.location.hash.slice(1) : "";
-      if ((id === "places" || id === "honeymoon") && sections[id]) {
-        lockModeSelection(900);
-        setActiveMode(id, true);
-      }
+      init();
     }
 
-    activateFromHash();
-    window.addEventListener("hashchange", activateFromHash);
+    function init() {
+      if (map) return;
+      if (typeof L === "undefined") return;
 
-    if (!("IntersectionObserver" in window)) return;
-
-    var sectionObserver = new IntersectionObserver(function (entries) {
-      var best = null;
-      entries.forEach(function (entry) {
-        if (!entry.isIntersecting) return;
-        if (!best || entry.intersectionRatio > best.intersectionRatio) {
-          best = entry;
-        }
+      map = L.map(mapEl, {
+        scrollWheelZoom: false,
+        zoomControl: false,
+        attributionControl: true
       });
-      if (!best) return;
 
-      var mode = best.target.getAttribute("data-story-map-section");
-      if (isModeSelectionLocked()) return;
-      if (mode) setActiveMode(mode, false);
-    }, { threshold: [0.25, 0.45, 0.6], rootMargin: "-10% 0px -10% 0px" });
-
-    observedSections.forEach(function (section) {
-      sectionObserver.observe(section);
-    });
-  }
-
-  function bindStoryNav() {
-    document.querySelectorAll('.vp-dot[href="#places"], .vp-dot[href="#honeymoon"]').forEach(function (link) {
-      link.addEventListener("click", function () {
-        var href = link.getAttribute("href") || "";
-        var mode = href.charAt(0) === "#" ? href.slice(1) : href;
-        if (mode !== "places" && mode !== "honeymoon") return;
-        lockModeSelection(900);
-        setActiveMode(mode, true);
-      });
-    });
-  }
-
-  function initMap() {
-    if (mapInitialized || typeof L === "undefined") return;
-    mapInitialized = true;
-
-    map = L.map(mapEl, {
-      scrollWheelZoom: false,
-      zoomControl: false,
-      attributionControl: true
-    });
-
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png", {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
-      subdomains: "abcd",
-      maxZoom: 19
-    }).addTo(map);
-
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png", {
-      attribution: "",
-      subdomains: "abcd",
-      maxZoom: 19,
-      pane: "overlayPane"
-    }).addTo(map);
-
-    entriesByMode.places = buildEntries("places", datasets.places);
-    entriesByMode.honeymoon = buildEntries("honeymoon", datasets.honeymoon);
-
-    if (entriesByMode.honeymoon.length > 1) {
-      routeLine = L.polyline(createCurvedRoute(entriesByMode.honeymoon.map(function (entry) {
-        return entry.latlng;
-      })), {
-        color: "#8a6a4d",
-        weight: 3,
-        opacity: 0,
-        lineCap: "round",
-        lineJoin: "round",
-        dashArray: "2 12",
-        interactive: false,
-        className: "timeline-route timeline-route--active"
+      L.tileLayer("https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png", {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
+        subdomains: "abcd",
+        maxZoom: 19
       }).addTo(map);
+
+      L.tileLayer("https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png", {
+        attribution: "",
+        subdomains: "abcd",
+        maxZoom: 19,
+        pane: "overlayPane"
+      }).addTo(map);
+
+      entries = buildEntries(mode, items, pinsEl, map);
+
+      if (mode === "honeymoon" && entries.length > 1) {
+        L.polyline(createCurvedRoute(entries.map(function (e) { return e.latlng; })), {
+          color: "#8a6a4d",
+          weight: 3,
+          opacity: 0.95,
+          lineCap: "round",
+          lineJoin: "round",
+          dashArray: "2 12",
+          interactive: false,
+          className: "timeline-route timeline-route--active"
+        }).addTo(map);
+      }
+
+      map.on("move zoom resize load", render);
+
+      fitMap(true);
+      window.setTimeout(function () {
+        map.invalidateSize();
+        fitMap(true);
+        render();
+      }, 120);
     }
 
-    map.on("move zoom resize load", renderPins);
-    map.on("resize", function () {
-      setMapViewForMode(activeMode, true);
-    });
+    function fitMap(immediate) {
+      if (!map || !entries.length) return;
 
-    storyRoot.dataset.activeStoryMap = activeMode;
-    setMapViewForMode(activeMode, true);
+      var minZoom = mode === "places" ? 6 : 4;
+      var maxZoom = mode === "places" ? 14 : 8;
 
-    window.setTimeout(function () {
-      map.invalidateSize();
-      setMapViewForMode(activeMode, true);
-      renderPins();
-    }, 120);
+      if (entries.length === 1) {
+        map.setView(entries[0].latlng, Math.max(minZoom, Math.min(maxZoom, 13)), { animate: !immediate });
+        return;
+      }
+
+      var bounds = L.latLngBounds(entries.map(function (e) { return e.latlng; }));
+      var pad = mode === "places"
+        ? L.point(80, 80)
+        : L.point(
+            Math.max(36, Math.round(mapEl.clientWidth * 0.08)) * 2,
+            Math.max(32, Math.round(mapEl.clientHeight * 0.08)) + Math.max(120, Math.round(mapEl.clientHeight * 0.18))
+          );
+
+      var fitZoom = Math.max(minZoom, Math.min(maxZoom, map.getBoundsZoom(bounds, false, pad)));
+      map.setView(weightedCentroid(entries), fitZoom, { animate: !immediate });
+    }
+
+    function render() {
+      if (!map) return;
+      var visibleEntries = [];
+
+      entries.forEach(function (entry, idx) {
+        var point = map.latLngToContainerPoint(entry.latlng);
+        var overflow = mode === "honeymoon" ? 240 : 80;
+        var isVisible =
+          point.x >= -overflow &&
+          point.y >= -overflow &&
+          point.x <= mapEl.clientWidth + overflow &&
+          point.y <= mapEl.clientHeight + overflow;
+
+        entry.element.style.display = isVisible ? "" : "none";
+        setPinScale(entry, 1);
+        setPinOffset(entry, 0, 0);
+
+        if (!isVisible) return;
+
+        entry.element.style.left = point.x + "px";
+        entry.element.style.top = point.y + "px";
+        entry.element.classList.toggle("places-pin--active", mode === "places" && idx === getActivePlaceIndex());
+        visibleEntries.push(entry);
+      });
+
+      applyOverlapLayout(visibleEntries, mode);
+    }
   }
 
-  function buildEntries(mode, items) {
+  function buildEntries(mode, items, pinsEl, map) {
     var entries = [];
 
     items.forEach(function (place, idx) {
-      if (typeof place.lat !== "number" || typeof place.lng !== "number" || (!place.lat && !place.lng)) {
-        return;
-      }
+      if (typeof place.lat !== "number" || typeof place.lng !== "number" || (!place.lat && !place.lng)) return;
 
       var latlng = L.latLng(place.lat, place.lng);
       var pin = buildPin(place, idx, mode);
@@ -212,132 +193,6 @@
     return place.image
       ? '<div class="places-pin-media' + transparentClass + '"><img src="' + place.image + '" alt="' + title + '"/><div class="places-pin-overlay"><h3>' + title + '</h3></div></div>'
       : '<div class="places-pin-media places-pin-media--placeholder"><span>' + escapeHtml(initials(place.label || place.name || "H")) + '</span><div class="places-pin-overlay"><h3>' + title + '</h3></div></div>';
-  }
-
-  function setActiveMode(mode, immediate) {
-    if (!sections[mode] && mode !== "places" && mode !== "honeymoon") return;
-    activeMode = mode;
-    storyRoot.dataset.activeStoryMap = mode;
-    if (!mapInitialized) return;
-
-    if (routeLine) {
-      routeLine.setStyle({ opacity: mode === "honeymoon" ? 0.95 : 0 });
-    }
-    if (mode !== "places") {
-      setActivePin(null);
-    }
-    setMapViewForMode(mode, immediate);
-    renderPins();
-  }
-
-  function lockModeSelection(durationMs) {
-    modeLockUntil = Date.now() + durationMs;
-  }
-
-  function isModeSelectionLocked() {
-    return Date.now() < modeLockUntil;
-  }
-
-  function setMapViewForMode(mode, immediate) {
-    if (!map) return;
-    var entries = entriesByMode[mode] || [];
-    if (!entries.length) return;
-
-    if (mode === "places") {
-      fitEntries(entries, {
-        padding: [80, 80],
-        maxZoom: 14,
-        minZoom: 6,
-        immediate: immediate
-      });
-      return;
-    }
-
-    fitEntries(entries, {
-      paddingTopLeft: [
-        Math.max(36, Math.round(mapEl.clientWidth * 0.08)),
-        Math.max(32, Math.round(mapEl.clientHeight * 0.08))
-      ],
-      paddingBottomRight: [
-        Math.max(36, Math.round(mapEl.clientWidth * 0.08)),
-        Math.max(120, Math.round(mapEl.clientHeight * 0.18))
-      ],
-      maxZoom: 8,
-      minZoom: 4,
-      immediate: immediate
-    });
-  }
-
-  function fitEntries(entries, options) {
-    var immediate = options.immediate || prefersReducedMotion();
-    var minZoom = options.minZoom || 0;
-
-    if (entries.length === 1) {
-      var singleZoom = Math.max(minZoom, Math.min(options.maxZoom || 13, 13));
-      map.setView(entries[0].latlng, singleZoom, { animate: !immediate });
-      return;
-    }
-
-    var bounds = L.latLngBounds(entries.map(function (entry) { return entry.latlng; }));
-    var pad = options.padding
-      ? L.point(options.padding[0], options.padding[1])
-      : L.point(
-          (options.paddingTopLeft ? options.paddingTopLeft[0] : 0) + (options.paddingBottomRight ? options.paddingBottomRight[0] : 0),
-          (options.paddingTopLeft ? options.paddingTopLeft[1] : 0) + (options.paddingBottomRight ? options.paddingBottomRight[1] : 0)
-        );
-    var fitZoom = map.getBoundsZoom(bounds, false, pad);
-    if (options.maxZoom) fitZoom = Math.min(fitZoom, options.maxZoom);
-    if (minZoom) fitZoom = Math.max(fitZoom, minZoom);
-
-    var center = weightedCentroid(entries);
-    if (options.paddingTopLeft || options.paddingBottomRight) {
-      var tl = options.paddingTopLeft || [0, 0];
-      var br = options.paddingBottomRight || [0, 0];
-      var centerPoint = map.project(center, fitZoom);
-      centerPoint = centerPoint.add(L.point((tl[0] - br[0]) / 2, (tl[1] - br[1]) / 2));
-      center = map.unproject(centerPoint, fitZoom);
-    }
-
-    map.setView(center, fitZoom, { animate: !immediate });
-  }
-
-  function renderPins() {
-    if (!map) return;
-
-    ["places", "honeymoon"].forEach(function (mode) {
-      var visibleEntries = [];
-      (entriesByMode[mode] || []).forEach(function (entry, idx) {
-        var isActiveMode = mode === activeMode;
-        if (!isActiveMode) {
-          entry.element.style.display = "none";
-          setPinScale(entry, 1);
-          return;
-        }
-
-        var point = map.latLngToContainerPoint(entry.latlng);
-        var overflow = mode === "honeymoon" ? 240 : 80;
-        var isVisible =
-          point.x >= -overflow &&
-          point.y >= -overflow &&
-          point.x <= mapEl.clientWidth + overflow &&
-          point.y <= mapEl.clientHeight + overflow;
-
-        entry.element.style.display = isVisible ? "" : "none";
-        setPinScale(entry, 1);
-        setPinOffset(entry, 0, 0);
-
-        if (!isVisible) {
-          return;
-        }
-
-        entry.element.style.left = point.x + "px";
-        entry.element.style.top = point.y + "px";
-        entry.element.classList.toggle("places-pin--active", mode === "places" && idx === getActivePlaceIndex());
-        visibleEntries.push(entry);
-      });
-
-      applyOverlapLayout(visibleEntries, mode);
-    });
   }
 
   function applyOverlapLayout(entries, mode) {

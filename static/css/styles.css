@@ -3538,70 +3538,20 @@ td [role="switch"] { margin: 0; }
 /* ---------------------------------------------------------------
    places section
    --------------------------------------------------------------- */
-.timeline-story {
-  position: relative;
-  z-index: 0;
-}
-
 .timeline-story-map-shell {
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  margin-bottom: -100vh;
-  z-index: 1;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
   overflow: hidden;
-}
-
-.timeline-story > .vp-places,
-.timeline-story > .vp-honeymoon {
-  z-index: 2;
-  pointer-events: none;
-}
-
-.timeline-story > .vp-places > *,
-.timeline-story > .vp-honeymoon > * {
-  pointer-events: auto;
 }
 
 .timeline-story-map-shell > .places-map-background,
-.timeline-story-map-shell > .places-pins-layer,
-.timeline-story-map-shell > .places-filter-defs {
-  position: absolute;
-  inset: 0;
-}
-
-.timeline-story-map-shell > .places-map-background {
-  z-index: 0;
-}
-
 .timeline-story-map-shell > .places-pins-layer {
-  z-index: 2;
-}
-
-.vp-places,
-.vp-honeymoon {
-  overflow: hidden;
-  justify-content: flex-start;
-  background: transparent;
-}
-
-.timeline-story > .vp-places::before,
-.timeline-story > .vp-honeymoon::before {
-  content: '';
   position: absolute;
   inset: 0;
-  z-index: 0;
-  pointer-events: none;
-}
-
-.vp-places::after,
-.vp-honeymoon::after {
-  z-index: 1;
 }
 
 .timeline-story-map-shell > .places-map-background {
-  position: absolute;
-  inset: 0;
   z-index: 0;
   opacity: 0.72;
   filter: grayscale(0.04) brightness(0.88) saturate(0.92);
@@ -3622,16 +3572,37 @@ td [role="switch"] { margin: 0; }
   pointer-events: none;
 }
 
+.vp-places,
+.vp-honeymoon {
+  overflow: hidden;
+  justify-content: flex-start;
+  background: transparent;
+}
+
+.vp-places::before,
+.vp-honeymoon::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.vp-places::after,
+.vp-honeymoon::after {
+  z-index: 1;
+}
+
 .vp-places > .vp-arrow,
 .vp-honeymoon > .vp-arrow {
   z-index: 4;
 }
 
 .vp-places > .vp-section-inner,
-.vp-places > #places-data,
+.vp-places > .timeline-data,
 .vp-places > #places-modal,
 .vp-honeymoon > .vp-section-inner,
-.vp-honeymoon > #honeymoon-data {
+.vp-honeymoon > .timeline-data {
   z-index: 3;
 }
 
