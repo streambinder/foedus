@@ -247,6 +247,7 @@
       fitEntries(entries, {
         padding: [80, 80],
         maxZoom: 14,
+        minZoom: 6,
         immediate: immediate
       });
       return;
@@ -261,42 +262,43 @@
         Math.max(36, Math.round(mapEl.clientWidth * 0.08)),
         Math.max(120, Math.round(mapEl.clientHeight * 0.18))
       ],
-      maxZoom: entries.length > 1 ? 8 : 8,
+      maxZoom: 8,
+      minZoom: 4,
       immediate: immediate
     });
   }
 
   function fitEntries(entries, options) {
     var immediate = options.immediate || prefersReducedMotion();
+    var minZoom = options.minZoom || 0;
+
     if (entries.length === 1) {
-      var singleZoom = Math.min(options.maxZoom || 13, 13);
-      if (immediate) {
-        map.setView(entries[0].latlng, singleZoom, { animate: false });
-      } else {
-        map.setView(entries[0].latlng, singleZoom, { animate: true });
-      }
+      var singleZoom = Math.max(minZoom, Math.min(options.maxZoom || 13, 13));
+      map.setView(entries[0].latlng, singleZoom, { animate: !immediate });
       return;
     }
 
     var bounds = L.latLngBounds(entries.map(function (entry) { return entry.latlng; }));
-    if (immediate) {
-      map.fitBounds(bounds, {
-        padding: options.padding,
-        paddingTopLeft: options.paddingTopLeft,
-        paddingBottomRight: options.paddingBottomRight,
-        maxZoom: options.maxZoom,
-        animate: false
-      });
-      return;
+    var pad = options.padding
+      ? L.point(options.padding[0], options.padding[1])
+      : L.point(
+          (options.paddingTopLeft ? options.paddingTopLeft[0] : 0) + (options.paddingBottomRight ? options.paddingBottomRight[0] : 0),
+          (options.paddingTopLeft ? options.paddingTopLeft[1] : 0) + (options.paddingBottomRight ? options.paddingBottomRight[1] : 0)
+        );
+    var fitZoom = map.getBoundsZoom(bounds, false, pad);
+    if (options.maxZoom) fitZoom = Math.min(fitZoom, options.maxZoom);
+    if (minZoom) fitZoom = Math.max(fitZoom, minZoom);
+
+    var center = weightedCentroid(entries);
+    if (options.paddingTopLeft || options.paddingBottomRight) {
+      var tl = options.paddingTopLeft || [0, 0];
+      var br = options.paddingBottomRight || [0, 0];
+      var centerPoint = map.project(center, fitZoom);
+      centerPoint = centerPoint.add(L.point((tl[0] - br[0]) / 2, (tl[1] - br[1]) / 2));
+      center = map.unproject(centerPoint, fitZoom);
     }
 
-    map.fitBounds(bounds, {
-      padding: options.padding,
-      paddingTopLeft: options.paddingTopLeft,
-      paddingBottomRight: options.paddingBottomRight,
-      maxZoom: options.maxZoom,
-      animate: true
-    });
+    map.setView(center, fitZoom, { animate: !immediate });
   }
 
   function renderPins() {
@@ -443,6 +445,15 @@
       x: Math.cos(angle),
       y: Math.sin(angle)
     };
+  }
+
+  function weightedCentroid(entries) {
+    var sumLat = 0, sumLng = 0;
+    entries.forEach(function (entry) {
+      sumLat += entry.latlng.lat;
+      sumLng += entry.latlng.lng;
+    });
+    return L.latLng(sumLat / entries.length, sumLng / entries.length);
   }
 
   function normalizeVector(dx, dy) {
