@@ -2046,6 +2046,7 @@ body.invitation-opening {
   color: rgba(42, 52, 57, 0.72);
   background: rgba(255, 255, 255, 0.34);
   backdrop-filter: blur(6px);
+  font-size: var(--fs-base);
 }
 
 .invitation-replay button:hover,
@@ -2741,7 +2742,6 @@ body.invitation-opening {
   margin-top: var(--sp-3);
   border: 0;
   box-shadow: none;
-  font-size: var(--fs-base);
   min-height: 2.75rem;
   text-transform: lowercase;
 }
