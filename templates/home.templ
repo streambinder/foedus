@@ -140,7 +140,7 @@ func heroBackgroundStyle(image string) templ.SafeCSS {
 	return templ.SafeCSS("background-image:url(" + image + ");")
 }
 
-templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBackground, registryItems []models.RegistryItem, claimedAmounts map[int]int, bankConfigured bool, chatEnabled bool, t i18n.T, lang string, ogMeta OGMeta) {
+templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBackground, registryItems []models.RegistryItem, claimedAmounts map[int]int, bankConfigured bool, chatEnabled bool, soundtrackEnabled bool, t i18n.T, lang string, ogMeta OGMeta) {
 	@Layout(settings.Spouse1Name+" & "+settings.Spouse2Name, lang, t, ogMeta, len(settings.Places) > 0 || len(settings.HoneymoonLocations) > 0) {
 		<!-- section 1: title -->
 		<section id="landing" class={ templ.Classes("vp-section", "vp-hero", templ.KV("vp-hero--with-background", heroBackground.DesktopImage != "" || heroBackground.MobileImage != "")) }>
@@ -286,6 +286,23 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 						<h2 class="section-title">{ t("home.soundtrack") }</h2>
 						if t("home.soundtrack_description") != "" {
 							<p class="section-subtitle">{ t("home.soundtrack_description") }</p>
+						}
+						if soundtrackEnabled {
+							<div
+								class="soundtrack-search"
+								data-msg-added={ t("soundtrack.added") }
+								data-msg-error={ t("soundtrack.error") }
+								data-msg-rate={ t("soundtrack.rate_limited") }
+							>
+								<input
+									type="text"
+									class="soundtrack-search-input"
+									placeholder={ t("soundtrack.search_placeholder") }
+									maxlength="100"
+									autocomplete="off"
+								/>
+								<div class="soundtrack-results"></div>
+							</div>
 						}
 					</div>
 				</div>
@@ -943,7 +960,10 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 		if len(settings.Places) > 0 || len(settings.HoneymoonLocations) > 0 {
 			<script src="/static/places.js" defer></script>
 		}
-		if chatEnabled {
+		if soundtrackEnabled {
+				<script src="/static/soundtrack.js" defer></script>
+			}
+			if chatEnabled {
 			<div id="chat-bubble" title={ t("chat.title") }>
 				<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
 			</div>

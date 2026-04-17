@@ -54,6 +54,7 @@ func Home(c *fiber.Ctx) error {
 	lang := getLang(c)
 	bankConfigured := settings.BankAccountIBAN != "" && settings.BankAccountHolder != ""
 	chatEnabled := ChatEnabled() && len(settings.Impersonations) > 0
+	soundtrackEnabled := SoundtrackEnabled()
 	baseURL := c.Protocol() + "://" + c.Hostname()
 	var ogDescParts []string
 	if settings.CeremonyDatetime != "" {
@@ -70,5 +71,5 @@ func Home(c *fiber.Ctx) error {
 		settings,
 	)
 	heroBackground := pickHomepageHeroBackground(settings.HomepageHeroBackgrounds)
-	return Render(c, templates.Home(settings, heroBackground, registryItems, claimedAmounts, bankConfigured, chatEnabled, i18n.NewTWithOverrides(lang, settings.HomepageLabels[lang]), lang, ogMeta))
+	return Render(c, templates.Home(settings, heroBackground, registryItems, claimedAmounts, bankConfigured, chatEnabled, soundtrackEnabled, i18n.NewTWithOverrides(lang, settings.HomepageLabels[lang]), lang, ogMeta))
 }

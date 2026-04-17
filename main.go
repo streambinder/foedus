@@ -11,6 +11,7 @@ import (
 	"github.com/streambinder/foedus/internal/database"
 	"github.com/streambinder/foedus/internal/handlers"
 	"github.com/streambinder/foedus/internal/middleware"
+	"github.com/streambinder/foedus/internal/spotify"
 )
 
 func main() {
@@ -27,6 +28,8 @@ func main() {
 	}
 	handlers.InitChat(openrouterKey, openrouterModel)
 
+	spotify.Init(os.Getenv("SPOTIFY_CLIENT_ID"), os.Getenv("SPOTIFY_CLIENT_SECRET"), os.Getenv("SPOTIFY_REFRESH_TOKEN"))
+
 	app := fiber.New(fiber.Config{
 		BodyLimit: 16 * 1024 * 1024,
 	})
@@ -39,6 +42,8 @@ func main() {
 	app.Get("/og-image", handlers.OGImage)
 	app.Post("/gift/claim", handlers.ClaimGift)
 	app.Post("/chat", handlers.ChatStream)
+	app.Get("/soundtrack/search", handlers.SoundtrackSearch)
+	app.Post("/soundtrack/add", handlers.SoundtrackAdd)
 
 	// admin group (must be registered before the /:code catch-all)
 	admin := app.Group("/dashboard", middleware.BasicAuth())

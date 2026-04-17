@@ -220,6 +220,10 @@ var translations = map[string]map[string]string{
 		// spotify playlists
 		"home.soundtrack":                 "Soundtrack",
 		"home.soundtrack_description":     "Help us out building the playlist for the big day by collaborating on Spotify!",
+		"soundtrack.search_placeholder":   "Search for a song to add...",
+		"soundtrack.added":                "Added to playlist!",
+		"soundtrack.error":                "Could not add track, try again",
+		"soundtrack.rate_limited":         "Too many requests, slow down",
 		"dashboard.playlists":             "Collaborative Playlist",
 		"dashboard.playlists_description": "Set the Spotify collaborative playlist embedded in the homepage soundtrack section",
 		"label.playlist_url":              "Spotify playlist URL",
@@ -466,6 +470,10 @@ var translations = map[string]map[string]string{
 		// spotify playlists
 		"home.soundtrack":                 "Colonna sonora",
 		"home.soundtrack_description":     "Dateci una mano a creare la playlist del grande giorno collaborando su Spotify!",
+		"soundtrack.search_placeholder":   "Cerca un brano da aggiungere...",
+		"soundtrack.added":                "Aggiunto alla playlist!",
+		"soundtrack.error":                "Impossibile aggiungere il brano, riprova",
+		"soundtrack.rate_limited":         "Troppe richieste, rallenta",
 		"dashboard.playlists":             "Playlist Collaborativa",
 		"dashboard.playlists_description": "Imposta la playlist collaborativa di Spotify incorporata nella sezione soundtrack della homepage",
 		"label.playlist_url":              "URL playlist Spotify",
@@ -524,6 +532,7 @@ var translations = map[string]map[string]string{
 var HomepageKeys = []string{
 	"home.getting_married", "home.venues", "home.venues_description", "home.ceremony", "home.reception",
 	"home.soundtrack", "home.soundtrack_description",
+	"soundtrack.search_placeholder", "soundtrack.added", "soundtrack.error", "soundtrack.rate_limited",
 	"home.places", "home.places_description",
 	"home.honeymoon", "home.honeymoon_description",
 	"home.accommodations", "home.accommodations_description",
