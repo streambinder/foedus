@@ -36,13 +36,16 @@ func ClaimGift(c *fiber.Ctx) error {
 		if err != nil {
 			return c.Status(404).JSON(fiber.Map{"error": "item not found"})
 		}
-		claimed, err := database.GetClaimedAmountsByItem()
-		if err != nil {
-			return c.Status(500).JSON(fiber.Map{"error": "internal error"})
-		}
-		remaining := item.Price - claimed[item.ID]
-		if req.Amount > remaining {
-			return c.Status(400).JSON(fiber.Map{"error": "amount exceeds remaining"})
+		// price=0 means open-ended (free gift style), no cap on amount
+		if item.Price > 0 {
+			claimed, err := database.GetClaimedAmountsByItem()
+			if err != nil {
+				return c.Status(500).JSON(fiber.Map{"error": "internal error"})
+			}
+			remaining := item.Price - claimed[item.ID]
+			if req.Amount > remaining {
+				return c.Status(400).JSON(fiber.Map{"error": "amount exceeds remaining"})
+			}
 		}
 	}
 

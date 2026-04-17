@@ -11,6 +11,9 @@ import (
 )
 
 func remainingAmount(item models.RegistryItem, claimed map[int]int) int {
+	if item.Price <= 0 {
+		return -1
+	}
 	remaining := item.Price - claimed[item.ID]
 	if remaining <= 0 {
 		return 0
@@ -409,25 +412,27 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 						</div>
 						<div class="registry-v2-carousel">
 							for _, item := range registryItems {
-								<div class={ "gift-tile", templ.KV("gift-tile--gifted", remainingAmount(item, claimedAmounts) <= 0) }>
+								<div class={ "gift-tile", templ.KV("gift-tile--gifted", remainingAmount(item, claimedAmounts) == 0) }>
 									if item.Image != "" {
 										<div class="gift-tile-image">
 											<img src={ item.Image } alt={ item.Name }/>
-											<span class="gift-tile-price">{ formatPrice(item.Price) }</span>
-											if remainingAmount(item, claimedAmounts) <= 0 {
+											if item.Price > 0 {
+												<span class="gift-tile-price">{ formatPrice(item.Price) }</span>
+											}
+											if remainingAmount(item, claimedAmounts) == 0 {
 												<span class="gift-tile-gifted-ribbon">{ t("badge.sold") }</span>
 											}
 										</div>
 									}
 									<div class="gift-tile-body">
 										<h3>{ item.Name }</h3>
-										if claimedAmounts[item.ID] > 0 || remainingAmount(item, claimedAmounts) <= 0 {
+										if item.Price > 0 && (claimedAmounts[item.ID] > 0 || remainingAmount(item, claimedAmounts) == 0) {
 											<div class="gift-tile-progress">
 												<div class="gift-tile-progress-track">
 													<div class="gift-tile-progress-fill" style={ fmt.Sprintf("width:%d%%", claimedPercent(item, claimedAmounts)) }></div>
 												</div>
 												<span class="gift-tile-progress-label">
-													if remainingAmount(item, claimedAmounts) <= 0 {
+													if remainingAmount(item, claimedAmounts) == 0 {
 														{ t("badge.sold") }
 													} else {
 														{ formatPrice(remainingAmount(item, claimedAmounts)) } { t("home.remaining") }
@@ -435,13 +440,21 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 												</span>
 											</div>
 										}
-										if remainingAmount(item, claimedAmounts) > 0 {
+										if item.Price > 0 && remainingAmount(item, claimedAmounts) > 0 {
 											<button
 												type="button"
 												class="gift-tile-btn"
 												data-item-id={ strconv.Itoa(item.ID) }
 												data-item-name={ item.Name }
 												data-item-remaining={ strconv.Itoa(remainingAmount(item, claimedAmounts)) }
+											>{ t("btn.buy") }</button>
+										}
+										if item.Price == 0 {
+											<button
+												type="button"
+												class="gift-tile-btn free-item-buy-btn"
+												data-item-id={ strconv.Itoa(item.ID) }
+												data-item-name={ item.Name }
 											>{ t("btn.buy") }</button>
 										}
 									</div>
@@ -842,12 +855,12 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 					document.querySelectorAll(".pct-btn").forEach(function (b) {
 						b.classList.remove("selected");
 					});
-					var max = currentItemId !== null ? parseInt(this.max) : 0;
+					var max = this.max ? parseInt(this.max) : 0;
 					var val = Number(this.value);
 					if (
 						Number.isInteger(val) &&
 						val > 0 &&
-						(currentItemId === null || val <= max)
+						(max === 0 || val <= max)
 					) {
 						currentAmount = val;
 						document.getElementById("pct-next").disabled = false;
@@ -893,6 +906,27 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 						openModal(pctModal);
 					});
 				}
+
+				// price=0 registry items — free-form amount with item ID
+				document
+					.querySelectorAll(".free-item-buy-btn")
+					.forEach(function (btn) {
+						btn.addEventListener("click", function () {
+							currentItemId = parseInt(btn.dataset.itemId);
+							currentAmount = 0;
+							document.getElementById("pct-item-name").textContent =
+								btn.dataset.itemName;
+							document.getElementById("pct-item-price").textContent = "";
+							document.querySelectorAll(".pct-btn").forEach(function (pb) {
+								pb.style.display = "none";
+							});
+							document.getElementById("pct-custom").value = "";
+							document.getElementById("pct-custom").step = "1";
+							document.getElementById("pct-custom").removeAttribute("max");
+							document.getElementById("pct-next").disabled = true;
+							openModal(pctModal);
+						});
+					});
 
 				function openTransferModal() {
 					var reason = "Regalo di nozze";

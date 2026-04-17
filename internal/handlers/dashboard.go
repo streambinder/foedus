@@ -537,7 +537,7 @@ func AddRegistryItem(c *fiber.Ctx) error {
 		return c.Status(400).SendString("name is required")
 	}
 	price, err := strconv.Atoi(c.FormValue("price"))
-	if err != nil || price < 1 {
+	if err != nil || price < 0 {
 		return c.Status(400).SendString("invalid price")
 	}
 	image := c.FormValue("image")
@@ -585,7 +585,7 @@ func UpdateRegistryItem(c *fiber.Ctx) error {
 		return c.Status(400).SendString("name is required")
 	}
 	price, err := strconv.Atoi(c.FormValue("price"))
-	if err != nil || price < 1 {
+	if err != nil || price < 0 {
 		return c.Status(400).SendString("invalid price")
 	}
 	image := c.FormValue("image")
