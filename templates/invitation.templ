@@ -136,7 +136,7 @@ templ Invitation(inv models.Invitation, settings models.WeddingSettings, polls [
 						<form method="POST" action={ templ.SafeURL("/" + inv.Code + "/rsvp") } id="rsvp-form" class={ templ.KV("rsvp-form-locked", invitationAnswered(inv)) }>
 							for i, g := range inv.Guests {
 								<div class="rsvp-guest">
-									<span class="rsvp-name"><span class="rsvp-name-number">{ strconv.Itoa(i + 1) }.</span>{ g.FirstName } { g.LastName }</span>
+									<span class="rsvp-name"><span class="rsvp-name-number">{ strconv.Itoa(i + 1) }.</span>{ g.FirstName }</span>
 									<div class="rsvp-fields">
 										<div class="rsvp-radio-group" role="group" aria-labelledby={ "ceremony_label_" + strconv.Itoa(g.ID) }>
 											<span class="rsvp-radio-legend" id={ "ceremony_label_" + strconv.Itoa(g.ID) }>{ t("th.ceremony") }</span>
