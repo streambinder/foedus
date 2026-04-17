@@ -482,11 +482,11 @@ var translations = map[string]map[string]string{
 		// places
 		"home.places":                     "I nostri luoghi",
 		"home.places_description":         "",
-		"home.honeymoon":                  "Luna di miele",
+		"home.honeymoon":                  "Viaggio di nozze",
 		"home.honeymoon_description":      "",
 		"dashboard.places":                "Luoghi",
 		"dashboard.places_description":    "Foto e luoghi che segnano la vostra storia, mostrati nella mappa in homepage",
-		"dashboard.honeymoon":             "Luna di miele",
+		"dashboard.honeymoon":             "Viaggio di nozze",
 		"dashboard.honeymoon_description": "Luoghi, etichette e foto del viaggio di nozze mostrati nella mappa in homepage",
 		"label.place_label":               "Etichetta",
 		"label.place_address":             "Indirizzo",
