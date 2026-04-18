@@ -128,7 +128,10 @@ templ Invitation(inv models.Invitation, settings models.WeddingSettings, polls [
 						if invitationAnswered(inv) {
 							<div id="rsvp-locked">
 								<p class="rsvp-subtitle rsvp-answered-notice">{ t("invitation.already_answered") }</p>
-								<button type="button" id="rsvp-unlock-btn" class="secondary outline">{ t("invitation.change_answer") }</button>
+								<div class="rsvp-locked-actions">
+									<a href="/" class="secondary outline rsvp-action-btn"><span class="rsvp-btn-icon rsvp-btn-icon-home" aria-hidden="true"></span>{ t("invitation.go_home") }</a>
+									<button type="button" id="rsvp-unlock-btn" class="secondary outline rsvp-action-btn"><span class="rsvp-btn-icon rsvp-btn-icon-edit" aria-hidden="true"></span>{ t("invitation.change_answer") }</button>
+								</div>
 							</div>
 						} else {
 							<p class="rsvp-subtitle">{ t("invitation.rsvp_description") }</p>
