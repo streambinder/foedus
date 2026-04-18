@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"database/sql"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -36,6 +37,7 @@ func ViewInvitation(c *fiber.Ctx) error {
 	}
 
 	lang := getLang(c)
+	t := i18n.NewTWithOverrides(lang, settings.HomepageLabels[lang])
 	baseURL := c.Protocol() + "://" + c.Hostname()
 	var ogDescParts []string
 	if settings.CeremonyDatetime != "" {
@@ -44,14 +46,15 @@ func ViewInvitation(c *fiber.Ctx) error {
 	if ogLocation := ogCeremonyLocation(settings); ogLocation != "" {
 		ogDescParts = append(ogDescParts, ogLocation)
 	}
+	title := invitationTitle(t, inv, settings.Spouse1Name, settings.Spouse2Name)
 	ogMeta := BuildOGMeta(
 		baseURL,
 		baseURL+"/"+code,
-		settings.Spouse1Name+" & "+settings.Spouse2Name,
+		title,
 		strings.Join(ogDescParts, " · "),
 		settings,
 	)
-	return Render(c, templates.Invitation(inv, settings, polls, inv.ViewedAt != nil, i18n.NewTWithOverrides(lang, settings.HomepageLabels[lang]), lang, ogMeta))
+	return Render(c, templates.Invitation(inv, settings, polls, inv.ViewedAt != nil, t, lang, ogMeta, title))
 }
 
 func MarkInvitationViewed(c *fiber.Ctx) error {
@@ -103,6 +106,23 @@ func UpdateInvitationRSVP(c *fiber.Ctx) error {
 	}
 
 	return c.Redirect("/" + code)
+}
+
+func invitationTitle(t i18n.T, inv models.Invitation, spouse1, spouse2 string) string {
+	label := t("invitation.title")
+	switch len(inv.Guests) {
+	case 0:
+	case 1:
+		label += " " + inv.Guests[0].FirstName
+	case 2:
+		label += " " + inv.Guests[0].FirstName + " & " + inv.Guests[1].FirstName
+	default:
+		label += " " + inv.Guests[0].FirstName + " + " + fmt.Sprintf("%d", len(inv.Guests)-1)
+	}
+	if spouse1 != "" && spouse2 != "" {
+		label += " · " + spouse1 + " & " + spouse2
+	}
+	return label
 }
 
 func parseRSVPField(val string) *bool {

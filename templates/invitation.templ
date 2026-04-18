@@ -33,8 +33,8 @@ func invitationAnswered(inv models.Invitation) bool {
 	return false
 }
 
-templ Invitation(inv models.Invitation, settings models.WeddingSettings, polls []models.Poll, alreadyViewed bool, t i18n.T, lang string, ogMeta OGMeta) {
-	@Layout(pageTitle(t("invitation.title"), settings.Spouse1Name, settings.Spouse2Name), lang, t, ogMeta, false) {
+templ Invitation(inv models.Invitation, settings models.WeddingSettings, polls []models.Poll, alreadyViewed bool, t i18n.T, lang string, ogMeta OGMeta, title string) {
+	@Layout(title, lang, t, ogMeta, false) {
 		<div id="envelope-overlay" class={ templ.KV("is-complete", alreadyViewed) }>
 			<div id="envelope-open-button" role="button" tabindex="0" aria-label={ t("invitation.title") }></div>
 			<div class="envelope">
