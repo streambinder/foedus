@@ -189,9 +189,14 @@ templ Invitation(inv models.Invitation, settings models.WeddingSettings, polls [
 											for _, p := range polls {
 												<div class="rsvp-poll-item">
 													<div class="rsvp-radio-group rsvp-poll-group" role="group" aria-labelledby={ "poll_label_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }>
-														<span class="rsvp-radio-legend rsvp-poll-label" id={ "poll_label_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }>
-															{ p.Question }
-														</span>
+														<div class="rsvp-poll-text">
+															<span class="rsvp-radio-legend rsvp-poll-label" id={ "poll_label_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }>
+																{ p.Question }
+															</span>
+															if p.Description != "" {
+																<span class="rsvp-poll-description">{ p.Description }</span>
+															}
+														</div>
 														<div class="rsvp-radio-options">
 															<label>
 																if guestAnsweredYes(g, p.ID) {

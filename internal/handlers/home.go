@@ -58,10 +58,10 @@ func Home(c *fiber.Ctx) error {
 	baseURL := c.Protocol() + "://" + c.Hostname()
 	var ogDescParts []string
 	if settings.CeremonyDatetime != "" {
-		ogDescParts = append(ogDescParts, i18n.FormatDatetime(settings.CeremonyDatetime, lang))
+		ogDescParts = append(ogDescParts, i18n.FormatDatetimeUniversal(settings.CeremonyDatetime))
 	}
-	if settings.CeremonyLocation != "" {
-		ogDescParts = append(ogDescParts, settings.CeremonyLocation)
+	if ogLocation := ogCeremonyLocation(settings); ogLocation != "" {
+		ogDescParts = append(ogDescParts, ogLocation)
 	}
 	ogMeta := BuildOGMeta(
 		baseURL,

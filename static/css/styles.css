@@ -2746,6 +2746,17 @@ body.invitation-opening {
   min-height: 0;
 }
 
+.rsvp-poll-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+
+.rsvp-poll-description {
+  font-size: 0.85em;
+  opacity: 0.6;
+}
+
 .rsvp-poll-notes {
   margin-top: var(--sp-2);
 }

@@ -6,6 +6,7 @@
     var dropdown = document.getElementById(config.dropdownId);
     var nameHidden = document.getElementById(config.nameHiddenId);
     var addressHidden = document.getElementById(config.addressHiddenId);
+    var cityHidden = document.getElementById(config.cityHiddenId);
     if (!input || !dropdown || !nameHidden || !addressHidden) return;
 
     var debounceTimer = null;
@@ -51,6 +52,11 @@
       activeIndex = idx;
     }
 
+    function extractCity(item) {
+      if (!item.address) return "";
+      return item.address.city || item.address.town || item.address.village || item.address.municipality || "";
+    }
+
     function select(idx) {
       var item = results[idx];
       if (!item) return;
@@ -58,6 +64,7 @@
       var address = extractAddress(item, name);
       nameHidden.value = name;
       addressHidden.value = address;
+      if (cityHidden) cityHidden.value = extractCity(item);
       input.value = name + (address ? ", " + address : "");
       hide();
     }
@@ -101,6 +108,7 @@
     input.addEventListener("input", function () {
       nameHidden.value = "";
       addressHidden.value = "";
+      if (cityHidden) cityHidden.value = "";
       clearTimeout(debounceTimer);
       var q = input.value.trim();
       if (q.length < 3) {
@@ -142,11 +150,13 @@
     dropdownId: "ceremony-dropdown",
     nameHiddenId: "ceremony-address-hidden",
     addressHiddenId: "ceremony-location-hidden",
+    cityHiddenId: "ceremony-city-hidden",
   });
   initAutocomplete({
     inputId: "reception-input",
     dropdownId: "reception-dropdown",
     nameHiddenId: "reception-address-hidden",
     addressHiddenId: "reception-location-hidden",
+    cityHiddenId: "reception-city-hidden",
   });
 })();

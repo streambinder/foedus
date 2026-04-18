@@ -33,6 +33,20 @@ func BuildOGMeta(baseURL, pageURL, title, description string, settings models.We
 	}
 }
 
+func ogCeremonyLocation(settings models.WeddingSettings) string {
+	var parts []string
+	if settings.CeremonyAddress != "" {
+		parts = append(parts, settings.CeremonyAddress)
+	}
+	if settings.CeremonyCity != "" {
+		parts = append(parts, settings.CeremonyCity)
+	}
+	if len(parts) > 0 {
+		return strings.Join(parts, ", ")
+	}
+	return settings.CeremonyLocation
+}
+
 func sharePreviewMetadata(dataURI string) (string, string, string) {
 	if dataURI == "" {
 		return defaultOGImageType, defaultOGImageWidth, defaultOGImageHeight

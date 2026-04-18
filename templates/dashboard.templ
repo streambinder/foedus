@@ -129,6 +129,7 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 						<div id="ceremony-dropdown" class="autocomplete-dropdown"></div>
 						<input type="hidden" name="ceremony_address" id="ceremony-address-hidden" value={ settings.CeremonyAddress }/>
 						<input type="hidden" name="ceremony_location" id="ceremony-location-hidden" value={ settings.CeremonyLocation }/>
+						<input type="hidden" name="ceremony_city" id="ceremony-city-hidden" value={ settings.CeremonyCity }/>
 					</div>
 					<input type="datetime-local" name="ceremony_datetime" value={ settings.CeremonyDatetime }/>
 				</div>
@@ -148,6 +149,7 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 					<div id="reception-dropdown" class="autocomplete-dropdown"></div>
 					<input type="hidden" name="reception_address" id="reception-address-hidden" value={ settings.ReceptionAddress }/>
 					<input type="hidden" name="reception_location" id="reception-location-hidden" value={ settings.ReceptionLocation }/>
+					<input type="hidden" name="reception_city" id="reception-city-hidden" value={ settings.ReceptionCity }/>
 				</div>
 				<div class="venue-image-row">
 					<input type="file" id="reception-file" accept="image/*" class="venue-file-input"/>
@@ -856,10 +858,9 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 						<div class="accordion-body dashboard-subsection-body">
 							<form class="add-poll-form" method="POST" action="/dashboard/polls">
 								<input type="hidden" name="_csrf" value={ csrfToken }/>
-								<div class="grid">
-									<input type="text" name="question" placeholder={ t("placeholder.question") } required/>
-									<button type="submit">{ t("btn.add") }</button>
-								</div>
+								<input type="text" name="question" placeholder={ t("placeholder.question") } required/>
+								<input type="text" name="description" placeholder={ t("placeholder.description") }/>
+								<button type="submit">{ t("btn.add") }</button>
 							</form>
 							if len(polls) > 0 {
 								<div class="overflow-auto">
@@ -867,6 +868,7 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 										<thead>
 											<tr>
 												<th>{ t("th.question") }</th>
+												<th>{ t("th.description") }</th>
 												<th>{ t("th.yes") }</th>
 												<th>{ t("th.actions") }</th>
 											</tr>
@@ -875,6 +877,7 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 											for _, p := range polls {
 												<tr>
 													<td data-label={ t("th.question") }>{ p.Question }</td>
+													<td data-label={ t("th.description") }>{ p.Description }</td>
 													<td data-label={ t("th.yes") }>
 														if len(p.YesVoters) > 0 {
 															<a href="#" class="poll-yes-link" data-poll-id={ strconv.Itoa(p.ID) }>{ strconv.Itoa(len(p.YesVoters)) }<small>/{ strconv.Itoa(p.TotalCount) }</small></a>
@@ -884,6 +887,7 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 													</td>
 													<td data-label={ t("th.actions") }>
 														<div class="actions">
+															<a href={ templ.SafeURL("/dashboard/polls/" + strconv.Itoa(p.ID) + "/edit") }>{ t("btn.edit") }</a>
 															<form method="POST" action={ templ.SafeURL("/dashboard/polls/" + strconv.Itoa(p.ID) + "/delete") } data-confirm={ t("confirm.delete_poll") } onsubmit="return confirm(this.dataset.confirm)">
 																<input type="hidden" name="_csrf" value={ csrfToken }/>
 																<button type="submit" class="outline secondary">{ t("btn.delete") }</button>
@@ -1170,6 +1174,21 @@ templ EditGift(gift models.Gift, registryItems []models.RegistryItem, settings m
 					</label>
 				</div>
 				<button type="submit">{ t("btn.update_gift") }</button>
+			</form>
+		</article>
+	}
+}
+
+templ EditPoll(poll models.Poll, settings models.WeddingSettings, csrfToken string, t i18n.T, lang string) {
+	@DashboardLayout(pageTitle(t("title.edit_poll"), settings.Spouse1Name, settings.Spouse2Name), lang) {
+		<a href="/dashboard">&larr; { t("btn.back") }</a>
+		<h1>{ t("title.edit_poll") }</h1>
+		<article>
+			<form method="POST" action={ templ.SafeURL("/dashboard/polls/" + strconv.Itoa(poll.ID)) }>
+				<input type="hidden" name="_csrf" value={ csrfToken }/>
+				@settingInput("question", t("th.question"), poll.Question)
+				@settingInput("description", t("th.description"), poll.Description)
+				<button type="submit">{ t("btn.update_poll") }</button>
 			</form>
 		</article>
 	}

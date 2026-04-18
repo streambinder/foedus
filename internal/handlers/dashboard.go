@@ -184,8 +184,8 @@ func SaveSettings(c *fiber.Ctx) error {
 
 	keys := []string{
 		"spouse1_name", "spouse2_name", "ceremony_datetime",
-		"ceremony_address", "ceremony_location",
-		"reception_address", "reception_location",
+		"ceremony_address", "ceremony_location", "ceremony_city",
+		"reception_address", "reception_location", "reception_city",
 		"bank_account_iban", "bank_account_holder",
 	}
 	for _, key := range keys {
@@ -761,10 +761,43 @@ func AddPoll(c *fiber.Ctx) error {
 	if question == "" {
 		return c.Redirect("/dashboard")
 	}
-	if err := database.CreatePoll(question); err != nil {
+	if err := database.CreatePoll(question, strings.TrimSpace(c.FormValue("description"))); err != nil {
 		return c.Status(500).SendString("failed to add poll")
 	}
 	setFlash(c, getT(c)("flash.poll_added"))
+	return c.Redirect("/dashboard")
+}
+
+func EditPollPage(c *fiber.Ctx) error {
+	id, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		return c.Status(400).SendString("invalid id")
+	}
+	poll, err := database.GetPoll(id)
+	if err != nil {
+		return c.Status(404).SendString("poll not found")
+	}
+	settings, err := database.GetAllSettings()
+	if err != nil {
+		return c.Status(500).SendString("failed to load settings")
+	}
+	csrfToken, _ := c.Locals("csrf").(string)
+	return Render(c, templates.EditPoll(poll, settings, csrfToken, getT(c), getLang(c)))
+}
+
+func UpdatePoll(c *fiber.Ctx) error {
+	id, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		return c.Status(400).SendString("invalid id")
+	}
+	question := strings.TrimSpace(c.FormValue("question"))
+	if question == "" {
+		return c.Redirect("/dashboard")
+	}
+	if err := database.UpdatePoll(id, question, strings.TrimSpace(c.FormValue("description"))); err != nil {
+		return c.Status(500).SendString("failed to update poll")
+	}
+	setFlash(c, getT(c)("flash.poll_updated"))
 	return c.Redirect("/dashboard")
 }
 

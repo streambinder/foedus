@@ -850,8 +850,8 @@ code {
     align-items: start;
   }
 
-  .add-poll-form .grid {
-    grid-template-columns: 1fr auto;
+  .add-poll-form {
+    grid-template-columns: 1fr 1fr auto;
   }
 
   .modal-overlay {

@@ -1,8 +1,8 @@
 package middleware
 
 import (
-	"github.com/streambinder/foedus/internal/i18n"
 	"github.com/gofiber/fiber/v2"
+	"github.com/streambinder/foedus/internal/i18n"
 )
 
 func LangDetect() fiber.Handler {

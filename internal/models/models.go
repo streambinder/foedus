@@ -38,9 +38,11 @@ type WeddingSettings struct {
 	Spouse2Name              string
 	CeremonyAddress          string
 	CeremonyLocation         string
+	CeremonyCity             string
 	CeremonyDatetime         string
 	ReceptionAddress         string
 	ReceptionLocation        string
+	ReceptionCity            string
 	CeremonyImage            string
 	ReceptionImage           string
 	BankAccountIBAN          string
@@ -72,11 +74,12 @@ type Guest struct {
 }
 
 type Poll struct {
-	ID         int
-	Question   string
-	TotalCount int      // computed at query time
-	YesVoters  []string // guest names who answered yes
-	CreatedAt  time.Time
+	ID          int
+	Question    string
+	Description string
+	TotalCount  int      // computed at query time
+	YesVoters   []string // guest names who answered yes
+	CreatedAt   time.Time
 }
 
 type PollAnswer struct {

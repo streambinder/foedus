@@ -7,9 +7,20 @@ import (
 	"github.com/streambinder/foedus/internal/models"
 )
 
-func CreatePoll(question string) error {
-	_, err := DB.Exec(`INSERT INTO polls (question) VALUES (?)`, question)
+func CreatePoll(question, description string) error {
+	_, err := DB.Exec(`INSERT INTO polls (question, description) VALUES (?, ?)`, question, description)
 	return err
+}
+
+func UpdatePoll(id int, question, description string) error {
+	_, err := DB.Exec(`UPDATE polls SET question = ?, description = ? WHERE id = ?`, question, description, id)
+	return err
+}
+
+func GetPoll(id int) (models.Poll, error) {
+	var p models.Poll
+	err := DB.QueryRow(`SELECT id, question, description, created_at FROM polls WHERE id = ?`, id).Scan(&p.ID, &p.Question, &p.Description, &p.CreatedAt)
+	return p, err
 }
 
 func DeletePoll(id int) error {
@@ -30,7 +41,7 @@ func DeletePoll(id int) error {
 
 func GetAllPollsWithCounts() ([]models.Poll, error) {
 	rows, err := DB.Query(`
-		SELECT p.id, p.question, p.created_at, COUNT(pa.id)
+		SELECT p.id, p.question, p.description, p.created_at, COUNT(pa.id)
 		FROM polls p
 		LEFT JOIN poll_answers pa ON pa.poll_id = p.id
 		GROUP BY p.id
@@ -43,7 +54,7 @@ func GetAllPollsWithCounts() ([]models.Poll, error) {
 	var polls []models.Poll
 	for rows.Next() {
 		var p models.Poll
-		if err := rows.Scan(&p.ID, &p.Question, &p.CreatedAt, &p.TotalCount); err != nil {
+		if err := rows.Scan(&p.ID, &p.Question, &p.Description, &p.CreatedAt, &p.TotalCount); err != nil {
 			return nil, err
 		}
 		polls = append(polls, p)
@@ -73,7 +84,7 @@ func GetAllPollsWithCounts() ([]models.Poll, error) {
 }
 
 func GetAllPolls() ([]models.Poll, error) {
-	rows, err := DB.Query(`SELECT id, question, created_at FROM polls ORDER BY id`)
+	rows, err := DB.Query(`SELECT id, question, description, created_at FROM polls ORDER BY id`)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +93,7 @@ func GetAllPolls() ([]models.Poll, error) {
 	var polls []models.Poll
 	for rows.Next() {
 		var p models.Poll
-		if err := rows.Scan(&p.ID, &p.Question, &p.CreatedAt); err != nil {
+		if err := rows.Scan(&p.ID, &p.Question, &p.Description, &p.CreatedAt); err != nil {
 			return nil, err
 		}
 		polls = append(polls, p)

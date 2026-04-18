@@ -32,6 +32,7 @@ var translations = map[string]map[string]string{
 		"title.edit_guest": "Edit Guest",
 		"title.edit_item":  "Edit Item",
 		"title.edit_gift":  "Edit Gift",
+		"title.edit_poll":  "Edit Poll",
 		"title.setup":      "Setup Required",
 
 		// dashboard - sections
@@ -83,6 +84,7 @@ var translations = map[string]map[string]string{
 		"btn.update_guest":  "Update Guest",
 		"btn.update_item":   "Update Item",
 		"btn.update_gift":   "Update Gift",
+		"btn.update_poll":   "Update Poll",
 		"btn.edit":          "Edit",
 		"btn.delete":        "Delete",
 		"btn.move_up":       "Move Up",
@@ -181,14 +183,17 @@ var translations = map[string]map[string]string{
 		"th.registry_item": "Item",
 
 		// polls
-		"dashboard.polls":      "Polls",
-		"placeholder.question": "Question",
-		"th.question":          "Question",
-		"th.yes":               "Yes",
-		"th.no":                "No",
-		"flash.poll_added":     "Poll added.",
-		"flash.poll_deleted":   "Poll deleted.",
-		"confirm.delete_poll":  "Delete this poll?",
+		"dashboard.polls":         "Polls",
+		"placeholder.question":    "Question",
+		"placeholder.description": "Description (optional)",
+		"th.question":             "Question",
+		"th.description":          "Description",
+		"th.yes":                  "Yes",
+		"th.no":                   "No",
+		"flash.poll_added":        "Poll added.",
+		"flash.poll_updated":      "Poll updated.",
+		"flash.poll_deleted":      "Poll deleted.",
+		"confirm.delete_poll":     "Delete this poll?",
 
 		// invitations
 		"dashboard.invitations":     "Invitations",
@@ -283,6 +288,7 @@ var translations = map[string]map[string]string{
 		"title.edit_guest": "Modifica Invitato",
 		"title.edit_item":  "Modifica Articolo",
 		"title.edit_gift":  "Modifica Dono",
+		"title.edit_poll":  "Modifica Sondaggio",
 		"title.setup":      "Configurazione necessaria",
 
 		// dashboard - sections
@@ -334,6 +340,7 @@ var translations = map[string]map[string]string{
 		"btn.update_guest":  "Aggiorna Invitato",
 		"btn.update_item":   "Aggiorna Articolo",
 		"btn.update_gift":   "Aggiorna Dono",
+		"btn.update_poll":   "Aggiorna Sondaggio",
 		"btn.edit":          "Modifica",
 		"btn.delete":        "Elimina",
 		"btn.move_up":       "Sposta Su",
@@ -432,14 +439,17 @@ var translations = map[string]map[string]string{
 		"th.registry_item": "Articolo",
 
 		// polls
-		"dashboard.polls":      "Sondaggi",
-		"placeholder.question": "Domanda",
-		"th.question":          "Domanda",
-		"th.yes":               "Sì",
-		"th.no":                "No",
-		"flash.poll_added":     "Sondaggio aggiunto.",
-		"flash.poll_deleted":   "Sondaggio eliminato.",
-		"confirm.delete_poll":  "Eliminare questo sondaggio?",
+		"dashboard.polls":         "Sondaggi",
+		"placeholder.question":    "Domanda",
+		"placeholder.description": "Descrizione (facoltativa)",
+		"th.question":             "Domanda",
+		"th.description":          "Descrizione",
+		"th.yes":                  "Sì",
+		"th.no":                   "No",
+		"flash.poll_added":        "Sondaggio aggiunto.",
+		"flash.poll_updated":      "Sondaggio aggiornato.",
+		"flash.poll_deleted":      "Sondaggio eliminato.",
+		"confirm.delete_poll":     "Eliminare questo sondaggio?",
 
 		// invitations
 		"dashboard.invitations":     "Inviti",
@@ -617,6 +627,19 @@ func FormatDate(t time.Time, lang string) string {
 		return t.Format("2") + " " + italianMonths[t.Month()] + " " + t.Format("2006")
 	}
 	return t.Format("Jan 2, 2006")
+}
+
+// FormatDatetimeUniversal formats a datetime-local string as dd/mm/yyyy HH:MM.
+func FormatDatetimeUniversal(datetimeStr string) string {
+	t, err := time.Parse("2006-01-02T15:04", datetimeStr)
+	if err != nil {
+		t, err = time.Parse("2006-01-02", datetimeStr)
+		if err != nil {
+			return datetimeStr
+		}
+		return t.Format("02/01/2006")
+	}
+	return t.Format("02/01/2006 15:04")
 }
 
 // FormatDatetime parses a datetime-local string (2006-01-02T15:04) and formats it locale-aware.

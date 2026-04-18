@@ -79,6 +79,8 @@ func main() {
 	admin.Post("/invitations", handlers.CreateInvitation)
 	admin.Post("/invitations/:id/delete", handlers.DeleteInvitation)
 	admin.Post("/polls", handlers.AddPoll)
+	admin.Get("/polls/:id/edit", handlers.EditPollPage)
+	admin.Post("/polls/:id", handlers.UpdatePoll)
 	admin.Post("/polls/:id/delete", handlers.DeletePoll)
 
 	// invitation public routes (catch-all, must be last)
