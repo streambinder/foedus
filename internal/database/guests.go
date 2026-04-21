@@ -96,15 +96,15 @@ func GetGuestsPaginated(page, perPage int, search string) ([]models.Guest, int, 
 	} else {
 		pattern := "%" + search + "%"
 		err = DB.QueryRow(
-			`SELECT COUNT(*) FROM guests WHERE first_name LIKE ? OR last_name LIKE ?`,
-			pattern, pattern,
+			`SELECT COUNT(*) FROM guests WHERE first_name LIKE ? OR last_name LIKE ? OR TRIM(COALESCE(first_name, '') || ' ' || COALESCE(last_name, '')) LIKE ?`,
+			pattern, pattern, pattern,
 		).Scan(&total)
 		if err != nil {
 			return nil, 0, err
 		}
 		rows, err = DB.Query(
-			`SELECT id, first_name, last_name, confirmed_ceremony, confirmed_reception, invitation_id, created_at, updated_at FROM guests WHERE first_name LIKE ? OR last_name LIKE ? ORDER BY id DESC LIMIT ? OFFSET ?`,
-			pattern, pattern, perPage, offset,
+			`SELECT id, first_name, last_name, confirmed_ceremony, confirmed_reception, invitation_id, created_at, updated_at FROM guests WHERE first_name LIKE ? OR last_name LIKE ? OR TRIM(COALESCE(first_name, '') || ' ' || COALESCE(last_name, '')) LIKE ? ORDER BY id DESC LIMIT ? OFFSET ?`,
+			pattern, pattern, pattern, perPage, offset,
 		)
 	}
 	if err != nil {
