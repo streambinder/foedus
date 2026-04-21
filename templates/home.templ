@@ -614,20 +614,12 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 				var reducedMotionQuery = window.matchMedia
 					? window.matchMedia("(prefers-reduced-motion: reduce)")
 					: null;
-				var mobileSoundtrackQuery = window.matchMedia
-					? window.matchMedia("(max-width: 640px)")
-					: null;
-
 				function prefersReducedMotion() {
 					return !!(reducedMotionQuery && reducedMotionQuery.matches);
 				}
 
 				function hideChatBubbleForSection(id) {
-					return (
-						id === "landing" ||
-						(!!(mobileSoundtrackQuery && mobileSoundtrackQuery.matches) &&
-							id === "soundtrack")
-					);
+					return id === "landing";
 				}
 
 				function setActiveSection(id) {
