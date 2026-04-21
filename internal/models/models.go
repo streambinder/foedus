@@ -68,6 +68,7 @@ type Guest struct {
 	ConfirmedCeremony  *bool
 	ConfirmedReception *bool
 	InvitationID       *int
+	InvitationOrder    *int
 	PollAnswers        []PollAnswer
 	CreatedAt          time.Time
 	UpdatedAt          time.Time

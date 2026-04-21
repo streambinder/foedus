@@ -2,10 +2,8 @@ package database
 
 import (
 	"crypto/rand"
-	"fmt"
 	"math/big"
 	"sort"
-	"strings"
 
 	"github.com/streambinder/foedus/internal/models"
 )
@@ -39,20 +37,16 @@ func CreateInvitation(guestIDs []int) (string, error) {
 		return "", err
 	}
 
-	// build a single UPDATE with IN clause
-	placeholders := make([]string, len(guestIDs))
-	args := make([]any, 0, len(guestIDs)+1)
-	args = append(args, invitationID)
-	for i, id := range guestIDs {
-		placeholders[i] = "?"
-		args = append(args, id)
-	}
-	_, err = tx.Exec(
-		fmt.Sprintf(`UPDATE guests SET invitation_id = ? WHERE id IN (%s)`, strings.Join(placeholders, ",")),
-		args...,
-	)
+	stmt, err := tx.Prepare(`UPDATE guests SET invitation_id = ?, invitation_guest_order = ? WHERE id = ?`)
 	if err != nil {
 		return "", err
+	}
+	defer stmt.Close()
+
+	for index, id := range guestIDs {
+		if _, err := stmt.Exec(invitationID, index, id); err != nil {
+			return "", err
+		}
 	}
 
 	return code, tx.Commit()
@@ -77,7 +71,10 @@ func GetAllInvitations() ([]models.Invitation, error) {
 	// load guests per invitation
 	for i := range invitations {
 		guestRows, err := DB.Query(
-			`SELECT id, first_name, last_name, confirmed_ceremony, confirmed_reception, invitation_id, created_at, updated_at FROM guests WHERE invitation_id = ? ORDER BY id`,
+			`SELECT id, first_name, last_name, confirmed_ceremony, confirmed_reception, invitation_id, invitation_guest_order, created_at, updated_at
+			FROM guests
+			WHERE invitation_id = ?
+			ORDER BY COALESCE(invitation_guest_order, id), id`,
 			invitations[i].ID,
 		)
 		if err != nil {
@@ -85,7 +82,7 @@ func GetAllInvitations() ([]models.Invitation, error) {
 		}
 		for guestRows.Next() {
 			var g models.Guest
-			if err := guestRows.Scan(&g.ID, &g.FirstName, &g.LastName, &g.ConfirmedCeremony, &g.ConfirmedReception, &g.InvitationID, &g.CreatedAt, &g.UpdatedAt); err != nil {
+			if err := guestRows.Scan(&g.ID, &g.FirstName, &g.LastName, &g.ConfirmedCeremony, &g.ConfirmedReception, &g.InvitationID, &g.InvitationOrder, &g.CreatedAt, &g.UpdatedAt); err != nil {
 				guestRows.Close()
 				return nil, err
 			}
@@ -132,7 +129,7 @@ func DeleteInvitation(id int) error {
 	}
 	defer tx.Rollback()
 
-	if _, err := tx.Exec(`UPDATE guests SET invitation_id = NULL WHERE invitation_id = ?`, id); err != nil {
+	if _, err := tx.Exec(`UPDATE guests SET invitation_id = NULL, invitation_guest_order = NULL WHERE invitation_id = ?`, id); err != nil {
 		return err
 	}
 	if _, err := tx.Exec(`DELETE FROM invitations WHERE id = ?`, id); err != nil {
@@ -175,7 +172,10 @@ func GetInvitationByCode(code string) (models.Invitation, error) {
 	}
 
 	rows, err := DB.Query(
-		`SELECT id, first_name, last_name, confirmed_ceremony, confirmed_reception, invitation_id, created_at, updated_at FROM guests WHERE invitation_id = ? ORDER BY id`,
+		`SELECT id, first_name, last_name, confirmed_ceremony, confirmed_reception, invitation_id, invitation_guest_order, created_at, updated_at
+		FROM guests
+		WHERE invitation_id = ?
+		ORDER BY COALESCE(invitation_guest_order, id), id`,
 		inv.ID,
 	)
 	if err != nil {
@@ -184,7 +184,7 @@ func GetInvitationByCode(code string) (models.Invitation, error) {
 	defer rows.Close()
 	for rows.Next() {
 		var g models.Guest
-		if err := rows.Scan(&g.ID, &g.FirstName, &g.LastName, &g.ConfirmedCeremony, &g.ConfirmedReception, &g.InvitationID, &g.CreatedAt, &g.UpdatedAt); err != nil {
+		if err := rows.Scan(&g.ID, &g.FirstName, &g.LastName, &g.ConfirmedCeremony, &g.ConfirmedReception, &g.InvitationID, &g.InvitationOrder, &g.CreatedAt, &g.UpdatedAt); err != nil {
 			return inv, err
 		}
 		inv.Guests = append(inv.Guests, g)

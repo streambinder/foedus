@@ -36,6 +36,7 @@ func migrate() {
 			confirmed_ceremony  INTEGER,
 			confirmed_reception INTEGER,
 			invitation_id       INTEGER REFERENCES invitations(id),
+			invitation_guest_order INTEGER,
 			created_at          DATETIME DEFAULT CURRENT_TIMESTAMP,
 			updated_at          DATETIME DEFAULT CURRENT_TIMESTAMP
 		)`,
@@ -80,5 +81,39 @@ func migrate() {
 		if _, err := DB.Exec(s); err != nil {
 			log.Fatalf("migration failed: %v", err)
 		}
+	}
+
+	ensureColumn("guests", "invitation_guest_order", `ALTER TABLE guests ADD COLUMN invitation_guest_order INTEGER`)
+	if _, err := DB.Exec(`UPDATE guests SET invitation_guest_order = id WHERE invitation_id IS NOT NULL AND invitation_guest_order IS NULL`); err != nil {
+		log.Fatalf("migration failed: %v", err)
+	}
+}
+
+func ensureColumn(tableName, columnName, alterStmt string) {
+	rows, err := DB.Query(`PRAGMA table_info(` + tableName + `)`)
+	if err != nil {
+		log.Fatalf("migration failed: %v", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var cid int
+		var name string
+		var columnType string
+		var notNull int
+		var defaultValue any
+		var pk int
+		if err := rows.Scan(&cid, &name, &columnType, &notNull, &defaultValue, &pk); err != nil {
+			log.Fatalf("migration failed: %v", err)
+		}
+		if name == columnName {
+			return
+		}
+	}
+	if err := rows.Err(); err != nil {
+		log.Fatalf("migration failed: %v", err)
+	}
+	if _, err := DB.Exec(alterStmt); err != nil {
+		log.Fatalf("migration failed: %v", err)
 	}
 }
