@@ -108,7 +108,7 @@ var translations = map[string]map[string]string{
 		"flash.gift_deleted":    "Gift deleted.",
 
 		// home
-		"home.getting_married":    "Together, forever",
+		"home.getting_married":    "We are announcing our marriage",
 		"home.venues":             "Location",
 		"home.venues_description": "",
 		"home.ceremony":           "The Ceremony",
@@ -208,17 +208,20 @@ var translations = map[string]map[string]string{
 		"confirm.delete_invitation": "Delete this invitation?",
 
 		// invitation public page
-		"invitation.title":            "Invitation",
-		"invitation.rsvp":             "We Look Forward to Seeing You",
-		"invitation.rsvp_description": "Let us know if you can join us on this special day",
-		"invitation.confirm":          "Confirm",
-		"invitation.already_answered": "You have already sent your confirmation.",
-		"invitation.change_answer":    "change my answer",
-		"invitation.go_home":          "go to homepage",
-		"invitation.replay_animation": "Replay envelope animation",
-		"invitation.close_envelope":   "close envelope",
-		"invitation.poll_notes":       "Notes",
-		"placeholder.poll_notes":      "Add a note",
+		"invitation.title":             "Invitation",
+		"invitation.rsvp":              "We Look Forward to Seeing You",
+		"invitation.rsvp_description":  "Let us know if you can join us on this special day",
+		"invitation.confirm":           "Confirm",
+		"invitation.already_answered":  "You have already sent your confirmation.",
+		"invitation.change_answer":     "change my answer",
+		"invitation.go_home":           "go to homepage",
+		"invitation.go_home_countdown": "home in %d",
+		"invitation.replay_animation":  "Replay envelope animation",
+		"invitation.close_envelope":    "close envelope",
+		"invitation.touch_to_open":     "touch to open",
+		"invitation.brought_to_you_by": "brought to you by Davide Pucci",
+		"invitation.poll_notes":        "Notes",
+		"placeholder.poll_notes":       "Add a note",
 
 		// setup guard
 		"setup.not_ready":       "This wedding hasn't been set up yet.",
@@ -278,6 +281,7 @@ var translations = map[string]map[string]string{
 		"chat.send":                            "Send",
 		"chat.error":                           "Something went wrong, try again",
 		"chat.rate_limited":                    "Too many messages, slow down",
+		"home.update_invitation":               "Invite",
 
 		// footer
 		"link.dashboard": "dashboard",
@@ -365,7 +369,7 @@ var translations = map[string]map[string]string{
 		"flash.gift_deleted":    "Dono eliminato.",
 
 		// home
-		"home.getting_married":    "Insieme per sempre",
+		"home.getting_married":    "Annunciamo il nostro matrimonio",
 		"home.venues":             "Location",
 		"home.venues_description": "",
 		"home.ceremony":           "Il Rito",
@@ -465,17 +469,20 @@ var translations = map[string]map[string]string{
 		"confirm.delete_invitation": "Eliminare questo invito?",
 
 		// invitation public page
-		"invitation.title":            "Invito",
-		"invitation.rsvp":             "Vi aspettiamo",
-		"invitation.rsvp_description": "Fateci sapere se potrete essere con noi in questo giorno speciale",
-		"invitation.confirm":          "Conferma",
-		"invitation.already_answered": "Avete già inviato la vostra conferma.",
-		"invitation.change_answer":    "modifica risposta",
-		"invitation.go_home":          "vai alla homepage",
-		"invitation.replay_animation": "Rivedi animazione busta",
-		"invitation.close_envelope":   "chiudi busta",
-		"invitation.poll_notes":       "Note",
-		"placeholder.poll_notes":      "Aggiungi una nota",
+		"invitation.title":             "Invito",
+		"invitation.rsvp":              "Vi aspettiamo",
+		"invitation.rsvp_description":  "Fateci sapere se potrete essere con noi in questo giorno speciale",
+		"invitation.confirm":           "Conferma",
+		"invitation.already_answered":  "Avete già inviato la vostra conferma.",
+		"invitation.change_answer":     "modifica risposta",
+		"invitation.go_home":           "vai alla homepage",
+		"invitation.go_home_countdown": "home tra %d",
+		"invitation.replay_animation":  "Rivedi animazione busta",
+		"invitation.close_envelope":    "chiudi busta",
+		"invitation.touch_to_open":     "tocca per aprire",
+		"invitation.brought_to_you_by": "offerto da Davide Pucci",
+		"invitation.poll_notes":        "Note",
+		"placeholder.poll_notes":       "Aggiungi una nota",
 
 		// setup guard
 		"setup.not_ready":       "Questo matrimonio non è ancora stato configurato.",
@@ -535,6 +542,7 @@ var translations = map[string]map[string]string{
 		"chat.send":                            "Invia",
 		"chat.error":                           "Qualcosa è andato storto, riprova",
 		"chat.rate_limited":                    "Troppi messaggi, rallenta",
+		"home.update_invitation":               "Invito",
 
 		// footer
 		"link.dashboard": "pannello",
@@ -553,13 +561,14 @@ var HomepageKeys = []string{
 	"home.registry", "home.registry_description",
 	"home.generic_gift", "home.generic_gift_description", "home.remaining",
 	"invitation.title", "invitation.rsvp", "invitation.rsvp_description",
-	"invitation.confirm", "invitation.already_answered", "invitation.change_answer", "invitation.go_home", "invitation.replay_animation", "invitation.close_envelope",
+	"invitation.confirm", "invitation.already_answered", "invitation.change_answer", "invitation.go_home", "invitation.go_home_countdown", "invitation.replay_animation", "invitation.close_envelope", "invitation.touch_to_open", "invitation.brought_to_you_by",
 	"gift.thank_you", "gift.thanks_message",
 	"badge.sold",
 	"btn.buy", "btn.copy", "btn.copied", "btn.cancel", "btn.confirm", "btn.close",
 	"modal.transfer_intro", "modal.iban", "modal.owner", "modal.reason", "modal.transfer_confirm_text",
 	"placeholder.custom_amount", "placeholder.donor",
 	"chat.title", "chat.placeholder", "chat.send", "chat.error", "chat.rate_limited",
+	"home.update_invitation",
 	"rsvp.yes", "rsvp.no",
 	"th.amount", "th.ceremony", "th.reception",
 	"link.dashboard",

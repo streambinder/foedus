@@ -171,6 +171,10 @@ func GetInvitationByCode(code string) (models.Invitation, error) {
 		return inv, err
 	}
 
+	return loadInvitationGuestsAndPollAnswers(inv)
+}
+
+func loadInvitationGuestsAndPollAnswers(inv models.Invitation) (models.Invitation, error) {
 	rows, err := DB.Query(
 		`SELECT id, first_name, last_name, confirmed_ceremony, confirmed_reception, invitation_id, invitation_guest_order, created_at, updated_at
 		FROM guests

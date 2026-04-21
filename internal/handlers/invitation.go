@@ -54,7 +54,7 @@ func ViewInvitation(c *fiber.Ctx) error {
 		strings.Join(ogDescParts, " · "),
 		settings,
 	)
-	return Render(c, templates.Invitation(inv, settings, polls, inv.ViewedAt != nil, t, lang, ogMeta, title))
+	return Render(c, templates.Invitation(inv, settings, polls, inv.ViewedAt != nil, c.Query("no_redirect") == "1", t, lang, ogMeta, title))
 }
 
 func MarkInvitationViewed(c *fiber.Ctx) error {
@@ -105,7 +105,11 @@ func UpdateInvitationRSVP(c *fiber.Ctx) error {
 		}
 	}
 
-	return c.Redirect("/" + code)
+	redirectURL := "/" + code
+	if c.Query("no_redirect") == "1" {
+		redirectURL += "?no_redirect=1"
+	}
+	return c.Redirect(redirectURL)
 }
 
 func invitationTitle(t i18n.T, inv models.Invitation, spouse1, spouse2 string) string {

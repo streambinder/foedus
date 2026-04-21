@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"database/sql"
 	"math/rand/v2"
 	"strings"
 
@@ -71,5 +72,13 @@ func Home(c *fiber.Ctx) error {
 		settings,
 	)
 	heroBackground := pickHomepageHeroBackground(settings.HomepageHeroBackgrounds)
-	return Render(c, templates.Home(settings, heroBackground, registryItems, claimedAmounts, bankConfigured, chatEnabled, soundtrackEnabled, i18n.NewTWithOverrides(lang, settings.HomepageLabels[lang]), lang, ogMeta))
+	inviteUpdateURL := ""
+	if inviteCode := strings.TrimSpace(c.Query("invite")); inviteCode != "" {
+		if inv, err := database.GetInvitationByCode(inviteCode); err == nil {
+			inviteUpdateURL = "/" + inv.Code + "?no_redirect=1"
+		} else if err != sql.ErrNoRows {
+			return c.Status(500).SendString("failed to load invitation")
+		}
+	}
+	return Render(c, templates.Home(settings, heroBackground, registryItems, claimedAmounts, bankConfigured, chatEnabled, soundtrackEnabled, inviteUpdateURL, i18n.NewTWithOverrides(lang, settings.HomepageLabels[lang]), lang, ogMeta))
 }
