@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"fmt"
 	"math/big"
+	"sort"
 	"strings"
 
 	"github.com/streambinder/foedus/internal/models"
@@ -93,7 +94,35 @@ func GetAllInvitations() ([]models.Invitation, error) {
 		guestRows.Close()
 	}
 
+	sort.SliceStable(invitations, func(i, j int) bool {
+		leftRank := invitationDashboardRank(invitations[i])
+		rightRank := invitationDashboardRank(invitations[j])
+		if leftRank != rightRank {
+			return leftRank < rightRank
+		}
+		return invitations[i].ID > invitations[j].ID
+	})
+
 	return invitations, nil
+}
+
+func invitationDashboardRank(inv models.Invitation) int {
+	if invitationActioned(inv) {
+		return 2
+	}
+	if inv.ViewedAt != nil {
+		return 1
+	}
+	return 0
+}
+
+func invitationActioned(inv models.Invitation) bool {
+	for _, g := range inv.Guests {
+		if g.ConfirmedCeremony != nil || g.ConfirmedReception != nil {
+			return true
+		}
+	}
+	return false
 }
 
 func DeleteInvitation(id int) error {
