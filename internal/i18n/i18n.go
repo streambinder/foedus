@@ -57,6 +57,7 @@ var translations = map[string]map[string]string{
 		"placeholder.first_name":        "First name",
 		"placeholder.last_name":         "Last name",
 		"placeholder.search":            "Search...",
+		"placeholder.invitation_search": "Search invitations...",
 
 		// dashboard - guest form labels
 		"label.first_name":    "First Name",
@@ -313,6 +314,7 @@ var translations = map[string]map[string]string{
 		"placeholder.first_name":        "Nome",
 		"placeholder.last_name":         "Cognome",
 		"placeholder.search":            "Cerca tra gli invitati...",
+		"placeholder.invitation_search": "Cerca tra gli inviti...",
 
 		// dashboard - guest form labels
 		"label.first_name":    "Nome",

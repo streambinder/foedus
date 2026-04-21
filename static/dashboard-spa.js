@@ -3,6 +3,7 @@
 
   var selectedGuestIds = new Set();
   var guestSearchTimer = null;
+  var invitationSearchValue = "";
   var SECTION_IDS = [
     "dashboard-flash",
     "dashboard-counters",
@@ -17,6 +18,7 @@
     initDashboardFeatures();
     initImageResizers();
     syncGuestSelectionUI();
+    applyInvitationFilter();
   }
 
   function bindGlobalListeners() {
@@ -67,20 +69,27 @@
   }
 
   function handleInput(event) {
-    if (event.target.id !== "guest-search") return;
-    clearTimeout(guestSearchTimer);
-    guestSearchTimer = setTimeout(function () {
-      var url = new URL(window.location.href);
-      var value = event.target.value.trim();
-      if (value) {
-        url.searchParams.set("q", value);
-      } else {
-        url.searchParams.delete("q");
-      }
-      url.searchParams.delete("page");
-      history.replaceState({}, "", url);
-      refreshSections(url.toString(), ["dashboard-guests"]);
-    }, 250);
+    if (event.target.id === "guest-search") {
+      clearTimeout(guestSearchTimer);
+      guestSearchTimer = setTimeout(function () {
+        var url = new URL(window.location.href);
+        var value = event.target.value.trim();
+        if (value) {
+          url.searchParams.set("q", value);
+        } else {
+          url.searchParams.delete("q");
+        }
+        url.searchParams.delete("page");
+        history.replaceState({}, "", url);
+        refreshSections(url.toString(), ["dashboard-guests"]);
+      }, 250);
+      return;
+    }
+
+    if (event.target.id === "invitation-search") {
+      invitationSearchValue = event.target.value;
+      applyInvitationFilter();
+    }
   }
 
   function handleSubmit(event) {
@@ -192,6 +201,7 @@
     initDashboardFeatures();
     initImageResizers();
     syncGuestSelectionUI();
+    applyInvitationFilter();
     if (sectionIds.indexOf("dashboard-guests") !== -1) {
       focusGuestSearchIfPresent();
     }
@@ -240,6 +250,22 @@
     input.focus();
     var end = input.value.length;
     input.setSelectionRange(end, end);
+  }
+
+  function applyInvitationFilter() {
+    var input = document.getElementById("invitation-search");
+    if (!input) return;
+
+    if (input.value !== invitationSearchValue) {
+      input.value = invitationSearchValue;
+    }
+
+    var query = invitationSearchValue.trim().toLowerCase();
+    var rows = document.querySelectorAll("#dashboard-invitations tbody tr[data-invitation-guests]");
+    rows.forEach(function (row) {
+      var guestNames = (row.dataset.invitationGuests || "").toLowerCase();
+      row.hidden = query !== "" && guestNames.indexOf(query) === -1;
+    });
   }
 
   function getOpenAccordionKeys() {

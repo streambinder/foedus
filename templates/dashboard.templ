@@ -806,6 +806,9 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 		<article id="dashboard-invitations">
 			<h2>{ t("dashboard.invitations") }</h2>
 			if len(invitations) > 0 {
+				<div class="guest-search-row">
+					<input type="search" id="invitation-search" value="" placeholder={ t("placeholder.invitation_search") } autocomplete="off"/>
+				</div>
 				<div class="overflow-auto">
 					<table>
 						<thead>
@@ -819,11 +822,11 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 						</thead>
 						<tbody>
 							for _, inv := range invitations {
-								<tr>
+								<tr data-invitation-guests={ invitationGuestNames(inv) }>
 									<td data-label={ t("th.code") }>
 										<code class="invitation-code">{ inv.Code }</code>
 									</td>
-									<td data-label={ t("th.guests") }>{ invitationGuestNames(inv) }</td>
+									<td class="invitation-guests-cell" data-label={ t("th.guests") }>{ invitationGuestNames(inv) }</td>
 									<td data-label={ t("th.viewed") }>
 										if inv.ViewedAt != nil {
 											{ i18n.FormatDate(*inv.ViewedAt, lang) }
