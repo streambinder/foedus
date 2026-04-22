@@ -56,7 +56,12 @@ templ Invitation(inv models.Invitation, settings models.WeddingSettings, polls [
 							{ settings.Spouse1Name } <span class="amp">&amp;</span> { settings.Spouse2Name }
 						</h1>
 						if settings.CeremonyDatetime != "" {
-							<p class="muted">{ i18n.FormatDatetime(settings.CeremonyDatetime, lang) }</p>
+							<p class="muted hero-datetime">
+								<span class="hero-datetime-date">{ i18n.FormatDatetimeDateLine(settings.CeremonyDatetime, lang) }</span>
+								if i18n.FormatDatetimeTimeLine(settings.CeremonyDatetime, lang) != "" {
+									<span class="hero-datetime-time">{ i18n.FormatDatetimeTimeLine(settings.CeremonyDatetime, lang) }</span>
+								}
+							</p>
 						}
 					</header>
 					if settings.CeremonyAddress != "" || settings.CeremonyLocation != "" {

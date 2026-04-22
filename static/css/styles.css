@@ -307,6 +307,18 @@ html:has(.vp-section) body {
   font-weight: 300;
 }
 
+.hero-datetime {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  align-items: center;
+}
+
+.hero-datetime-date,
+.hero-datetime-time {
+  display: block;
+}
+
 .vp-hero.vp-hero--with-background .hero-kicker,
 .vp-hero.vp-hero--with-background .muted {
   color: rgba(245, 236, 226, 0.86);

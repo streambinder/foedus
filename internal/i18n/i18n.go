@@ -642,33 +642,39 @@ func FormatDate(t time.Time, lang string) string {
 	return t.Format("Jan 2, 2006")
 }
 
-// FormatDatetimeUniversal formats a datetime-local string as dd/mm/yyyy HH:MM.
-func FormatDatetimeUniversal(datetimeStr string) string {
+func parseDatetime(datetimeStr string) (time.Time, bool, bool) {
 	t, err := time.Parse("2006-01-02T15:04", datetimeStr)
+	hasTime := strings.Contains(datetimeStr, "T")
 	if err != nil {
 		t, err = time.Parse("2006-01-02", datetimeStr)
 		if err != nil {
-			return datetimeStr
+			return time.Time{}, false, hasTime
 		}
-		return t.Format("02/01/2006")
 	}
-	return t.Format("02/01/2006 15:04")
+	return t, true, hasTime
+}
+
+// FormatDatetimeUniversal formats a datetime-local string as dd/mm/yyyy HH:MM.
+func FormatDatetimeUniversal(datetimeStr string) string {
+	t, ok, hasTime := parseDatetime(datetimeStr)
+	if !ok {
+		return datetimeStr
+	}
+	if hasTime {
+		return t.Format("02/01/2006 15:04")
+	}
+	return t.Format("02/01/2006")
 }
 
 // FormatDatetime parses a datetime-local string (2006-01-02T15:04) and formats it locale-aware.
 // falls back to date-only format (2006-01-02) if datetime parse fails.
 // returns the raw string on total parse failure.
 func FormatDatetime(datetimeStr, lang string) string {
-	t, err := time.Parse("2006-01-02T15:04", datetimeStr)
-	if err != nil {
-		// try date-only fallback for old data
-		t, err = time.Parse("2006-01-02", datetimeStr)
-		if err != nil {
-			return datetimeStr
-		}
+	t, ok, hasTime := parseDatetime(datetimeStr)
+	if !ok {
+		return datetimeStr
 	}
 
-	hasTime := strings.Contains(datetimeStr, "T")
 	if lang == "it" {
 		s := t.Format("2") + " " + italianMonths[t.Month()] + " " + t.Format("2006")
 		if hasTime {
@@ -680,4 +686,23 @@ func FormatDatetime(datetimeStr, lang string) string {
 		return t.Format("January 2, 2006 at 3:04 PM")
 	}
 	return t.Format("January 2, 2006")
+}
+
+func FormatDatetimeDateLine(datetimeStr, lang string) string {
+	t, ok, _ := parseDatetime(datetimeStr)
+	if !ok {
+		return datetimeStr
+	}
+	return FormatDate(t, lang)
+}
+
+func FormatDatetimeTimeLine(datetimeStr, lang string) string {
+	t, ok, hasTime := parseDatetime(datetimeStr)
+	if !ok || !hasTime {
+		return ""
+	}
+	if lang == "it" {
+		return t.Format("15:04")
+	}
+	return t.Format("3:04 PM")
 }
