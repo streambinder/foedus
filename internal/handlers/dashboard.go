@@ -18,6 +18,7 @@ import (
 	"github.com/streambinder/foedus/internal/database"
 	"github.com/streambinder/foedus/internal/i18n"
 	"github.com/streambinder/foedus/internal/models"
+	"github.com/streambinder/foedus/internal/observability"
 	"github.com/streambinder/foedus/templates"
 )
 
@@ -63,20 +64,25 @@ func getLang(c *fiber.Ctx) string {
 const guestsPerPage = 10
 
 func DashboardIndex(c *fiber.Ctx) error {
+	logger := handlerLogger(c)
 	settings, err := database.GetAllSettings()
 	if err != nil {
+		logger.Error("dashboard failed to load settings", "error", err.Error())
 		return c.Status(500).SendString("failed to load settings")
 	}
 	confirmedCeremony, confirmedReception, pendingGuests, totalGuests, err := database.CountConfirmed()
 	if err != nil {
+		logger.Error("dashboard failed to count guests", "error", err.Error())
 		return c.Status(500).SendString("failed to count guests")
 	}
 	gifts, err := database.GetAllGifts()
 	if err != nil {
+		logger.Error("dashboard failed to load gifts", "error", err.Error())
 		return c.Status(500).SendString("failed to load gifts")
 	}
 	registryItems, err := database.GetAllRegistryItems()
 	if err != nil {
+		logger.Error("dashboard failed to load registry items", "error", err.Error())
 		return c.Status(500).SendString("failed to load registry items")
 	}
 	search := strings.TrimSpace(c.Query("q"))
@@ -86,6 +92,7 @@ func DashboardIndex(c *fiber.Ctx) error {
 	}
 	guests, filteredTotal, err := database.GetGuestsPaginated(page, guestsPerPage, search)
 	if err != nil {
+		logger.Error("dashboard failed to load guests", "page", page, "search_len", len(search), "error", err.Error())
 		return c.Status(500).SendString("failed to load guests")
 	}
 	totalPages := (filteredTotal + guestsPerPage - 1) / guestsPerPage
@@ -97,13 +104,29 @@ func DashboardIndex(c *fiber.Ctx) error {
 	}
 	invitations, err := database.GetAllInvitations()
 	if err != nil {
+		logger.Error("dashboard failed to load invitations", "error", err.Error())
 		return c.Status(500).SendString("failed to load invitations")
 	}
 	polls, err := database.GetAllPollsWithCounts()
 	if err != nil {
+		logger.Error("dashboard failed to load polls", "error", err.Error())
 		return c.Status(500).SendString("failed to load polls")
 	}
 	csrfToken, _ := c.Locals("csrf").(string)
+	logger.Info("dashboard rendered",
+		"guest_count", len(guests),
+		"filtered_total", filteredTotal,
+		"gift_count", len(gifts),
+		"registry_count", len(registryItems),
+		"invitation_count", len(invitations),
+		"poll_count", len(polls),
+		"page", page,
+		"search_len", len(search),
+		"confirmed_ceremony", confirmedCeremony,
+		"confirmed_reception", confirmedReception,
+		"pending_guests", pendingGuests,
+		"total_guests", totalGuests,
+	)
 	return Render(c, templates.Dashboard(settings, guests, gifts, registryItems, invitations, polls, confirmedCeremony, confirmedReception, pendingGuests, totalGuests, page, totalPages, search, csrfToken, getFlash(c), getT(c), getLang(c)))
 }
 
@@ -176,8 +199,10 @@ func resolveMappedImage(rawImage, rawToken string, existingImages map[string]str
 }
 
 func SaveSettings(c *fiber.Ctx) error {
+	logger := handlerLogger(c)
 	settings, err := database.GetAllSettings()
 	if err != nil {
+		logger.Error("settings save failed to load existing settings", "error", err.Error())
 		return c.Status(500).SendString("failed to load settings")
 	}
 	existingImages := buildExistingImageMap(settings)
@@ -191,31 +216,38 @@ func SaveSettings(c *fiber.Ctx) error {
 	for _, key := range keys {
 		val := c.FormValue(key)
 		if err := database.UpdateSetting(key, val); err != nil {
+			logger.Error("settings save failed", "key", key, "error", err.Error())
 			return c.Status(500).SendString("failed to save settings")
 		}
 	}
 
 	ceremonyImage, err := resolveExistingImage(c.FormValue("ceremony_image"), c.FormValue("ceremony_image_token"), settings.CeremonyImage)
 	if err != nil {
+		logger.Warn("settings save rejected", "field", "ceremony_image", "error", err.Error())
 		return c.Status(400).SendString(err.Error())
 	}
 	if err := database.UpdateSetting("ceremony_image", ceremonyImage); err != nil {
+		logger.Error("settings save failed", "key", "ceremony_image", "error", err.Error())
 		return c.Status(500).SendString("failed to save settings")
 	}
 
 	receptionImage, err := resolveExistingImage(c.FormValue("reception_image"), c.FormValue("reception_image_token"), settings.ReceptionImage)
 	if err != nil {
+		logger.Warn("settings save rejected", "field", "reception_image", "error", err.Error())
 		return c.Status(400).SendString(err.Error())
 	}
 	if err := database.UpdateSetting("reception_image", receptionImage); err != nil {
+		logger.Error("settings save failed", "key", "reception_image", "error", err.Error())
 		return c.Status(500).SendString("failed to save settings")
 	}
 
 	sharePreviewImage, err := resolveExistingImage(c.FormValue("share_preview_image"), c.FormValue("share_preview_image_token"), settings.SharePreviewImage)
 	if err != nil {
+		logger.Warn("settings save rejected", "field", "share_preview_image", "error", err.Error())
 		return c.Status(400).SendString(err.Error())
 	}
 	if err := database.UpdateSetting("share_preview_image", sharePreviewImage); err != nil {
+		logger.Error("settings save failed", "key", "share_preview_image", "error", err.Error())
 		return c.Status(500).SendString("failed to save settings")
 	}
 
@@ -227,6 +259,7 @@ func SaveSettings(c *fiber.Ctx) error {
 	}
 	playlistsJSON, _ := json.Marshal(playlists)
 	if err := database.UpdateSetting("spotify_playlists", string(playlistsJSON)); err != nil {
+		logger.Error("settings save failed", "key", "spotify_playlists", "error", err.Error())
 		return c.Status(500).SendString("failed to save settings")
 	}
 
@@ -239,6 +272,7 @@ func SaveSettings(c *fiber.Ctx) error {
 		date := strings.TrimSpace(c.FormValue(fmt.Sprintf("place_date_%d", i)))
 		image, err := resolveMappedImage(c.FormValue(fmt.Sprintf("place_image_%d", i)), c.FormValue(fmt.Sprintf("place_image_token_%d", i)), existingImages)
 		if err != nil {
+			logger.Warn("settings save rejected", "field", fmt.Sprintf("place_image_%d", i), "error", err.Error())
 			return c.Status(400).SendString(err.Error())
 		}
 		if label == "" && name == "" && address == "" && date == "" && image == "" && c.FormValue(fmt.Sprintf("place_image_token_%d", i)) == "" {
@@ -258,6 +292,7 @@ func SaveSettings(c *fiber.Ctx) error {
 	}
 	placesJSON, _ := json.Marshal(places)
 	if err := database.UpdateSetting("places", string(placesJSON)); err != nil {
+		logger.Error("settings save failed", "key", "places", "error", err.Error())
 		return c.Status(500).SendString("failed to save settings")
 	}
 
@@ -270,6 +305,7 @@ func SaveSettings(c *fiber.Ctx) error {
 		date := strings.TrimSpace(c.FormValue(fmt.Sprintf("honeymoon_date_%d", i)))
 		image, err := resolveMappedImage(c.FormValue(fmt.Sprintf("honeymoon_image_%d", i)), c.FormValue(fmt.Sprintf("honeymoon_image_token_%d", i)), existingImages)
 		if err != nil {
+			logger.Warn("settings save rejected", "field", fmt.Sprintf("honeymoon_image_%d", i), "error", err.Error())
 			return c.Status(400).SendString(err.Error())
 		}
 		if label == "" && name == "" && address == "" && date == "" && image == "" && c.FormValue(fmt.Sprintf("honeymoon_image_token_%d", i)) == "" {
@@ -289,6 +325,7 @@ func SaveSettings(c *fiber.Ctx) error {
 	}
 	honeymoonLocationsJSON, _ := json.Marshal(honeymoonLocations)
 	if err := database.UpdateSetting("honeymoon_locations", string(honeymoonLocationsJSON)); err != nil {
+		logger.Error("settings save failed", "key", "honeymoon_locations", "error", err.Error())
 		return c.Status(500).SendString("failed to save settings")
 	}
 
@@ -307,6 +344,7 @@ func SaveSettings(c *fiber.Ctx) error {
 	}
 	accommodationSuggestionsJSON, _ := json.Marshal(accommodationSuggestions)
 	if err := database.UpdateSetting("accommodation_suggestions", string(accommodationSuggestionsJSON)); err != nil {
+		logger.Error("settings save failed", "key", "accommodation_suggestions", "error", err.Error())
 		return c.Status(500).SendString("failed to save settings")
 	}
 
@@ -324,6 +362,7 @@ func SaveSettings(c *fiber.Ctx) error {
 	}
 	impersonationsJSON, _ := json.Marshal(impersonations)
 	if err := database.UpdateSetting("impersonations", string(impersonationsJSON)); err != nil {
+		logger.Error("settings save failed", "key", "impersonations", "error", err.Error())
 		return c.Status(500).SendString("failed to save settings")
 	}
 
@@ -343,6 +382,7 @@ func SaveSettings(c *fiber.Ctx) error {
 	}
 	homepageLabelsJSON, _ := json.Marshal(homepageLabels)
 	if err := database.UpdateSetting("homepage_labels", string(homepageLabelsJSON)); err != nil {
+		logger.Error("settings save failed", "key", "homepage_labels", "error", err.Error())
 		return c.Status(500).SendString("failed to save settings")
 	}
 
@@ -352,10 +392,12 @@ func SaveSettings(c *fiber.Ctx) error {
 	for i := 0; i < backgroundCount; i++ {
 		desktopImage, err := resolveMappedImage(c.FormValue(fmt.Sprintf("homepage_hero_background_desktop_%d", i)), c.FormValue(fmt.Sprintf("homepage_hero_background_desktop_token_%d", i)), existingImages)
 		if err != nil {
+			logger.Warn("settings save rejected", "field", fmt.Sprintf("homepage_hero_background_desktop_%d", i), "error", err.Error())
 			return c.Status(400).SendString(err.Error())
 		}
 		mobileImage, err := resolveMappedImage(c.FormValue(fmt.Sprintf("homepage_hero_background_mobile_%d", i)), c.FormValue(fmt.Sprintf("homepage_hero_background_mobile_token_%d", i)), existingImages)
 		if err != nil {
+			logger.Warn("settings save rejected", "field", fmt.Sprintf("homepage_hero_background_mobile_%d", i), "error", err.Error())
 			return c.Status(400).SendString(err.Error())
 		}
 		if desktopImage == "" && mobileImage == "" {
@@ -368,31 +410,49 @@ func SaveSettings(c *fiber.Ctx) error {
 	}
 	homepageHeroBackgroundsJSON, _ := json.Marshal(homepageHeroBackgrounds)
 	if err := database.UpdateSetting("homepage_hero_backgrounds", string(homepageHeroBackgroundsJSON)); err != nil {
+		logger.Error("settings save failed", "key", "homepage_hero_backgrounds", "error", err.Error())
 		return c.Status(500).SendString("failed to save settings")
 	}
 
+	logger.Info("settings updated",
+		"places", len(places),
+		"honeymoon_locations", len(honeymoonLocations),
+		"accommodation_suggestions", len(accommodationSuggestions),
+		"impersonations", len(impersonations),
+		"homepage_label_langs", len(homepageLabels),
+		"hero_backgrounds", len(homepageHeroBackgrounds),
+		"spotify_playlist_configured", playlist != "",
+	)
 	setFlash(c, getT(c)("flash.settings_saved"))
 	return c.Redirect("/dashboard")
 }
 
 func AddGuest(c *fiber.Ctx) error {
+	logger := handlerLogger(c)
+	firstName := strings.TrimSpace(c.FormValue("first_name"))
+	lastName := strings.TrimSpace(c.FormValue("last_name"))
 	if err := database.CreateGuest(
-		c.FormValue("first_name"),
-		c.FormValue("last_name"),
+		firstName,
+		lastName,
 	); err != nil {
+		logger.Error("guest create failed", "first_name", firstName, "last_name", lastName, "error", err.Error())
 		return c.Status(500).SendString("failed to add guest")
 	}
+	logger.Info("guest created", "first_name", firstName, "last_name", lastName)
 	setFlash(c, getT(c)("flash.guest_added"))
 	return c.Redirect("/dashboard")
 }
 
 func ImportGuestsCSV(c *fiber.Ctx) error {
+	logger := handlerLogger(c)
 	fh, err := c.FormFile("csv_file")
 	if err != nil {
+		logger.Warn("guest import rejected", "reason", "missing file")
 		return c.Status(400).SendString("no file uploaded")
 	}
 	f, err := fh.Open()
 	if err != nil {
+		logger.Error("guest import failed to open file", "filename", fh.Filename, "error", err.Error())
 		return c.Status(500).SendString("failed to open file")
 	}
 	defer f.Close()
@@ -434,18 +494,23 @@ func ImportGuestsCSV(c *fiber.Ctx) error {
 		}
 		imported++
 	}
+	logger.Info("guest import completed", "filename", fh.Filename, "size_bytes", fh.Size, "imported", imported)
 	setFlash(c, strconv.Itoa(imported)+" "+getT(c)("flash.guests_imported"))
 	return c.Redirect("/dashboard")
 }
 
 func CycleConfirmed(c *fiber.Ctx) error {
+	logger := handlerLogger(c)
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
+		logger.Warn("guest confirmation cycle rejected", "guest_id", c.Params("id"), "error", err.Error())
 		return c.Status(400).SendString("invalid id")
 	}
 	if err := database.CycleConfirmed(id, c.Params("field")); err != nil {
+		logger.Warn("guest confirmation cycle rejected", "guest_id", id, "field", c.Params("field"), "error", err.Error())
 		return c.Status(400).SendString("invalid field")
 	}
+	logger.Info("guest confirmation cycled", "guest_id", id, "field", c.Params("field"))
 	return c.Redirect("/dashboard")
 }
 
@@ -467,29 +532,39 @@ func EditGuestPage(c *fiber.Ctx) error {
 }
 
 func UpdateGuest(c *fiber.Ctx) error {
+	logger := handlerLogger(c)
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
+		logger.Warn("guest update rejected", "guest_id", c.Params("id"), "error", err.Error())
 		return c.Status(400).SendString("invalid id")
 	}
+	firstName := strings.TrimSpace(c.FormValue("first_name"))
+	lastName := strings.TrimSpace(c.FormValue("last_name"))
 	if err := database.UpdateGuest(
 		id,
-		c.FormValue("first_name"),
-		c.FormValue("last_name"),
+		firstName,
+		lastName,
 	); err != nil {
+		logger.Error("guest update failed", "guest_id", id, "error", err.Error())
 		return c.Status(500).SendString("failed to update guest")
 	}
+	logger.Info("guest updated", "guest_id", id, "first_name", firstName, "last_name", lastName)
 	setFlash(c, getT(c)("flash.guest_updated"))
 	return c.Redirect("/dashboard")
 }
 
 func DeleteGuest(c *fiber.Ctx) error {
+	logger := handlerLogger(c)
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
+		logger.Warn("guest delete rejected", "guest_id", c.Params("id"), "error", err.Error())
 		return c.Status(400).SendString("invalid id")
 	}
 	if err := database.DeleteGuest(id); err != nil {
+		logger.Error("guest delete failed", "guest_id", id, "error", err.Error())
 		return c.Status(500).SendString("failed to delete guest")
 	}
+	logger.Info("guest deleted", "guest_id", id)
 	setFlash(c, getT(c)("flash.guest_deleted"))
 	return c.Redirect("/dashboard")
 }
@@ -532,23 +607,29 @@ func validateBase64ImageAny(image string) error {
 }
 
 func AddRegistryItem(c *fiber.Ctx) error {
+	logger := handlerLogger(c)
 	name := strings.TrimSpace(c.FormValue("name"))
 	if name == "" {
+		logger.Warn("registry item create rejected", "reason", "missing name")
 		return c.Status(400).SendString("name is required")
 	}
 	price, err := strconv.Atoi(c.FormValue("price"))
 	if err != nil || price < 0 {
+		logger.Warn("registry item create rejected", "name", name, "price", c.FormValue("price"))
 		return c.Status(400).SendString("invalid price")
 	}
 	image := c.FormValue("image")
 	if image != "" {
 		if err := validateBase64Image(image); err != nil {
+			logger.Warn("registry item create rejected", "name", name, "error", err.Error())
 			return c.Status(400).SendString(err.Error())
 		}
 	}
 	if err := database.CreateRegistryItem(name, price, image); err != nil {
+		logger.Error("registry item create failed", "name", name, "price", price, "error", err.Error())
 		return c.Status(500).SendString("failed to add item")
 	}
+	logger.Info("registry item created", "name", name, "price", price, "has_image", image != "")
 	setFlash(c, getT(c)("flash.item_added"))
 	return c.Redirect("/dashboard")
 }
@@ -571,21 +652,26 @@ func EditRegistryItemPage(c *fiber.Ctx) error {
 }
 
 func UpdateRegistryItem(c *fiber.Ctx) error {
+	logger := handlerLogger(c)
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
+		logger.Warn("registry item update rejected", "item_id", c.Params("id"), "error", err.Error())
 		return c.Status(400).SendString("invalid id")
 	}
 	item, err := database.GetRegistryItem(id)
 	if err != nil {
+		logger.Warn("registry item update rejected", "item_id", id, "reason", "not found")
 		return c.Status(404).SendString("item not found")
 	}
 
 	name := strings.TrimSpace(c.FormValue("name"))
 	if name == "" {
+		logger.Warn("registry item update rejected", "item_id", id, "reason", "missing name")
 		return c.Status(400).SendString("name is required")
 	}
 	price, err := strconv.Atoi(c.FormValue("price"))
 	if err != nil || price < 0 {
+		logger.Warn("registry item update rejected", "item_id", id, "price", c.FormValue("price"))
 		return c.Status(400).SendString("invalid price")
 	}
 	image := c.FormValue("image")
@@ -594,43 +680,56 @@ func UpdateRegistryItem(c *fiber.Ctx) error {
 	}
 	if image != "" {
 		if err := validateBase64ImageAny(image); err != nil {
+			logger.Warn("registry item update rejected", "item_id", id, "error", err.Error())
 			return c.Status(400).SendString(err.Error())
 		}
 	}
 	if err := database.UpdateRegistryItem(id, name, price, image); err != nil {
+		logger.Error("registry item update failed", "item_id", id, "error", err.Error())
 		return c.Status(500).SendString("failed to update item")
 	}
+	logger.Info("registry item updated", "item_id", id, "name", name, "price", price, "has_image", image != "")
 	setFlash(c, getT(c)("flash.item_updated"))
 	return c.Redirect("/dashboard")
 }
 
 func DeleteRegistryItem(c *fiber.Ctx) error {
+	logger := handlerLogger(c)
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
+		logger.Warn("registry item delete rejected", "item_id", c.Params("id"), "error", err.Error())
 		return c.Status(400).SendString("invalid id")
 	}
 	if err := database.DeleteRegistryItem(id); err != nil {
+		logger.Error("registry item delete failed", "item_id", id, "error", err.Error())
 		return c.Status(500).SendString("failed to delete item")
 	}
+	logger.Info("registry item deleted", "item_id", id)
 	setFlash(c, getT(c)("flash.item_deleted"))
 	return c.Redirect("/dashboard")
 }
 
 func MoveRegistryItem(c *fiber.Ctx) error {
+	logger := handlerLogger(c)
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
+		logger.Warn("registry item reorder rejected", "item_id", c.Params("id"), "error", err.Error())
 		return c.Status(400).SendString("invalid id")
 	}
 	direction := strings.TrimSpace(c.Params("direction"))
 	if direction != "up" && direction != "down" {
+		logger.Warn("registry item reorder rejected", "item_id", id, "direction", direction)
 		return c.Status(400).SendString("invalid direction")
 	}
 	if err := database.MoveRegistryItem(id, direction); err != nil {
 		if err == sql.ErrNoRows {
+			logger.Warn("registry item reorder rejected", "item_id", id, "reason", "not found")
 			return c.Status(404).SendString("item not found")
 		}
+		logger.Error("registry item reorder failed", "item_id", id, "direction", direction, "error", err.Error())
 		return c.Status(500).SendString("failed to reorder item")
 	}
+	logger.Info("registry item reordered", "item_id", id, "direction", direction)
 	return c.Redirect("/dashboard")
 }
 
@@ -656,47 +755,60 @@ func EditGiftPage(c *fiber.Ctx) error {
 }
 
 func UpdateGift(c *fiber.Ctx) error {
+	logger := handlerLogger(c)
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
+		logger.Warn("gift update rejected", "gift_id", c.Params("id"), "error", err.Error())
 		return c.Status(400).SendString("invalid id")
 	}
 	if _, err := database.GetGift(id); err != nil {
+		logger.Warn("gift update rejected", "gift_id", id, "reason", "not found")
 		return c.Status(404).SendString("gift not found")
 	}
 
 	amount, err := strconv.Atoi(c.FormValue("amount"))
 	if err != nil || amount < 1 {
+		logger.Warn("gift update rejected", "gift_id", id, "amount", c.FormValue("amount"))
 		return c.Status(400).SendString("invalid amount")
 	}
 	registryItemID, err := parseGiftRegistryItemID(c.FormValue("registry_item_id"))
 	if err != nil {
+		logger.Warn("gift update rejected", "gift_id", id, "error", err.Error())
 		return c.Status(400).SendString(err.Error())
 	}
 	if err := validateGiftAssignment(amount, registryItemID, id); err != nil {
+		logger.Warn("gift update rejected", "gift_id", id, "error", err.Message)
 		return c.Status(err.Code).SendString(err.Message)
 	}
 
+	donor := strings.TrimSpace(c.FormValue("donor"))
 	if err := database.UpdateGift(
 		id,
 		amount,
-		strings.TrimSpace(c.FormValue("donor")),
+		donor,
 		registryItemID,
 		c.FormValue("confirmed") == "on",
 	); err != nil {
+		logger.Error("gift update failed", "gift_id", id, "error", err.Error())
 		return c.Status(500).SendString("failed to update gift")
 	}
+	logger.Info("gift updated", "gift_id", id, "amount", amount, "donor", observability.Redact(donor), "registry_item_id", registryItemID, "confirmed", c.FormValue("confirmed") == "on")
 	setFlash(c, getT(c)("flash.gift_updated"))
 	return c.Redirect("/dashboard")
 }
 
 func DeleteGift(c *fiber.Ctx) error {
+	logger := handlerLogger(c)
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
+		logger.Warn("gift delete rejected", "gift_id", c.Params("id"), "error", err.Error())
 		return c.Status(400).SendString("invalid id")
 	}
 	if err := database.DeleteGift(id); err != nil {
+		logger.Error("gift delete failed", "gift_id", id, "error", err.Error())
 		return c.Status(500).SendString("failed to delete gift")
 	}
+	logger.Info("gift deleted", "gift_id", id)
 	setFlash(c, getT(c)("flash.gift_deleted"))
 	return c.Redirect("/dashboard")
 }
@@ -732,8 +844,10 @@ func validateGiftAssignment(amount int, registryItemID *int, excludeGiftID int) 
 }
 
 func CreateInvitation(c *fiber.Ctx) error {
+	logger := handlerLogger(c)
 	raw := c.FormValue("guest_ids")
 	if raw == "" {
+		logger.Warn("invitation create skipped", "reason", "missing guest ids")
 		return c.Redirect("/dashboard")
 	}
 	parts := strings.Split(raw, ",")
@@ -746,24 +860,31 @@ func CreateInvitation(c *fiber.Ctx) error {
 		guestIDs = append(guestIDs, id)
 	}
 	if len(guestIDs) == 0 {
+		logger.Warn("invitation create skipped", "reason", "no valid guest ids")
 		return c.Redirect("/dashboard")
 	}
 	code, err := database.CreateInvitation(guestIDs)
 	if err != nil {
+		logger.Error("invitation create failed", "guest_count", len(guestIDs), "error", err.Error())
 		return c.Status(500).SendString("failed to create invitation")
 	}
+	logger.Info("invitation created", "invitation_code", observability.Redact(code), "guest_count", len(guestIDs))
 	setFlash(c, getT(c)("flash.invitation_created")+" "+code)
 	return c.Redirect("/dashboard")
 }
 
 func AddPoll(c *fiber.Ctx) error {
+	logger := handlerLogger(c)
 	question := strings.TrimSpace(c.FormValue("question"))
 	if question == "" {
+		logger.Warn("poll create skipped", "reason", "missing question")
 		return c.Redirect("/dashboard")
 	}
 	if err := database.CreatePoll(question, strings.TrimSpace(c.FormValue("description"))); err != nil {
+		logger.Error("poll create failed", "question_len", len(question), "error", err.Error())
 		return c.Status(500).SendString("failed to add poll")
 	}
+	logger.Info("poll created", "question_len", len(question))
 	setFlash(c, getT(c)("flash.poll_added"))
 	return c.Redirect("/dashboard")
 }
@@ -786,41 +907,54 @@ func EditPollPage(c *fiber.Ctx) error {
 }
 
 func UpdatePoll(c *fiber.Ctx) error {
+	logger := handlerLogger(c)
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
+		logger.Warn("poll update rejected", "poll_id", c.Params("id"), "error", err.Error())
 		return c.Status(400).SendString("invalid id")
 	}
 	question := strings.TrimSpace(c.FormValue("question"))
 	if question == "" {
+		logger.Warn("poll update skipped", "poll_id", id, "reason", "missing question")
 		return c.Redirect("/dashboard")
 	}
 	if err := database.UpdatePoll(id, question, strings.TrimSpace(c.FormValue("description"))); err != nil {
+		logger.Error("poll update failed", "poll_id", id, "error", err.Error())
 		return c.Status(500).SendString("failed to update poll")
 	}
+	logger.Info("poll updated", "poll_id", id, "question_len", len(question))
 	setFlash(c, getT(c)("flash.poll_updated"))
 	return c.Redirect("/dashboard")
 }
 
 func DeletePoll(c *fiber.Ctx) error {
+	logger := handlerLogger(c)
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
+		logger.Warn("poll delete rejected", "poll_id", c.Params("id"), "error", err.Error())
 		return c.Status(400).SendString("invalid id")
 	}
 	if err := database.DeletePoll(id); err != nil {
+		logger.Error("poll delete failed", "poll_id", id, "error", err.Error())
 		return c.Status(500).SendString("failed to delete poll")
 	}
+	logger.Info("poll deleted", "poll_id", id)
 	setFlash(c, getT(c)("flash.poll_deleted"))
 	return c.Redirect("/dashboard")
 }
 
 func DeleteInvitation(c *fiber.Ctx) error {
+	logger := handlerLogger(c)
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
+		logger.Warn("invitation delete rejected", "invitation_id", c.Params("id"), "error", err.Error())
 		return c.Status(400).SendString("invalid id")
 	}
 	if err := database.DeleteInvitation(id); err != nil {
+		logger.Error("invitation delete failed", "invitation_id", id, "error", err.Error())
 		return c.Status(500).SendString("failed to delete invitation")
 	}
+	logger.Info("invitation deleted", "invitation_id", id)
 	setFlash(c, getT(c)("flash.invitation_deleted"))
 	return c.Redirect("/dashboard")
 }

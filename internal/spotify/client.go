@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"strings"
@@ -36,9 +36,9 @@ func Init(id, secret, refresh string) {
 	clientSecret = secret
 	refreshToken = refresh
 	if id != "" && secret != "" && refresh != "" {
-		log.Println("spotify: enabled")
+		slog.Info("spotify client enabled")
 	} else {
-		log.Println("spotify: disabled (credentials not set)")
+		slog.Warn("spotify client disabled", "reason", "credentials not set")
 	}
 }
 
@@ -47,10 +47,12 @@ func Enabled() bool {
 }
 
 func getAccessToken() (string, error) {
+	start := time.Now()
 	mu.Lock()
 	defer mu.Unlock()
 
 	if accessToken != "" && time.Now().Before(tokenExpiry) {
+		slog.Debug("spotify access token cache hit", "expires_in_ms", time.Until(tokenExpiry).Milliseconds())
 		return accessToken, nil
 	}
 
@@ -83,12 +85,13 @@ func getAccessToken() (string, error) {
 	accessToken = result.AccessToken
 	// refresh 60s before actual expiry
 	tokenExpiry = time.Now().Add(time.Duration(result.ExpiresIn-60) * time.Second)
-	log.Printf("spotify: token refreshed, expires in %ds", result.ExpiresIn)
+	slog.Info("spotify token refreshed", "expires_in_seconds", result.ExpiresIn, "duration_ms", time.Since(start).Milliseconds())
 
 	return accessToken, nil
 }
 
 func Search(query string, limit int) ([]Track, error) {
+	start := time.Now()
 	token, err := getAccessToken()
 	if err != nil {
 		return nil, err
@@ -160,10 +163,12 @@ func Search(query string, limit int) ([]Track, error) {
 			ImageURL: imageURL,
 		})
 	}
+	slog.Info("spotify search completed", "query_len", len(strings.TrimSpace(query)), "limit", limit, "results", len(tracks), "duration_ms", time.Since(start).Milliseconds())
 	return tracks, nil
 }
 
 func AddToPlaylist(playlistID, trackURI string) error {
+	start := time.Now()
 	token, err := getAccessToken()
 	if err != nil {
 		return err
@@ -187,5 +192,6 @@ func AddToPlaylist(playlistID, trackURI string) error {
 		respBody, _ := io.ReadAll(resp.Body)
 		return fmt.Errorf("add track failed: status=%d body=%s", resp.StatusCode, respBody)
 	}
+	slog.Info("spotify track added to playlist", "playlist_id", playlistID, "track_uri", trackURI, "duration_ms", time.Since(start).Milliseconds())
 	return nil
 }

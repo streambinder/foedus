@@ -6,7 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
+	"log/slog"
 	"math/rand/v2"
 	"net/http"
 	"strings"
@@ -37,9 +37,9 @@ func InitChat(key, model string) {
 	openrouterKey = key
 	openrouterModel = model
 	if key != "" {
-		log.Printf("chat: enabled, model=%s", model)
+		slog.Info("chat service enabled", "model", model)
 	} else {
-		log.Println("chat: disabled (OPENROUTER_API_KEY not set)")
+		slog.Warn("chat service disabled", "reason", "OPENROUTER_API_KEY not set")
 	}
 	go cleanRateLimiter()
 }
@@ -99,44 +99,52 @@ type chatRequest struct {
 }
 
 func ChatStream(c *fiber.Ctx) error {
+	logger := handlerLogger(c)
+
 	if openrouterKey == "" {
+		logger.Warn("chat request rejected", "reason", "service disabled")
 		return c.SendStatus(fiber.StatusNotFound)
 	}
 
 	ip := c.IP()
 	if !checkRateLimit(ip) {
-		log.Printf("chat: rate limited ip=%s", ip)
+		logger.Warn("chat request rate limited")
 		return c.Status(fiber.StatusTooManyRequests).SendString("rate limited")
 	}
 
 	var req chatRequest
 	if err := json.Unmarshal(c.Body(), &req); err != nil {
-		log.Printf("chat: bad json ip=%s err=%v", ip, err)
+		logger.Warn("chat request invalid json", "error", err.Error())
 		return c.Status(fiber.StatusBadRequest).SendString("invalid json")
 	}
 	req.Message = strings.TrimSpace(req.Message)
 	if req.Message == "" || len(req.Message) > chatMaxMessageLen {
-		log.Printf("chat: invalid message len=%d ip=%s", len(req.Message), ip)
+		logger.Warn("chat request invalid message", "message_len", len(req.Message))
 		return c.Status(fiber.StatusBadRequest).SendString("invalid message")
 	}
 	if len(req.History) > chatMaxHistoryInReq {
-		log.Printf("chat: history too long len=%d ip=%s", len(req.History), ip)
+		logger.Warn("chat request history too long", "history_len", len(req.History))
 		return c.Status(fiber.StatusBadRequest).SendString("history too long")
 	}
 
 	settings, err := database.GetAllSettings()
 	if err != nil {
-		log.Printf("chat: failed to load settings: %v", err)
+		logger.Error("chat request failed to load settings", "error", err.Error())
 		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 	if len(settings.Impersonations) == 0 {
-		log.Printf("chat: no impersonations configured")
+		logger.Warn("chat request rejected", "reason", "no impersonations configured")
 		return c.SendStatus(fiber.StatusNotFound)
 	}
 
 	persona := settings.Impersonations[rand.IntN(len(settings.Impersonations))]
 	personaName := capitalizedPersonaName(persona.Codename)
-	log.Printf("chat: request ip=%s persona=%q (pool=%d) msgLen=%d historyLen=%d", ip, persona.Codename, len(settings.Impersonations), len(req.Message), len(req.History))
+	logger.Info("chat request accepted",
+		"persona", persona.Codename,
+		"persona_pool", len(settings.Impersonations),
+		"message_len", len(req.Message),
+		"history_len", len(req.History),
+	)
 
 	// build wedding context for system prompt
 	playlistList := "none"
@@ -224,9 +232,11 @@ func ChatStream(c *fiber.Ctx) error {
 
 	start := time.Now()
 	c.Context().SetBodyStreamWriter(func(w *bufio.Writer) {
+		streamLogger := logger.With("persona", persona.Codename)
+
 		upstreamReq, err := http.NewRequestWithContext(context.Background(), "POST", "https://openrouter.ai/api/v1/chat/completions", bytes.NewReader(payload))
 		if err != nil {
-			log.Printf("chat: failed to build upstream request: %v", err)
+			streamLogger.Error("chat upstream request build failed", "error", err.Error())
 			fmt.Fprintf(w, "data: {\"error\":\"upstream error\"}\n\n")
 			w.Flush()
 			return
@@ -237,7 +247,7 @@ func ChatStream(c *fiber.Ctx) error {
 
 		resp, err := http.DefaultClient.Do(upstreamReq)
 		if err != nil {
-			log.Printf("chat: upstream request failed: %v", err)
+			streamLogger.Error("chat upstream request failed", "error", err.Error())
 			fmt.Fprintf(w, "data: {\"error\":\"upstream error\"}\n\n")
 			w.Flush()
 			return
@@ -245,13 +255,13 @@ func ChatStream(c *fiber.Ctx) error {
 		defer resp.Body.Close()
 
 		if resp.StatusCode != http.StatusOK {
-			log.Printf("chat: upstream returned status=%d", resp.StatusCode)
+			streamLogger.Error("chat upstream returned unexpected status", "status", resp.StatusCode)
 			fmt.Fprintf(w, "data: {\"error\":\"upstream error\"}\n\n")
 			w.Flush()
 			return
 		}
 
-		log.Printf("chat: streaming started persona=%q ttfb=%s", persona.Codename, time.Since(start).Round(time.Millisecond))
+		streamLogger.Info("chat streaming started", "ttfb_ms", time.Since(start).Milliseconds())
 
 		var chunks int
 		scanner := bufio.NewScanner(resp.Body)
@@ -268,11 +278,11 @@ func ChatStream(c *fiber.Ctx) error {
 			}
 		}
 		if err := scanner.Err(); err != nil {
-			log.Printf("chat: stream scan error: %v", err)
+			streamLogger.Error("chat stream scan failed", "chunks", chunks, "error", err.Error())
 			fmt.Fprintf(w, "data: {\"error\":\"stream error\"}\n\n")
 			w.Flush()
 		}
-		log.Printf("chat: stream done persona=%q chunks=%d total=%s", persona.Codename, chunks, time.Since(start).Round(time.Millisecond))
+		streamLogger.Info("chat stream completed", "chunks", chunks, "duration_ms", time.Since(start).Milliseconds())
 	})
 
 	return nil

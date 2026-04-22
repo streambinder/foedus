@@ -2,6 +2,7 @@ package database
 
 import (
 	"encoding/json"
+	"log/slog"
 	"strings"
 
 	"github.com/streambinder/foedus/internal/models"
@@ -19,9 +20,18 @@ var settingsKeys = []string{
 
 // SeedSettings inserts default empty rows for any missing setting keys.
 func SeedSettings() {
+	inserted := 0
 	for _, key := range settingsKeys {
-		DB.Exec(`INSERT OR IGNORE INTO settings (key, value) VALUES (?, '')`, key)
+		result, err := DB.Exec(`INSERT OR IGNORE INTO settings (key, value) VALUES (?, '')`, key)
+		if err != nil {
+			slog.Error("failed to seed setting", "key", key, "error", err.Error())
+			continue
+		}
+		if rows, err := result.RowsAffected(); err == nil && rows > 0 {
+			inserted++
+		}
 	}
+	slog.Info("settings seeded", "keys", len(settingsKeys), "inserted", inserted)
 }
 
 func GetAllSettings() (models.WeddingSettings, error) {

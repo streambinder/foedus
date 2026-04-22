@@ -1,10 +1,12 @@
 package middleware
 
 import (
+	"log/slog"
 	"os"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/basicauth"
+	"github.com/streambinder/foedus/internal/observability"
 )
 
 func BasicAuth() fiber.Handler {
@@ -20,7 +22,13 @@ func BasicAuth() fiber.Handler {
 	if len(users) == 0 {
 		users["admin"] = "admin"
 	}
+	slog.Info("basic auth configured", "admin_users", len(users), "using_default_credentials", len(users) == 1 && users["admin"] == "admin")
 	return basicauth.New(basicauth.Config{
 		Users: users,
+		Unauthorized: func(c *fiber.Ctx) error {
+			observability.LoggerFromFiber(c).Warn("dashboard authentication failed")
+			c.Set(fiber.HeaderWWWAuthenticate, "basic realm=Restricted")
+			return c.SendStatus(fiber.StatusUnauthorized)
+		},
 	})
 }

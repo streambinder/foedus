@@ -3,22 +3,27 @@
 package main
 
 import (
-	"log"
+	"log/slog"
 	"os"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/csrf"
+	fiberrecover "github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/streambinder/foedus/internal/database"
 	"github.com/streambinder/foedus/internal/handlers"
 	"github.com/streambinder/foedus/internal/middleware"
+	"github.com/streambinder/foedus/internal/observability"
 	"github.com/streambinder/foedus/internal/spotify"
 )
 
 func main() {
+	observability.Init()
+
 	dsn := os.Getenv("DATABASE_URL")
 	if dsn == "" {
 		dsn = "foedus.db"
 	}
+	slog.Info("initializing application", "dsn", dsn)
 	database.Init(dsn)
 
 	openrouterKey := os.Getenv("OPENROUTER_API_KEY")
@@ -31,9 +36,13 @@ func main() {
 	spotify.Init(os.Getenv("SPOTIFY_CLIENT_ID"), os.Getenv("SPOTIFY_CLIENT_SECRET"), os.Getenv("SPOTIFY_REFRESH_TOKEN"))
 
 	app := fiber.New(fiber.Config{
-		BodyLimit: 16 * 1024 * 1024,
+		BodyLimit:    16 * 1024 * 1024,
+		ErrorHandler: middleware.ErrorHandler,
 	})
 
+	app.Use(middleware.RequestContext())
+	app.Use(middleware.AccessLog())
+	app.Use(fiberrecover.New())
 	app.Use(middleware.LangDetect())
 	app.Static("/static", "./static")
 
@@ -92,5 +101,10 @@ func main() {
 	if port == "" {
 		port = "3000"
 	}
-	log.Fatal(app.Listen(":" + port))
+	addr := ":" + port
+	slog.Info("starting server", "addr", addr)
+	if err := app.Listen(addr); err != nil {
+		slog.Error("server stopped", "error", err.Error())
+		os.Exit(1)
+	}
 }

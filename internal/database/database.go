@@ -2,7 +2,8 @@ package database
 
 import (
 	"database/sql"
-	"log"
+	"log/slog"
+	"time"
 
 	_ "modernc.org/sqlite"
 )
@@ -10,20 +11,25 @@ import (
 var DB *sql.DB
 
 func Init(dsn string) {
+	start := time.Now()
 	var err error
 	DB, err = sql.Open("sqlite", dsn)
 	if err != nil {
-		log.Fatalf("failed to open database: %v", err)
+		slog.Error("failed to open database", "dsn", dsn, "error", err.Error())
+		panic(err)
 	}
 
 	// single connection prevents "database is locked" on concurrent writes
 	DB.SetMaxOpenConns(1)
+	slog.Info("database connection opened", "dsn", dsn, "max_open_conns", 1)
 
 	migrate()
 	SeedSettings()
+	slog.Info("database initialized", "dsn", dsn, "duration_ms", time.Since(start).Milliseconds())
 }
 
 func migrate() {
+	start := time.Now()
 	statements := []string{
 		`CREATE TABLE IF NOT EXISTS settings (
 			key   TEXT PRIMARY KEY,
@@ -77,22 +83,28 @@ func migrate() {
 			UNIQUE(poll_id, guest_id)
 		)`,
 	}
-	for _, s := range statements {
+	for index, s := range statements {
+		stmtStart := time.Now()
 		if _, err := DB.Exec(s); err != nil {
-			log.Fatalf("migration failed: %v", err)
+			slog.Error("migration statement failed", "index", index, "duration_ms", time.Since(stmtStart).Milliseconds(), "error", err.Error())
+			panic(err)
 		}
+		slog.Debug("migration statement applied", "index", index, "duration_ms", time.Since(stmtStart).Milliseconds())
 	}
 
 	ensureColumn("guests", "invitation_guest_order", `ALTER TABLE guests ADD COLUMN invitation_guest_order INTEGER`)
 	if _, err := DB.Exec(`UPDATE guests SET invitation_guest_order = id WHERE invitation_id IS NOT NULL AND invitation_guest_order IS NULL`); err != nil {
-		log.Fatalf("migration failed: %v", err)
+		slog.Error("migration backfill failed", "table", "guests", "column", "invitation_guest_order", "error", err.Error())
+		panic(err)
 	}
+	slog.Info("database migrations complete", "statements", len(statements), "duration_ms", time.Since(start).Milliseconds())
 }
 
 func ensureColumn(tableName, columnName, alterStmt string) {
 	rows, err := DB.Query(`PRAGMA table_info(` + tableName + `)`)
 	if err != nil {
-		log.Fatalf("migration failed: %v", err)
+		slog.Error("migration pragma failed", "table", tableName, "error", err.Error())
+		panic(err)
 	}
 	defer rows.Close()
 
@@ -104,16 +116,21 @@ func ensureColumn(tableName, columnName, alterStmt string) {
 		var defaultValue any
 		var pk int
 		if err := rows.Scan(&cid, &name, &columnType, &notNull, &defaultValue, &pk); err != nil {
-			log.Fatalf("migration failed: %v", err)
+			slog.Error("migration pragma scan failed", "table", tableName, "error", err.Error())
+			panic(err)
 		}
 		if name == columnName {
+			slog.Debug("migration column already present", "table", tableName, "column", columnName)
 			return
 		}
 	}
 	if err := rows.Err(); err != nil {
-		log.Fatalf("migration failed: %v", err)
+		slog.Error("migration pragma iteration failed", "table", tableName, "error", err.Error())
+		panic(err)
 	}
 	if _, err := DB.Exec(alterStmt); err != nil {
-		log.Fatalf("migration failed: %v", err)
+		slog.Error("migration alter failed", "table", tableName, "column", columnName, "error", err.Error())
+		panic(err)
 	}
+	slog.Info("migration column added", "table", tableName, "column", columnName)
 }
