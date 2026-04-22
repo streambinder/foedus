@@ -36,6 +36,12 @@ func ViewInvitation(c *fiber.Ctx) error {
 		return c.Status(500).SendString("failed to load polls")
 	}
 
+	noRedirect := c.Query("no_redirect") == "1"
+	showSubmittedCountdown := c.Query("submitted") == "1"
+	if templates.InvitationAnswered(inv) && !noRedirect && !showSubmittedCountdown {
+		return c.Redirect("/?invite=" + inv.Code)
+	}
+
 	lang := getLang(c)
 	t := i18n.NewTWithOverrides(lang, settings.HomepageLabels[lang])
 	baseURL := c.Protocol() + "://" + c.Hostname()
@@ -54,7 +60,7 @@ func ViewInvitation(c *fiber.Ctx) error {
 		strings.Join(ogDescParts, " · "),
 		settings,
 	)
-	return Render(c, templates.Invitation(inv, settings, polls, inv.ViewedAt != nil, c.Query("no_redirect") == "1", t, lang, ogMeta, title))
+	return Render(c, templates.Invitation(inv, settings, polls, inv.ViewedAt != nil, noRedirect, showSubmittedCountdown, t, lang, ogMeta, title))
 }
 
 func MarkInvitationViewed(c *fiber.Ctx) error {
@@ -108,6 +114,8 @@ func UpdateInvitationRSVP(c *fiber.Ctx) error {
 	redirectURL := "/" + code
 	if c.Query("no_redirect") == "1" {
 		redirectURL += "?no_redirect=1"
+	} else {
+		redirectURL += "?submitted=1"
 	}
 	return c.Redirect(redirectURL)
 }

@@ -25,7 +25,7 @@ func guestPollNotes(g models.Guest, pollID int) string {
 	return ""
 }
 
-func invitationAnswered(inv models.Invitation) bool {
+func InvitationAnswered(inv models.Invitation) bool {
 	for _, g := range inv.Guests {
 		if g.ConfirmedCeremony != nil || g.ConfirmedReception != nil {
 			return true
@@ -41,7 +41,7 @@ func noRedirectQuery(noRedirect bool) string {
 	return ""
 }
 
-templ Invitation(inv models.Invitation, settings models.WeddingSettings, polls []models.Poll, alreadyViewed bool, noRedirect bool, t i18n.T, lang string, ogMeta OGMeta, title string) {
+templ Invitation(inv models.Invitation, settings models.WeddingSettings, polls []models.Poll, alreadyViewed bool, noRedirect bool, showSubmittedCountdown bool, t i18n.T, lang string, ogMeta OGMeta, title string) {
 	@Layout(title, lang, t, ogMeta, false) {
 		<div id="envelope-overlay" class={ templ.KV("is-complete", alreadyViewed) }>
 			<div id="envelope-open-button" role="button" tabindex="0" aria-label={ t("invitation.title") }></div>
@@ -133,11 +133,11 @@ templ Invitation(inv models.Invitation, settings models.WeddingSettings, polls [
 					}
 					<article class="rsvp-card">
 						<h2>{ t("invitation.rsvp") }</h2>
-						if invitationAnswered(inv) {
+						if InvitationAnswered(inv) {
 							<div id="rsvp-locked">
 								<p class="rsvp-subtitle rsvp-answered-notice">{ t("invitation.already_answered") }</p>
 								<div class="rsvp-locked-actions">
-									if noRedirect {
+									if noRedirect || !showSubmittedCountdown {
 										<a href={ templ.SafeURL("/?invite=" + inv.Code) } class="secondary outline rsvp-action-btn"><span class="rsvp-btn-icon rsvp-btn-icon-home" aria-hidden="true"></span>{ t("invitation.go_home") }</a>
 									} else {
 										<a
@@ -154,7 +154,7 @@ templ Invitation(inv models.Invitation, settings models.WeddingSettings, polls [
 						} else {
 							<p class="rsvp-subtitle">{ t("invitation.rsvp_description") }</p>
 						}
-						<form method="POST" action={ templ.SafeURL("/" + inv.Code + "/rsvp" + noRedirectQuery(noRedirect)) } id="rsvp-form" class={ templ.KV("rsvp-form-locked", invitationAnswered(inv)) }>
+						<form method="POST" action={ templ.SafeURL("/" + inv.Code + "/rsvp" + noRedirectQuery(noRedirect)) } id="rsvp-form" class={ templ.KV("rsvp-form-locked", InvitationAnswered(inv)) }>
 							for i, g := range inv.Guests {
 								<div class="rsvp-guest">
 									<span class="rsvp-name"><span class="rsvp-name-number">{ strconv.Itoa(i + 1) }.</span>{ g.FirstName }</span>
@@ -392,7 +392,7 @@ templ Invitation(inv models.Invitation, settings models.WeddingSettings, polls [
 				});
 			})();
 		</script>
-		if invitationAnswered(inv) {
+		if InvitationAnswered(inv) {
 			<script>
 				(function() {
 					var unlockBtn = document.getElementById('rsvp-unlock-btn');
