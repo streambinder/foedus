@@ -78,6 +78,15 @@ func invitationGuestNames(inv models.Invitation) string {
 	return strings.Join(names, ", ")
 }
 
+func invitationActioned(inv models.Invitation) bool {
+	for _, g := range inv.Guests {
+		if g.ConfirmedCeremony != nil || g.ConfirmedReception != nil {
+			return true
+		}
+	}
+	return false
+}
+
 func registryItemSelected(selectedID *int, itemID int) bool {
 	return selectedID != nil && *selectedID == itemID
 }
@@ -815,6 +824,7 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 							<tr>
 								<th>{ t("th.code") }</th>
 								<th>{ t("th.guests") }</th>
+								<th>{ t("th.actioned") }</th>
 								<th>{ t("th.viewed") }</th>
 								<th>{ t("th.created") }</th>
 								<th>{ t("th.actions") }</th>
@@ -827,6 +837,13 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 										<code class="invitation-code">{ inv.Code }</code>
 									</td>
 									<td class="invitation-guests-cell" data-label={ t("th.guests") }>{ invitationGuestNames(inv) }</td>
+									<td data-label={ t("th.actioned") }>
+										if invitationActioned(inv) {
+											{ t("status.confirmed") }
+										} else {
+											{ t("status.pending_confirmation") }
+										}
+									</td>
 									<td data-label={ t("th.viewed") }>
 										if inv.ViewedAt != nil {
 											{ i18n.FormatDate(*inv.ViewedAt, lang) }
