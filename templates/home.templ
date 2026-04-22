@@ -199,21 +199,20 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 											if settings.CeremonyAddress != "" {
 												<strong>{ settings.CeremonyAddress }</strong>
 											}
-											if settings.CeremonyLocation != "" {
-												<div class="venue-address-line">
-													<span class="venue-address-icon" aria-hidden="true"></span>
-													<span>{ settings.CeremonyLocation }</span>
-												</div>
-											}
+											<div class="venue-address-line">
+												<span class="venue-address-icon" aria-hidden="true"></span>
+												<span>{ t("home.directions") }</span>
+											</div>
 										</div>
 									</div>
 								} else {
 									if settings.CeremonyAddress != "" {
 										<p><strong>{ settings.CeremonyAddress }</strong></p>
 									}
-									if settings.CeremonyLocation != "" {
-										<p><small>{ settings.CeremonyLocation }</small></p>
-									}
+									<div class="venue-address-line">
+										<span class="venue-address-icon" aria-hidden="true"></span>
+										<span>{ t("home.directions") }</span>
+									</div>
 								}
 							</a>
 						</div>
@@ -235,21 +234,20 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 											if settings.ReceptionAddress != "" {
 												<strong>{ settings.ReceptionAddress }</strong>
 											}
-											if settings.ReceptionLocation != "" {
-												<div class="venue-address-line">
-													<span class="venue-address-icon" aria-hidden="true"></span>
-													<span>{ settings.ReceptionLocation }</span>
-												</div>
-											}
+											<div class="venue-address-line">
+												<span class="venue-address-icon" aria-hidden="true"></span>
+												<span>{ t("home.directions") }</span>
+											</div>
 										</div>
 									</div>
 								} else {
 									if settings.ReceptionAddress != "" {
 										<p><strong>{ settings.ReceptionAddress }</strong></p>
 									}
-									if settings.ReceptionLocation != "" {
-										<p><small>{ settings.ReceptionLocation }</small></p>
-									}
+									<div class="venue-address-line">
+										<span class="venue-address-icon" aria-hidden="true"></span>
+										<span>{ t("home.directions") }</span>
+									</div>
 								}
 							</a>
 						</div>

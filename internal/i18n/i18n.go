@@ -111,6 +111,7 @@ var translations = map[string]map[string]string{
 		"home.getting_married":    "We are announcing our marriage",
 		"home.venues":             "Location",
 		"home.venues_description": "",
+		"home.directions":         "directions",
 		"home.ceremony":           "The Ceremony",
 		"home.reception":          "The Celebration",
 		"home.guest_list":         "Guest List",
@@ -372,6 +373,7 @@ var translations = map[string]map[string]string{
 		"home.getting_married":    "Annunciamo il nostro matrimonio",
 		"home.venues":             "Location",
 		"home.venues_description": "",
+		"home.directions":         "indicazioni",
 		"home.ceremony":           "Il Rito",
 		"home.reception":          "I Festeggiamenti",
 		"home.guest_list":         "Lista Invitati",
@@ -552,7 +554,7 @@ var translations = map[string]map[string]string{
 
 // HomepageKeys is the ordered list of i18n keys overridable from the dashboard.
 var HomepageKeys = []string{
-	"home.getting_married", "home.venues", "home.venues_description", "home.ceremony", "home.reception",
+	"home.getting_married", "home.venues", "home.venues_description", "home.directions", "home.ceremony", "home.reception",
 	"home.soundtrack", "home.soundtrack_description",
 	"soundtrack.search_placeholder", "soundtrack.added", "soundtrack.error", "soundtrack.rate_limited",
 	"home.places", "home.places_description",

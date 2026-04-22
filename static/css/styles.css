@@ -806,13 +806,13 @@ body:has(.hero) {
 
 .venue-overlay-top {
   top: 0;
-  padding: var(--sp-4);
+  padding: var(--sp-3);
   align-items: flex-start;
 }
 
 .venue-overlay-bottom {
   bottom: 0;
-  padding: var(--sp-10) var(--sp-6) var(--sp-6);
+  padding: var(--sp-8) var(--sp-5) var(--sp-5);
   gap: var(--sp-1);
   background: linear-gradient(
     to top,
@@ -826,7 +826,13 @@ body:has(.hero) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--sp-2);
+  gap: var(--sp-1);
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  background: rgba(24, 24, 24, 0.38);
+  color: var(--white);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.18);
 }
 
 .venue-overlay-bottom strong {
@@ -839,14 +845,23 @@ body:has(.hero) {
 
 .venue-address-icon {
   display: inline-block;
-  width: 1rem;
-  height: 1rem;
+  width: 0.85rem;
+  height: 0.85rem;
   flex-shrink: 0;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 21s6-4.35 6-10a6 6 0 1 0-12 0c0 5.65 6 10 6 10Z'/%3E%3Ccircle cx='12' cy='11' r='2.5'/%3E%3C/svg%3E");
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
   opacity: 0.92;
+}
+
+.venue-address-line span:not(.venue-address-icon) {
+  color: var(--white);
+  font-family: 'Inter', sans-serif;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .venue-overlay-bottom span {
