@@ -112,6 +112,11 @@ func DashboardIndex(c *fiber.Ctx) error {
 		logger.Error("dashboard failed to load polls", "error", err.Error())
 		return c.Status(500).SendString("failed to load polls")
 	}
+	soundtrackEvents, err := database.GetAllSoundtrackEvents()
+	if err != nil {
+		logger.Error("dashboard failed to load soundtrack events", "error", err.Error())
+		return c.Status(500).SendString("failed to load soundtrack events")
+	}
 	csrfToken, _ := c.Locals("csrf").(string)
 	logger.Info("dashboard rendered",
 		"guest_count", len(guests),
@@ -120,6 +125,7 @@ func DashboardIndex(c *fiber.Ctx) error {
 		"registry_count", len(registryItems),
 		"invitation_count", len(invitations),
 		"poll_count", len(polls),
+		"soundtrack_event_count", len(soundtrackEvents),
 		"page", page,
 		"search_len", len(search),
 		"confirmed_ceremony", confirmedCeremony,
@@ -127,7 +133,7 @@ func DashboardIndex(c *fiber.Ctx) error {
 		"pending_guests", pendingGuests,
 		"total_guests", totalGuests,
 	)
-	return Render(c, templates.Dashboard(settings, guests, gifts, registryItems, invitations, polls, confirmedCeremony, confirmedReception, pendingGuests, totalGuests, page, totalPages, search, csrfToken, getFlash(c), getT(c), getLang(c)))
+	return Render(c, templates.Dashboard(settings, guests, gifts, registryItems, invitations, polls, soundtrackEvents, confirmedCeremony, confirmedReception, pendingGuests, totalGuests, page, totalPages, search, csrfToken, getFlash(c), getT(c), getLang(c)))
 }
 
 func imageToken(image string) string {

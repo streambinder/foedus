@@ -114,3 +114,12 @@ type RegistryItem struct {
 	SortOrder int
 	CreatedAt time.Time
 }
+
+type SoundtrackEvent struct {
+	ID        int
+	Title     string
+	Artist    string
+	URL       string
+	InviteID  string
+	CreatedAt time.Time
+}

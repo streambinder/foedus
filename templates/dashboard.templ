@@ -78,6 +78,36 @@ func invitationGuestNames(inv models.Invitation) string {
 	return strings.Join(names, ", ")
 }
 
+func soundtrackHasInviteIDs(events []models.SoundtrackEvent) bool {
+	for _, event := range events {
+		if strings.TrimSpace(event.InviteID) != "" {
+			return true
+		}
+	}
+	return false
+}
+
+func soundtrackInviteGuestFirstNames(invitations []models.Invitation, inviteID string) string {
+	inviteID = strings.TrimSpace(inviteID)
+	if inviteID == "" {
+		return ""
+	}
+	for _, inv := range invitations {
+		if inv.Code != inviteID {
+			continue
+		}
+		var names []string
+		for _, guest := range inv.Guests {
+			firstName := strings.TrimSpace(guest.FirstName)
+			if firstName != "" {
+				names = append(names, firstName)
+			}
+		}
+		return strings.Join(names, ", ")
+	}
+	return ""
+}
+
 func invitationActioned(inv models.Invitation) bool {
 	for _, g := range inv.Guests {
 		if g.ConfirmedCeremony != nil || g.ConfirmedReception != nil {
@@ -99,7 +129,7 @@ func imageToken(image string) string {
 	return hex.EncodeToString(sum[:])
 }
 
-templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []models.Gift, registryItems []models.RegistryItem, invitations []models.Invitation, polls []models.Poll, confirmedCeremony int, confirmedReception int, pendingGuests int, total int, page int, totalPages int, search string, csrfToken string, flash string, t i18n.T, lang string) {
+templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []models.Gift, registryItems []models.RegistryItem, invitations []models.Invitation, polls []models.Poll, soundtrackEvents []models.SoundtrackEvent, confirmedCeremony int, confirmedReception int, pendingGuests int, total int, page int, totalPages int, search string, csrfToken string, flash string, t i18n.T, lang string) {
 	@DashboardLayout(pageTitle(t("title.dashboard"), settings.Spouse1Name, settings.Spouse2Name), lang) {
 		<div id="dashboard-flash">
 			if flash != "" {
@@ -1057,6 +1087,57 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 							</div>
 						</div>
 					</div>
+				</div>
+			}
+		</article>
+		<article id="dashboard-soundtrack-events">
+			<h2>{ t("dashboard.track_additions") }</h2>
+			if len(soundtrackEvents) > 0 {
+				<div class="overflow-auto">
+					<table>
+						<thead>
+							<tr>
+								<th>{ t("th.track_title") }</th>
+								<th>{ t("th.track_artist") }</th>
+								<th>{ t("th.track_url") }</th>
+								if soundtrackHasInviteIDs(soundtrackEvents) {
+									<th>{ t("th.invite_id") }</th>
+									<th>{ t("th.invite_guests") }</th>
+								}
+								<th>{ t("th.date") }</th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, event := range soundtrackEvents {
+								<tr>
+									<td data-label={ t("th.track_title") }>{ event.Title }</td>
+									<td data-label={ t("th.track_artist") }>{ event.Artist }</td>
+									<td data-label={ t("th.track_url") }>
+										if strings.TrimSpace(event.URL) != "" {
+											<a href={ templ.SafeURL(event.URL) } target="_blank" rel="noreferrer">{ event.URL }</a>
+										}
+									</td>
+									if soundtrackHasInviteIDs(soundtrackEvents) {
+										<td data-label={ t("th.invite_id") }>
+											if strings.TrimSpace(event.InviteID) != "" {
+												<code>{ event.InviteID }</code>
+											} else {
+												—
+											}
+										</td>
+										<td data-label={ t("th.invite_guests") }>
+											if soundtrackInviteGuestFirstNames(invitations, event.InviteID) != "" {
+												{ soundtrackInviteGuestFirstNames(invitations, event.InviteID) }
+											} else {
+												—
+											}
+										</td>
+									}
+									<td data-label={ t("th.date") }>{ i18n.FormatDate(event.CreatedAt, lang) }</td>
+								</tr>
+							}
+						</tbody>
+					</table>
 				</div>
 			}
 		</article>

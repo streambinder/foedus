@@ -82,6 +82,14 @@ func migrate() {
 			notes    TEXT NOT NULL DEFAULT '',
 			UNIQUE(poll_id, guest_id)
 		)`,
+		`CREATE TABLE IF NOT EXISTS soundtrack_events (
+			id         INTEGER PRIMARY KEY AUTOINCREMENT,
+			title      TEXT NOT NULL DEFAULT '',
+			artist     TEXT NOT NULL DEFAULT '',
+			url        TEXT NOT NULL DEFAULT '',
+			invite_id  TEXT NOT NULL DEFAULT '',
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+		)`,
 	}
 	for index, s := range statements {
 		stmtStart := time.Now()

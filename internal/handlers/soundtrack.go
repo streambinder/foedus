@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"regexp"
+	"strings"
 	"sync"
 	"time"
 
@@ -110,12 +111,20 @@ func SoundtrackAdd(c *fiber.Ctx) error {
 	}
 
 	var req struct {
-		URI string `json:"uri"`
+		URI      string `json:"uri"`
+		Title    string `json:"title"`
+		Artist   string `json:"artist"`
+		URL      string `json:"url"`
+		InviteID string `json:"invite_id"`
 	}
 	if err := c.BodyParser(&req); err != nil || req.URI == "" {
 		logger.Warn("soundtrack add invalid request", "error", errString(err))
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid request"})
 	}
+	req.Title = strings.TrimSpace(req.Title)
+	req.Artist = strings.TrimSpace(req.Artist)
+	req.URL = strings.TrimSpace(req.URL)
+	req.InviteID = strings.TrimSpace(req.InviteID)
 
 	settings, err := database.GetAllSettings()
 	if err != nil {
@@ -142,6 +151,16 @@ func SoundtrackAdd(c *fiber.Ctx) error {
 		"playlist_id", observability.Redact(playlistID),
 		"track_uri", observability.Redact(req.URI),
 	)
+
+	if err := database.CreateSoundtrackEvent(req.Title, req.Artist, req.URL, req.InviteID); err != nil {
+		logger.Error("soundtrack event save failed",
+			"track_uri", observability.Redact(req.URI),
+			"invite_id", observability.Redact(req.InviteID),
+			"error", err.Error(),
+		)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to record track"})
+	}
+
 	return c.JSON(fiber.Map{"ok": true})
 }
 

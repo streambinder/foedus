@@ -36,9 +36,10 @@ var translations = map[string]map[string]string{
 		"title.setup":      "Setup Required",
 
 		// dashboard - sections
-		"dashboard.title":   "Wedding Dashboard",
-		"dashboard.details": "Settings",
-		"dashboard.guests":  "Guests",
+		"dashboard.title":           "Wedding Dashboard",
+		"dashboard.details":         "Settings",
+		"dashboard.guests":          "Guests",
+		"dashboard.track_additions": "Track Additions",
 
 		// dashboard - labels
 		"label.spouses":   "Couple's Names",
@@ -67,12 +68,17 @@ var translations = map[string]map[string]string{
 		"label.registry_item": "Registry Item",
 		"label.confirmed":     "Confirmed",
 		// dashboard - table headers
-		"th.first_name": "First Name",
-		"th.last_name":  "Last Name",
-		"th.ceremony":   "Ceremony",
-		"th.reception":  "Reception",
-		"th.actions":    "Actions",
-		"th.confirmed":  "Confirmed",
+		"th.first_name":    "First Name",
+		"th.last_name":     "Last Name",
+		"th.ceremony":      "Ceremony",
+		"th.reception":     "Reception",
+		"th.actions":       "Actions",
+		"th.confirmed":     "Confirmed",
+		"th.track_title":   "Title",
+		"th.track_artist":  "Artist",
+		"th.track_url":     "Track URL",
+		"th.invite_id":     "Invite ID",
+		"th.invite_guests": "Guests",
 
 		// rsvp radio labels
 		"rsvp.yes": "Yes",
@@ -299,9 +305,10 @@ var translations = map[string]map[string]string{
 		"title.setup":      "Configurazione necessaria",
 
 		// dashboard - sections
-		"dashboard.title":   "Pannello",
-		"dashboard.details": "Impostazioni",
-		"dashboard.guests":  "Invitati",
+		"dashboard.title":           "Pannello",
+		"dashboard.details":         "Impostazioni",
+		"dashboard.guests":          "Invitati",
+		"dashboard.track_additions": "Brani aggiunti",
 
 		// dashboard - labels
 		"label.spouses":   "Nomi degli sposi",
@@ -330,12 +337,17 @@ var translations = map[string]map[string]string{
 		"label.registry_item": "Articolo lista",
 		"label.confirmed":     "Confermato",
 		// dashboard - table headers
-		"th.first_name": "Nome",
-		"th.last_name":  "Cognome",
-		"th.ceremony":   "Cerimonia",
-		"th.reception":  "Ricevimento",
-		"th.actions":    "Azioni",
-		"th.confirmed":  "Confermato",
+		"th.first_name":    "Nome",
+		"th.last_name":     "Cognome",
+		"th.ceremony":      "Cerimonia",
+		"th.reception":     "Ricevimento",
+		"th.actions":       "Azioni",
+		"th.confirmed":     "Confermato",
+		"th.track_title":   "Titolo",
+		"th.track_artist":  "Artista",
+		"th.track_url":     "URL brano",
+		"th.invite_id":     "ID invito",
+		"th.invite_guests": "Invitati",
 
 		// rsvp radio labels
 		"rsvp.yes": "Sì",

@@ -98,10 +98,10 @@
           var btn = item.querySelector(".soundtrack-add-btn");
           btn.addEventListener("click", function (e) {
             e.stopPropagation();
-            addTrack(track.uri, btn, item);
+            addTrack(track, btn, item);
           });
           item.addEventListener("click", function () {
-            addTrack(track.uri, btn, item);
+            addTrack(track, btn, item);
           });
           item.style.cursor = "pointer";
 
@@ -112,13 +112,24 @@
       });
   }
 
-  function addTrack(uri, btn, row) {
+  function addTrack(track, btn, row) {
+    var inviteID = "";
+    try {
+      inviteID = new URLSearchParams(window.location.search).get("invite") || "";
+    } catch (_) {}
+
     btn.disabled = true;
     btn.textContent = "...";
     fetch("/soundtrack/add", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ uri: uri }),
+      body: JSON.stringify({
+        uri: track.uri,
+        title: track.name,
+        artist: track.artist,
+        url: track.id ? ("https://open.spotify.com/track/" + track.id) : "",
+        invite_id: inviteID
+      }),
     })
       .then(function (res) {
         if (res.status === 429) {
