@@ -36,6 +36,13 @@
   });
   closeBtn.addEventListener("click", closePanel);
 
+  document.addEventListener("click", function(e) {
+    if (chatPanel.style.display === "none") return;
+    if (chatPanel.classList.contains("chat-panel--closing")) return;
+    if (chatPanel.contains(e.target) || bubble.contains(e.target)) return;
+    closePanel();
+  });
+
   function openPanel() {
     chatPanel.style.display = "";
     chatPanel.classList.remove("chat-panel--closing");

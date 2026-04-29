@@ -4371,6 +4371,13 @@ td [role="switch"] { margin: 0; }
   transform: scale(0.92);
 }
 
+body.floating-bubbles-hidden #chat-bubble,
+body.floating-bubbles-hidden #invite-update-bubble,
+body.floating-bubbles-hidden #chat-panel {
+  opacity: 0;
+  pointer-events: none;
+}
+
 @media (max-width: 640px) {
   .vp-soundtrack .vp-arrow--up {
     opacity: 0;
