@@ -2,8 +2,10 @@ package database
 
 import (
 	"crypto/rand"
+	"fmt"
 	"math/big"
 	"sort"
+	"strings"
 
 	"github.com/streambinder/foedus/internal/models"
 )
@@ -19,8 +21,24 @@ func GenerateCode() string {
 	return string(b)
 }
 
-func CreateInvitation(guestIDs []int) (string, error) {
+// DefaultInvitationLabel mirrors the historical guest-name composition used
+// for OG titles: single guest → first name; pair → "A & B"; 3+ → "A + N".
+func DefaultInvitationLabel(guests []models.Guest) string {
+	switch len(guests) {
+	case 0:
+		return ""
+	case 1:
+		return guests[0].FirstName
+	case 2:
+		return guests[0].FirstName + " & " + guests[1].FirstName
+	default:
+		return fmt.Sprintf("%s + %d", guests[0].FirstName, len(guests)-1)
+	}
+}
+
+func CreateInvitation(guestIDs []int, label string) (string, error) {
 	code := GenerateCode()
+	label = strings.TrimSpace(label)
 
 	tx, err := DB.Begin()
 	if err != nil {
@@ -28,7 +46,7 @@ func CreateInvitation(guestIDs []int) (string, error) {
 	}
 	defer tx.Rollback()
 
-	result, err := tx.Exec(`INSERT INTO invitations (code) VALUES (?)`, code)
+	result, err := tx.Exec(`INSERT INTO invitations (code, label) VALUES (?, ?)`, code, label)
 	if err != nil {
 		return "", err
 	}
@@ -52,8 +70,24 @@ func CreateInvitation(guestIDs []int) (string, error) {
 	return code, tx.Commit()
 }
 
+func UpdateInvitationLabel(id int, label string) error {
+	_, err := DB.Exec(`UPDATE invitations SET label = ? WHERE id = ?`, strings.TrimSpace(label), id)
+	return err
+}
+
+func GetInvitation(id int) (models.Invitation, error) {
+	var inv models.Invitation
+	err := DB.QueryRow(
+		`SELECT id, code, label, viewed_at, created_at FROM invitations WHERE id = ?`, id,
+	).Scan(&inv.ID, &inv.Code, &inv.Label, &inv.ViewedAt, &inv.CreatedAt)
+	if err != nil {
+		return inv, err
+	}
+	return loadInvitationGuestsAndPollAnswers(inv)
+}
+
 func GetAllInvitations() ([]models.Invitation, error) {
-	rows, err := DB.Query(`SELECT id, code, viewed_at, created_at FROM invitations ORDER BY id DESC`)
+	rows, err := DB.Query(`SELECT id, code, label, viewed_at, created_at FROM invitations ORDER BY id DESC`)
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +96,7 @@ func GetAllInvitations() ([]models.Invitation, error) {
 	var invitations []models.Invitation
 	for rows.Next() {
 		var inv models.Invitation
-		if err := rows.Scan(&inv.ID, &inv.Code, &inv.ViewedAt, &inv.CreatedAt); err != nil {
+		if err := rows.Scan(&inv.ID, &inv.Code, &inv.Label, &inv.ViewedAt, &inv.CreatedAt); err != nil {
 			return nil, err
 		}
 		invitations = append(invitations, inv)
@@ -165,8 +199,8 @@ func boolToNullableInt(b *bool) *int {
 func GetInvitationByCode(code string) (models.Invitation, error) {
 	var inv models.Invitation
 	err := DB.QueryRow(
-		`SELECT id, code, viewed_at, created_at FROM invitations WHERE code = ?`, code,
-	).Scan(&inv.ID, &inv.Code, &inv.ViewedAt, &inv.CreatedAt)
+		`SELECT id, code, label, viewed_at, created_at FROM invitations WHERE code = ?`, code,
+	).Scan(&inv.ID, &inv.Code, &inv.Label, &inv.ViewedAt, &inv.CreatedAt)
 	if err != nil {
 		return inv, err
 	}

@@ -65,6 +65,7 @@ func migrate() {
 		`CREATE TABLE IF NOT EXISTS invitations (
 			id         INTEGER PRIMARY KEY AUTOINCREMENT,
 			code       TEXT NOT NULL UNIQUE,
+			label      TEXT NOT NULL DEFAULT '',
 			viewed_at  DATETIME,
 			created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 		)`,

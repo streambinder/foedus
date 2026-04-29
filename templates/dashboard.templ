@@ -78,6 +78,27 @@ func invitationGuestNames(inv models.Invitation) string {
 	return strings.Join(names, ", ")
 }
 
+// dashboard column display: prefer custom label, fall back to default composition
+func invitationDisplayLabel(inv models.Invitation) string {
+	if label := strings.TrimSpace(inv.Label); label != "" {
+		return label
+	}
+	return defaultInvitationLabel(inv.Guests)
+}
+
+func defaultInvitationLabel(guests []models.Guest) string {
+	switch len(guests) {
+	case 0:
+		return ""
+	case 1:
+		return guests[0].FirstName
+	case 2:
+		return guests[0].FirstName + " & " + guests[1].FirstName
+	default:
+		return fmt.Sprintf("%s + %d", guests[0].FirstName, len(guests)-1)
+	}
+}
+
 func soundtrackHasInviteIDs(events []models.SoundtrackEvent) bool {
 	for _, event := range events {
 		if strings.TrimSpace(event.InviteID) != "" {
@@ -753,6 +774,7 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 						<input type="hidden" name="_csrf" value={ csrfToken }/>
 						<input type="hidden" name="guest_ids" id="guest-ids-input"/>
 						<div class="invitation-bar">
+							<input type="text" name="label" id="invitation-label-input" placeholder={ t("placeholder.invitation_label") } autocomplete="off"/>
 							<button type="submit" id="create-invitation-btn" disabled>{ t("btn.create_invitation") }</button>
 						</div>
 					</form>
@@ -776,7 +798,7 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 								<tr>
 									<td class="checkbox-col">
 										if g.InvitationID == nil {
-											<input type="checkbox" class="guest-checkbox" value={ strconv.Itoa(g.ID) }/>
+											<input type="checkbox" class="guest-checkbox" value={ strconv.Itoa(g.ID) } data-first-name={ g.FirstName }/>
 										}
 									</td>
 									<td data-label={ t("th.first_name") }>
@@ -853,6 +875,7 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 						<thead>
 							<tr>
 								<th>{ t("th.code") }</th>
+								<th>{ t("th.label") }</th>
 								<th>{ t("th.guests") }</th>
 								<th>{ t("th.actioned") }</th>
 								<th>{ t("th.viewed") }</th>
@@ -866,6 +889,7 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 									<td data-label={ t("th.code") }>
 										<code class="invitation-code">{ inv.Code }</code>
 									</td>
+									<td data-label={ t("th.label") }>{ invitationDisplayLabel(inv) }</td>
 									<td class="invitation-guests-cell" data-label={ t("th.guests") }>{ invitationGuestNames(inv) }</td>
 									<td data-label={ t("th.actioned") }>
 										if invitationActioned(inv) {
@@ -884,6 +908,7 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 									<td data-label={ t("th.created") }>{ i18n.FormatDate(inv.CreatedAt, lang) }</td>
 									<td data-label={ t("th.actions") }>
 										<div class="actions">
+											<a href={ templ.SafeURL("/dashboard/invitations/" + strconv.Itoa(inv.ID) + "/edit") }>{ t("btn.edit") }</a>
 											<button type="button" class="copy-btn" data-code={ inv.Code } onclick="copyInvitationURL(this)">{ t("btn.copy") }</button>
 											<form method="POST" action={ templ.SafeURL("/dashboard/invitations/" + strconv.Itoa(inv.ID) + "/delete") } data-confirm={ t("confirm.delete_invitation") } onsubmit="return confirm(this.dataset.confirm)">
 												<input type="hidden" name="_csrf" value={ csrfToken }/>
@@ -1290,6 +1315,25 @@ templ EditPoll(poll models.Poll, settings models.WeddingSettings, csrfToken stri
 				@settingInput("question", t("th.question"), poll.Question)
 				@settingInput("description", t("th.description"), poll.Description)
 				<button type="submit">{ t("btn.update_poll") }</button>
+			</form>
+		</article>
+	}
+}
+
+templ EditInvitation(inv models.Invitation, settings models.WeddingSettings, csrfToken string, t i18n.T, lang string) {
+	@DashboardLayout(pageTitle(t("title.edit_invitation"), settings.Spouse1Name, settings.Spouse2Name), lang) {
+		<a href="/dashboard">&larr; { t("btn.back") }</a>
+		<h1>{ t("title.edit_invitation") }</h1>
+		<article>
+			<p><code class="invitation-code">{ inv.Code }</code> &middot; { invitationGuestNames(inv) }</p>
+			<form method="POST" action={ templ.SafeURL("/dashboard/invitations/" + strconv.Itoa(inv.ID)) }>
+				<input type="hidden" name="_csrf" value={ csrfToken }/>
+				<label>
+					{ t("label.invitation_label") }
+					<input type="text" name="label" value={ inv.Label } placeholder={ defaultInvitationLabel(inv.Guests) } autocomplete="off"/>
+				</label>
+				<small>{ t("hint.invitation_label") }</small>
+				<button type="submit">{ t("btn.update_invitation") }</button>
 			</form>
 		</article>
 	}

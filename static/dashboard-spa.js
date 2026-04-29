@@ -69,6 +69,10 @@
   }
 
   function handleInput(event) {
+    if (event.target.id === "invitation-label-input") {
+      event.target.dataset.userEdited = event.target.value.trim() === "" ? "" : "1";
+      return;
+    }
     if (event.target.id === "guest-search") {
       clearTimeout(guestSearchTimer);
       guestSearchTimer = setTimeout(function () {
@@ -133,6 +137,11 @@
 
     if (form.id === "invitation-form") {
       selectedGuestIds.clear();
+      var labelInput = form.querySelector("#invitation-label-input");
+      if (labelInput) {
+        labelInput.value = "";
+        labelInput.dataset.userEdited = "";
+      }
     }
 
     if (isGuestDeleteForm(form)) {
@@ -242,6 +251,33 @@
     if (button) {
       button.disabled = selectedGuestIds.size === 0;
     }
+
+    syncInvitationLabelDefault();
+  }
+
+  function syncInvitationLabelDefault() {
+    var input = document.getElementById("invitation-label-input");
+    if (!input) return;
+    if (input.dataset.userEdited === "1") return;
+
+    var firstNamesById = {};
+    document.querySelectorAll(".guest-checkbox").forEach(function (checkbox) {
+      firstNamesById[checkbox.value] = (checkbox.dataset.firstName || "").trim();
+    });
+
+    var firstNames = [];
+    selectedGuestIds.forEach(function (id) {
+      var name = firstNamesById[id];
+      if (name) firstNames.push(name);
+    });
+    input.value = composeDefaultInvitationLabel(firstNames);
+  }
+
+  function composeDefaultInvitationLabel(firstNames) {
+    if (firstNames.length === 0) return "";
+    if (firstNames.length === 1) return firstNames[0];
+    if (firstNames.length === 2) return firstNames[0] + " & " + firstNames[1];
+    return firstNames[0] + " + " + (firstNames.length - 1);
   }
 
   function focusGuestSearchIfPresent() {

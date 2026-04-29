@@ -92,6 +92,7 @@ type PollAnswer struct {
 type Invitation struct {
 	ID        int
 	Code      string
+	Label     string
 	ViewedAt  *time.Time
 	CreatedAt time.Time
 	Guests    []Guest

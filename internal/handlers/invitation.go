@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"database/sql"
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -156,20 +155,18 @@ func UpdateInvitationRSVP(c *fiber.Ctx) error {
 }
 
 func invitationTitle(t i18n.T, inv models.Invitation, spouse1, spouse2 string) string {
-	label := t("invitation.title")
-	switch len(inv.Guests) {
-	case 0:
-	case 1:
-		label += " " + inv.Guests[0].FirstName
-	case 2:
-		label += " " + inv.Guests[0].FirstName + " & " + inv.Guests[1].FirstName
-	default:
-		label += " " + inv.Guests[0].FirstName + " + " + fmt.Sprintf("%d", len(inv.Guests)-1)
+	label := strings.TrimSpace(inv.Label)
+	if label == "" {
+		label = database.DefaultInvitationLabel(inv.Guests)
+	}
+	title := t("invitation.title")
+	if label != "" {
+		title += " " + label
 	}
 	if spouse1 != "" && spouse2 != "" {
-		label += " · " + spouse1 + " & " + spouse2
+		title += " · " + spouse1 + " & " + spouse2
 	}
-	return label
+	return title
 }
 
 func parseRSVPField(val string) *bool {

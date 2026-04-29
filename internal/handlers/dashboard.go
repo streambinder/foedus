@@ -869,12 +869,13 @@ func CreateInvitation(c *fiber.Ctx) error {
 		logger.Warn("invitation create skipped", "reason", "no valid guest ids")
 		return c.Redirect("/dashboard")
 	}
-	code, err := database.CreateInvitation(guestIDs)
+	label := strings.TrimSpace(c.FormValue("label"))
+	code, err := database.CreateInvitation(guestIDs, label)
 	if err != nil {
 		logger.Error("invitation create failed", "guest_count", len(guestIDs), "error", err.Error())
 		return c.Status(500).SendString("failed to create invitation")
 	}
-	logger.Info("invitation created", "invitation_code", observability.Redact(code), "guest_count", len(guestIDs))
+	logger.Info("invitation created", "invitation_code", observability.Redact(code), "guest_count", len(guestIDs), "custom_label", label != "")
 	setFlash(c, getT(c)("flash.invitation_created")+" "+code)
 	return c.Redirect("/dashboard")
 }
@@ -962,5 +963,39 @@ func DeleteInvitation(c *fiber.Ctx) error {
 	}
 	logger.Info("invitation deleted", "invitation_id", id)
 	setFlash(c, getT(c)("flash.invitation_deleted"))
+	return c.Redirect("/dashboard")
+}
+
+func EditInvitationPage(c *fiber.Ctx) error {
+	id, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		return c.Status(400).SendString("invalid id")
+	}
+	inv, err := database.GetInvitation(id)
+	if err != nil {
+		return c.Status(404).SendString("invitation not found")
+	}
+	settings, err := database.GetAllSettings()
+	if err != nil {
+		return c.Status(500).SendString("failed to load settings")
+	}
+	csrfToken, _ := c.Locals("csrf").(string)
+	return Render(c, templates.EditInvitation(inv, settings, csrfToken, getT(c), getLang(c)))
+}
+
+func UpdateInvitation(c *fiber.Ctx) error {
+	logger := handlerLogger(c)
+	id, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		logger.Warn("invitation update rejected", "invitation_id", c.Params("id"), "error", err.Error())
+		return c.Status(400).SendString("invalid id")
+	}
+	label := strings.TrimSpace(c.FormValue("label"))
+	if err := database.UpdateInvitationLabel(id, label); err != nil {
+		logger.Error("invitation update failed", "invitation_id", id, "error", err.Error())
+		return c.Status(500).SendString("failed to update invitation")
+	}
+	logger.Info("invitation updated", "invitation_id", id, "custom_label", label != "")
+	setFlash(c, getT(c)("flash.invitation_updated"))
 	return c.Redirect("/dashboard")
 }
