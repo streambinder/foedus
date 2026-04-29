@@ -150,7 +150,9 @@ main.container:has(#invitation-content) {
   padding: 0;
 }
 
-/* snap scrolling for vp-section pages */
+/* snap scrolling for vp-section pages — mandatory snap auto-anchors
+   to nearest section after manual scroll. Arrow nav uses instant jump
+   (behavior:auto in JS) so snap doesn't fight smooth animation. */
 html:has(.vp-section) {
   overflow: hidden;
 }
@@ -159,7 +161,6 @@ html:has(.vp-section) body {
   height: 100dvh;
   overflow-y: scroll;
   scroll-snap-type: y mandatory;
-  scroll-behavior: smooth;
 }
 
 /* ---------------------------------------------------------------
@@ -175,7 +176,6 @@ html:has(.vp-section) body {
   padding: var(--sp-8) var(--sp-4);
   position: relative;
   scroll-snap-align: start;
-  scroll-snap-stop: always;
 }
 
 .vp-section::after {
@@ -450,56 +450,7 @@ html:has(.vp-section) body {
   50%      { transform: translateX(-50%) translateY(-6px); }
 }
 
-/* nav dots — hidden on mobile, shown on desktop */
-.vp-dots {
-  display: none;
-}
-
-.vp-dot {
-  display: block;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  border: 1.5px solid var(--sage);
-  background: transparent;
-  text-decoration: none;
-  transition: transform var(--duration) var(--ease),
-              border-color var(--duration) var(--ease),
-              background-color var(--duration) var(--ease);
-  position: relative;
-}
-
-.vp-dot:hover {
-  border-color: var(--dusty-rose);
-  transform: scale(1.3);
-}
-
-.vp-dot.active {
-  background: var(--dusty-rose);
-  border-color: var(--dusty-rose);
-  transform: scale(1.2);
-}
-
-.vp-dot[aria-label]::after {
-  content: attr(aria-label);
-  position: absolute;
-  right: calc(100% + 0.75rem);
-  top: 50%;
-  transform: translateY(-50%);
-  white-space: nowrap;
-  font-family: 'Inter', sans-serif;
-  font-size: var(--fs-xs);
-  color: var(--charcoal);
-  background: var(--white);
-  padding: 0.25rem 0.6rem;
-  border-radius: var(--radius-sm);
-  box-shadow: var(--shadow-sm);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s var(--ease);
-}
-
-.vp-dot:hover::after { opacity: 1; }
+/* nav dots removed — arrows handle cross-section nav */
 
 /* venues pair — attached cards, no gap */
 .venues-pair {
@@ -3260,29 +3211,6 @@ td [role="switch"] { margin: 0; }
     width: 16rem;
   }
 
-  /* nav dots visible on tablet+ */
-  .vp-dots {
-    display: flex;
-    position: fixed;
-    right: 28px;
-    top: 50%;
-    transform: translateY(-50%);
-    flex-direction: column;
-    gap: var(--sp-3);
-    z-index: 200;
-    opacity: 1;
-    visibility: visible;
-    pointer-events: auto;
-    transition: opacity var(--duration) var(--ease),
-                visibility var(--duration) var(--ease);
-  }
-
-  .vp-dots.vp-dots--hidden {
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
-  }
-
   /* tables: restore traditional layout on tablet+ */
   thead {
     display: table-header-group;
@@ -3492,11 +3420,15 @@ td [role="switch"] { margin: 0; }
 
 .vp-soundtrack .vp-arrow {
   z-index: 3;
-  color: rgba(255, 255, 255, 0.92);
+  color: rgba(255, 255, 255, 0.82);
+  border-color: rgba(255, 255, 255, 0.28);
+  background: rgba(18, 24, 27, 0.24);
 }
 
 .vp-soundtrack .vp-arrow:hover {
-  color: #fff;
+  color: var(--white);
+  border-color: rgba(255, 255, 255, 0.5);
+  background: rgba(18, 24, 27, 0.42);
 }
 
 /* soundtrack search */
@@ -3667,8 +3599,6 @@ td [role="switch"] { margin: 0; }
   }
 
   .vp-arrow,
-  .vp-dots,
-  .vp-dot,
   .modal-overlay,
   .modal-box,
   .timeline-item,

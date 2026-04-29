@@ -484,23 +484,6 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 				</div>
 			</section>
 		}
-		<!-- nav dots -->
-		<nav class="vp-dots vp-dots--hidden" aria-label="Sections">
-			<a href="#landing" class="vp-dot active" aria-label={ settings.Spouse1Name + " & " + settings.Spouse2Name }></a>
-			<a href="#venues" class="vp-dot" aria-label={ t("home.ceremony") }></a>
-			if hasSpotifyPlaylist(settings.SpotifyPlaylist) {
-				<a href="#soundtrack" class="vp-dot" aria-label={ t("home.soundtrack") }></a>
-			}
-			if len(settings.Places) > 0 {
-				<a href="#places" class="vp-dot" aria-label={ t("home.places") }></a>
-			}
-			if len(settings.HoneymoonLocations) > 0 {
-				<a href="#honeymoon" class="vp-dot" aria-label={ t("home.honeymoon") }></a>
-			}
-			if bankConfigured {
-				<a href="#registry" class="vp-dot" aria-label={ t("home.registry") }></a>
-			}
-		</nav>
 		if len(settings.AccommodationSuggestions) > 0 {
 			<div id="accommodations-modal" class="modal-overlay" style="display:none">
 				<div class="modal-box accommodation-modal-box">
@@ -610,9 +593,6 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 		}
 		<script>
 			(function () {
-				// nav dots: highlight active section on scroll
-				var dotsNav = document.querySelector(".vp-dots");
-				var dots = document.querySelectorAll(".vp-dot");
 				var sections = document.querySelectorAll(".vp-section");
 				var reducedMotionQuery = window.matchMedia
 					? window.matchMedia("(prefers-reduced-motion: reduce)")
@@ -621,29 +601,57 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 					return !!(reducedMotionQuery && reducedMotionQuery.matches);
 				}
 
-				function hideChatBubbleForSection(id) {
-					return id === "landing";
+				// snap container is body (see CSS: html:has(.vp-section) body)
+				function getScroller() {
+					return document.body;
+				}
+
+				// programmatic smooth scroll. native behavior:smooth fights mandatory snap
+				// (snap interrupts mid-animation). manual rAF tween + temporary snap-none
+				// lets animation finish, then snap re-engages on release.
+				var animating = false;
+				function animateScrollTo(targetY, duration) {
+					var scroller = getScroller();
+					var startY = scroller.scrollTop;
+					var delta = targetY - startY;
+					if (Math.abs(delta) < 1) return;
+
+					if (prefersReducedMotion() || animating) {
+						scroller.scrollTop = targetY;
+						return;
+					}
+
+					animating = true;
+					document.body.style.scrollSnapType = "none";
+					var start = performance.now();
+					function easeInOutCubic(t) {
+						return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+					}
+					function step(now) {
+						var elapsed = now - start;
+						var t = Math.min(1, elapsed / duration);
+						scroller.scrollTop = startY + delta * easeInOutCubic(t);
+						if (t < 1) {
+							requestAnimationFrame(step);
+						} else {
+							document.body.style.scrollSnapType = "";
+							animating = false;
+						}
+					}
+					requestAnimationFrame(step);
+				}
+
+				function applyLandingState(isLanding) {
+					var chatBubble = document.getElementById("chat-bubble");
+					if (chatBubble) {
+						chatBubble.classList.toggle("chat-bubble--hidden-on-landing", isLanding);
+					}
+					syncFloatingButtons();
 				}
 
 				function setActiveSection(id) {
 					if (!id) return;
-
-					if (dotsNav) {
-						dotsNav.classList.toggle("vp-dots--hidden", id === "landing");
-					}
-
-					dots.forEach(function (d) {
-						d.classList.toggle("active", d.getAttribute("href") === "#" + id);
-					});
-
-					var chatBubble = document.getElementById("chat-bubble");
-					if (chatBubble) {
-						chatBubble.classList.toggle(
-							"chat-bubble--hidden-on-landing",
-							hideChatBubbleForSection(id),
-						);
-					}
-
+					applyLandingState(id === "landing");
 					if (
 						window.history &&
 						window.history.replaceState &&
@@ -655,8 +663,6 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 							window.location.pathname + window.location.search + "#" + id,
 						);
 					}
-
-					syncFloatingButtons();
 				}
 
 				function syncFloatingButtons() {
@@ -682,8 +688,9 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 					setActiveSection(sections[0].id);
 				}
 
+				// arrow click: smooth-scroll to target
 				document
-					.querySelectorAll('.vp-arrow[href^="#"], .vp-dot[href^="#"]')
+					.querySelectorAll('.vp-arrow[href^="#"]')
 					.forEach(function (link) {
 						link.addEventListener("click", function (event) {
 							var href = link.getAttribute("href") || "";
@@ -692,10 +699,9 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 							if (!target) return;
 
 							event.preventDefault();
-							target.scrollIntoView({
-								block: "start",
-								behavior: prefersReducedMotion() ? "auto" : "smooth",
-							});
+							var rect = target.getBoundingClientRect();
+							var targetY = getScroller().scrollTop + rect.top;
+							animateScrollTo(targetY, 600);
 							setActiveSection(id);
 						});
 					});
@@ -717,30 +723,18 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 					}
 				});
 
-				if (sections.length) {
-					var observer = new IntersectionObserver(
+				// only watch landing for chat-bubble visibility — no full active-section tracking
+				var landing = document.getElementById("landing");
+				if (landing && "IntersectionObserver" in window) {
+					var landingObserver = new IntersectionObserver(
 						function (entries) {
-							var activeEntry = null;
-
 							entries.forEach(function (entry) {
-								if (!entry.isIntersecting) return;
-								if (
-									!activeEntry ||
-									entry.intersectionRatio > activeEntry.intersectionRatio
-								) {
-									activeEntry = entry;
-								}
+								applyLandingState(entry.isIntersecting && entry.intersectionRatio > 0.5);
 							});
-
-							if (activeEntry) {
-								setActiveSection(activeEntry.target.id);
-							}
 						},
-						{ threshold: 0.5, rootMargin: "-15% 0px -15% 0px" },
+						{ threshold: [0, 0.5, 1] },
 					);
-					sections.forEach(function (s) {
-						observer.observe(s);
-					});
+					landingObserver.observe(landing);
 				}
 
 				function finishModalClose(m) {
