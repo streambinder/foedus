@@ -115,30 +115,150 @@
     function render() {
       if (!map) return;
       var visibleEntries = [];
+      var edgeEntries = [];
+      var width = mapEl.clientWidth;
+      var height = mapEl.clientHeight;
+      var edgeMargin = 18;
+      var honeymoonOverflow = 240;
 
       entries.forEach(function (entry, idx) {
         var point = map.latLngToContainerPoint(entry.latlng);
-        var overflow = mode === "honeymoon" ? 240 : 80;
-        var isVisible =
-          point.x >= -overflow &&
-          point.y >= -overflow &&
-          point.x <= mapEl.clientWidth + overflow &&
-          point.y <= mapEl.clientHeight + overflow;
 
-        entry.element.style.display = isVisible ? "" : "none";
-        setPinScale(entry, 1);
+        if (mode === "honeymoon") {
+          var isVisible =
+            point.x >= -honeymoonOverflow &&
+            point.y >= -honeymoonOverflow &&
+            point.x <= width + honeymoonOverflow &&
+            point.y <= height + honeymoonOverflow;
+
+          entry.element.style.display = isVisible ? "" : "none";
+          setPinScale(entry, 1);
+          setPinOffset(entry, 0, 0);
+          if (!isVisible) return;
+
+          entry.element.style.left = point.x + "px";
+          entry.element.style.top = point.y + "px";
+          visibleEntries.push(entry);
+          return;
+        }
+
+        var inside =
+          point.x >= 0 &&
+          point.y >= 0 &&
+          point.x <= width &&
+          point.y <= height;
+
+        // animated pins use class toggling instead of display:none so transitions can run
+        entry.element.classList.remove("places-pin--hidden");
         setPinOffset(entry, 0, 0);
+        entry.element.classList.toggle("places-pin--edge", !inside);
 
-        if (!isVisible) return;
-
-        entry.element.style.left = point.x + "px";
-        entry.element.style.top = point.y + "px";
-        entry.element.classList.toggle("places-pin--active", mode === "places" && idx === getActivePlaceIndex());
-        visibleEntries.push(entry);
+        if (inside) {
+          setPinScale(entry, 1);
+          entry.element.style.left = point.x + "px";
+          entry.element.style.top = point.y + "px";
+          entry.element.classList.toggle("places-pin--active", idx === getActivePlaceIndex());
+          visibleEntries.push(entry);
+        } else {
+          var clamped = clampToEdge(point, width, height, edgeMargin);
+          entry.element.style.left = clamped.x + "px";
+          entry.element.style.top = clamped.y + "px";
+          entry.element.classList.remove("places-pin--active");
+          // closer to viewport edge = bigger; far away = tiny
+          var distance = distanceToViewport(point, width, height);
+          var falloff = Math.max(width, height) * 0.6;
+          var t = Math.min(1, distance / falloff);
+          setPinScale(entry, lerp(1, 0.35, t));
+          edgeEntries.push(entry);
+        }
       });
 
       applyOverlapLayout(visibleEntries, mode);
+      collapseEdgeClusters(edgeEntries);
     }
+  }
+
+  // distance in px from a (possibly off-viewport) point to the nearest viewport edge.
+  // returns 0 if the point is inside.
+  function distanceToViewport(point, width, height) {
+    var dx = Math.max(0, Math.max(-point.x, point.x - width));
+    var dy = Math.max(0, Math.max(-point.y, point.y - height));
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+
+  function lerp(a, b, t) {
+    return a + (b - a) * t;
+  }
+
+  // project off-screen point to nearest viewport edge, inset by margin so pin sits fully inside
+  function clampToEdge(point, width, height, margin) {
+    var cx = width / 2;
+    var cy = height / 2;
+    var dx = point.x - cx;
+    var dy = point.y - cy;
+    if (!dx && !dy) return { x: cx, y: cy };
+
+    var halfW = Math.max(1, cx - margin);
+    var halfH = Math.max(1, cy - margin);
+    var scale = Math.min(halfW / Math.abs(dx || 1e-6), halfH / Math.abs(dy || 1e-6));
+    return {
+      x: cx + dx * scale,
+      y: cy + dy * scale
+    };
+  }
+
+  // collapse edge pins that are too close along the same border into a single representative pin.
+  // hidden pins reappear automatically next render once spacing increases.
+  function collapseEdgeClusters(edgeEntries) {
+    edgeEntries.forEach(function (entry) {
+      entry.element.classList.remove("places-pin--cluster");
+    });
+    if (edgeEntries.length < 2) return;
+
+    var clusterDistance = 28;
+    var sides = { top: [], bottom: [], left: [], right: [] };
+    edgeEntries.forEach(function (entry) {
+      sides[classifyEdge(entry)].push(entry);
+    });
+
+    Object.keys(sides).forEach(function (side) {
+      var group = sides[side];
+      if (group.length < 2) return;
+      var axisProp = (side === "top" || side === "bottom") ? "left" : "top";
+      group.sort(function (a, b) {
+        return (parseFloat(a.element.style[axisProp]) || 0) - (parseFloat(b.element.style[axisProp]) || 0);
+      });
+
+      var clusterStart = 0;
+      for (var i = 1; i <= group.length; i++) {
+        var prevPos = parseFloat(group[i - 1].element.style[axisProp]) || 0;
+        var curPos = i < group.length ? (parseFloat(group[i].element.style[axisProp]) || 0) : Infinity;
+        if (curPos - prevPos >= clusterDistance) {
+          if (i - clusterStart > 1) {
+            // hide cluster members except the first; survivor stays visible
+            group[clusterStart].element.classList.add("places-pin--cluster");
+            for (var j = clusterStart + 1; j < i; j++) {
+              group[j].element.classList.add("places-pin--hidden");
+            }
+          }
+          clusterStart = i;
+        }
+      }
+    });
+  }
+
+  function classifyEdge(entry) {
+    var x = parseFloat(entry.element.style.left) || 0;
+    var y = parseFloat(entry.element.style.top) || 0;
+    var parent = entry.element.parentElement;
+    var w = parent ? parent.clientWidth : 0;
+    var h = parent ? parent.clientHeight : 0;
+    var distances = { left: x, right: w - x, top: y, bottom: h - y };
+    var min = Infinity, side = "top";
+    Object.keys(distances).forEach(function (key) {
+      if (distances[key] < min) { min = distances[key]; side = key; }
+    });
+    return side;
   }
 
   function buildEntries(mode, items, pinsEl, map) {

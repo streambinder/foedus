@@ -3753,7 +3753,7 @@ td [role="switch"] { margin: 0; }
   overflow: hidden;
   background: linear-gradient(135deg, var(--dusty-rose), #e6d4c0);
   transform: scale(1);
-  transition: transform var(--duration) var(--ease), box-shadow var(--duration) var(--ease);
+  transition: transform var(--duration) var(--ease), box-shadow var(--duration) var(--ease), opacity var(--duration) var(--ease);
   cursor: pointer;
   pointer-events: auto;
   padding: 0;
@@ -3788,6 +3788,49 @@ td [role="switch"] { margin: 0; }
   font-size: 1rem;
   font-weight: 700;
   letter-spacing: 0.08em;
+}
+
+/* edge pins: pin is off-viewport, shown as small desaturated dot against the closest border.
+   --places-pin-scale is updated per-frame from JS based on distance to viewport. */
+.places-pin--edge {
+  --places-pin-scale: 1;
+  --places-pin-offset-x: 0px;
+  --places-pin-offset-y: 0px;
+  width: 2rem;
+  height: 2rem;
+  border-width: 1px;
+  pointer-events: none;
+  cursor: default;
+  opacity: 0.6;
+  box-shadow: 0 2px 6px rgba(42, 52, 57, 0.18);
+  transition:
+    transform 320ms var(--ease),
+    opacity 320ms var(--ease);
+}
+
+.places-pin--edge:not(.places-pin--honeymoon) > img {
+  filter: url(#places-pin-photo-filter) sepia(0.1) saturate(0.35) contrast(1) brightness(0.95);
+}
+
+.places-pin--edge:hover {
+  transform: translate(
+    calc(-50% + var(--places-pin-offset-x)),
+    calc(-50% + var(--places-pin-offset-y))
+  ) scale(var(--places-pin-scale));
+  box-shadow: 0 2px 6px rgba(42, 52, 57, 0.18);
+}
+
+/* fade/scale out collapsed cluster members instead of display:none so transitions run */
+.places-pin--hidden {
+  opacity: 0 !important;
+  pointer-events: none;
+  transform: translate(
+    calc(-50% + var(--places-pin-offset-x)),
+    calc(-50% + var(--places-pin-offset-y))
+  ) scale(0) !important;
+  transition:
+    transform 260ms var(--ease),
+    opacity 260ms var(--ease);
 }
 
 .places-pin--honeymoon {
