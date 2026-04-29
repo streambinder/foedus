@@ -59,6 +59,17 @@
     }, 150);
   });
 
+  // reposition on viewport changes (mobile keyboard show/hide, scroll, resize)
+  function repositionIfVisible() {
+    if (results.style.display === "block") positionResults();
+  }
+  window.addEventListener("resize", repositionIfVisible);
+  window.addEventListener("scroll", repositionIfVisible, true);
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", repositionIfVisible);
+    window.visualViewport.addEventListener("scroll", repositionIfVisible);
+  }
+
   function search(query) {
     fetch("/soundtrack/search?q=" + encodeURIComponent(query))
       .then(function (res) {

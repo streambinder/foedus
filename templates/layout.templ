@@ -33,7 +33,7 @@ templ Layout(title string, lang string, t i18n.T, ogMeta OGMeta, includeLeaflet 
 	<html lang={ lang } data-theme="light">
 		<head>
 			<meta charset="UTF-8"/>
-			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content"/>
 			<title>{ title }</title>
 			<meta name="theme-color" content="#2A3439"/>
 			if ogMeta.Title != "" {
