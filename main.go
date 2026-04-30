@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/compress"
 	"github.com/gofiber/fiber/v2/middleware/csrf"
 	fiberrecover "github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/streambinder/foedus/internal/database"
@@ -43,8 +44,14 @@ func main() {
 	app.Use(middleware.RequestContext())
 	app.Use(middleware.AccessLog())
 	app.Use(fiberrecover.New())
+	app.Use(compress.New(compress.Config{Level: compress.LevelBestSpeed}))
 	app.Use(middleware.LangDetect())
-	app.Static("/static", "./static")
+	app.Static("/static", "./static", fiber.Static{
+		Compress:      true,
+		ByteRange:     true,
+		MaxAge:        60 * 60 * 24 * 30, // 30 days; bust via filename if needed
+		CacheDuration: 10 * 60,
+	})
 
 	// public
 	app.Get("/", handlers.Home)

@@ -527,7 +527,11 @@
 
     setActivePin(pin);
     modalEl.classList.remove("is-closing");
-    modalEl.style.display = "";
+    if (typeof modalEl.showModal === "function" && !modalEl.open) {
+      modalEl.showModal();
+    } else {
+      modalEl.style.display = "";
+    }
     document.body.style.overflow = "hidden";
   }
 
@@ -539,12 +543,12 @@
       modalEl.addEventListener("click", function (event) {
         if (event.target === modalEl) closeModal();
       });
+      modalEl.addEventListener("close", function () {
+        modalEl.classList.remove("is-closing");
+        document.body.style.overflow = "";
+        setActivePin(null);
+      });
     }
-    document.addEventListener("keydown", function (event) {
-      if (event.key === "Escape" && modalEl && modalEl.style.display !== "none") {
-        closeModal();
-      }
-    });
   }
 
   function closeModal() {
@@ -568,7 +572,11 @@
 
   function finishModalClose() {
     if (!modalEl) return;
-    modalEl.style.display = "none";
+    if (typeof modalEl.close === "function" && modalEl.open) {
+      modalEl.close();
+    } else {
+      modalEl.style.display = "none";
+    }
     modalEl.classList.remove("is-closing");
     document.body.style.overflow = "";
     setActivePin(null);

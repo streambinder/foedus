@@ -145,6 +145,10 @@ func heroBackgroundStyle(image string) templ.SafeCSS {
 
 templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBackground, registryItems []models.RegistryItem, claimedAmounts map[int]int, bankConfigured bool, chatEnabled bool, soundtrackEnabled bool, inviteUpdateURL string, t i18n.T, lang string, ogMeta OGMeta) {
 	@Layout(settings.Spouse1Name+" & "+settings.Spouse2Name, lang, t, ogMeta, len(settings.Places) > 0 || len(settings.HoneymoonLocations) > 0) {
+		<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+			<symbol id="chev-d" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></symbol>
+			<symbol id="chev-u" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></symbol>
+		</svg>
 		<!-- section 1: title -->
 		<section id="landing" class={ templ.Classes("vp-section", "vp-hero", templ.KV("vp-hero--with-background", heroBackground.DesktopImage != "" || heroBackground.MobileImage != "")) }>
 			if heroBackground.DesktopImage != "" {
@@ -171,13 +175,13 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 				}
 			</div>
 			<a href="#venues" class="vp-arrow vp-arrow--down" aria-label={ t("home.ceremony") }>
-				<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
+				<svg width="20" height="20" aria-hidden="true"><use href="#chev-d"/></svg>
 			</a>
 		</section>
 		<!-- section 2: ceremony & celebration -->
 		<section id="venues" class="vp-section vp-venues">
 			<a href="#landing" class="vp-arrow vp-arrow--up" aria-label={ t("home.getting_married") }>
-				<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"></path></svg>
+				<svg width="20" height="20" aria-hidden="true"><use href="#chev-u"/></svg>
 			</a>
 			<div class="vp-section-inner">
 				<div class="section-heading">
@@ -193,7 +197,7 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 							<a href={ templ.SafeURL(mapsURL(settings.CeremonyAddress, settings.CeremonyLocation)) } target="_blank" class="venue-link">
 								if settings.CeremonyImage != "" {
 									<div class="venue-image-wrapper">
-										<img class="venue-image" src={ settings.CeremonyImage } alt={ t("home.ceremony") }/>
+										<img class="venue-image" src={ settings.CeremonyImage } alt={ t("home.ceremony") } width="800" height="500" loading="lazy" decoding="async"/>
 										<div class="venue-overlay venue-overlay-top">
 											<div class="venue-overlay-badge">
 												<span class="venue-overlay-icon" aria-hidden="true"></span>
@@ -228,7 +232,7 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 							<a href={ templ.SafeURL(mapsURL(settings.ReceptionAddress, settings.ReceptionLocation)) } target="_blank" class="venue-link">
 								if settings.ReceptionImage != "" {
 									<div class="venue-image-wrapper">
-										<img class="venue-image" src={ settings.ReceptionImage } alt={ t("home.reception") }/>
+										<img class="venue-image" src={ settings.ReceptionImage } alt={ t("home.reception") } width="800" height="500" loading="lazy" decoding="async"/>
 										<div class="venue-overlay venue-overlay-top">
 											<div class="venue-overlay-badge">
 												<span class="venue-overlay-icon" aria-hidden="true"></span>
@@ -268,7 +272,7 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 			</div>
 			if nextSectionAfterVenues(settings.SpotifyPlaylist, settings.Places, settings.HoneymoonLocations, bankConfigured) != "" {
 				<a href={ templ.SafeURL(nextSectionAfterVenues(settings.SpotifyPlaylist, settings.Places, settings.HoneymoonLocations, bankConfigured)) } class="vp-arrow vp-arrow--down" aria-label={ t("home.registry") }>
-					<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
+					<svg width="20" height="20" aria-hidden="true"><use href="#chev-d"/></svg>
 				</a>
 			}
 		</section>
@@ -276,7 +280,7 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 		if hasSpotifyPlaylist(settings.SpotifyPlaylist) {
 			<section id="soundtrack" class="vp-section vp-soundtrack">
 				<a href="#venues" class="vp-arrow vp-arrow--up" aria-label={ t("home.ceremony") }>
-					<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"></path></svg>
+					<svg width="20" height="20" aria-hidden="true"><use href="#chev-u"/></svg>
 				</a>
 				<div class="soundtrack-header">
 					<div class="section-heading soundtrack-heading">
@@ -313,7 +317,7 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 				></iframe>
 				if nextSectionAfterSoundtrack(settings.Places, settings.HoneymoonLocations, bankConfigured) != "" {
 					<a href={ templ.SafeURL(nextSectionAfterSoundtrack(settings.Places, settings.HoneymoonLocations, bankConfigured)) } class="vp-arrow vp-arrow--down">
-						<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
+						<svg width="20" height="20" aria-hidden="true"><use href="#chev-d"/></svg>
 					</a>
 				}
 			</section>
@@ -335,11 +339,11 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 				<section id="places" class="vp-section vp-places" data-story-map-section="places">
 					if hasSpotifyPlaylist(settings.SpotifyPlaylist) {
 						<a href="#soundtrack" class="vp-arrow vp-arrow--up">
-							<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"></path></svg>
+							<svg width="20" height="20" aria-hidden="true"><use href="#chev-u"/></svg>
 						</a>
 					} else {
 						<a href="#venues" class="vp-arrow vp-arrow--up">
-							<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"></path></svg>
+							<svg width="20" height="20" aria-hidden="true"><use href="#chev-u"/></svg>
 						</a>
 					}
 					<div class="timeline-story-map-shell" aria-hidden="true">
@@ -357,21 +361,21 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 						</div>
 					</div>
 					<div class="timeline-data" style="display:none">{ locationTimelineJSON(settings.Places, lang) }</div>
-					<div id="places-modal" class="modal-overlay" style="display:none">
+					<dialog id="places-modal" class="modal-overlay">
 						<div class="modal-box places-modal-box">
 							<button type="button" id="places-modal-close" class="places-modal-close" aria-label={ t("btn.close") }>&times;</button>
 							<div class="places-modal-media">
-								<img id="places-modal-image" src="" alt=""/>
+								<img id="places-modal-image" src="" alt="" width="800" height="600" decoding="async"/>
 							</div>
 							<div class="places-modal-caption">
 								<h3 id="places-modal-label"></h3>
 								<p id="places-modal-date"></p>
 							</div>
 						</div>
-					</div>
+					</dialog>
 					if nextSectionAfterPlaces(settings.HoneymoonLocations, bankConfigured) != "" {
 						<a href={ templ.SafeURL(nextSectionAfterPlaces(settings.HoneymoonLocations, bankConfigured)) } class="vp-arrow vp-arrow--down">
-							<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
+							<svg width="20" height="20" aria-hidden="true"><use href="#chev-d"/></svg>
 						</a>
 					}
 				</section>
@@ -379,7 +383,7 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 			if len(settings.HoneymoonLocations) > 0 {
 				<section id="honeymoon" class="vp-section vp-honeymoon" data-story-map-section="honeymoon">
 					<a href={ templ.SafeURL(prevSectionBeforeHoneymoon(settings.Places, settings.SpotifyPlaylist)) } class="vp-arrow vp-arrow--up">
-						<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"></path></svg>
+						<svg width="20" height="20" aria-hidden="true"><use href="#chev-u"/></svg>
 					</a>
 					<div class="timeline-story-map-shell" aria-hidden="true">
 						<div class="places-map-background timeline-map-background">
@@ -398,7 +402,7 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 					<div class="timeline-data" style="display:none">{ locationTimelineJSON(settings.HoneymoonLocations, lang) }</div>
 					if nextSectionAfterHoneymoon(bankConfigured) != "" {
 						<a href={ templ.SafeURL(nextSectionAfterHoneymoon(bankConfigured)) } class="vp-arrow vp-arrow--down">
-							<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
+							<svg width="20" height="20" aria-hidden="true"><use href="#chev-d"/></svg>
 						</a>
 					}
 				</section>
@@ -407,7 +411,7 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 		if bankConfigured {
 			<section id="registry" class="vp-section vp-registry">
 				<a href={ templ.SafeURL(prevSectionBeforeRegistry(settings.Places, settings.HoneymoonLocations, settings.SpotifyPlaylist)) } class="vp-arrow vp-arrow--up" aria-label={ t("home.ceremony") }>
-					<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"></path></svg>
+					<svg width="20" height="20" aria-hidden="true"><use href="#chev-u"/></svg>
 				</a>
 				<div class="vp-section-inner">
 					<div class="registry-v2">
@@ -422,7 +426,7 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 								<div class={ "gift-tile", templ.KV("gift-tile--gifted", remainingAmount(item, claimedAmounts) == 0) }>
 									if item.Image != "" {
 										<div class="gift-tile-image">
-											<img src={ item.Image } alt={ item.Name }/>
+											<img src={ item.Image } alt={ item.Name } width="400" height="300" loading="lazy" decoding="async"/>
 											if item.Price > 0 {
 												<span class="gift-tile-price">{ formatPrice(item.Price) }</span>
 											}
@@ -485,7 +489,7 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 			</section>
 		}
 		if len(settings.AccommodationSuggestions) > 0 {
-			<div id="accommodations-modal" class="modal-overlay" style="display:none">
+			<dialog id="accommodations-modal" class="modal-overlay">
 				<div class="modal-box accommodation-modal-box">
 					<h3>{ t("home.accommodations") }</h3>
 					<p class="modal-intro">{ t("home.accommodations_description") }</p>
@@ -509,7 +513,7 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 						<button type="button" id="accommodations-close" class="outline secondary">{ t("btn.close") }</button>
 					</div>
 				</div>
-			</div>
+			</dialog>
 		}
 		<!-- transfer modal -->
 		if bankConfigured {
@@ -521,7 +525,7 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 				data-copy-label={ t("btn.copy") }
 				data-copied-label={ t("btn.copied") }
 			></div>
-			<div id="transfer-modal" class="modal-overlay" data-hide-floating="true" style="display:none">
+			<dialog id="transfer-modal" class="modal-overlay" data-hide-floating="true">
 				<div class="modal-box">
 					<p class="modal-intro">{ t("modal.transfer_intro") }<br/>{ t("modal.transfer_confirm_text") }</p>
 					<div class="modal-field">
@@ -558,9 +562,9 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 						<button type="button" id="modal-confirm">{ t("btn.confirm") }</button>
 					</div>
 				</div>
-			</div>
+			</dialog>
 			<!-- percentage selector modal -->
-			<div id="pct-modal" class="modal-overlay" data-hide-floating="true" style="display:none">
+			<dialog id="pct-modal" class="modal-overlay" data-hide-floating="true">
 				<div class="modal-box">
 					<h3 id="pct-item-name"></h3>
 					<p id="pct-item-price"></p>
@@ -579,9 +583,9 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 						<button type="button" id="pct-next" disabled>{ t("btn.confirm") }</button>
 					</div>
 				</div>
-			</div>
+			</dialog>
 			<!-- thank you modal -->
-			<div id="thanks-modal" class="modal-overlay" data-hide-floating="true" style="display:none">
+			<dialog id="thanks-modal" class="modal-overlay" data-hide-floating="true">
 				<div class="modal-box thanks-box">
 					<h3>{ t("gift.thank_you") }</h3>
 					<p>{ t("gift.thanks_message") }</p>
@@ -589,7 +593,7 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 						<button type="button" id="thanks-close">{ t("btn.close") }</button>
 					</div>
 				</div>
-			</div>
+			</dialog>
 		}
 		<script>
 			(function () {
@@ -737,47 +741,26 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 					landingObserver.observe(landing);
 				}
 
-				function finishModalClose(m) {
-					m.style.display = "none";
-					m.classList.remove("is-closing");
-				}
-
 				var hideFloatingCount = 0;
 				function applyFloatingVisibility(m, opening) {
 					if (!m || m.dataset.hideFloating !== "true") return;
 					hideFloatingCount += opening ? 1 : -1;
 					if (hideFloatingCount < 0) hideFloatingCount = 0;
-					document.body.classList.toggle(
-						"floating-bubbles-hidden",
-						hideFloatingCount > 0,
-					);
+					document.body.classList.toggle("floating-bubbles-hidden", hideFloatingCount > 0);
+				}
+
+				function openModal(m) {
+					if (!m) return;
+					if (typeof m.showModal === "function" && !m.open) m.showModal();
+					else m.style.display = "";
+					applyFloatingVisibility(m, true);
 				}
 
 				function closeModal(m) {
 					if (!m) return;
 					applyFloatingVisibility(m, false);
-					if (prefersReducedMotion()) {
-						finishModalClose(m);
-						return;
-					}
-
-					m.classList.add("is-closing");
-					var closed = false;
-					function onClose() {
-						if (closed) return;
-						closed = true;
-						finishModalClose(m);
-					}
-
-					m.addEventListener("animationend", onClose, { once: true });
-					window.setTimeout(onClose, 260);
-				}
-
-				function openModal(m) {
-					if (!m) return;
-					m.classList.remove("is-closing");
-					m.style.display = "";
-					applyFloatingVisibility(m, true);
+					if (typeof m.close === "function" && m.open) m.close();
+					else m.style.display = "none";
 				}
 
 				var accommodationsModal = document.getElementById(
@@ -1060,7 +1043,7 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 					<button type="submit">{ t("chat.send") }</button>
 				</form>
 			</div>
-			<script src="/static/chat.js"></script>
+			<script src="/static/chat.js" defer></script>
 		}
 	}
 }

@@ -69,7 +69,7 @@ templ Invitation(inv models.Invitation, settings models.WeddingSettings, polls [
 							<a href={ templ.SafeURL(mapsURL(settings.CeremonyAddress, settings.CeremonyLocation)) } target="_blank" class="venue-link">
 								if settings.CeremonyImage != "" {
 									<div class="venue-image-wrapper">
-										<img class="venue-image" src={ settings.CeremonyImage } alt={ t("home.ceremony") }/>
+										<img class="venue-image" src={ settings.CeremonyImage } alt={ t("home.ceremony") } width="800" height="500" loading="lazy" decoding="async"/>
 										<div class="venue-overlay venue-overlay-top">
 											<div class="venue-overlay-badge">
 												<span class="venue-overlay-icon" aria-hidden="true"></span>
@@ -104,7 +104,7 @@ templ Invitation(inv models.Invitation, settings models.WeddingSettings, polls [
 							<a href={ templ.SafeURL(mapsURL(settings.ReceptionAddress, settings.ReceptionLocation)) } target="_blank" class="venue-link">
 								if settings.ReceptionImage != "" {
 									<div class="venue-image-wrapper">
-										<img class="venue-image" src={ settings.ReceptionImage } alt={ t("home.reception") }/>
+										<img class="venue-image" src={ settings.ReceptionImage } alt={ t("home.reception") } width="800" height="500" loading="lazy" decoding="async"/>
 										<div class="venue-overlay venue-overlay-top">
 											<div class="venue-overlay-badge">
 												<span class="venue-overlay-icon" aria-hidden="true"></span>
@@ -157,7 +157,7 @@ templ Invitation(inv models.Invitation, settings models.WeddingSettings, polls [
 						} else {
 							<p class="rsvp-subtitle">{ t("invitation.rsvp_description") }</p>
 						}
-						<form method="POST" action={ templ.SafeURL("/" + inv.Code + "/rsvp" + noRedirectQuery(noRedirect)) } id="rsvp-form" class={ templ.KV("rsvp-form-locked", InvitationAnswered(inv)) }>
+						<form method="POST" action={ templ.SafeURL("/" + inv.Code + "/rsvp" + noRedirectQuery(noRedirect)) } id="rsvp-form" class={ templ.KV("rsvp-form-locked", InvitationAnswered(inv)) } inert?={ InvitationAnswered(inv) }>
 							for i, g := range inv.Guests {
 								<div class="rsvp-guest">
 									<span class="rsvp-name"><span class="rsvp-name-number">{ strconv.Itoa(i + 1) }.</span>{ g.FirstName }</span>
@@ -167,17 +167,17 @@ templ Invitation(inv models.Invitation, settings models.WeddingSettings, polls [
 											<div class="rsvp-radio-options">
 												<label>
 													if g.ConfirmedCeremony != nil && !*g.ConfirmedCeremony {
-														<input type="radio" name={ "ceremony_" + strconv.Itoa(g.ID) } value="0" checked/>
+														<input type="radio" name={ "ceremony_" + strconv.Itoa(g.ID) } value="0" required checked/>
 													} else {
-														<input type="radio" name={ "ceremony_" + strconv.Itoa(g.ID) } value="0"/>
+														<input type="radio" name={ "ceremony_" + strconv.Itoa(g.ID) } value="0" required/>
 													}
 													{ t("rsvp.no") }
 												</label>
 												<label>
 													if g.ConfirmedCeremony != nil && *g.ConfirmedCeremony {
-														<input type="radio" name={ "ceremony_" + strconv.Itoa(g.ID) } value="1" checked/>
+														<input type="radio" name={ "ceremony_" + strconv.Itoa(g.ID) } value="1" required checked/>
 													} else {
-														<input type="radio" name={ "ceremony_" + strconv.Itoa(g.ID) } value="1"/>
+														<input type="radio" name={ "ceremony_" + strconv.Itoa(g.ID) } value="1" required/>
 													}
 													{ t("rsvp.yes") }
 												</label>
@@ -188,17 +188,17 @@ templ Invitation(inv models.Invitation, settings models.WeddingSettings, polls [
 											<div class="rsvp-radio-options">
 												<label>
 													if g.ConfirmedReception != nil && !*g.ConfirmedReception {
-														<input type="radio" name={ "reception_" + strconv.Itoa(g.ID) } value="0" checked/>
+														<input type="radio" name={ "reception_" + strconv.Itoa(g.ID) } value="0" required checked/>
 													} else {
-														<input type="radio" name={ "reception_" + strconv.Itoa(g.ID) } value="0"/>
+														<input type="radio" name={ "reception_" + strconv.Itoa(g.ID) } value="0" required/>
 													}
 													{ t("rsvp.no") }
 												</label>
 												<label>
 													if g.ConfirmedReception != nil && *g.ConfirmedReception {
-														<input type="radio" name={ "reception_" + strconv.Itoa(g.ID) } value="1" checked/>
+														<input type="radio" name={ "reception_" + strconv.Itoa(g.ID) } value="1" required checked/>
 													} else {
-														<input type="radio" name={ "reception_" + strconv.Itoa(g.ID) } value="1"/>
+														<input type="radio" name={ "reception_" + strconv.Itoa(g.ID) } value="1" required/>
 													}
 													{ t("rsvp.yes") }
 												</label>
@@ -225,18 +225,14 @@ templ Invitation(inv models.Invitation, settings models.WeddingSettings, polls [
 																		type="radio"
 																		name={ "poll_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }
 																		value="0"
-																		data-poll-answer="true"
-																		data-notes-target={ "poll_notes_wrap_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }
-																		data-notes-input={ "poll_notes_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }/>
+																		data-poll-answer="true"/>
 																} else {
 																	<input
 																		type="radio"
 																		name={ "poll_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }
 																		value="0"
 																		checked
-																		data-poll-answer="true"
-																		data-notes-target={ "poll_notes_wrap_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }
-																		data-notes-input={ "poll_notes_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }/>
+																		data-poll-answer="true"/>
 																}
 																{ t("rsvp.no") }
 															</label>
@@ -247,17 +243,13 @@ templ Invitation(inv models.Invitation, settings models.WeddingSettings, polls [
 																		name={ "poll_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }
 																		value="1"
 																		checked
-																		data-poll-answer="true"
-																		data-notes-target={ "poll_notes_wrap_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }
-																		data-notes-input={ "poll_notes_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }/>
+																		data-poll-answer="true"/>
 																} else {
 																	<input
 																		type="radio"
 																		name={ "poll_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }
 																		value="1"
-																		data-poll-answer="true"
-																		data-notes-target={ "poll_notes_wrap_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }
-																		data-notes-input={ "poll_notes_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }/>
+																		data-poll-answer="true"/>
 																}
 																{ t("rsvp.yes") }
 															</label>
@@ -266,13 +258,13 @@ templ Invitation(inv models.Invitation, settings models.WeddingSettings, polls [
 													<div
 														class="rsvp-poll-notes"
 														id={ "poll_notes_wrap_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }
-														hidden?={ !guestAnsweredYes(g, p.ID) }>
+														>
 														<textarea
 															name={ "poll_notes_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }
 															id={ "poll_notes_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }
 															placeholder={ t("placeholder.poll_notes") }
 															aria-label={ t("invitation.poll_notes") }
-															disabled?={ !guestAnsweredYes(g, p.ID) }>{ guestPollNotes(g, p.ID) }</textarea>
+															>{ guestPollNotes(g, p.ID) }</textarea>
 													</div>
 												</div>
 											}
@@ -280,7 +272,7 @@ templ Invitation(inv models.Invitation, settings models.WeddingSettings, polls [
 									}
 								</div>
 							}
-							<button type="submit" id="rsvp-submit-btn" disabled>{ t("invitation.confirm") }</button>
+							<button type="submit" id="rsvp-submit-btn">{ t("invitation.confirm") }</button>
 						</form>
 					</article>
 					<div class="invitation-replay">
@@ -298,39 +290,14 @@ templ Invitation(inv models.Invitation, settings models.WeddingSettings, polls [
 				</div>
 				<div class="envelope-flap envelope-flap-left"></div>
 				<div class="envelope-wax" aria-hidden="true">
-					<img class="envelope-wax-img" src="/static/wax-seal.png" alt=""/>
+					<picture>
+						<source type="image/webp" srcset="/static/wax-seal.webp"/>
+						<img class="envelope-wax-img" src="/static/wax-seal.png" alt="" width="512" height="512" decoding="async"/>
+					</picture>
 					<span class="envelope-wax-mark">&amp;</span>
 				</div>
 			</div>
 		</div>
-		<script>
-			(function() {
-				var form = document.getElementById('rsvp-form');
-				var submitButton = document.getElementById('rsvp-submit-btn');
-				if (!form || !submitButton) return;
-
-				function syncRsvpSubmitState() {
-					if (form.classList.contains('rsvp-form-locked')) {
-						submitButton.disabled = true;
-						return;
-					}
-
-					var groups = Array.prototype.slice.call(form.querySelectorAll('.rsvp-radio-group'));
-					var isComplete = groups.every(function(group) {
-						return group.querySelector('input[type="radio"]:checked');
-					});
-
-					submitButton.disabled = !isComplete;
-				}
-
-				form.querySelectorAll('input[type="radio"]').forEach(function(radio) {
-					radio.addEventListener('change', syncRsvpSubmitState);
-				});
-
-				syncRsvpSubmitState();
-				window.syncInvitationRsvpSubmitState = syncRsvpSubmitState;
-			})();
-		</script>
 		<script>
 			(function() {
 				var overlay = document.getElementById('envelope-overlay');
@@ -433,38 +400,16 @@ templ Invitation(inv models.Invitation, settings models.WeddingSettings, polls [
 						if (countdownTimer !== null) {
 							window.clearInterval(countdownTimer);
 						}
-						document.getElementById('rsvp-locked').style.display = 'none';
-						document.getElementById('rsvp-form').classList.remove('rsvp-form-locked');
-						if (typeof window.syncInvitationRsvpSubmitState === 'function') {
-							window.syncInvitationRsvpSubmitState();
+						var lockedEl = document.getElementById('rsvp-locked');
+						if (lockedEl) lockedEl.style.display = 'none';
+						var formEl = document.getElementById('rsvp-form');
+						if (formEl) {
+							formEl.classList.remove('rsvp-form-locked');
+							formEl.removeAttribute('inert');
 						}
 					});
 				})();
 			</script>
 		}
-		<script>
-			(function() {
-				function syncPollNotes(input) {
-					var targetId = input.getAttribute('data-notes-target');
-					var inputId = input.getAttribute('data-notes-input');
-					if (!targetId || !inputId) return;
-					var notesWrap = document.getElementById(targetId);
-					var notesInput = document.getElementById(inputId);
-					if (!notesWrap || !notesInput) return;
-					var checkedInput = document.querySelector('input[name="' + input.name + '"]:checked');
-					var enabled = checkedInput && checkedInput.value === '1';
-					notesWrap.hidden = !enabled;
-					notesInput.disabled = !enabled;
-					if (!enabled) notesInput.value = '';
-				}
-
-				document.querySelectorAll('[data-poll-answer]').forEach(function(input) {
-					syncPollNotes(input);
-					input.addEventListener('change', function() {
-						syncPollNotes(input);
-					});
-				});
-			})();
-		</script>
 	}
 }
