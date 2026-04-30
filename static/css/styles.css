@@ -2395,6 +2395,84 @@ body.invitation-opening {
   background-size: 100% 100%, 100% 100%;
 }
 
+/* sealing wax stamp at envelope center. animates with the topmost flap (top in landscape,
+   left in portrait) by sharing the same hinge edge, transform-origin, and keyframes. */
+.envelope-wax {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 0;
+  height: 50%;
+  transform: translateX(-50%);
+  transform-origin: 50% 0%;
+  z-index: 6;
+  pointer-events: none;
+  backface-visibility: hidden;
+  will-change: transform;
+}
+
+.envelope-wax::before {
+  content: '&';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 5.5rem;
+  height: 5.5rem;
+  max-width: 22vmin;
+  max-height: 22vmin;
+  transform: translate(-50%, 50%);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 35% 30%, rgba(255, 245, 200, 0.65), transparent 38%),
+    radial-gradient(circle at 65% 72%, rgba(80, 50, 0, 0.45), transparent 50%),
+    radial-gradient(circle at 50% 50%, #e8c060 0%, #b8892c 55%, #6e4f10 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(80, 50, 0, 0.55),
+    inset 0 -2px 6px rgba(60, 35, 0, 0.55),
+    inset 0 2px 4px rgba(255, 240, 200, 0.4),
+    0 3px 8px rgba(60, 40, 10, 0.45);
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-size: 3.2rem;
+  line-height: 5.5rem;
+  text-align: center;
+  color: rgba(60, 35, 0, 0.82);
+  text-shadow: 0 1px 0 rgba(255, 240, 200, 0.35);
+  backface-visibility: hidden;
+}
+
+@media (orientation: portrait) {
+  .envelope-wax {
+    top: 50%;
+    left: 0;
+    width: 50%;
+    height: 0;
+    transform: translateY(-50%);
+    transform-origin: 0% 50%;
+  }
+  .envelope-wax::before {
+    bottom: auto;
+    left: auto;
+    top: 50%;
+    right: 0;
+    transform: translate(50%, -50%);
+  }
+}
+
+#envelope-overlay.opening .envelope-wax {
+  animation: flap-open-top 0.58s ease-in-out forwards;
+}
+
+@media (orientation: portrait) {
+  #envelope-overlay.opening .envelope-wax {
+    animation: flap-open-right 0.58s ease-in-out forwards;
+  }
+}
+
+#envelope-overlay.is-complete .envelope-wax {
+  display: none;
+}
+
 #envelope-overlay.opening .envelope-flap-top {
   animation: flap-open-top 0.58s ease-in-out forwards;
 }
