@@ -2411,34 +2411,45 @@ body.invitation-opening {
   will-change: transform;
 }
 
-.envelope-wax::before {
-  content: '&';
+.envelope-wax-img,
+.envelope-wax-mark {
   position: absolute;
   bottom: 0;
   left: 50%;
-  width: 5.5rem;
-  height: 5.5rem;
-  max-width: 22vmin;
-  max-height: 22vmin;
+  width: 12rem;
+  height: 12rem;
+  max-width: 48vmin;
+  max-height: 48vmin;
   transform: translate(-50%, 50%);
-  border-radius: 50%;
-  background:
-    radial-gradient(circle at 35% 30%, rgba(255, 245, 200, 0.65), transparent 38%),
-    radial-gradient(circle at 65% 72%, rgba(80, 50, 0, 0.45), transparent 50%),
-    radial-gradient(circle at 50% 50%, #e8c060 0%, #b8892c 55%, #6e4f10 100%);
-  box-shadow:
-    inset 0 0 0 1px rgba(80, 50, 0, 0.55),
-    inset 0 -2px 6px rgba(60, 35, 0, 0.55),
-    inset 0 2px 4px rgba(255, 240, 200, 0.4),
-    0 3px 8px rgba(60, 40, 10, 0.45);
-  font-family: 'Playfair Display', serif;
-  font-style: italic;
-  font-size: 3.2rem;
-  line-height: 5.5rem;
-  text-align: center;
-  color: rgba(60, 35, 0, 0.82);
-  text-shadow: 0 1px 0 rgba(255, 240, 200, 0.35);
+  pointer-events: none;
   backface-visibility: hidden;
+}
+
+.envelope-wax-img {
+  object-fit: contain;
+  display: block;
+}
+
+.envelope-wax-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Playfair Display', 'Georgia', serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 2.6rem;
+  line-height: 1;
+  /* debossed into wax */
+  color: rgba(110, 80, 25, 0.45);
+  text-shadow:
+    -1px -1px 0.5px rgba(50, 35, 10, 0.4),
+     1px  1px 0.5px rgba(255, 235, 160, 0.28),
+    -0.5px -0.5px 1.5px rgba(40, 25, 5, 0.28),
+     0.5px  0.5px 1.5px rgba(255, 240, 180, 0.18);
+  user-select: none;
+  /* nudge up-left toward optical center of pressed disc */
+  margin-top: -5%;
+  margin-left: -4%;
 }
 
 @media (orientation: portrait) {
@@ -2450,7 +2461,8 @@ body.invitation-opening {
     transform: translateY(-50%);
     transform-origin: 0% 50%;
   }
-  .envelope-wax::before {
+  .envelope-wax-img,
+  .envelope-wax-mark {
     bottom: auto;
     left: auto;
     top: 50%;
