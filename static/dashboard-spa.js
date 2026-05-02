@@ -351,13 +351,13 @@
 
   function initImageResizers() {
     bindImageResize("registry-file", "registry-image-data", null, null, null);
-    bindImageResize("ceremony-file", "ceremony-image-data", "ceremony-preview", "image/jpeg", 0.7, false, "ceremony-image-token");
-    bindImageResize("reception-file", "reception-image-data", "reception-preview", "image/jpeg", 0.7, false, "reception-image-token");
+    bindImageResize("ceremony-file", "ceremony-image-data", "ceremony-preview", "image/webp", 0.9, false, "ceremony-image-token", 1600);
+    bindImageResize("reception-file", "reception-image-data", "reception-preview", "image/webp", 0.9, false, "reception-image-token", 1600);
     bindImageResize("share-preview-file", "share-preview-image-data", "share-preview-preview", null, null, true, "share-preview-image-token");
     bindManagedImageResizers();
   }
 
-  function bindImageResize(fileId, dataId, previewId, format, quality, withRemove, tokenId) {
+  function bindImageResize(fileId, dataId, previewId, format, quality, withRemove, tokenId, maxDim) {
     var fileInput = document.getElementById(fileId);
     var dataInput = document.getElementById(dataId);
     var tokenInput = tokenId ? document.getElementById(tokenId) : null;
@@ -370,7 +370,7 @@
       if (!file) return;
       var img = new Image();
       img.onload = function () {
-        var max = 400;
+        var max = maxDim || 400;
         var w = img.width;
         var h = img.height;
         if (w > max || h > max) {
