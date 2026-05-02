@@ -575,7 +575,7 @@ func DeleteGuest(c *fiber.Ctx) error {
 	return c.Redirect("/dashboard")
 }
 
-const maxImageBytes = 600 * 1024 // 600KB
+const maxImageBytes = 5 * 1024 * 1024 // 5MB
 
 // validateBase64Image checks a base64 data URI for PNG prefix and size
 func validateBase64Image(image string) error {

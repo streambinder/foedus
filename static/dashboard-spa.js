@@ -350,14 +350,14 @@
   }
 
   function initImageResizers() {
-    bindImageResize("registry-file", "registry-image-data", null, null, null);
-    bindImageResize("ceremony-file", "ceremony-image-data", "ceremony-preview", "image/webp", 0.9, false, "ceremony-image-token", 1600);
-    bindImageResize("reception-file", "reception-image-data", "reception-preview", "image/webp", 0.9, false, "reception-image-token", 1600);
-    bindImageResize("share-preview-file", "share-preview-image-data", "share-preview-preview", null, null, true, "share-preview-image-token");
+    bindImageResize("registry-file", "registry-image-data", null, null, null, false, null, null, false);
+    bindImageResize("ceremony-file", "ceremony-image-data", "ceremony-preview", "image/webp", 0.9, false, "ceremony-image-token", 1600, true);
+    bindImageResize("reception-file", "reception-image-data", "reception-preview", "image/webp", 0.9, false, "reception-image-token", 1600, true);
+    bindImageResize("share-preview-file", "share-preview-image-data", "share-preview-preview", null, null, true, "share-preview-image-token", null, true);
     bindManagedImageResizers();
   }
 
-  function bindImageResize(fileId, dataId, previewId, format, quality, withRemove, tokenId, maxDim) {
+  function bindImageResize(fileId, dataId, previewId, format, quality, withRemove, tokenId, maxDim, passthrough) {
     var fileInput = document.getElementById(fileId);
     var dataInput = document.getElementById(dataId);
     var tokenInput = tokenId ? document.getElementById(tokenId) : null;
@@ -368,6 +368,27 @@
     fileInput.addEventListener("change", function () {
       var file = fileInput.files && fileInput.files[0];
       if (!file) return;
+
+      // skip canvas re-encode when source already fits server cap — preserves original quality
+      var serverCapBytes = 5 * 1024 * 1024;
+      if (passthrough && file.type && file.type.indexOf("image/") === 0 && file.size <= serverCapBytes) {
+        var reader = new FileReader();
+        reader.onload = function () {
+          dataInput.value = reader.result;
+          if (tokenInput) tokenInput.value = "";
+          if (previewImg) {
+            previewImg.src = reader.result;
+            previewImg.style.display = "";
+          }
+          if (withRemove) {
+            var removeBtn = document.getElementById("share-preview-remove");
+            if (removeBtn) removeBtn.style.display = "";
+          }
+        };
+        reader.readAsDataURL(file);
+        return;
+      }
+
       var img = new Image();
       img.onload = function () {
         var max = maxDim || 400;
