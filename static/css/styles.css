@@ -2387,10 +2387,10 @@ body.invitation-opening {
   position: absolute;
   bottom: 0;
   left: 50%;
-  width: 12rem;
-  height: 12rem;
-  max-width: 48vmin;
-  max-height: 48vmin;
+  width: 15rem;
+  height: 15rem;
+  max-width: 58vmin;
+  max-height: 58vmin;
   transform: translate(-50%, 50%);
   pointer-events: none;
   backface-visibility: hidden;
