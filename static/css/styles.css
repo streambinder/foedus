@@ -319,6 +319,7 @@ html:has(.vp-section) body {
 .vp-hero h1 {
   font-size: var(--fs-hero);
   font-weight: 400;
+  margin-top: 0.4em;
   margin-bottom: var(--sp-4);
   letter-spacing: -0.01em;
 }
