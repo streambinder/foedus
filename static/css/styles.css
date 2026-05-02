@@ -13,9 +13,6 @@
   --sage-dark:         #8A9178;
   --charcoal:          #36454F;
   --charcoal-dark:     #2A3439;
-  --dusty-rose:        #D4A59A;
-  --dusty-rose-light:  #E8CFC8;
-  --dusty-rose-dark:   #B8877C;
   --white:             #FFFFFF;
   --red-500:           #C45B5B;
   --red-700:           #9E3A3A;
@@ -119,13 +116,13 @@ a {
 }
 
 a:hover {
-  color: var(--dusty-rose-dark);
-  text-decoration-color: var(--dusty-rose);
+  color: var(--sage-dark);
+  text-decoration-color: var(--sage);
 }
 
 /* focus-visible for accessibility */
 :focus-visible {
-  outline: 2px solid var(--dusty-rose);
+  outline: 2px solid var(--sage);
   outline-offset: 2px;
 }
 
@@ -296,7 +293,7 @@ html:has(.vp-section) body {
 
 .vp-hero .amp {
   font-weight: 400;
-  color: var(--dusty-rose);
+  color: var(--sage);
   font-style: italic;
 }
 
@@ -329,7 +326,7 @@ html:has(.vp-section) body {
 }
 
 .vp-hero.vp-hero--with-background .amp {
-  color: var(--dusty-rose);
+  color: var(--sage);
 }
 
 .vp-hero.vp-hero--with-background .hero-kicker,
@@ -380,8 +377,8 @@ html:has(.vp-section) body {
 
 .calendar-btn:hover {
   color: var(--white);
-  background: var(--dusty-rose-dark);
-  border-color: var(--dusty-rose-dark);
+  background: var(--sage-dark);
+  border-color: var(--sage-dark);
   transform: translateY(-1px);
   text-decoration: none;
 }
@@ -395,7 +392,7 @@ html:has(.vp-section) body {
 .calendar-btn--secondary:hover {
   color: var(--charcoal-dark);
   background: var(--ivory);
-  border-color: var(--dusty-rose);
+  border-color: var(--sage);
 }
 
 /* nav arrows */
@@ -423,8 +420,8 @@ html:has(.vp-section) body {
 }
 
 .vp-arrow:hover {
-  color: var(--dusty-rose-dark);
-  border-color: var(--dusty-rose);
+  color: var(--sage-dark);
+  border-color: var(--sage);
   background: rgba(252, 248, 243, 0.95);
   transform: translateX(-50%) scale(1.1);
   animation: none;
@@ -556,7 +553,7 @@ hr::after {
   z-index: 1;
   background: var(--ivory);
   padding: 0 var(--sp-3);
-  color: var(--dusty-rose);
+  color: var(--sage);
   font-size: var(--fs-sm);
   letter-spacing: 0.3em;
 }
@@ -614,9 +611,9 @@ footer a:hover { color: var(--charcoal); }
 .setup-guard p { font-size: var(--fs-base); }
 
 .setup-guard a {
-  color: var(--dusty-rose-dark);
+  color: var(--sage-dark);
   text-decoration: underline;
-  text-decoration-color: var(--dusty-rose-light);
+  text-decoration-color: var(--sage-light);
 }
 
 .setup-guard a:hover { color: var(--charcoal-dark); }
@@ -702,7 +699,7 @@ body:has(.hero) {
 
 .hero .amp {
   font-weight: 400;
-  color: var(--dusty-rose);
+  color: var(--sage);
   font-style: italic;
 }
 
@@ -975,7 +972,7 @@ body:has(.hero) {
 
 .counter-label[class]::before { display: none; }
 
-.counter-card:first-child { border-left-color: var(--dusty-rose-light); border-left-width: 2px; }
+.counter-card:first-child { border-left-color: var(--sage-light); border-left-width: 2px; }
 .counter-card:nth-child(2) { border-left-color: var(--sage); border-left-width: 2px; }
 .counter-card:nth-child(3) { border-left-color: var(--charcoal); border-left-width: 2px; }
 
@@ -1027,8 +1024,8 @@ select, textarea {
 }
 
 input:focus, select:focus, textarea:focus {
-  border-color: var(--dusty-rose);
-  box-shadow: 0 0 0 3px var(--dusty-rose-light);
+  border-color: var(--sage);
+  box-shadow: 0 0 0 3px var(--sage-light);
   outline: none;
 }
 
@@ -1140,7 +1137,7 @@ tbody td:first-child {
   width: 1.25rem;
   height: 1.25rem;
   cursor: pointer;
-  accent-color: var(--dusty-rose);
+  accent-color: var(--sage);
 }
 
 /* actions row in mobile cards */
@@ -1168,8 +1165,8 @@ tbody td:first-child {
 }
 
 .actions a:hover {
-  color: var(--dusty-rose-dark);
-  text-decoration-color: var(--dusty-rose);
+  color: var(--sage-dark);
+  text-decoration-color: var(--sage);
 }
 
 .actions form { margin: 0; padding: 0; }
@@ -1308,7 +1305,7 @@ a[href="/dashboard"]:not(footer a):hover {
 
 .progress-fill {
   height: 100%;
-  background: var(--dusty-rose);
+  background: var(--sage);
   border-radius: var(--radius-sm);
   transition: width 0.4s var(--ease);
 }
@@ -1745,7 +1742,7 @@ dialog.modal-overlay:not([open]) .modal-box {
 
 .gift-tile-progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--dusty-rose-light), var(--dusty-rose));
+  background: linear-gradient(90deg, var(--sage-light), var(--sage));
   border-radius: 2px;
   transition: width 0.6s var(--ease);
 }
@@ -1794,7 +1791,7 @@ dialog.modal-overlay:not([open]) .modal-box {
   align-items: center;
   justify-content: center;
   background: var(--white);
-  color: var(--dusty-rose);
+  color: var(--sage);
 }
 
 /* ---------------------------------------------------------------
@@ -1818,7 +1815,7 @@ dialog.modal-overlay:not([open]) .modal-box {
 }
 
 .free-gift-icon {
-  color: var(--dusty-rose);
+  color: var(--sage);
   flex-shrink: 0;
 }
 
@@ -1862,8 +1859,8 @@ dialog.modal-overlay:not([open]) .modal-box {
 }
 
 .free-gift-chip:hover {
-  border-color: var(--dusty-rose);
-  background: var(--dusty-rose-light);
+  border-color: var(--sage);
+  background: var(--sage-light);
   color: var(--charcoal-dark);
 }
 
@@ -1894,7 +1891,7 @@ dialog.modal-overlay:not([open]) .modal-box {
 }
 
 .free-gift-custom input:focus {
-  border-color: var(--dusty-rose);
+  border-color: var(--sage);
 }
 
 .free-gift-custom .gift-tile-btn {
@@ -2100,9 +2097,9 @@ body.invitation-opening {
   z-index: 220;
   padding: env(safe-area-inset-top, 0) env(safe-area-inset-right, 0) env(safe-area-inset-bottom, 0) env(safe-area-inset-left, 0);
   background:
-    radial-gradient(circle at 82% 18%, rgba(100, 80, 55, 0.08), transparent 18%),
-    radial-gradient(circle at top, rgba(245, 240, 232, 0.90), transparent 38%),
-    linear-gradient(180deg, #ede6da 0%, #e2d9cc 48%, #d6ccbc 100%);
+    radial-gradient(circle at 82% 18%, rgba(54, 69, 79, 0.08), transparent 18%),
+    radial-gradient(circle at top, rgba(232, 230, 218, 0.85), transparent 38%),
+    linear-gradient(180deg, #d8d6c5 0%, #b9b9a6 48%, #8f937f 100%);
   overflow: hidden;
 }
 
@@ -2154,7 +2151,7 @@ body.invitation-opening {
   height: min(48rem, 86vw);
   right: -14rem;
   bottom: -16rem;
-  background: radial-gradient(circle, rgba(212, 165, 154, 0.26), transparent 70%);
+  background: radial-gradient(circle, rgba(138, 145, 120, 0.22), transparent 70%);
 }
 
 #envelope-open-button {
@@ -2173,7 +2170,7 @@ body.invitation-opening {
 }
 
 #envelope-open-button:focus-visible {
-  outline: 2px solid rgba(184, 135, 124, 0.8);
+  outline: 2px solid rgba(138, 145, 120, 0.8);
   outline-offset: -0.5rem;
 }
 
@@ -2198,14 +2195,14 @@ body.invitation-opening {
   line-height: 1.4;
   letter-spacing: 0.05em;
   text-align: center;
-  color: rgba(72, 51, 30, 0.88);
-  background: rgba(186, 164, 132, 0.98);
-  border: 1px solid rgba(91, 67, 39, 0.18);
+  color: rgba(54, 69, 79, 0.88);
+  background: rgba(178, 184, 163, 0.98);
+  border: 1px solid rgba(60, 72, 56, 0.18);
   border-radius: 0.14rem;
   box-shadow:
-    0 0.22rem 0.5rem rgba(70, 48, 26, 0.16),
-    inset 0 0 0 1px rgba(255, 245, 225, 0.12),
-    inset 0 -0.08rem 0 rgba(111, 84, 52, 0.18);
+    0 0.22rem 0.5rem rgba(54, 69, 79, 0.16),
+    inset 0 0 0 1px rgba(252, 248, 243, 0.18),
+    inset 0 -0.08rem 0 rgba(80, 92, 76, 0.18);
   pointer-events: none;
   transform-origin: 50% 100%;
   isolation: isolate;
@@ -2220,10 +2217,10 @@ body.invitation-opening {
   height: 0.7rem;
   transform: translateX(-50%) rotate(1.5deg);
   border-radius: 0.12rem;
-  background: rgba(191, 168, 137, 0.88);
+  background: rgba(170, 178, 154, 0.92);
   box-shadow:
-    0 0.08rem 0.18rem rgba(70, 48, 26, 0.08),
-    inset 0 0 0 1px rgba(255, 244, 222, 0.15);
+    0 0.08rem 0.18rem rgba(54, 69, 79, 0.10),
+    inset 0 0 0 1px rgba(252, 248, 243, 0.20);
   opacity: 0.94;
   z-index: 2;
 }
@@ -2278,7 +2275,7 @@ body.invitation-opening {
   inset: auto 8% 3%;
   height: 12%;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(40, 28, 14, 0.22), rgba(40, 28, 14, 0));
+  background: radial-gradient(circle, rgba(54, 69, 79, 0.22), rgba(54, 69, 79, 0));
   z-index: 0;
   filter: blur(10px);
 }
@@ -2292,10 +2289,10 @@ body.invitation-opening {
   border-radius: 0;
   background:
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.68' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='256' height='256' filter='url(%23n)' opacity='0.25'/%3E%3C/svg%3E"),
-    radial-gradient(ellipse at 22% 18%, rgba(200, 185, 160, 0.28), transparent 30%),
-    radial-gradient(ellipse at 74% 80%, rgba(80, 65, 45, 0.10), transparent 28%),
-    linear-gradient(160deg, #b8a080 0%, #a89070 35%, #9a8262 65%, #8e7858 100%);
-  box-shadow: inset 0 0 0 1px rgba(50, 38, 22, 0.22), 0 24px 50px rgba(40, 30, 15, 0.10);
+    radial-gradient(ellipse at 22% 18%, rgba(180, 188, 165, 0.32), transparent 30%),
+    radial-gradient(ellipse at 74% 80%, rgba(25, 32, 22, 0.14), transparent 28%),
+    linear-gradient(160deg, #a8af9a 0%, #959c87 35%, #828a76 65%, #6f7665 100%);
+  box-shadow: inset 0 0 0 1px rgba(54, 69, 79, 0.22), 0 24px 50px rgba(40, 50, 40, 0.10);
   overflow: hidden;
   z-index: 0;
 }
@@ -2308,16 +2305,16 @@ body.invitation-opening {
   will-change: transform, opacity;
   transform-style: preserve-3d;
   filter:
-    drop-shadow(0 0 0.7px rgba(96, 72, 45, 0.82))
-    drop-shadow(0 0 0.7px rgba(96, 72, 45, 0.82))
-    drop-shadow(0 0 2px rgba(255, 240, 220, 0.4));
+    drop-shadow(0 0 0.7px rgba(70, 84, 64, 0.82))
+    drop-shadow(0 0 0.7px rgba(70, 84, 64, 0.82))
+    drop-shadow(0 0 2px rgba(252, 248, 243, 0.4));
 }
 
 .envelope-flap::after {
   content: '';
   position: absolute;
   inset: 0;
-  opacity: 0.3;
+  opacity: 0.7;
   pointer-events: none;
 }
 
@@ -2329,8 +2326,8 @@ body.invitation-opening {
   transform: translateX(-50%);
   background:
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.68' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='256' height='256' filter='url(%23n)' opacity='0.25'/%3E%3C/svg%3E"),
-    radial-gradient(ellipse at 50% 86%, rgba(175, 158, 128, 0.20), transparent 30%),
-    linear-gradient(180deg, #967858 0%, #a68868 45%, #b89878 100%);
+    radial-gradient(ellipse at 50% 86%, rgba(190, 196, 175, 0.20), transparent 30%),
+    linear-gradient(180deg, #5a6151 0%, #6f7665 45%, #959c87 100%);
   transform-origin: 50% 0%;
   z-index: 5;
   clip-path: shape(from 0% 0%, line to 100% 0%, line to 53% 90%, curve to 47% 90% with 50% 98%, close);
@@ -2339,8 +2336,8 @@ body.invitation-opening {
 
 .envelope-flap-top::after {
   background:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M97,3 L53,87 Q50,94 47,87 L3,3' fill='none' stroke='rgba(60,42,20,0.5)' stroke-width='0.25' stroke-dasharray='1.8,1.2'/%3E%3C/svg%3E"),
-    linear-gradient(180deg, rgba(58, 34, 10, 0.32), rgba(58, 34, 10, 0) 72%);
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M97,3 L53,87 Q50,94 47,87 L3,3' fill='none' stroke='rgba(15, 22, 12, 0.45)' stroke-width='0.18' stroke-dasharray='1.8,1.2'/%3E%3C/svg%3E"),
+    linear-gradient(180deg, rgba(40, 50, 40, 0.32), rgba(40, 50, 40, 0) 72%);
   background-size: 100% 100%, 100% 100%;
 }
 
@@ -2353,8 +2350,8 @@ body.invitation-opening {
   transform: translateY(-50%);
   background:
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.68' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='256' height='256' filter='url(%23n)' opacity='0.25'/%3E%3C/svg%3E"),
-    linear-gradient(90deg, rgba(160, 145, 112, 0.16), transparent 22%),
-    linear-gradient(90deg, #ac8c6c 0%, #9e7e5e 55%, #907050 100%);
+    linear-gradient(90deg, rgba(200, 206, 188, 0.16), transparent 22%),
+    linear-gradient(90deg, #828a76 0%, #6f7665 55%, #5a6151 100%);
   transform-origin: 100% 50%;
   z-index: 3;
   clip-path: shape(from 100% 0%, line to 10% 47%, curve to 10% 53% with 2% 50%, line to 100% 100%, close);
@@ -2362,10 +2359,8 @@ body.invitation-opening {
 }
 
 .envelope-flap-right::after {
-  background:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M97,3 L13,47 Q6,50 13,53 L97,97' fill='none' stroke='rgba(60,42,20,0.5)' stroke-width='0.25' stroke-dasharray='1.8,1.2'/%3E%3C/svg%3E"),
-    linear-gradient(90deg, rgba(58, 34, 10, 0.28), rgba(58, 34, 10, 0) 68%);
-  background-size: 100% 100%, 100% 100%;
+  background: linear-gradient(90deg, rgba(40, 50, 40, 0.28), rgba(40, 50, 40, 0) 68%);
+  background-size: 100% 100%;
 }
 
 .envelope-flap-bottom {
@@ -2377,8 +2372,8 @@ body.invitation-opening {
   transform: translateX(-50%);
   background:
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.68' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='256' height='256' filter='url(%23n)' opacity='0.25'/%3E%3C/svg%3E"),
-    radial-gradient(ellipse at 50% 14%, rgba(175, 158, 128, 0.18), transparent 28%),
-    linear-gradient(180deg, #b09070 0%, #9e8060 55%, #8e7050 100%);
+    radial-gradient(ellipse at 50% 14%, rgba(190, 196, 175, 0.18), transparent 28%),
+    linear-gradient(180deg, #828a76 0%, #6f7665 55%, #5a6151 100%);
   transform-origin: 50% 100%;
   z-index: 4;
   clip-path: shape(from 0% 100%, line to 47% 10%, curve to 53% 10% with 50% 2%, line to 100% 100%, close);
@@ -2387,8 +2382,8 @@ body.invitation-opening {
 
 .envelope-flap-bottom::after {
   background:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M3,97 L47,13 Q50,6 53,13 L97,97' fill='none' stroke='rgba(60,42,20,0.5)' stroke-width='0.25' stroke-dasharray='1.8,1.2'/%3E%3C/svg%3E"),
-    linear-gradient(0deg, rgba(58, 34, 10, 0.32), rgba(58, 34, 10, 0) 72%);
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M3,97 L47,13 Q50,6 53,13 L97,97' fill='none' stroke='rgba(15, 22, 12, 0.45)' stroke-width='0.18' stroke-dasharray='1.8,1.2'/%3E%3C/svg%3E"),
+    linear-gradient(0deg, rgba(40, 50, 40, 0.32), rgba(40, 50, 40, 0) 72%);
   background-size: 100% 100%, 100% 100%;
 }
 
@@ -2400,8 +2395,8 @@ body.invitation-opening {
   transform: translateY(-50%);
   background:
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.68' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='256' height='256' filter='url(%23n)' opacity='0.25'/%3E%3C/svg%3E"),
-    linear-gradient(90deg, transparent 78%, rgba(160, 145, 112, 0.14)),
-    linear-gradient(90deg, #907050 0%, #9e7e5e 45%, #ac8c6c 100%);
+    linear-gradient(90deg, transparent 78%, rgba(200, 206, 188, 0.14)),
+    linear-gradient(90deg, #5a6151 0%, #6f7665 45%, #828a76 100%);
   transform-origin: 0 50%;
   z-index: 3;
   clip-path: shape(from 0% 0%, line to 90% 47%, curve to 90% 53% with 98% 50%, line to 0% 100%, close);
@@ -2409,10 +2404,8 @@ body.invitation-opening {
 }
 
 .envelope-flap-left::after {
-  background:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M3,3 L87,47 Q94,50 87,53 L3,97' fill='none' stroke='rgba(60,42,20,0.5)' stroke-width='0.25' stroke-dasharray='1.8,1.2'/%3E%3C/svg%3E"),
-    linear-gradient(270deg, rgba(58, 34, 10, 0.28), rgba(58, 34, 10, 0) 68%);
-  background-size: 100% 100%, 100% 100%;
+  background: linear-gradient(270deg, rgba(40, 50, 40, 0.28), rgba(40, 50, 40, 0) 68%);
+  background-size: 100% 100%;
 }
 
 /* sealing wax stamp at envelope center. animates with the topmost flap (top in landscape,
@@ -2460,12 +2453,12 @@ body.invitation-opening {
   font-size: 2.6rem;
   line-height: 1;
   /* debossed into wax */
-  color: rgba(110, 80, 25, 0.45);
+  color: rgba(60, 75, 55, 0.45);
   text-shadow:
-    -1px -1px 0.5px rgba(50, 35, 10, 0.4),
-     1px  1px 0.5px rgba(255, 235, 160, 0.28),
-    -0.5px -0.5px 1.5px rgba(40, 25, 5, 0.28),
-     0.5px  0.5px 1.5px rgba(255, 240, 180, 0.18);
+    -1px -1px 0.5px rgba(35, 50, 30, 0.4),
+     1px  1px 0.5px rgba(220, 230, 200, 0.28),
+    -0.5px -0.5px 1.5px rgba(25, 40, 20, 0.28),
+     0.5px  0.5px 1.5px rgba(225, 232, 205, 0.18);
   user-select: none;
   /* nudge up-left toward optical center of pressed disc */
   margin-top: -5%;
@@ -2550,18 +2543,16 @@ body.invitation-opening {
     transform: translateX(-50%);
     background:
       url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.68' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='256' height='256' filter='url(%23n)' opacity='0.25'/%3E%3C/svg%3E"),
-      linear-gradient(0deg, rgba(160, 145, 112, 0.16), transparent 22%),
-      linear-gradient(180deg, #907050 0%, #9e7e5e 55%, #ac8c6c 100%);
+      linear-gradient(0deg, rgba(200, 206, 188, 0.16), transparent 22%),
+      linear-gradient(180deg, #5a6151 0%, #6f7665 55%, #828a76 100%);
     transform-origin: 50% 0%;
     z-index: 3;
     clip-path: shape(from 0% 0%, line to 100% 0%, line to 53% 90%, curve to 47% 90% with 50% 98%, close);
   }
 
   .envelope-flap-top::after {
-    background:
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M97,3 L53,87 Q50,94 47,87 L3,3' fill='none' stroke='rgba(60,42,20,0.5)' stroke-width='0.25' stroke-dasharray='1.8,1.2'/%3E%3C/svg%3E"),
-      linear-gradient(0deg, rgba(58, 34, 10, 0.28), rgba(58, 34, 10, 0) 68%);
-    background-size: 100% 100%, 100% 100%;
+    background: linear-gradient(0deg, rgba(40, 50, 40, 0.28), rgba(40, 50, 40, 0) 68%);
+    background-size: 100% 100%;
   }
 
   .envelope-flap-right {
@@ -2573,8 +2564,8 @@ body.invitation-opening {
     transform: translateY(-50%);
     background:
       url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.68' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='256' height='256' filter='url(%23n)' opacity='0.25'/%3E%3C/svg%3E"),
-      radial-gradient(ellipse at 86% 50%, rgba(175, 158, 128, 0.18), transparent 28%),
-      linear-gradient(90deg, #b09070 0%, #9e8060 55%, #8e7050 100%);
+      radial-gradient(ellipse at 86% 50%, rgba(190, 196, 175, 0.18), transparent 28%),
+      linear-gradient(90deg, #828a76 0%, #6f7665 55%, #5a6151 100%);
     transform-origin: 100% 50%;
     z-index: 4;
     clip-path: shape(from 100% 0%, line to 10% 47%, curve to 10% 53% with 2% 50%, line to 100% 100%, close);
@@ -2582,8 +2573,8 @@ body.invitation-opening {
 
   .envelope-flap-right::after {
     background:
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M97,3 L13,47 Q6,50 13,53 L97,97' fill='none' stroke='rgba(60,42,20,0.5)' stroke-width='0.25' stroke-dasharray='1.8,1.2'/%3E%3C/svg%3E"),
-      linear-gradient(90deg, rgba(58, 34, 10, 0.32), rgba(58, 34, 10, 0) 72%);
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M97,3 L13,47 Q6,50 13,53 L97,97' fill='none' stroke='rgba(15, 22, 12, 0.45)' stroke-width='0.18' stroke-dasharray='1.8,1.2'/%3E%3C/svg%3E"),
+      linear-gradient(90deg, rgba(40, 50, 40, 0.32), rgba(40, 50, 40, 0) 72%);
     background-size: 100% 100%, 100% 100%;
   }
 
@@ -2596,18 +2587,16 @@ body.invitation-opening {
     transform: translateX(-50%);
     background:
       url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.68' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='256' height='256' filter='url(%23n)' opacity='0.25'/%3E%3C/svg%3E"),
-      linear-gradient(180deg, rgba(160, 145, 112, 0.14), transparent 22%),
-      linear-gradient(180deg, #ac8c6c 0%, #9e7e5e 45%, #907050 100%);
+      linear-gradient(180deg, rgba(200, 206, 188, 0.14), transparent 22%),
+      linear-gradient(180deg, #828a76 0%, #6f7665 45%, #5a6151 100%);
     transform-origin: 50% 100%;
     z-index: 3;
     clip-path: shape(from 0% 100%, line to 47% 10%, curve to 53% 10% with 50% 2%, line to 100% 100%, close);
   }
 
   .envelope-flap-bottom::after {
-    background:
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M3,97 L47,13 Q50,6 53,13 L97,97' fill='none' stroke='rgba(60,42,20,0.5)' stroke-width='0.25' stroke-dasharray='1.8,1.2'/%3E%3C/svg%3E"),
-      linear-gradient(180deg, rgba(58, 34, 10, 0.28), rgba(58, 34, 10, 0) 68%);
-    background-size: 100% 100%, 100% 100%;
+    background: linear-gradient(180deg, rgba(40, 50, 40, 0.28), rgba(40, 50, 40, 0) 68%);
+    background-size: 100% 100%;
   }
 
   .envelope-flap-left {
@@ -2618,8 +2607,8 @@ body.invitation-opening {
     transform: translateY(-50%);
     background:
       url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.68' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='256' height='256' filter='url(%23n)' opacity='0.25'/%3E%3C/svg%3E"),
-      radial-gradient(ellipse at 14% 50%, rgba(175, 158, 128, 0.20), transparent 30%),
-      linear-gradient(90deg, #967858 0%, #a68868 45%, #b89878 100%);
+      radial-gradient(ellipse at 14% 50%, rgba(190, 196, 175, 0.20), transparent 30%),
+      linear-gradient(90deg, #5a6151 0%, #6f7665 45%, #959c87 100%);
     transform-origin: 0 50%;
     z-index: 5;
     clip-path: shape(from 0% 0%, line to 90% 47%, curve to 90% 53% with 98% 50%, line to 0% 100%, close);
@@ -2627,8 +2616,8 @@ body.invitation-opening {
 
   .envelope-flap-left::after {
     background:
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M3,3 L87,47 Q94,50 87,53 L3,97' fill='none' stroke='rgba(60,42,20,0.5)' stroke-width='0.25' stroke-dasharray='1.8,1.2'/%3E%3C/svg%3E"),
-      linear-gradient(90deg, rgba(58, 34, 10, 0.32), rgba(58, 34, 10, 0) 72%);
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M3,3 L87,47 Q94,50 87,53 L3,97' fill='none' stroke='rgba(15, 22, 12, 0.45)' stroke-width='0.18' stroke-dasharray='1.8,1.2'/%3E%3C/svg%3E"),
+      linear-gradient(90deg, rgba(40, 50, 40, 0.32), rgba(40, 50, 40, 0) 72%);
     background-size: 100% 100%, 100% 100%;
   }
 
@@ -2867,7 +2856,7 @@ body.invitation-opening {
   cursor: pointer;
   flex-shrink: 0;
   margin: 0;
-  accent-color: var(--dusty-rose);
+  accent-color: var(--sage);
 }
 
 .rsvp-radio-group input[type="radio"]:focus,
@@ -3001,7 +2990,7 @@ body.invitation-opening {
    toggle switches
    --------------------------------------------------------------- */
 [role="switch"] {
-  --pico-switch-color: var(--dusty-rose);
+  --pico-switch-color: var(--sage);
   height: 1.5rem;
   width: 2.75rem;
 }
@@ -3125,8 +3114,8 @@ td [role="switch"] { margin: 0; }
 }
 
 .pagination a:hover {
-  color: var(--dusty-rose-dark);
-  text-decoration-color: var(--dusty-rose);
+  color: var(--sage-dark);
+  text-decoration-color: var(--sage);
 }
 
 .pagination .disabled { color: var(--sage-light); }
@@ -3914,7 +3903,7 @@ td [role="switch"] { margin: 0; }
   border: 1.5px solid var(--sage);
   box-shadow: 0 8px 20px rgba(42, 52, 57, 0.18);
   overflow: hidden;
-  background: linear-gradient(135deg, var(--dusty-rose), #e6d4c0);
+  background: linear-gradient(135deg, var(--sage), #e6d4c0);
   transform: scale(1);
   transition: transform var(--duration) var(--ease), box-shadow var(--duration) var(--ease), opacity var(--duration) var(--ease);
   cursor: pointer;
@@ -4257,7 +4246,7 @@ td [role="switch"] { margin: 0; }
 .place-number {
   font-family: 'Playfair Display', serif;
   font-size: var(--fs-xl);
-  color: var(--dusty-rose);
+  color: var(--sage);
   font-weight: 400;
 }
 
@@ -4351,8 +4340,8 @@ td [role="switch"] { margin: 0; }
 }
 
 .add-entry-btn:hover {
-  border-color: var(--dusty-rose);
-  color: var(--dusty-rose-dark);
+  border-color: var(--sage);
+  color: var(--sage-dark);
   background: var(--ivory-deep);
 }
 
@@ -4440,7 +4429,7 @@ td [role="switch"] { margin: 0; }
   height: var(--floating-action-size);
   padding: 0 0.9rem;
   border-radius: calc(var(--floating-action-size) / 2);
-  background: var(--dusty-rose);
+  background: var(--sage);
   color: var(--white);
   font-family: 'Inter', sans-serif;
   font-size: var(--fs-sm);
@@ -4481,7 +4470,7 @@ td [role="switch"] { margin: 0; }
   width: var(--floating-action-size);
   height: var(--floating-action-size);
   border-radius: 50%;
-  background: var(--dusty-rose);
+  background: var(--sage);
   color: var(--white);
   display: flex;
   align-items: center;
@@ -4596,7 +4585,7 @@ body.floating-bubbles-hidden #chat-panel {
 }
 
 .chat-msg--user .chat-bubble {
-  background: var(--dusty-rose);
+  background: var(--sage);
   color: var(--white);
   border-bottom-right-radius: 4px;
 }
