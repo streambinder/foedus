@@ -2363,6 +2363,7 @@ body.invitation-opening {
   backface-visibility: hidden;
   object-fit: contain;
   display: block;
+  filter: brightness(0.85);
 }
 
 @media (orientation: portrait) {
