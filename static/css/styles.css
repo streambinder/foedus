@@ -1692,7 +1692,7 @@ dialog.modal-overlay:not([open]) .modal-box {
   width: 100%;
   aspect-ratio: 4 / 3;
   overflow: hidden;
-  background: var(--ivory-deep);
+  background: #fff;
 }
 
 .gift-tile-image img {
