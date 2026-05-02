@@ -4316,8 +4316,8 @@ td [role="switch"] { margin: 0; }
 
 #invite-update-bubble {
   position: fixed;
-  bottom: 24px;
-  right: 24px;
+  bottom: var(--sp-6);
+  right: var(--sp-6);
   z-index: 149;
   min-width: calc(var(--floating-action-size) * 2.2);
   height: var(--floating-action-size);
@@ -4359,8 +4359,8 @@ td [role="switch"] { margin: 0; }
    =================================================================== */
 #chat-bubble {
   position: fixed;
-  bottom: 24px;
-  right: 24px;
+  bottom: var(--sp-6);
+  right: var(--sp-6);
   width: var(--floating-action-size);
   height: var(--floating-action-size);
   border-radius: 50%;
@@ -4408,8 +4408,8 @@ body.floating-bubbles-hidden #chat-panel {
 
 #chat-panel {
   position: fixed;
-  bottom: 24px;
-  right: 24px;
+  bottom: var(--sp-6);
+  right: var(--sp-6);
   width: 360px;
   max-height: 500px;
   background: var(--white);
@@ -4551,47 +4551,21 @@ body.floating-bubbles-hidden #chat-panel {
 
 @media (max-width: 479px) {
   #invite-update-bubble {
-    bottom: 20px;
-    right: 12px;
     min-width: calc(var(--floating-action-size) * 2);
     padding: 0 0.8rem;
   }
 
   #chat-panel {
-    left: 12px;
-    right: 12px;
+    left: var(--sp-6);
+    right: var(--sp-6);
     width: auto;
-    bottom: 20px;
     border-radius: 12px;
     max-height: 70vh;
-  }
-
-  #chat-bubble {
-    bottom: 20px;
-    right: 12px;
   }
 
   #chat-bubble.chat-bubble--covered {
     opacity: 0;
     pointer-events: none;
-  }
-}
-
-@media (min-width: 768px) {
-  #invite-update-bubble {
-    bottom: 56px;
-    right: 56px;
-  }
-
-  /* shift chat clear of the nav dots column on the right */
-  #chat-bubble {
-    bottom: 56px;
-    right: 56px;
-  }
-
-  #chat-panel {
-    right: 56px;
-    bottom: 56px;
   }
 }
 
