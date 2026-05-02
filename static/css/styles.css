@@ -268,10 +268,42 @@ html:has(.vp-section) body {
 
 .vp-venues {
   background: var(--white);
+  overflow: hidden;
 }
 
 .vp-registry {
   background: var(--ivory);
+  overflow: hidden;
+}
+
+.vp-flora {
+  position: absolute;
+  width: clamp(300px, 46vw, 520px);
+  aspect-ratio: 846 / 1000;
+  background: url("/static/eucalyptus-corner.webp") center / contain no-repeat;
+  opacity: 0.78;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.vp-flora--bl {
+  bottom: -1.5rem;
+  left: -10em;
+  transform: rotate(30deg);
+  transform-origin: bottom left;
+}
+
+.vp-flora--tr {
+  top: -12.5rem;
+  right: -10rem;
+  transform: rotate(210deg);
+}
+
+@media (min-width: 768px) {
+  .vp-flora--tr {
+    top: -17.5rem;
+    right: -15rem;
+  }
 }
 
 .vp-hero .hero-kicker {
