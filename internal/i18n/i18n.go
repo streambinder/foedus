@@ -233,8 +233,7 @@ var translations = map[string]map[string]string{
 		"invitation.submitted_message": "Thank you! Your RSVP has been recorded.",
 		"invitation.replay_animation":  "Replay envelope animation",
 		"invitation.close_envelope":    "close envelope",
-		"invitation.touch_to_open":     "touch to open",
-		"invitation.brought_to_you_by": "brought to you by Davide Pucci",
+		"invitation.brought_to_you_by": "Brought to you by Davide Pucci",
 		"invitation.poll_notes":        "Notes",
 		"placeholder.poll_notes":       "Add a note",
 
@@ -509,8 +508,7 @@ var translations = map[string]map[string]string{
 		"invitation.submitted_message": "Grazie! La vostra risposta è stata registrata.",
 		"invitation.replay_animation":  "Rivedi animazione busta",
 		"invitation.close_envelope":    "chiudi busta",
-		"invitation.touch_to_open":     "tocca per aprire",
-		"invitation.brought_to_you_by": "offerto da Davide Pucci",
+		"invitation.brought_to_you_by": "Offerto da Davide Pucci",
 		"invitation.poll_notes":        "Note",
 		"placeholder.poll_notes":       "Aggiungi una nota",
 
@@ -591,7 +589,7 @@ var HomepageKeys = []string{
 	"home.registry", "home.registry_description",
 	"home.generic_gift", "home.generic_gift_description", "home.remaining",
 	"invitation.title", "invitation.rsvp", "invitation.rsvp_description",
-	"invitation.confirm", "invitation.already_answered", "invitation.change_answer", "invitation.go_home", "invitation.submitted_message", "invitation.replay_animation", "invitation.close_envelope", "invitation.touch_to_open", "invitation.brought_to_you_by",
+	"invitation.confirm", "invitation.already_answered", "invitation.change_answer", "invitation.go_home", "invitation.submitted_message", "invitation.replay_animation", "invitation.close_envelope", "invitation.brought_to_you_by",
 	"gift.thank_you", "gift.thanks_message",
 	"badge.sold",
 	"btn.buy", "btn.copy", "btn.copied", "btn.cancel", "btn.confirm", "btn.close",

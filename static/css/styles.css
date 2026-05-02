@@ -2178,86 +2178,6 @@ body.invitation-opening {
   display: none;
 }
 
-.envelope-caption {
-  position: absolute;
-  left: 50%;
-  bottom: clamp(1.35rem, 3.6vh, 2.15rem);
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.75rem;
-  width: min(18rem, calc(100% - 4rem));
-  padding: 0.7rem 0.9rem 0.8rem;
-  transform: translateX(-50%) rotate(-4deg);
-  font-family: 'Courier Prime', 'Courier New', monospace;
-  font-size: clamp(0.68rem, 1.7vw, 0.8rem);
-  line-height: 1.4;
-  letter-spacing: 0.05em;
-  text-align: center;
-  color: rgba(54, 69, 79, 0.88);
-  background: rgba(178, 184, 163, 0.98);
-  border: 1px solid rgba(60, 72, 56, 0.18);
-  border-radius: 0.14rem;
-  box-shadow:
-    0 0.22rem 0.5rem rgba(54, 69, 79, 0.16),
-    inset 0 0 0 1px rgba(252, 248, 243, 0.18),
-    inset 0 -0.08rem 0 rgba(80, 92, 76, 0.18);
-  pointer-events: none;
-  transform-origin: 50% 100%;
-  isolation: isolate;
-}
-
-.envelope-caption::before {
-  content: '';
-  position: absolute;
-  top: -0.28rem;
-  left: 50%;
-  width: 2.8rem;
-  height: 0.7rem;
-  transform: translateX(-50%) rotate(1.5deg);
-  border-radius: 0.12rem;
-  background: rgba(170, 178, 154, 0.92);
-  box-shadow:
-    0 0.08rem 0.18rem rgba(54, 69, 79, 0.10),
-    inset 0 0 0 1px rgba(252, 248, 243, 0.20);
-  opacity: 0.94;
-  z-index: 2;
-}
-
-.envelope-caption::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.95' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
-  background-repeat: repeat;
-  background-size: 120px 120px;
-  opacity: 0.48;
-  pointer-events: none;
-  z-index: 0;
-  clip-path: inset(0 round 0.14rem);
-}
-
-.envelope-caption span {
-  position: relative;
-  z-index: 1;
-}
-
-.envelope-caption span:last-child {
-  font-size: 0.93em;
-  letter-spacing: 0.03em;
-}
-
-#envelope-overlay.opening .envelope-caption {
-  animation: postit-slide-away 0.3s ease-in forwards;
-}
-
-#envelope-overlay.is-complete .envelope-caption {
-  opacity: 0;
-}
-
 .envelope {
   position: absolute;
   inset: 0;
@@ -2336,9 +2256,10 @@ body.invitation-opening {
 
 .envelope-flap-top::after {
   background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M0,0 L100,0 L53,90 Q50,98 47,90 Z' fill='none' stroke='rgba(20, 30, 18, 0.3)' stroke-width='0.25'/%3E%3C/svg%3E"),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M97,3 L53,87 Q50,94 47,87 L3,3' fill='none' stroke='rgba(15, 22, 12, 0.45)' stroke-width='0.18' stroke-dasharray='1.8,1.2'/%3E%3C/svg%3E"),
     linear-gradient(180deg, rgba(40, 50, 40, 0.32), rgba(40, 50, 40, 0) 72%);
-  background-size: 100% 100%, 100% 100%;
+  background-size: 100% 100%, 100% 100%, 100% 100%;
 }
 
 .envelope-flap-right {
@@ -2359,8 +2280,10 @@ body.invitation-opening {
 }
 
 .envelope-flap-right::after {
-  background: linear-gradient(90deg, rgba(40, 50, 40, 0.28), rgba(40, 50, 40, 0) 68%);
-  background-size: 100% 100%;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M100,0 L10,47 Q2,50 10,53 L100,100 Z' fill='none' stroke='rgba(20, 30, 18, 0.3)' stroke-width='0.25'/%3E%3C/svg%3E"),
+    linear-gradient(90deg, rgba(40, 50, 40, 0.28), rgba(40, 50, 40, 0) 68%);
+  background-size: 100% 100%, 100% 100%;
 }
 
 .envelope-flap-bottom {
@@ -2382,9 +2305,10 @@ body.invitation-opening {
 
 .envelope-flap-bottom::after {
   background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M0,100 L47,10 Q50,2 53,10 L100,100 Z' fill='none' stroke='rgba(20, 30, 18, 0.3)' stroke-width='0.25'/%3E%3C/svg%3E"),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M3,97 L47,13 Q50,6 53,13 L97,97' fill='none' stroke='rgba(15, 22, 12, 0.45)' stroke-width='0.18' stroke-dasharray='1.8,1.2'/%3E%3C/svg%3E"),
     linear-gradient(0deg, rgba(40, 50, 40, 0.32), rgba(40, 50, 40, 0) 72%);
-  background-size: 100% 100%, 100% 100%;
+  background-size: 100% 100%, 100% 100%, 100% 100%;
 }
 
 .envelope-flap-left {
@@ -2404,8 +2328,10 @@ body.invitation-opening {
 }
 
 .envelope-flap-left::after {
-  background: linear-gradient(270deg, rgba(40, 50, 40, 0.28), rgba(40, 50, 40, 0) 68%);
-  background-size: 100% 100%;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M0,0 L90,47 Q98,50 90,53 L0,100 Z' fill='none' stroke='rgba(20, 30, 18, 0.3)' stroke-width='0.25'/%3E%3C/svg%3E"),
+    linear-gradient(270deg, rgba(40, 50, 40, 0.28), rgba(40, 50, 40, 0) 68%);
+  background-size: 100% 100%, 100% 100%;
 }
 
 /* sealing wax stamp at envelope center. animates with the topmost flap (top in landscape,
@@ -2424,8 +2350,7 @@ body.invitation-opening {
   will-change: transform;
 }
 
-.envelope-wax-img,
-.envelope-wax-mark {
+.envelope-wax-img {
   position: absolute;
   bottom: 0;
   left: 50%;
@@ -2436,33 +2361,8 @@ body.invitation-opening {
   transform: translate(-50%, 50%);
   pointer-events: none;
   backface-visibility: hidden;
-}
-
-.envelope-wax-img {
   object-fit: contain;
   display: block;
-}
-
-.envelope-wax-mark {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: 'Playfair Display', 'Georgia', serif;
-  font-style: italic;
-  font-weight: 400;
-  font-size: 2.6rem;
-  line-height: 1;
-  /* debossed into wax */
-  color: rgba(60, 75, 55, 0.45);
-  text-shadow:
-    -1px -1px 0.5px rgba(35, 50, 30, 0.4),
-     1px  1px 0.5px rgba(220, 230, 200, 0.28),
-    -0.5px -0.5px 1.5px rgba(25, 40, 20, 0.28),
-     0.5px  0.5px 1.5px rgba(225, 232, 205, 0.18);
-  user-select: none;
-  /* nudge up-left toward optical center of pressed disc */
-  margin-top: -5%;
-  margin-left: -4%;
 }
 
 @media (orientation: portrait) {
@@ -2474,8 +2374,7 @@ body.invitation-opening {
     transform: translateY(-50%);
     transform-origin: 0% 50%;
   }
-  .envelope-wax-img,
-  .envelope-wax-mark {
+  .envelope-wax-img {
     bottom: auto;
     left: auto;
     top: 50%;
@@ -2551,8 +2450,10 @@ body.invitation-opening {
   }
 
   .envelope-flap-top::after {
-    background: linear-gradient(0deg, rgba(40, 50, 40, 0.28), rgba(40, 50, 40, 0) 68%);
-    background-size: 100% 100%;
+    background:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M0,0 L100,0 L53,90 Q50,98 47,90 Z' fill='none' stroke='rgba(20, 30, 18, 0.3)' stroke-width='0.25'/%3E%3C/svg%3E"),
+      linear-gradient(0deg, rgba(40, 50, 40, 0.28), rgba(40, 50, 40, 0) 68%);
+    background-size: 100% 100%, 100% 100%;
   }
 
   .envelope-flap-right {
@@ -2573,9 +2474,10 @@ body.invitation-opening {
 
   .envelope-flap-right::after {
     background:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M100,0 L10,47 Q2,50 10,53 L100,100 Z' fill='none' stroke='rgba(20, 30, 18, 0.3)' stroke-width='0.25'/%3E%3C/svg%3E"),
       url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M97,3 L13,47 Q6,50 13,53 L97,97' fill='none' stroke='rgba(15, 22, 12, 0.45)' stroke-width='0.18' stroke-dasharray='1.8,1.2'/%3E%3C/svg%3E"),
       linear-gradient(90deg, rgba(40, 50, 40, 0.32), rgba(40, 50, 40, 0) 72%);
-    background-size: 100% 100%, 100% 100%;
+    background-size: 100% 100%, 100% 100%, 100% 100%;
   }
 
   .envelope-flap-bottom {
@@ -2595,8 +2497,10 @@ body.invitation-opening {
   }
 
   .envelope-flap-bottom::after {
-    background: linear-gradient(180deg, rgba(40, 50, 40, 0.28), rgba(40, 50, 40, 0) 68%);
-    background-size: 100% 100%;
+    background:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M0,100 L47,10 Q50,2 53,10 L100,100 Z' fill='none' stroke='rgba(20, 30, 18, 0.3)' stroke-width='0.25'/%3E%3C/svg%3E"),
+      linear-gradient(180deg, rgba(40, 50, 40, 0.28), rgba(40, 50, 40, 0) 68%);
+    background-size: 100% 100%, 100% 100%;
   }
 
   .envelope-flap-left {
@@ -2616,9 +2520,10 @@ body.invitation-opening {
 
   .envelope-flap-left::after {
     background:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M0,0 L90,47 Q98,50 90,53 L0,100 Z' fill='none' stroke='rgba(20, 30, 18, 0.3)' stroke-width='0.25'/%3E%3C/svg%3E"),
       url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M3,3 L87,47 Q94,50 87,53 L3,97' fill='none' stroke='rgba(15, 22, 12, 0.45)' stroke-width='0.18' stroke-dasharray='1.8,1.2'/%3E%3C/svg%3E"),
       linear-gradient(90deg, rgba(40, 50, 40, 0.32), rgba(40, 50, 40, 0) 72%);
-    background-size: 100% 100%, 100% 100%;
+    background-size: 100% 100%, 100% 100%, 100% 100%;
   }
 
   #envelope-overlay.opening .envelope-flap-top {
@@ -2704,17 +2609,6 @@ body.invitation-opening {
   }
   100% {
     opacity: 0;
-  }
-}
-
-@keyframes postit-slide-away {
-  0% {
-    opacity: 1;
-    transform: translateX(-50%) rotate(-4deg) translateY(0);
-  }
-  100% {
-    opacity: 0;
-    transform: translateX(-50%) rotate(-2deg) translateY(0.7rem);
   }
 }
 
@@ -4699,4 +4593,22 @@ body.floating-bubbles-hidden #chat-panel {
     right: 56px;
     bottom: 56px;
   }
+}
+
+.site-footer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--sp-6) + env(safe-area-inset-bottom, 0));
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0 1rem;
+  color: var(--sage-dark);
+  font-family: 'Inter', sans-serif;
+  font-size: var(--fs-sm);
+  font-weight: 300;
+  line-height: 1.65;
+  text-shadow: 0 1px 6px rgba(10, 14, 16, 0.1);
+  pointer-events: none;
 }
