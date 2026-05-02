@@ -73,12 +73,14 @@ func Home(c *fiber.Ctx) error {
 	)
 	heroBackground := pickHomepageHeroBackground(settings.HomepageHeroBackgrounds)
 	inviteUpdateURL := ""
+	rsvpSubmitted := false
 	if inviteCode := strings.TrimSpace(c.Query("invite")); inviteCode != "" {
 		if inv, err := database.GetInvitationByCode(inviteCode); err == nil {
 			inviteUpdateURL = "/" + inv.Code + "?no_redirect=1"
+			rsvpSubmitted = c.Query("submitted") == "1"
 		} else if err != sql.ErrNoRows {
 			return c.Status(500).SendString("failed to load invitation")
 		}
 	}
-	return Render(c, templates.Home(settings, heroBackground, registryItems, claimedAmounts, bankConfigured, chatEnabled, soundtrackEnabled, inviteUpdateURL, i18n.NewTWithOverrides(lang, settings.HomepageLabels[lang]), lang, ogMeta))
+	return Render(c, templates.Home(settings, heroBackground, registryItems, claimedAmounts, bankConfigured, chatEnabled, soundtrackEnabled, inviteUpdateURL, rsvpSubmitted, i18n.NewTWithOverrides(lang, settings.HomepageLabels[lang]), lang, ogMeta))
 }

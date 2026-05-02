@@ -43,8 +43,7 @@ func ViewInvitation(c *fiber.Ctx) error {
 	}
 
 	noRedirect := c.Query("no_redirect") == "1"
-	showSubmittedCountdown := c.Query("submitted") == "1"
-	if templates.InvitationAnswered(inv) && !noRedirect && !showSubmittedCountdown {
+	if templates.InvitationAnswered(inv) && !noRedirect {
 		logger.Info("invitation view redirected to homepage", "invitation_code", observability.Redact(code), "guest_count", len(inv.Guests))
 		return c.Redirect("/?invite=" + inv.Code)
 	}
@@ -73,7 +72,7 @@ func ViewInvitation(c *fiber.Ctx) error {
 		"poll_count", len(polls),
 		"viewed", inv.ViewedAt != nil,
 	)
-	return Render(c, templates.Invitation(inv, settings, polls, inv.ViewedAt != nil, noRedirect, showSubmittedCountdown, t, lang, ogMeta, title))
+	return Render(c, templates.Invitation(inv, settings, polls, inv.ViewedAt != nil, noRedirect, t, lang, ogMeta, title))
 }
 
 func MarkInvitationViewed(c *fiber.Ctx) error {
@@ -139,12 +138,7 @@ func UpdateInvitationRSVP(c *fiber.Ctx) error {
 		}
 	}
 
-	redirectURL := "/" + code
-	if c.Query("no_redirect") == "1" {
-		redirectURL += "?no_redirect=1"
-	} else {
-		redirectURL += "?submitted=1"
-	}
+	redirectURL := "/?invite=" + code + "&submitted=1"
 	logger.Info("invitation rsvp updated",
 		"invitation_code", observability.Redact(code),
 		"guest_count", len(inv.Guests),

@@ -3703,6 +3703,53 @@ td [role="switch"] { margin: 0; }
   opacity: 0;
 }
 
+#rsvp-submitted-toast {
+  position: fixed;
+  top: 1.5rem;
+  left: 50%;
+  transform: translate(-50%, -1rem);
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  align-items: center;
+  text-align: center;
+  padding: 0.75rem 1.4rem;
+  border-radius: var(--radius-lg);
+  background: var(--white);
+  color: var(--charcoal);
+  border: 1px solid var(--sage-light);
+  font-size: var(--fs-sm);
+  box-shadow: var(--shadow-lg, 0 6px 20px rgba(54, 69, 79, 0.15));
+  z-index: 9999;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+#rsvp-submitted-toast span {
+  color: var(--charcoal);
+}
+
+#rsvp-submitted-toast.rsvp-submitted-toast--in {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+#rsvp-submitted-toast.rsvp-submitted-toast--out {
+  opacity: 0;
+  transform: translate(-50%, -1rem);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #rsvp-submitted-toast {
+    transition: opacity 0.2s ease;
+    transform: translate(-50%, 0);
+  }
+  #rsvp-submitted-toast.rsvp-submitted-toast--out {
+    transform: translate(-50%, 0);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html,
   html:has(.vp-section) body {

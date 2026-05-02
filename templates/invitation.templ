@@ -1,7 +1,6 @@
 package templates
 
 import (
-	"strings"
 	"github.com/streambinder/foedus/internal/i18n"
 	"github.com/streambinder/foedus/internal/models"
 	"strconv"
@@ -34,14 +33,7 @@ func InvitationAnswered(inv models.Invitation) bool {
 	return false
 }
 
-func noRedirectQuery(noRedirect bool) string {
-	if noRedirect {
-		return "?no_redirect=1"
-	}
-	return ""
-}
-
-templ Invitation(inv models.Invitation, settings models.WeddingSettings, polls []models.Poll, alreadyViewed bool, noRedirect bool, showSubmittedCountdown bool, t i18n.T, lang string, ogMeta OGMeta, title string) {
+templ Invitation(inv models.Invitation, settings models.WeddingSettings, polls []models.Poll, alreadyViewed bool, noRedirect bool, t i18n.T, lang string, ogMeta OGMeta, title string) {
 	@Layout(title, lang, t, ogMeta, false) {
 		<div id="envelope-overlay" class={ templ.KV("is-complete", alreadyViewed) }>
 			<div id="envelope-open-button" role="button" tabindex="0" aria-label={ t("invitation.title") }></div>
@@ -140,24 +132,14 @@ templ Invitation(inv models.Invitation, settings models.WeddingSettings, polls [
 							<div id="rsvp-locked">
 								<p class="rsvp-subtitle rsvp-answered-notice">{ t("invitation.already_answered") }</p>
 								<div class="rsvp-locked-actions">
-									if noRedirect || !showSubmittedCountdown {
-										<a href={ templ.SafeURL("/?invite=" + inv.Code) } class="secondary outline rsvp-action-btn"><span class="rsvp-btn-icon rsvp-btn-icon-home" aria-hidden="true"></span>{ t("invitation.go_home") }</a>
-									} else {
-										<a
-											href={ templ.SafeURL("/?invite=" + inv.Code) }
-											id="rsvp-home-link"
-											class="secondary outline rsvp-action-btn"
-											data-countdown-label={ t("invitation.go_home_countdown") }
-											data-initial-countdown="3"
-										><span class="rsvp-btn-icon rsvp-btn-icon-home" aria-hidden="true"></span><span id="rsvp-home-link-label">{ strings.ReplaceAll(t("invitation.go_home_countdown"), "%d", "3") }</span></a>
-									}
+									<a href={ templ.SafeURL("/?invite=" + inv.Code) } class="secondary outline rsvp-action-btn"><span class="rsvp-btn-icon rsvp-btn-icon-home" aria-hidden="true"></span>{ t("invitation.go_home") }</a>
 									<button type="button" id="rsvp-unlock-btn" class="secondary outline rsvp-action-btn"><span class="rsvp-btn-icon rsvp-btn-icon-edit" aria-hidden="true"></span>{ t("invitation.change_answer") }</button>
 								</div>
 							</div>
 						} else {
 							<p class="rsvp-subtitle">{ t("invitation.rsvp_description") }</p>
 						}
-						<form method="POST" action={ templ.SafeURL("/" + inv.Code + "/rsvp" + noRedirectQuery(noRedirect)) } id="rsvp-form" class={ templ.KV("rsvp-form-locked", InvitationAnswered(inv)) } inert?={ InvitationAnswered(inv) }>
+						<form method="POST" action={ templ.SafeURL("/" + inv.Code + "/rsvp") } id="rsvp-form" class={ templ.KV("rsvp-form-locked", InvitationAnswered(inv)) } inert?={ InvitationAnswered(inv) }>
 							for i, g := range inv.Guests {
 								<div class="rsvp-guest">
 									<span class="rsvp-name"><span class="rsvp-name-number">{ strconv.Itoa(i + 1) }.</span>{ g.FirstName }</span>
@@ -370,36 +352,8 @@ templ Invitation(inv models.Invitation, settings models.WeddingSettings, polls [
 			<script>
 				(function() {
 					var unlockBtn = document.getElementById('rsvp-unlock-btn');
-					var countdownLink = document.getElementById('rsvp-home-link');
-					var countdownLabel = document.getElementById('rsvp-home-link-label');
-					var countdownTimer = null;
-					var countdownValue = 0;
-					if (countdownLink && countdownLabel) {
-						var template = countdownLink.getAttribute('data-countdown-label') || '';
-						countdownValue = parseInt(countdownLink.getAttribute('data-initial-countdown') || '0', 10);
-						function renderCountdown(value) {
-							countdownLabel.textContent = template.replace('%d', String(value));
-						}
-						function redirectHome() {
-							window.location.href = countdownLink.href;
-						}
-						renderCountdown(countdownValue);
-						countdownTimer = window.setInterval(function() {
-							countdownValue -= 1;
-							if (countdownValue <= 0) {
-								renderCountdown(0);
-								window.clearInterval(countdownTimer);
-								redirectHome();
-								return;
-							}
-							renderCountdown(countdownValue);
-						}, 1000);
-					}
 					if (!unlockBtn) return;
 					unlockBtn.addEventListener('click', function() {
-						if (countdownTimer !== null) {
-							window.clearInterval(countdownTimer);
-						}
 						var lockedEl = document.getElementById('rsvp-locked');
 						if (lockedEl) lockedEl.style.display = 'none';
 						var formEl = document.getElementById('rsvp-form');

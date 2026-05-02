@@ -143,7 +143,7 @@ func heroBackgroundStyle(image string) templ.SafeCSS {
 	return templ.SafeCSS("background-image:url(" + image + ");")
 }
 
-templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBackground, registryItems []models.RegistryItem, claimedAmounts map[int]int, bankConfigured bool, chatEnabled bool, soundtrackEnabled bool, inviteUpdateURL string, t i18n.T, lang string, ogMeta OGMeta) {
+templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBackground, registryItems []models.RegistryItem, claimedAmounts map[int]int, bankConfigured bool, chatEnabled bool, soundtrackEnabled bool, inviteUpdateURL string, rsvpSubmitted bool, t i18n.T, lang string, ogMeta OGMeta) {
 	@Layout(settings.Spouse1Name+" & "+settings.Spouse2Name, lang, t, ogMeta, len(settings.Places) > 0 || len(settings.HoneymoonLocations) > 0) {
 		<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
 			<symbol id="chev-d" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></symbol>
@@ -1022,6 +1022,30 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 			}
 		if inviteUpdateURL != "" {
 			<a id="invite-update-bubble" href={ templ.SafeURL(inviteUpdateURL) }>{ t("home.update_invitation") }</a>
+		}
+		if rsvpSubmitted {
+			<div id="rsvp-submitted-toast" role="status" aria-live="polite">
+				<span>{ t("invitation.submitted_message") }</span>
+			</div>
+			<script>
+				(function () {
+					var toast = document.getElementById("rsvp-submitted-toast");
+					if (!toast) return;
+					var url = new URL(window.location.href);
+					url.searchParams.delete("submitted");
+					window.history.replaceState(null, "", url.pathname + (url.search ? url.search : "") + url.hash);
+					window.requestAnimationFrame(function () {
+						window.requestAnimationFrame(function () {
+							toast.classList.add("rsvp-submitted-toast--in");
+						});
+					});
+					window.setTimeout(function () {
+						toast.classList.remove("rsvp-submitted-toast--in");
+						toast.classList.add("rsvp-submitted-toast--out");
+						window.setTimeout(function () { toast.remove(); }, 400);
+					}, 3000);
+				})();
+			</script>
 		}
 			if chatEnabled {
 			<div id="chat-bubble" title={ t("chat.title") }>
