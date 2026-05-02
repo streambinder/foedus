@@ -233,7 +233,7 @@ var translations = map[string]map[string]string{
 		"invitation.submitted_message": "Thank you! Your RSVP has been recorded.",
 		"invitation.replay_animation":  "Replay envelope animation",
 		"invitation.close_envelope":    "close envelope",
-		"invitation.brought_to_you_by": "Brought to you by Davide Pucci",
+		"invitation.brought_to_you_by": "Created by Davide Pucci",
 		"invitation.poll_notes":        "Notes",
 		"placeholder.poll_notes":       "Add a note",
 
@@ -508,7 +508,7 @@ var translations = map[string]map[string]string{
 		"invitation.submitted_message": "Grazie! La vostra risposta è stata registrata.",
 		"invitation.replay_animation":  "Rivedi animazione busta",
 		"invitation.close_envelope":    "chiudi busta",
-		"invitation.brought_to_you_by": "Offerto da Davide Pucci",
+		"invitation.brought_to_you_by": "Creato da Davide Pucci",
 		"invitation.poll_notes":        "Note",
 		"placeholder.poll_notes":       "Aggiungi una nota",
 
