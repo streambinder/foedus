@@ -1553,7 +1553,7 @@ dialog.modal-overlay:not([open]) .modal-box {
   margin-top: var(--sp-4);
   display: flex;
   flex-direction: column;
-  gap: var(--sp-4);
+  gap: var(--sp-2);
 }
 
 .accommodation-modal-box .accommodation-tile {
@@ -4217,17 +4217,16 @@ td [role="switch"] { margin: 0; }
   margin-bottom: var(--sp-2);
 }
 
-.accommodation-tile p {
-  margin-bottom: var(--sp-3);
-  color: var(--sage-dark);
-}
-
-.accommodation-tile a {
+.accommodation-tile h3 a {
   display: inline-flex;
   align-items: center;
   gap: var(--sp-2);
-  font-size: var(--fs-sm);
   overflow-wrap: anywhere;
+}
+
+.accommodation-tile p {
+  margin-bottom: 0;
+  color: var(--sage-dark);
 }
 
 /* ---------------------------------------------------------------

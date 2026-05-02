@@ -496,15 +496,18 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 					<div class="accommodation-grid">
 						for _, suggestion := range settings.AccommodationSuggestions {
 							<article class="accommodation-tile">
-								<h3>{ suggestion.Name }</h3>
+								if suggestion.URL != "" {
+									<h3>
+										<a href={ templ.SafeURL(suggestion.URL) } target="_blank" rel="noreferrer">
+											<span>{ suggestion.Name }</span>
+											<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L11 4"></path><path d="M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L13 19"></path></svg>
+										</a>
+									</h3>
+								} else {
+									<h3>{ suggestion.Name }</h3>
+								}
 								if suggestion.Description != "" {
 									<p>{ suggestion.Description }</p>
-								}
-								if suggestion.URL != "" {
-									<a href={ templ.SafeURL(suggestion.URL) } target="_blank" rel="noreferrer">
-										<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L11 4"></path><path d="M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L13 19"></path></svg>
-										<span>{ suggestion.URL }</span>
-									</a>
 								}
 							</article>
 						}
