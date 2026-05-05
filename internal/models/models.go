@@ -43,6 +43,7 @@ type WeddingSettings struct {
 	ReceptionAddress         string
 	ReceptionLocation        string
 	ReceptionCity            string
+	ReceptionDatetime        string
 	CeremonyImage            string
 	ReceptionImage           string
 	BankAccountIBAN          string

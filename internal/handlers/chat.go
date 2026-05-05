@@ -180,8 +180,10 @@ func ChatStream(c *fiber.Ctx) error {
 			"You MUST sign every message with your name \"— %s\" at the very end.\n\n"+
 			"Here is context about the wedding you can use to answer questions:\n"+
 			"- Couple: %s & %s\n"+
-			"- Ceremony: %s at %s, %s\n"+
-			"- Reception: %s, %s\n"+
+			"- Ceremony time: %s\n"+
+			"- Ceremony venue: %s, %s\n"+
+			"- Reception time: %s\n"+
+			"- Reception venue: %s, %s\n"+
 			"- Bank account (IBAN): %s, holder: %s\n"+
 			"- Spotify playlists: %s\n"+
 			"- Places of our story: %s\n\n"+
@@ -206,7 +208,7 @@ func ChatStream(c *fiber.Ctx) error {
 		personaName, persona.Profile, personaName,
 		settings.Spouse1Name, settings.Spouse2Name,
 		settings.CeremonyDatetime, settings.CeremonyLocation, settings.CeremonyAddress,
-		settings.ReceptionLocation, settings.ReceptionAddress,
+		settings.ReceptionDatetime, settings.ReceptionLocation, settings.ReceptionAddress,
 		settings.BankAccountIBAN, settings.BankAccountHolder,
 		playlistList, placeList, accommodationList, formatConversationContext(history), req.Message, personaName,
 	)

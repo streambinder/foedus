@@ -73,6 +73,10 @@ templ Invitation(inv models.Invitation, settings models.WeddingSettings, polls [
 											<div class="venue-overlay-badge">
 												<span class="venue-overlay-icon" aria-hidden="true"></span>
 												<strong>{ t("home.ceremony") }</strong>
+												if i18n.FormatDatetimeTimeLine(settings.CeremonyDatetime, lang) != "" {
+													<span class="venue-overlay-separator" aria-hidden="true">·</span>
+													<span class="venue-overlay-time">{ i18n.FormatDatetimeTimeLine(settings.CeremonyDatetime, lang) }</span>
+												}
 											</div>
 										</div>
 										<div class="venue-overlay venue-overlay-bottom">
@@ -108,6 +112,10 @@ templ Invitation(inv models.Invitation, settings models.WeddingSettings, polls [
 											<div class="venue-overlay-badge">
 												<span class="venue-overlay-icon" aria-hidden="true"></span>
 												<strong>{ t("home.reception") }</strong>
+												if i18n.FormatDatetimeTimeLine(settings.ReceptionDatetime, lang) != "" {
+													<span class="venue-overlay-separator" aria-hidden="true">·</span>
+													<span class="venue-overlay-time">{ i18n.FormatDatetimeTimeLine(settings.ReceptionDatetime, lang) }</span>
+												}
 											</div>
 										</div>
 										<div class="venue-overlay venue-overlay-bottom">

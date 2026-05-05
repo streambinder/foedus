@@ -204,12 +204,15 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 					}
 				</div>
 				<label>{ t("label.reception") }</label>
-				<div style="position:relative">
-					<input type="text" id="reception-input" value={ locationDisplay(settings.ReceptionAddress, settings.ReceptionLocation) } autocomplete="off" placeholder={ t("placeholder.reception_address") }/>
-					<div id="reception-dropdown" class="autocomplete-dropdown"></div>
-					<input type="hidden" name="reception_address" id="reception-address-hidden" value={ settings.ReceptionAddress }/>
-					<input type="hidden" name="reception_location" id="reception-location-hidden" value={ settings.ReceptionLocation }/>
-					<input type="hidden" name="reception_city" id="reception-city-hidden" value={ settings.ReceptionCity }/>
+				<div class="grid">
+					<div style="position:relative">
+						<input type="text" id="reception-input" value={ locationDisplay(settings.ReceptionAddress, settings.ReceptionLocation) } autocomplete="off" placeholder={ t("placeholder.reception_address") }/>
+						<div id="reception-dropdown" class="autocomplete-dropdown"></div>
+						<input type="hidden" name="reception_address" id="reception-address-hidden" value={ settings.ReceptionAddress }/>
+						<input type="hidden" name="reception_location" id="reception-location-hidden" value={ settings.ReceptionLocation }/>
+						<input type="hidden" name="reception_city" id="reception-city-hidden" value={ settings.ReceptionCity }/>
+					</div>
+					<input type="datetime-local" name="reception_datetime" value={ settings.ReceptionDatetime }/>
 				</div>
 				<div class="venue-image-row">
 					<input type="file" id="reception-file" accept="image/*" class="venue-file-input"/>

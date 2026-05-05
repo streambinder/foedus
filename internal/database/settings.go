@@ -11,7 +11,7 @@ import (
 var settingsKeys = []string{
 	"spouse1_name", "spouse2_name", "ceremony_datetime",
 	"ceremony_address", "ceremony_location", "ceremony_city", "ceremony_image",
-	"reception_address", "reception_location", "reception_city", "reception_image",
+	"reception_address", "reception_location", "reception_city", "reception_datetime", "reception_image",
 	"bank_account_iban", "bank_account_holder",
 	"spotify_playlists", "places", "honeymoon_locations", "accommodation_suggestions", "impersonations", "homepage_labels",
 	"homepage_hero_backgrounds",
@@ -109,6 +109,7 @@ func GetAllSettings() (models.WeddingSettings, error) {
 		ReceptionAddress:         m["reception_address"],
 		ReceptionLocation:        m["reception_location"],
 		ReceptionCity:            m["reception_city"],
+		ReceptionDatetime:        m["reception_datetime"],
 		ReceptionImage:           m["reception_image"],
 		BankAccountIBAN:          m["bank_account_iban"],
 		BankAccountHolder:        m["bank_account_holder"],

@@ -913,6 +913,15 @@ body:has(.hero) {
   text-transform: uppercase;
 }
 
+.venue-overlay-separator,
+.venue-overlay-time {
+  color: rgba(255, 255, 255, 0.88);
+  font-family: 'Inter', sans-serif;
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
 .venue-overlay-icon {
   display: inline-block;
   width: 1rem;

@@ -216,7 +216,7 @@ func SaveSettings(c *fiber.Ctx) error {
 	keys := []string{
 		"spouse1_name", "spouse2_name", "ceremony_datetime",
 		"ceremony_address", "ceremony_location", "ceremony_city",
-		"reception_address", "reception_location", "reception_city",
+		"reception_address", "reception_location", "reception_city", "reception_datetime",
 		"bank_account_iban", "bank_account_holder",
 	}
 	for _, key := range keys {
