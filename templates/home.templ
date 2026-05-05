@@ -525,9 +525,6 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 						</div>
 					</div>
 				</div>
-				<footer class="site-footer" role="contentinfo">
-					<span>{ t("invitation.brought_to_you_by") }</span>
-				</footer>
 			</section>
 		}
 		if len(settings.AccommodationSuggestions) > 0 {
@@ -716,19 +713,28 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 
 				function syncFloatingButtons() {
 					var inviteBubble = document.getElementById("invite-update-bubble");
-					if (!inviteBubble) return;
-
 					var chatBubble = document.getElementById("chat-bubble");
+					var creatorBubble = document.getElementById("creator-bubble");
 					var chatVisible =
 						!!chatBubble &&
 						!chatBubble.classList.contains("chat-bubble--hidden-on-landing") &&
 						!chatBubble.classList.contains("chat-bubble--covered") &&
 						chatBubble.style.display !== "none";
 
-					inviteBubble.classList.toggle(
-						"invite-update-bubble--shifted",
-						chatVisible,
-					);
+					if (inviteBubble) {
+						inviteBubble.classList.toggle(
+							"invite-update-bubble--shifted",
+							chatVisible,
+						);
+					}
+
+					if (creatorBubble) {
+						creatorBubble.classList.toggle("creator-bubble--shift-chat", chatVisible);
+						creatorBubble.classList.toggle(
+							"creator-bubble--shift-invite",
+							!!inviteBubble && inviteBubble.style.display !== "none",
+						);
+					}
 				}
 
 				if (window.location.hash) {
@@ -770,6 +776,7 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 							attributeFilter: ["class", "style"],
 						});
 					}
+					setupCreatorBubble();
 				}, { once: true });
 
 				// only watch landing for chat-bubble visibility — no full active-section tracking
@@ -784,6 +791,39 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 						{ threshold: [0, 0.5, 1] },
 					);
 					landingObserver.observe(landing);
+				}
+
+				var bottomSection = sections.length ? sections[sections.length - 1] : null;
+				function applyBottomState(creatorBubble, isBottom) {
+					if (!creatorBubble) return;
+					creatorBubble.classList.toggle("creator-bubble--visible", isBottom);
+					syncFloatingButtons();
+				}
+				function setupCreatorBubble() {
+					var creatorBubble = document.getElementById("creator-bubble");
+					if (!creatorBubble || !bottomSection) return;
+					if ("IntersectionObserver" in window) {
+						var bottomObserver = new IntersectionObserver(
+							function (entries) {
+								entries.forEach(function (entry) {
+									applyBottomState(creatorBubble, entry.isIntersecting && entry.intersectionRatio > 0.55);
+								});
+							},
+							{ threshold: [0, 0.55, 1] },
+						);
+						bottomObserver.observe(bottomSection);
+					} else {
+						var scrollerForBottom = getScroller();
+						function syncBottomFromScroll() {
+							applyBottomState(
+								creatorBubble,
+								scrollerForBottom.scrollTop + window.innerHeight >=
+									scrollerForBottom.scrollHeight - 2,
+							);
+						}
+						scrollerForBottom.addEventListener("scroll", syncBottomFromScroll, { passive: true });
+						syncBottomFromScroll();
+					}
 				}
 
 				var hideFloatingCount = 0;
@@ -1068,6 +1108,7 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 		if inviteUpdateURL != "" {
 			<a id="invite-update-bubble" href={ templ.SafeURL(inviteUpdateURL) }>{ t("home.update_invitation") }</a>
 		}
+		<a id="creator-bubble" href="https://davidepucci.it" aria-label={ t("invitation.brought_to_you_by") }>{ t("invitation.brought_to_you_by") }</a>
 		if rsvpSubmitted {
 			<div id="rsvp-submitted-toast" role="status" aria-live="polite">
 				<span>{ t("invitation.submitted_message") }</span>

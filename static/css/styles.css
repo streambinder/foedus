@@ -4613,11 +4613,11 @@ td [role="switch"] { margin: 0; }
   }
 }
 
-#invite-update-bubble {
+#invite-update-bubble,
+#creator-bubble {
   position: fixed;
   bottom: calc(var(--floating-action-edge-offset) + env(safe-area-inset-bottom, 0));
   right: calc(var(--floating-action-edge-offset) + env(safe-area-inset-right, 0));
-  z-index: 149;
   min-width: var(--floating-action-pill-width);
   height: var(--floating-action-size);
   padding: 0 0.9rem;
@@ -4645,12 +4645,52 @@ td [role="switch"] { margin: 0; }
   transform: translateX(var(--invite-shift));
 }
 
+#invite-update-bubble {
+  z-index: 149;
+}
+
 #invite-update-bubble:hover {
   transform: translateX(var(--invite-shift)) scale(1.08);
 }
 
 #invite-update-bubble.invite-update-bubble--shifted {
   --invite-shift: calc(-1 * (var(--floating-action-size) + var(--floating-action-gap)));
+}
+
+#creator-bubble {
+  z-index: 148;
+  width: max-content;
+  min-width: max-content;
+  max-width: calc(100vw - var(--floating-action-edge-offset) - var(--floating-action-edge-offset));
+  color: var(--white);
+  white-space: nowrap;
+  --invite-shift: 0px;
+  --creator-chat-shift: 0px;
+  --creator-invite-shift: 0px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(calc(-1 * (var(--creator-chat-shift) + var(--creator-invite-shift)))) scale(0.92);
+}
+
+#creator-bubble.creator-bubble--shift-chat {
+  --creator-chat-shift: calc(var(--floating-action-size) + var(--floating-action-gap));
+}
+
+#creator-bubble.creator-bubble--shift-invite {
+  --creator-invite-shift: calc(var(--floating-action-pill-width) + var(--floating-action-gap));
+}
+
+#creator-bubble.creator-bubble--visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(calc(-1 * (var(--creator-chat-shift) + var(--creator-invite-shift)))) scale(1);
+}
+
+#creator-bubble:hover {
+  color: var(--white);
+  background: var(--sage);
+  text-decoration: none;
+  transform: translateX(calc(-1 * (var(--creator-chat-shift) + var(--creator-invite-shift)))) scale(1.08);
 }
 
 /* ===================================================================
@@ -4702,6 +4742,7 @@ td [role="switch"] { margin: 0; }
 
 body.floating-bubbles-hidden #chat-bubble,
 body.floating-bubbles-hidden #invite-update-bubble,
+body.floating-bubbles-hidden #creator-bubble,
 body.floating-bubbles-hidden #chat-panel {
   opacity: 0;
   pointer-events: none;
@@ -4968,22 +5009,4 @@ body.floating-bubbles-hidden #chat-panel {
     opacity: 0;
     pointer-events: none;
   }
-}
-
-.site-footer {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: calc(var(--sp-6) + env(safe-area-inset-bottom, 0));
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 0 1rem;
-  color: var(--sage-dark);
-  font-family: 'Inter', sans-serif;
-  font-size: var(--fs-sm);
-  font-weight: 300;
-  line-height: 1.65;
-  text-shadow: 0 1px 6px rgba(10, 14, 16, 0.1);
-  pointer-events: none;
 }
