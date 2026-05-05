@@ -275,8 +275,8 @@ templ Invitation(inv models.Invitation, settings models.WeddingSettings, polls [
 				<div class="envelope-flap envelope-flap-left"></div>
 				<div class="envelope-wax" aria-hidden="true">
 					<picture>
-						<source type="image/webp" srcset="/static/wax-seal.webp"/>
-						<img class="envelope-wax-img" src="/static/wax-seal.png" alt="" width="768" height="768" loading="eager" fetchpriority="high" decoding="async"/>
+						<source type="image/webp" srcset={ assetURL("/static/wax-seal.webp") }/>
+						<img class="envelope-wax-img" src={ templ.SafeURL(assetURL("/static/wax-seal.png")) } alt="" width="768" height="768" loading="eager" fetchpriority="high" decoding="async"/>
 					</picture>
 				</div>
 			</div>

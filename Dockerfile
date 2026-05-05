@@ -8,7 +8,10 @@ RUN go mod download
 
 COPY . .
 RUN templ generate
-RUN CGO_ENABLED=0 go build -o foedus .
+RUN ASSET_VERSION="$(date -u +%Y%m%d)" && \
+    CGO_ENABLED=0 go build \
+    -ldflags "-X github.com/streambinder/foedus/internal/buildinfo.AssetVersion=${ASSET_VERSION}" \
+    -o foedus .
 
 FROM alpine:3.21
 RUN apk add --no-cache ca-certificates

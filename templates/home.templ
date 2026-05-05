@@ -1100,10 +1100,10 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 			})();
 		</script>
 		if len(settings.Places) > 0 || len(settings.HoneymoonLocations) > 0 {
-			<script src="/static/places.js" defer fetchpriority="low"></script>
+			<script src={ templ.SafeURL(assetURL("/static/places.js")) } defer fetchpriority="low"></script>
 		}
 		if soundtrackEnabled {
-				<script src="/static/soundtrack.js" defer fetchpriority="low"></script>
+				<script src={ templ.SafeURL(assetURL("/static/soundtrack.js")) } defer fetchpriority="low"></script>
 			}
 		if inviteUpdateURL != "" {
 			<a id="invite-update-bubble" href={ templ.SafeURL(inviteUpdateURL) }>{ t("home.update_invitation") }</a>
@@ -1153,7 +1153,7 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 					<button type="submit">{ t("chat.send") }</button>
 				</form>
 			</div>
-			<script src="/static/chat.js" defer fetchpriority="low"></script>
+			<script src={ templ.SafeURL(assetURL("/static/chat.js")) } defer fetchpriority="low"></script>
 		}
 	}
 }

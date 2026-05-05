@@ -8,5 +8,6 @@ import (
 
 func Render(c *fiber.Ctx, component templ.Component) error {
 	c.Set("Content-Type", "text/html")
+	c.Set(fiber.HeaderCacheControl, "no-cache")
 	return adaptor.HTTPHandler(templ.Handler(component))(c)
 }

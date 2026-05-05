@@ -1193,9 +1193,9 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 				});
 			}
 		</script>
-		<script src="/static/autocomplete.js"></script>
-		<script src="/static/dashboard-features.js"></script>
-		<script src="/static/dashboard-spa.js"></script>
+		<script src={ templ.SafeURL(assetURL("/static/autocomplete.js")) }></script>
+		<script src={ templ.SafeURL(assetURL("/static/dashboard-features.js")) }></script>
+		<script src={ templ.SafeURL(assetURL("/static/dashboard-spa.js")) }></script>
 		<hr class="footer-separator"/>
 		<footer>
 			<a href="/">{ t("link.home") }</a>

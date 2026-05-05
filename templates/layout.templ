@@ -83,9 +83,9 @@ templ Layout(title string, lang string, t i18n.T, ogMeta OGMeta, includeLeaflet 
 				<meta name="twitter:description" content={ ogMeta.Description }/>
 				<meta name="twitter:image" content={ ogMeta.ImageURL }/>
 			}
-			<link rel="icon" type="image/svg+xml" href="/static/favicon.svg"/>
-			<link rel="icon" type="image/png" sizes="512x512" href="/static/favicon.png"/>
-			<link rel="apple-touch-icon" sizes="512x512" href="/static/favicon.png"/>
+			<link rel="icon" type="image/svg+xml" href={ templ.SafeURL(assetURL("/static/favicon.svg")) }/>
+			<link rel="icon" type="image/png" sizes="512x512" href={ templ.SafeURL(assetURL("/static/favicon.png")) }/>
+			<link rel="apple-touch-icon" sizes="512x512" href={ templ.SafeURL(assetURL("/static/favicon.png")) }/>
 			<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin/>
 			<link rel="preconnect" href="https://fonts.googleapis.com"/>
 			<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -97,14 +97,14 @@ templ Layout(title string, lang string, t i18n.T, ogMeta OGMeta, includeLeaflet 
 			for _, preload := range imagePreloads {
 				if preload.Href != "" {
 					if preload.Media != "" {
-						<link rel="preload" as="image" href={ preload.Href } media={ preload.Media } fetchpriority="high"/>
+						<link rel="preload" as="image" href={ templ.SafeURL(assetURL(preload.Href)) } media={ preload.Media } fetchpriority="high"/>
 					} else {
-						<link rel="preload" as="image" href={ preload.Href } fetchpriority="high"/>
+						<link rel="preload" as="image" href={ templ.SafeURL(assetURL(preload.Href)) } fetchpriority="high"/>
 					}
 				}
 			}
 			<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" fetchpriority="high"/>
-			<link rel="stylesheet" href="/static/css/styles.css" fetchpriority="high"/>
+			<link rel="stylesheet" href={ templ.SafeURL(assetURL("/static/css/styles.css")) } fetchpriority="high"/>
 			<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600&family=Courier+Prime:wght@400;700&display=swap" fetchpriority="high"/>
 			<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600&family=Courier+Prime:wght@400;700&display=swap" media="print" onload="this.media='all'"/>
 			<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600&family=Courier+Prime:wght@400;700&display=swap"/></noscript>
@@ -125,14 +125,14 @@ templ DashboardLayout(title string, lang string) {
 			<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
 			<title>{ title }</title>
 			<meta name="theme-color" content="#2A3439"/>
-			<link rel="icon" type="image/svg+xml" href="/static/favicon.svg"/>
-			<link rel="icon" type="image/png" sizes="512x512" href="/static/favicon.png"/>
-			<link rel="apple-touch-icon" sizes="512x512" href="/static/favicon.png"/>
+			<link rel="icon" type="image/svg+xml" href={ templ.SafeURL(assetURL("/static/favicon.svg")) }/>
+			<link rel="icon" type="image/png" sizes="512x512" href={ templ.SafeURL(assetURL("/static/favicon.png")) }/>
+			<link rel="apple-touch-icon" sizes="512x512" href={ templ.SafeURL(assetURL("/static/favicon.png")) }/>
 			<link
 				rel="stylesheet"
 				href="https://cdn.jsdelivr.net/npm/@tabler/core@1.4.0/dist/css/tabler.min.css"
 			/>
-			<link rel="stylesheet" href="/static/css/dashboard.css"/>
+			<link rel="stylesheet" href={ templ.SafeURL(assetURL("/static/css/dashboard.css")) }/>
 		</head>
 		<body class="dashboard-page">
 			<div class="page">
