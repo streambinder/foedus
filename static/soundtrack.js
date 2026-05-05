@@ -10,15 +10,35 @@
   var input = container.querySelector(".soundtrack-search-input");
   var results = container.querySelector(".soundtrack-results");
   var debounceTimer = null;
+  var searchController = null;
 
   // move results to body so it escapes overflow:hidden ancestors
   document.body.appendChild(results);
   function positionResults() {
     var rect = input.getBoundingClientRect();
-    results.style.top = (rect.bottom + 4) + "px";
+    var viewport = window.visualViewport || null;
+    var viewportTop = viewport ? viewport.offsetTop : 0;
+    var viewportLeft = viewport ? viewport.offsetLeft : 0;
+    var viewportWidth = viewport ? viewport.width : window.innerWidth;
+    var viewportHeight = viewport ? viewport.height : window.innerHeight;
+    var margin = 12;
+    var gap = 4;
+    var width = Math.min(rect.width, Math.max(160, viewportWidth - margin * 2));
+    var left = Math.max(viewportLeft + margin, Math.min(rect.left, viewportLeft + viewportWidth - width - margin));
+    var top = rect.bottom + gap;
+    var availableBelow = viewportTop + viewportHeight - top - margin;
+    var availableAbove = rect.top - viewportTop - margin;
+    var maxHeight = Math.min(288, Math.max(160, Math.max(availableBelow, availableAbove)));
+
+    if (availableBelow < 160 && availableAbove > availableBelow) {
+      top = Math.max(viewportTop + margin, rect.top - gap - maxHeight);
+    }
+
+    results.style.top = Math.round(top) + "px";
     results.style.bottom = "auto";
-    results.style.left = rect.left + "px";
-    results.style.width = rect.width + "px";
+    results.style.left = Math.round(left) + "px";
+    results.style.width = Math.round(width) + "px";
+    results.style.maxHeight = Math.round(maxHeight) + "px";
     results.style.transform = "none";
   }
 
@@ -63,15 +83,22 @@
   function repositionIfVisible() {
     if (results.style.display === "block") positionResults();
   }
-  window.addEventListener("resize", repositionIfVisible);
-  window.addEventListener("scroll", repositionIfVisible, true);
+  window.addEventListener("resize", repositionIfVisible, { passive: true });
+  window.addEventListener("scroll", repositionIfVisible, { capture: true, passive: true });
   if (window.visualViewport) {
-    window.visualViewport.addEventListener("resize", repositionIfVisible);
-    window.visualViewport.addEventListener("scroll", repositionIfVisible);
+    window.visualViewport.addEventListener("resize", repositionIfVisible, { passive: true });
+    window.visualViewport.addEventListener("scroll", repositionIfVisible, { passive: true });
   }
 
   function search(query) {
-    fetch("/soundtrack/search?q=" + encodeURIComponent(query))
+    if (searchController) {
+      searchController.abort();
+    }
+    searchController = window.AbortController ? new AbortController() : null;
+    fetch(
+      "/soundtrack/search?q=" + encodeURIComponent(query),
+      searchController ? { signal: searchController.signal } : undefined
+    )
       .then(function (res) {
         if (!res.ok) return [];
         return res.json();
@@ -91,7 +118,7 @@
             img =
               '<img class="soundtrack-result-art" src="' +
               escapeAttr(track.image_url) +
-              '" alt="" loading="lazy"/>';
+              '" alt="" width="40" height="40" loading="lazy" decoding="async" fetchpriority="low"/>';
           }
 
           item.innerHTML =
@@ -120,6 +147,10 @@
         });
         results.style.display = "block";
         positionResults();
+      })
+      .catch(function (err) {
+        if (err && err.name === "AbortError") return;
+        results.style.display = "none";
       });
   }
 

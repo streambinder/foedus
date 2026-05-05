@@ -11,6 +11,9 @@
   var modalDate = modalEl ? modalEl.querySelector("#places-modal-date") : null;
   var modalClose = modalEl ? modalEl.querySelector("#places-modal-close") : null;
   var activePin = null;
+  var LEAFLET_CSS_URL = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+  var LEAFLET_JS_URL = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+  var leafletAssetsPromise = null;
 
   if (placesSection) initSection(placesSection, "places");
   if (honeymoonSection) initSection(honeymoonSection, "honeymoon");
@@ -27,6 +30,7 @@
 
     var map = null;
     var entries = [];
+    var initStarted = false;
 
     if ("IntersectionObserver" in window) {
       var observer = new IntersectionObserver(function (observed) {
@@ -42,11 +46,24 @@
     }
 
     function init() {
-      if (map) return;
-      if (typeof L === "undefined") return;
+      if (map || initStarted) return;
+      initStarted = true;
+      ensureLeaflet().then(startMap).catch(function () {
+        initStarted = false;
+      });
+    }
+
+    function startMap() {
+      if (map || typeof L === "undefined") return;
 
       map = L.map(mapEl, {
+        boxZoom: true,
+        doubleClickZoom: true,
+        dragging: true,
+        keyboard: true,
         scrollWheelZoom: false,
+        tap: true,
+        touchZoom: true,
         zoomControl: false,
         attributionControl: true
       });
@@ -178,6 +195,46 @@
     }
   }
 
+  function ensureLeaflet() {
+    if (window.L) return Promise.resolve();
+    if (leafletAssetsPromise) return leafletAssetsPromise;
+
+    loadLeafletStylesheet();
+    leafletAssetsPromise = new Promise(function (resolve, reject) {
+      var script = document.createElement("script");
+      script.src = LEAFLET_JS_URL;
+      script.async = true;
+      script.defer = true;
+      script.crossOrigin = "anonymous";
+      script.setAttribute("fetchpriority", "low");
+      script.onload = function () {
+        if (window.L) {
+          resolve();
+        } else {
+          leafletAssetsPromise = null;
+          reject(new Error("Leaflet did not initialize"));
+        }
+      };
+      script.onerror = function () {
+        leafletAssetsPromise = null;
+        reject(new Error("Leaflet failed to load"));
+      };
+      document.head.appendChild(script);
+    });
+    return leafletAssetsPromise;
+  }
+
+  function loadLeafletStylesheet() {
+    if (document.querySelector('link[data-foedus-leaflet-css="true"]')) return;
+    var link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = LEAFLET_CSS_URL;
+    link.crossOrigin = "anonymous";
+    link.dataset.foedusLeafletCss = "true";
+    link.setAttribute("fetchpriority", "low");
+    document.head.appendChild(link);
+  }
+
   // distance in px from a (possibly off-viewport) point to the nearest viewport edge.
   // returns 0 if the point is inside.
   function distanceToViewport(point, width, height) {
@@ -302,7 +359,7 @@
       pin.classList.add("places-pin--placeholder");
       pin.innerHTML = '<span>' + escapeHtml(initials(place.label || place.name || "P")) + "</span>";
     } else {
-      pin.innerHTML = '<img src="' + place.image + '" alt="' + escapeHtml(place.label || "Place") + '"/>';
+      pin.innerHTML = '<img src="' + escapeAttr(place.image) + '" alt="' + escapeAttr(place.label || "Place") + '" loading="lazy" decoding="async" fetchpriority="low"/>';
     }
     return pin;
   }
@@ -311,7 +368,7 @@
     var title = escapeHtml(place.label || place.name || "Stop");
     var transparentClass = supportsTransparency(place.image) ? " places-pin-media--transparent" : "";
     return place.image
-      ? '<div class="places-pin-media' + transparentClass + '"><img src="' + place.image + '" alt="' + title + '"/><div class="places-pin-overlay"><h3>' + title + '</h3></div></div>'
+      ? '<div class="places-pin-media' + transparentClass + '"><img src="' + escapeAttr(place.image) + '" alt="' + escapeAttr(place.label || place.name || "Stop") + '" loading="lazy" decoding="async" fetchpriority="low"/><div class="places-pin-overlay"><h3>' + title + '</h3></div></div>'
       : '<div class="places-pin-media places-pin-media--placeholder"><span>' + escapeHtml(initials(place.label || place.name || "H")) + '</span><div class="places-pin-overlay"><h3>' + title + '</h3></div></div>';
   }
 
@@ -615,6 +672,14 @@
     var div = document.createElement("div");
     div.textContent = str;
     return div.innerHTML;
+  }
+
+  function escapeAttr(str) {
+    return String(str || "")
+      .replace(/&/g, "&amp;")
+      .replace(/"/g, "&quot;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
   }
 
   function initials(value) {

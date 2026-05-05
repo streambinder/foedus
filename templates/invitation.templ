@@ -33,8 +33,15 @@ func InvitationAnswered(inv models.Invitation) bool {
 	return false
 }
 
+func invitationImagePreloads(alreadyViewed bool) []ImagePreload {
+	if alreadyViewed {
+		return nil
+	}
+	return []ImagePreload{{Href: "/static/wax-seal.webp"}}
+}
+
 templ Invitation(inv models.Invitation, settings models.WeddingSettings, polls []models.Poll, alreadyViewed bool, noRedirect bool, t i18n.T, lang string, ogMeta OGMeta, title string) {
-	@Layout(title, lang, t, ogMeta, false) {
+	@Layout(title, lang, t, ogMeta, false, invitationImagePreloads(alreadyViewed)) {
 		<div id="envelope-overlay" class={ templ.KV("is-complete", alreadyViewed) }>
 			<div id="envelope-open-button" role="button" tabindex="0" aria-label={ t("invitation.title") }></div>
 			<div class="envelope">
@@ -61,7 +68,7 @@ templ Invitation(inv models.Invitation, settings models.WeddingSettings, polls [
 							<a href={ templ.SafeURL(mapsURL(settings.CeremonyAddress, settings.CeremonyLocation)) } target="_blank" class="venue-link">
 								if settings.CeremonyImage != "" {
 									<div class="venue-image-wrapper">
-										<img class="venue-image" src={ settings.CeremonyImage } alt={ t("home.ceremony") } width="800" height="500" loading="lazy" decoding="async"/>
+										<img class="venue-image" src={ publicImageURL(settings.CeremonyImage) } alt={ t("home.ceremony") } width="800" height="500" loading="lazy" decoding="async"/>
 										<div class="venue-overlay venue-overlay-top">
 											<div class="venue-overlay-badge">
 												<span class="venue-overlay-icon" aria-hidden="true"></span>
@@ -96,7 +103,7 @@ templ Invitation(inv models.Invitation, settings models.WeddingSettings, polls [
 							<a href={ templ.SafeURL(mapsURL(settings.ReceptionAddress, settings.ReceptionLocation)) } target="_blank" class="venue-link">
 								if settings.ReceptionImage != "" {
 									<div class="venue-image-wrapper">
-										<img class="venue-image" src={ settings.ReceptionImage } alt={ t("home.reception") } width="800" height="500" loading="lazy" decoding="async"/>
+										<img class="venue-image" src={ publicImageURL(settings.ReceptionImage) } alt={ t("home.reception") } width="800" height="500" loading="lazy" decoding="async"/>
 										<div class="venue-overlay venue-overlay-top">
 											<div class="venue-overlay-badge">
 												<span class="venue-overlay-icon" aria-hidden="true"></span>
@@ -269,7 +276,7 @@ templ Invitation(inv models.Invitation, settings models.WeddingSettings, polls [
 				<div class="envelope-wax" aria-hidden="true">
 					<picture>
 						<source type="image/webp" srcset="/static/wax-seal.webp"/>
-						<img class="envelope-wax-img" src="/static/wax-seal.png" alt="" width="768" height="768" decoding="async"/>
+						<img class="envelope-wax-img" src="/static/wax-seal.png" alt="" width="768" height="768" loading="eager" fetchpriority="high" decoding="async"/>
 					</picture>
 				</div>
 			</div>
@@ -283,6 +290,12 @@ templ Invitation(inv models.Invitation, settings models.WeddingSettings, polls [
 				var code = window.location.pathname.replace('/', '');
 				if (!overlay || !content || !openButton || !replayButton) return;
 				var shouldMarkViewed = !overlay.classList.contains('is-complete');
+				var reducedMotionQuery = window.matchMedia
+					? window.matchMedia("(prefers-reduced-motion: reduce)")
+					: null;
+				function prefersReducedMotion() {
+					return !!(reducedMotionQuery && reducedMotionQuery.matches);
+				}
 				if (shouldMarkViewed) {
 					document.body.classList.add('invitation-opening');
 				}
@@ -306,6 +319,10 @@ templ Invitation(inv models.Invitation, settings models.WeddingSettings, polls [
 
 				function startOpening(markViewed) {
 					if (overlay.classList.contains('opening')) return;
+					if (prefersReducedMotion()) {
+						finishAnimation(markViewed);
+						return;
+					}
 					overlay.classList.remove('is-complete');
 					overlay.classList.add('opening');
 					window.requestAnimationFrame(function() {

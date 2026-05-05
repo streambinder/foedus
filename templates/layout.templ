@@ -1,6 +1,10 @@
 package templates
 
-import "github.com/streambinder/foedus/internal/i18n"
+import (
+	"strings"
+
+	"github.com/streambinder/foedus/internal/i18n"
+)
 
 type OGMeta struct {
 	Title       string
@@ -12,6 +16,24 @@ type OGMeta struct {
 	ImageHeight string
 }
 
+type ImagePreload struct {
+	Href  string
+	Media string
+}
+
+func isPreloadableImageURL(raw string) bool {
+	raw = strings.TrimSpace(raw)
+	return strings.HasPrefix(raw, "/") || strings.HasPrefix(raw, "https://") || strings.HasPrefix(raw, "http://")
+}
+
+func publicImageURL(raw string) string {
+	raw = strings.TrimSpace(raw)
+	if strings.HasPrefix(raw, "data:image/") {
+		return "/media/" + imageToken(raw)
+	}
+	return raw
+}
+
 func pageTitle(title, spouse1, spouse2 string) string {
 	if spouse1 != "" && spouse2 != "" {
 		return title + " · " + spouse1 + " & " + spouse2
@@ -20,7 +42,7 @@ func pageTitle(title, spouse1, spouse2 string) string {
 }
 
 templ SetupGuard(lang string, t i18n.T) {
-	@Layout(t("title.setup"), lang, t, OGMeta{}, false) {
+	@Layout(t("title.setup"), lang, t, OGMeta{}, false, nil) {
 		<div class="setup-guard">
 			<h1>{ t("setup.not_ready") }</h1>
 			<p><a href="/dashboard">{ t("setup.go_to_dashboard") }</a></p>
@@ -28,12 +50,12 @@ templ SetupGuard(lang string, t i18n.T) {
 	}
 }
 
-templ Layout(title string, lang string, t i18n.T, ogMeta OGMeta, includeLeaflet bool) {
+templ Layout(title string, lang string, t i18n.T, ogMeta OGMeta, includeLeaflet bool, imagePreloads []ImagePreload) {
 	<!DOCTYPE html>
 	<html lang={ lang } data-theme="light">
 		<head>
 			<meta charset="UTF-8"/>
-			<meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content"/>
 			<title>{ title }</title>
 			<meta name="theme-color" content="#2A3439"/>
 			<style>html,body{margin:0;background:#FCF8F3;color:#36454F;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}</style>
@@ -67,15 +89,25 @@ templ Layout(title string, lang string, t i18n.T, ogMeta OGMeta, includeLeaflet 
 			<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin/>
 			<link rel="preconnect" href="https://fonts.googleapis.com"/>
 			<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-			<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css"/>
-			<link rel="stylesheet" href="/static/css/styles.css"/>
-			<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600&family=Courier+Prime:wght@400;700&display=swap"/>
+			if includeLeaflet {
+				<link rel="preconnect" href="https://unpkg.com" crossorigin/>
+				<link rel="dns-prefetch" href="//unpkg.com"/>
+				<link rel="dns-prefetch" href="//basemaps.cartocdn.com"/>
+			}
+			for _, preload := range imagePreloads {
+				if preload.Href != "" {
+					if preload.Media != "" {
+						<link rel="preload" as="image" href={ preload.Href } media={ preload.Media } fetchpriority="high"/>
+					} else {
+						<link rel="preload" as="image" href={ preload.Href } fetchpriority="high"/>
+					}
+				}
+			}
+			<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" fetchpriority="high"/>
+			<link rel="stylesheet" href="/static/css/styles.css" fetchpriority="high"/>
+			<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600&family=Courier+Prime:wght@400;700&display=swap" fetchpriority="high"/>
 			<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600&family=Courier+Prime:wght@400;700&display=swap" media="print" onload="this.media='all'"/>
 			<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600&family=Courier+Prime:wght@400;700&display=swap"/></noscript>
-			if includeLeaflet {
-				<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
-				<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="" defer></script>
-			}
 		</head>
 		<body>
 			<main class="container">
@@ -90,7 +122,7 @@ templ DashboardLayout(title string, lang string) {
 	<html lang={ lang } data-bs-theme="light">
 		<head>
 			<meta charset="UTF-8"/>
-			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
 			<title>{ title }</title>
 			<meta name="theme-color" content="#2A3439"/>
 			<link rel="icon" type="image/svg+xml" href="/static/favicon.svg"/>

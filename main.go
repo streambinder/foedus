@@ -55,6 +55,7 @@ func main() {
 
 	// public
 	app.Get("/", handlers.Home)
+	app.Get("/media/:token", handlers.MediaImage)
 	app.Get("/og-image", handlers.OGImage)
 	app.Post("/gift/claim", handlers.ClaimGift)
 	app.Post("/chat", handlers.ChatStream)

@@ -43,7 +43,7 @@ func locationTimelineJSON(places []models.Place, lang string) string {
 			"label":          place.Label,
 			"date":           place.Date,
 			"formatted_date": i18n.FormatDatetime(place.Date, lang),
-			"image":          place.Image,
+			"image":          publicImageURL(place.Image),
 			"name":           place.Name,
 			"address":        place.Address,
 			"lat":            place.Lat,
@@ -139,25 +139,59 @@ func claimedPercent(item models.RegistryItem, claimed map[int]int) int {
 	return pct
 }
 
-func heroBackgroundStyle(image string) templ.SafeCSS {
-	return templ.SafeCSS("background-image:url(" + image + ");")
+func heroFallbackImage(heroBackground models.HomepageHeroBackground) string {
+	if heroBackground.MobileImage != "" {
+		return publicImageURL(heroBackground.MobileImage)
+	}
+	return publicImageURL(heroBackground.DesktopImage)
+}
+
+func homepageHeroPreloads(heroBackground models.HomepageHeroBackground) []ImagePreload {
+	desktopImage := heroBackground.DesktopImage
+	mobileImage := heroBackground.MobileImage
+	if desktopImage == "" {
+		desktopImage = mobileImage
+	}
+	if mobileImage == "" {
+		mobileImage = desktopImage
+	}
+	if desktopImage == "" && mobileImage == "" {
+		return nil
+	}
+	desktopURL := publicImageURL(desktopImage)
+	mobileURL := publicImageURL(mobileImage)
+	if desktopURL == mobileURL {
+		if isPreloadableImageURL(desktopURL) {
+			return []ImagePreload{{Href: desktopURL}}
+		}
+		return nil
+	}
+
+	preloads := make([]ImagePreload, 0, 2)
+	if isPreloadableImageURL(mobileURL) {
+		preloads = append(preloads, ImagePreload{Href: mobileURL, Media: "(max-width: 767px)"})
+	}
+	if isPreloadableImageURL(desktopURL) {
+		preloads = append(preloads, ImagePreload{Href: desktopURL, Media: "(min-width: 768px)"})
+	}
+	return preloads
 }
 
 templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBackground, registryItems []models.RegistryItem, claimedAmounts map[int]int, bankConfigured bool, chatEnabled bool, soundtrackEnabled bool, inviteUpdateURL string, rsvpSubmitted bool, t i18n.T, lang string, ogMeta OGMeta) {
-	@Layout(settings.Spouse1Name+" & "+settings.Spouse2Name, lang, t, ogMeta, len(settings.Places) > 0 || len(settings.HoneymoonLocations) > 0) {
+	@Layout(settings.Spouse1Name+" & "+settings.Spouse2Name, lang, t, ogMeta, len(settings.Places) > 0 || len(settings.HoneymoonLocations) > 0, homepageHeroPreloads(heroBackground)) {
 		<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
 			<symbol id="chev-d" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></symbol>
 			<symbol id="chev-u" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></symbol>
 		</svg>
 		<!-- section 1: title -->
 		<section id="landing" class={ templ.Classes("vp-section", "vp-hero", templ.KV("vp-hero--with-background", heroBackground.DesktopImage != "" || heroBackground.MobileImage != "")) }>
-			if heroBackground.DesktopImage != "" {
-				<div class="vp-hero-background-layer vp-hero-background-layer--desktop" style={ heroBackgroundStyle(heroBackground.DesktopImage) } aria-hidden="true"></div>
-			}
-			if heroBackground.MobileImage != "" {
-				<div class="vp-hero-background-layer vp-hero-background-layer--mobile" style={ heroBackgroundStyle(heroBackground.MobileImage) } aria-hidden="true"></div>
-			}
 			if heroBackground.DesktopImage != "" || heroBackground.MobileImage != "" {
+				<picture class="vp-hero-background-layer" aria-hidden="true">
+					if heroBackground.DesktopImage != "" {
+						<source media="(min-width: 768px)" srcset={ publicImageURL(heroBackground.DesktopImage) }/>
+					}
+					<img src={ heroFallbackImage(heroBackground) } alt="" width="1600" height="1000" loading="eager" fetchpriority="high" decoding="async"/>
+				</picture>
 				<div class="vp-hero-background-wash" aria-hidden="true"></div>
 			}
 			<div class="vp-section-inner">
@@ -199,7 +233,7 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 							<a href={ templ.SafeURL(mapsURL(settings.CeremonyAddress, settings.CeremonyLocation)) } target="_blank" class="venue-link">
 								if settings.CeremonyImage != "" {
 									<div class="venue-image-wrapper">
-										<img class="venue-image" src={ settings.CeremonyImage } alt={ t("home.ceremony") } width="800" height="500" loading="lazy" decoding="async"/>
+										<img class="venue-image" src={ publicImageURL(settings.CeremonyImage) } alt={ t("home.ceremony") } width="800" height="500" loading="lazy" decoding="async"/>
 										<div class="venue-overlay venue-overlay-top">
 											<div class="venue-overlay-badge">
 												<span class="venue-overlay-icon" aria-hidden="true"></span>
@@ -234,7 +268,7 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 							<a href={ templ.SafeURL(mapsURL(settings.ReceptionAddress, settings.ReceptionLocation)) } target="_blank" class="venue-link">
 								if settings.ReceptionImage != "" {
 									<div class="venue-image-wrapper">
-										<img class="venue-image" src={ settings.ReceptionImage } alt={ t("home.reception") } width="800" height="500" loading="lazy" decoding="async"/>
+										<img class="venue-image" src={ publicImageURL(settings.ReceptionImage) } alt={ t("home.reception") } width="800" height="500" loading="lazy" decoding="async"/>
 										<div class="venue-overlay venue-overlay-top">
 											<div class="venue-overlay-badge">
 												<span class="venue-overlay-icon" aria-hidden="true"></span>
@@ -311,6 +345,7 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 				</div>
 				<iframe
 					class="soundtrack-embed"
+					title={ t("home.soundtrack") }
 					src={ spotifyEmbedURL(settings.SpotifyPlaylist) }
 					width="100%"
 					frameBorder="0"
@@ -367,7 +402,7 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 						<div class="modal-box places-modal-box">
 							<button type="button" id="places-modal-close" class="places-modal-close" aria-label={ t("btn.close") }>&times;</button>
 							<div class="places-modal-media">
-								<img id="places-modal-image" src="" alt="" width="800" height="600" decoding="async"/>
+								<img id="places-modal-image" src="" alt="" width="800" height="600" loading="lazy" fetchpriority="low" decoding="async"/>
 							</div>
 							<div class="places-modal-caption">
 								<h3 id="places-modal-label"></h3>
@@ -430,7 +465,7 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 								<div class={ "gift-tile", templ.KV("gift-tile--gifted", remainingAmount(item, claimedAmounts) == 0) }>
 									if item.Image != "" {
 										<div class="gift-tile-image">
-											<img src={ item.Image } alt={ item.Name } width="400" height="300" loading="lazy" decoding="async"/>
+											<img src={ publicImageURL(item.Image) } alt={ item.Name } width="400" height="300" loading="lazy" decoding="async"/>
 											if item.Price > 0 {
 												<span class="gift-tile-price">{ formatPrice(item.Price) }</span>
 											}
@@ -735,7 +770,7 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 							attributeFilter: ["class", "style"],
 						});
 					}
-				});
+				}, { once: true });
 
 				// only watch landing for chat-bubble visibility — no full active-section tracking
 				var landing = document.getElementById("landing");
@@ -1025,10 +1060,10 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 			})();
 		</script>
 		if len(settings.Places) > 0 || len(settings.HoneymoonLocations) > 0 {
-			<script src="/static/places.js" defer></script>
+			<script src="/static/places.js" defer fetchpriority="low"></script>
 		}
 		if soundtrackEnabled {
-				<script src="/static/soundtrack.js" defer></script>
+				<script src="/static/soundtrack.js" defer fetchpriority="low"></script>
 			}
 		if inviteUpdateURL != "" {
 			<a id="invite-update-bubble" href={ templ.SafeURL(inviteUpdateURL) }>{ t("home.update_invitation") }</a>
@@ -1058,9 +1093,9 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 			</script>
 		}
 			if chatEnabled {
-			<div id="chat-bubble" title={ t("chat.title") }>
+			<button id="chat-bubble" type="button" title={ t("chat.title") } aria-label={ t("chat.title") }>
 				<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-			</div>
+			</button>
 			<div
 				id="chat-panel"
 				style="display:none"
@@ -1069,7 +1104,7 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 			>
 				<div class="chat-header">
 					<span>{ t("chat.title") }</span>
-					<button id="chat-close" type="button">&times;</button>
+					<button id="chat-close" type="button" aria-label={ t("btn.close") }>&times;</button>
 				</div>
 				<div id="chat-messages"></div>
 				<form id="chat-form">
@@ -1077,7 +1112,7 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 					<button type="submit">{ t("chat.send") }</button>
 				</form>
 			</div>
-			<script src="/static/chat.js" defer></script>
+			<script src="/static/chat.js" defer fetchpriority="low"></script>
 		}
 	}
 }
