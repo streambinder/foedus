@@ -1137,6 +1137,7 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 									<th>{ t("th.invite_guests") }</th>
 								}
 								<th>{ t("th.date") }</th>
+								<th>{ t("th.actions") }</th>
 							</tr>
 						</thead>
 						<tbody>
@@ -1166,6 +1167,12 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 										</td>
 									}
 									<td data-label={ t("th.date") }>{ i18n.FormatDate(event.CreatedAt, lang) }</td>
+									<td data-label={ t("th.actions") }>
+										<form method="POST" action={ templ.SafeURL("/dashboard/soundtrack/" + strconv.Itoa(event.ID) + "/delete") } data-confirm={ t("confirm.delete_track") } onsubmit="return confirm(this.dataset.confirm)">
+											<input type="hidden" name="_csrf" value={ csrfToken }/>
+											<button type="submit" class="outline secondary">{ t("btn.delete") }</button>
+										</form>
+									</td>
 								</tr>
 							}
 						</tbody>

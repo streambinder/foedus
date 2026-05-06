@@ -38,3 +38,8 @@ func GetAllSoundtrackEvents() ([]models.SoundtrackEvent, error) {
 	}
 	return events, rows.Err()
 }
+
+func DeleteSoundtrackEvent(id int) error {
+	_, err := DB.Exec(`DELETE FROM soundtrack_events WHERE id = ?`, id)
+	return err
+}

@@ -10,7 +10,8 @@
     "dashboard-settings",
     "dashboard-guests",
     "dashboard-invitations",
-    "dashboard-registry"
+    "dashboard-registry",
+    "dashboard-soundtrack-events"
   ];
 
   function init() {
@@ -183,6 +184,9 @@
     }
     if (/\/dashboard\/registry(?:\/\d+(?:\/(?:move\/(?:up|down)|delete))?)?$/.test(action)) {
       return ["dashboard-flash", "dashboard-registry"];
+    }
+    if (/\/dashboard\/soundtrack\/\d+\/delete$/.test(action)) {
+      return ["dashboard-flash", "dashboard-soundtrack-events"];
     }
     if (/\/dashboard\/settings$/.test(action)) {
       return ["dashboard-flash", "dashboard-counters", "dashboard-settings", "dashboard-invitations", "dashboard-registry"];

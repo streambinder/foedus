@@ -202,6 +202,8 @@ var translations = map[string]map[string]string{
 		"flash.poll_updated":      "Poll updated.",
 		"flash.poll_deleted":      "Poll deleted.",
 		"confirm.delete_poll":     "Delete this poll?",
+		"flash.track_deleted":     "Track removed from history.",
+		"confirm.delete_track":    "Remove this track from history? Spotify playlist not affected.",
 
 		// invitations
 		"dashboard.invitations":        "Invitations",
@@ -477,6 +479,8 @@ var translations = map[string]map[string]string{
 		"flash.poll_updated":      "Sondaggio aggiornato.",
 		"flash.poll_deleted":      "Sondaggio eliminato.",
 		"confirm.delete_poll":     "Eliminare questo sondaggio?",
+		"flash.track_deleted":     "Brano rimosso dallo storico.",
+		"confirm.delete_track":    "Rimuovere questo brano dallo storico? La playlist Spotify non verrà modificata.",
 
 		// invitations
 		"dashboard.invitations":        "Inviti",

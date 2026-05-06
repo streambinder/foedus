@@ -954,6 +954,22 @@ func DeletePoll(c *fiber.Ctx) error {
 	return c.Redirect("/dashboard")
 }
 
+func DeleteSoundtrackEvent(c *fiber.Ctx) error {
+	logger := handlerLogger(c)
+	id, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		logger.Warn("soundtrack event delete rejected", "event_id", c.Params("id"), "error", err.Error())
+		return c.Status(400).SendString("invalid id")
+	}
+	if err := database.DeleteSoundtrackEvent(id); err != nil {
+		logger.Error("soundtrack event delete failed", "event_id", id, "error", err.Error())
+		return c.Status(500).SendString("failed to delete soundtrack event")
+	}
+	logger.Info("soundtrack event deleted", "event_id", id)
+	setFlash(c, getT(c)("flash.track_deleted"))
+	return c.Redirect("/dashboard#dashboard-soundtrack-events")
+}
+
 func DeleteInvitation(c *fiber.Ctx) error {
 	logger := handlerLogger(c)
 	id, err := strconv.Atoi(c.Params("id"))

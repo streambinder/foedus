@@ -101,6 +101,7 @@ func main() {
 	admin.Get("/polls/:id/edit", handlers.EditPollPage)
 	admin.Post("/polls/:id", handlers.UpdatePoll)
 	admin.Post("/polls/:id/delete", handlers.DeletePoll)
+	admin.Post("/soundtrack/:id/delete", handlers.DeleteSoundtrackEvent)
 
 	// invitation public routes (catch-all, must be last)
 	app.Get("/:code", handlers.ViewInvitation)
