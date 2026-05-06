@@ -235,6 +235,11 @@ html:has(.vp-section) body {
   isolation: isolate;
 }
 
+#landing.vp-hero > .vp-section-inner {
+  transform: translateY(25vh);
+  transform: translateY(25dvh);
+}
+
 .vp-hero-background-layer,
 .vp-hero-background-wash {
   position: absolute;
