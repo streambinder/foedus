@@ -429,6 +429,7 @@ func SaveSettings(c *fiber.Ctx) error {
 		"hero_backgrounds", len(homepageHeroBackgrounds),
 		"spotify_playlist_configured", playlist != "",
 	)
+	invalidateMediaCache()
 	setFlash(c, getT(c)("flash.settings_saved"))
 	return c.Redirect("/dashboard")
 }
@@ -635,6 +636,7 @@ func AddRegistryItem(c *fiber.Ctx) error {
 		logger.Error("registry item create failed", "name", name, "price", price, "error", err.Error())
 		return c.Status(500).SendString("failed to add item")
 	}
+	invalidateMediaCache()
 	logger.Info("registry item created", "name", name, "price", price, "has_image", image != "")
 	setFlash(c, getT(c)("flash.item_added"))
 	return c.Redirect("/dashboard")
@@ -694,6 +696,7 @@ func UpdateRegistryItem(c *fiber.Ctx) error {
 		logger.Error("registry item update failed", "item_id", id, "error", err.Error())
 		return c.Status(500).SendString("failed to update item")
 	}
+	invalidateMediaCache()
 	logger.Info("registry item updated", "item_id", id, "name", name, "price", price, "has_image", image != "")
 	setFlash(c, getT(c)("flash.item_updated"))
 	return c.Redirect("/dashboard")
@@ -710,6 +713,7 @@ func DeleteRegistryItem(c *fiber.Ctx) error {
 		logger.Error("registry item delete failed", "item_id", id, "error", err.Error())
 		return c.Status(500).SendString("failed to delete item")
 	}
+	invalidateMediaCache()
 	logger.Info("registry item deleted", "item_id", id)
 	setFlash(c, getT(c)("flash.item_deleted"))
 	return c.Redirect("/dashboard")

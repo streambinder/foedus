@@ -1,6 +1,32 @@
 function initDashboardFeatures() {
   "use strict";
 
+  initDashboardLazyImages();
+
+  // ---------------------------------------------------------------
+  // lazy dashboard previews
+  // ---------------------------------------------------------------
+  function initDashboardLazyImages() {
+    loadDashboardLazyImages(document, false);
+
+    if (!document.body || document.body.dataset.dashboardLazyImagesBound === "true") return;
+    document.body.dataset.dashboardLazyImagesBound = "true";
+    document.addEventListener("shown.bs.collapse", function (event) {
+      loadDashboardLazyImages(event.target, true);
+    });
+  }
+
+  function loadDashboardLazyImages(root, force) {
+    var scope = root instanceof Element ? root : document;
+    scope.querySelectorAll("img.dashboard-lazy-image[data-src]").forEach(function (img) {
+      if (!force && img.closest(".accordion-collapse:not(.show)")) return;
+      var src = img.getAttribute("data-src");
+      if (!src) return;
+      img.src = src;
+      img.removeAttribute("data-src");
+    });
+  }
+
   // ---------------------------------------------------------------
   // places / honeymoon management
   // ---------------------------------------------------------------

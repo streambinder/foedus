@@ -1,13 +1,23 @@
 package handlers
 
 import (
-	"database/sql"
 	"encoding/hex"
 	"strings"
+	"sync"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/streambinder/foedus/internal/database"
 )
+
+type cachedMediaImage struct {
+	mimeType string
+	data     []byte
+}
+
+var mediaCache = struct {
+	sync.RWMutex
+	images map[string]cachedMediaImage
+}{}
 
 func MediaImage(c *fiber.Ctx) error {
 	token := strings.TrimSpace(c.Params("token"))
@@ -34,59 +44,88 @@ func MediaImage(c *fiber.Ctx) error {
 }
 
 func findImageByToken(token string) (string, []byte, bool) {
-	settings, err := database.GetAllSettings()
-	if err == nil {
-		if mimeType, data, ok := matchDataImage(token, settings.CeremonyImage); ok {
-			return mimeType, data, true
-		}
-		if mimeType, data, ok := matchDataImage(token, settings.ReceptionImage); ok {
-			return mimeType, data, true
-		}
-		if mimeType, data, ok := matchDataImage(token, settings.SharePreviewImage); ok {
-			return mimeType, data, true
-		}
-		for _, place := range settings.Places {
-			if mimeType, data, ok := matchDataImage(token, place.Image); ok {
-				return mimeType, data, true
-			}
-		}
-		for _, place := range settings.HoneymoonLocations {
-			if mimeType, data, ok := matchDataImage(token, place.Image); ok {
-				return mimeType, data, true
-			}
-		}
-		for _, background := range settings.HomepageHeroBackgrounds {
-			if mimeType, data, ok := matchDataImage(token, background.DesktopImage); ok {
-				return mimeType, data, true
-			}
-			if mimeType, data, ok := matchDataImage(token, background.MobileImage); ok {
-				return mimeType, data, true
-			}
-		}
-	} else if err != sql.ErrNoRows {
+	images, err := getMediaCache()
+	if err != nil {
 		return "", nil, false
+	}
+	image, ok := images[token]
+	if !ok {
+		return "", nil, false
+	}
+	return image.mimeType, image.data, true
+}
+
+func getMediaCache() (map[string]cachedMediaImage, error) {
+	mediaCache.RLock()
+	if mediaCache.images != nil {
+		images := mediaCache.images
+		mediaCache.RUnlock()
+		return images, nil
+	}
+	mediaCache.RUnlock()
+
+	mediaCache.Lock()
+	defer mediaCache.Unlock()
+	if mediaCache.images != nil {
+		return mediaCache.images, nil
+	}
+
+	images, err := buildMediaCache()
+	if err != nil {
+		return nil, err
+	}
+	mediaCache.images = images
+	return mediaCache.images, nil
+}
+
+func buildMediaCache() (map[string]cachedMediaImage, error) {
+	images := make(map[string]cachedMediaImage)
+	add := func(image string) {
+		if image == "" || !strings.HasPrefix(image, "data:image/") {
+			return
+		}
+		token := imageToken(image)
+		if _, exists := images[token]; exists {
+			return
+		}
+		mimeType, data, err := decodeDataURI(image)
+		if err != nil {
+			return
+		}
+		images[token] = cachedMediaImage{mimeType: mimeType, data: data}
+	}
+
+	settings, err := database.GetAllSettings()
+	if err != nil {
+		return nil, err
+	}
+	add(settings.CeremonyImage)
+	add(settings.ReceptionImage)
+	add(settings.SharePreviewImage)
+	for _, place := range settings.Places {
+		add(place.Image)
+	}
+	for _, place := range settings.HoneymoonLocations {
+		add(place.Image)
+	}
+	for _, background := range settings.HomepageHeroBackgrounds {
+		add(background.DesktopImage)
+		add(background.MobileImage)
 	}
 
 	items, err := database.GetAllRegistryItems()
 	if err != nil {
-		return "", nil, false
+		return nil, err
 	}
 	for _, item := range items {
-		if mimeType, data, ok := matchDataImage(token, item.Image); ok {
-			return mimeType, data, true
-		}
+		add(item.Image)
 	}
 
-	return "", nil, false
+	return images, nil
 }
 
-func matchDataImage(token, image string) (string, []byte, bool) {
-	if image == "" || imageToken(image) != token || !strings.HasPrefix(image, "data:image/") {
-		return "", nil, false
-	}
-	mimeType, data, err := decodeDataURI(image)
-	if err != nil {
-		return "", nil, false
-	}
-	return mimeType, data, true
+func invalidateMediaCache() {
+	mediaCache.Lock()
+	mediaCache.images = nil
+	mediaCache.Unlock()
 }

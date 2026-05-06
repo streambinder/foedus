@@ -35,8 +35,13 @@ body.dashboard-page {
 
 .dashboard-stack {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 1.25rem;
   padding-bottom: 2rem;
+}
+
+.dashboard-stack > * {
+  min-width: 0;
 }
 
 .page-title {
@@ -53,6 +58,7 @@ article {
   border: 1px solid var(--tblr-border-color);
   border-radius: var(--dashboard-radius);
   box-shadow: var(--dashboard-shadow);
+  min-width: 0;
   padding: 1.25rem;
 }
 
@@ -245,6 +251,7 @@ button.outline.secondary:hover,
 
 .dashboard-settings-form {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.9rem;
 }
 
@@ -255,6 +262,7 @@ button.outline.secondary:hover,
 .dashboard-accordion,
 .dashboard-subaccordion,
 .dashboard-subsection-accordion {
+  min-width: 0;
   --tblr-accordion-bg: var(--tblr-bg-surface);
   --tblr-accordion-border-color: var(--tblr-border-color);
   --tblr-accordion-btn-bg: var(--tblr-bg-surface-secondary);
@@ -834,6 +842,95 @@ input[role="switch"] {
 code {
   font-size: 0.8125rem;
   color: var(--tblr-emphasis-color);
+}
+
+@media (max-width: 575px) {
+  .page-header .container-xl,
+  .page-body .container-xl {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  .dashboard-stack {
+    gap: 1rem;
+  }
+
+  .page-title {
+    font-size: 1.15rem;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+  }
+
+  article,
+  .counter-card {
+    padding: 0.9rem;
+  }
+
+  .dashboard-accordion .accordion-button,
+  .dashboard-subaccordion .accordion-button,
+  .dashboard-subsection-accordion .accordion-button {
+    padding: 0.85rem 2.75rem 0.85rem 0.85rem;
+  }
+
+  .settings-section-body,
+  .settings-subsection-body,
+  .dashboard-subsection-body {
+    padding: 0 0.85rem 0.85rem;
+  }
+
+  .place-card,
+  .accommodation-card,
+  .impersonation-card,
+  .hero-background-card {
+    padding: 0.85rem;
+  }
+
+  .place-card-header,
+  .accommodation-card-header,
+  .impersonation-card-header,
+  .hero-background-card-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .place-card-meta {
+    width: 100%;
+  }
+
+  .place-card-actions,
+  .actions,
+  .modal-actions {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    white-space: normal;
+  }
+
+  .place-coords {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  .venue-image-row,
+  .managed-image-field {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .venue-file-input,
+  .managed-image-field .managed-image-file {
+    flex: none;
+    width: 100%;
+  }
+
+  .modal-overlay {
+    align-items: flex-end;
+    padding: 0.75rem;
+  }
+
+  .modal-box {
+    max-height: calc(100dvh - 1.5rem);
+    overflow-y: auto;
+  }
 }
 
 @media (min-width: 768px) {

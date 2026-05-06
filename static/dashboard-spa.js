@@ -377,8 +377,7 @@
           dataInput.value = reader.result;
           if (tokenInput) tokenInput.value = "";
           if (previewImg) {
-            previewImg.src = reader.result;
-            previewImg.style.display = "";
+            setPreviewImage(previewImg, reader.result);
           }
           if (withRemove) {
             var removeBtn = document.getElementById("share-preview-remove");
@@ -406,8 +405,7 @@
         dataInput.value = canvas.toDataURL(format || "image/png", quality);
         if (tokenInput) tokenInput.value = "";
         if (previewImg) {
-          previewImg.src = dataInput.value;
-          previewImg.style.display = "";
+          setPreviewImage(previewImg, dataInput.value);
         }
         if (withRemove) {
           var removeBtn = document.getElementById("share-preview-remove");
@@ -425,8 +423,7 @@
           dataInput.value = "";
           if (tokenInput) tokenInput.value = "";
           if (previewImg) {
-            previewImg.src = "";
-            previewImg.style.display = "none";
+            clearPreviewImage(previewImg);
           }
           removeBtn.style.display = "none";
           fileInput.value = "";
@@ -471,13 +468,26 @@
           targetInput.value = encodeManagedImage(canvas, format, quality, maxBytes);
           if (tokenInput) tokenInput.value = "";
           if (previewImg) {
-            previewImg.src = targetInput.value;
-            previewImg.style.display = "";
+            setPreviewImage(previewImg, targetInput.value);
           }
         };
         img.src = URL.createObjectURL(file);
       });
     });
+  }
+
+  function setPreviewImage(previewImg, src) {
+    previewImg.removeAttribute("data-src");
+    previewImg.classList.remove("dashboard-lazy-image");
+    previewImg.src = src;
+    previewImg.style.display = "";
+  }
+
+  function clearPreviewImage(previewImg) {
+    previewImg.removeAttribute("data-src");
+    previewImg.classList.remove("dashboard-lazy-image");
+    previewImg.removeAttribute("src");
+    previewImg.style.display = "none";
   }
 
   function escapeHtml(str) {

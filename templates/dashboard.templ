@@ -198,7 +198,7 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 					<input type="hidden" name="ceremony_image" id="ceremony-image-data"/>
 					<input type="hidden" name="ceremony_image_token" id="ceremony-image-token" value={ imageToken(settings.CeremonyImage) }/>
 					if settings.CeremonyImage != "" {
-						<img class="venue-image-preview" id="ceremony-preview" src={ settings.CeremonyImage } alt="ceremony"/>
+						<img class="venue-image-preview" id="ceremony-preview" src={ publicImageURL(settings.CeremonyImage) } loading="lazy" decoding="async" alt="ceremony"/>
 					} else {
 						<img class="venue-image-preview" id="ceremony-preview" style="display:none" alt="ceremony"/>
 					}
@@ -219,7 +219,7 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 					<input type="hidden" name="reception_image" id="reception-image-data"/>
 					<input type="hidden" name="reception_image_token" id="reception-image-token" value={ imageToken(settings.ReceptionImage) }/>
 					if settings.ReceptionImage != "" {
-						<img class="venue-image-preview" id="reception-preview" src={ settings.ReceptionImage } alt="reception"/>
+						<img class="venue-image-preview" id="reception-preview" src={ publicImageURL(settings.ReceptionImage) } loading="lazy" decoding="async" alt="reception"/>
 					} else {
 						<img class="venue-image-preview" id="reception-preview" style="display:none" alt="reception"/>
 					}
@@ -237,7 +237,7 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 					<input type="hidden" name="share_preview_image" id="share-preview-image-data"/>
 					<input type="hidden" name="share_preview_image_token" id="share-preview-image-token" value={ imageToken(settings.SharePreviewImage) }/>
 					if settings.SharePreviewImage != "" {
-						<img class="venue-image-preview" id="share-preview-preview" src={ settings.SharePreviewImage } alt="share preview"/>
+						<img class="venue-image-preview" id="share-preview-preview" src={ publicImageURL(settings.SharePreviewImage) } loading="lazy" decoding="async" alt="share preview"/>
 						<button type="button" id="share-preview-remove" class="outline secondary" style="margin-top:0.5rem">Remove</button>
 					} else {
 						<img class="venue-image-preview" id="share-preview-preview" style="display:none" alt="share preview"/>
@@ -284,7 +284,7 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 															<input type="hidden" name={ fmt.Sprintf("homepage_hero_background_desktop_%d", idx) } id={ "homepage-hero-background-desktop-data-" + strconv.Itoa(idx) } class="hero-background-image-hidden"/>
 															<input type="hidden" name={ fmt.Sprintf("homepage_hero_background_desktop_token_%d", idx) } id={ "homepage-hero-background-desktop-token-" + strconv.Itoa(idx) } class="hero-background-token-hidden" value={ imageToken(bg.DesktopImage) }/>
 															if bg.DesktopImage != "" {
-																<img class="hero-background-preview" id={ "homepage-hero-background-desktop-preview-" + strconv.Itoa(idx) } src={ bg.DesktopImage } alt="desktop background preview"/>
+																<img class="hero-background-preview dashboard-lazy-image" id={ "homepage-hero-background-desktop-preview-" + strconv.Itoa(idx) } data-src={ publicImageURL(bg.DesktopImage) } loading="lazy" decoding="async" alt="desktop background preview"/>
 															} else {
 																<img class="hero-background-preview" id={ "homepage-hero-background-desktop-preview-" + strconv.Itoa(idx) } style="display:none" alt="desktop background preview"/>
 															}
@@ -309,7 +309,7 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 															<input type="hidden" name={ fmt.Sprintf("homepage_hero_background_mobile_%d", idx) } id={ "homepage-hero-background-mobile-data-" + strconv.Itoa(idx) } class="hero-background-image-hidden"/>
 															<input type="hidden" name={ fmt.Sprintf("homepage_hero_background_mobile_token_%d", idx) } id={ "homepage-hero-background-mobile-token-" + strconv.Itoa(idx) } class="hero-background-token-hidden" value={ imageToken(bg.MobileImage) }/>
 															if bg.MobileImage != "" {
-																<img class="hero-background-preview hero-background-preview--portrait" id={ "homepage-hero-background-mobile-preview-" + strconv.Itoa(idx) } src={ bg.MobileImage } alt="mobile background preview"/>
+																<img class="hero-background-preview hero-background-preview--portrait dashboard-lazy-image" id={ "homepage-hero-background-mobile-preview-" + strconv.Itoa(idx) } data-src={ publicImageURL(bg.MobileImage) } loading="lazy" decoding="async" alt="mobile background preview"/>
 															} else {
 																<img class="hero-background-preview hero-background-preview--portrait" id={ "homepage-hero-background-mobile-preview-" + strconv.Itoa(idx) } style="display:none" alt="mobile background preview"/>
 															}
@@ -537,9 +537,11 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 															<input type="hidden" name={ fmt.Sprintf("place_image_token_%d", idx) } id={ fmt.Sprintf("place-image-token-%d", idx) } class="place-image-token-hidden" value={ imageToken(place.Image) }/>
 															if place.Image != "" {
 																<img
-																	class="venue-image-preview place-image-preview"
+																	class="venue-image-preview place-image-preview dashboard-lazy-image"
 																	id={ fmt.Sprintf("place-image-preview-%d", idx) }
-																	src={ place.Image }
+																	data-src={ publicImageURL(place.Image) }
+																	loading="lazy"
+																	decoding="async"
 																	alt={ place.Label }
 																/>
 															} else {
@@ -624,9 +626,11 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 															<input type="hidden" name={ fmt.Sprintf("honeymoon_image_token_%d", idx) } id={ fmt.Sprintf("honeymoon-image-token-%d", idx) } class="place-image-token-hidden" value={ imageToken(place.Image) }/>
 															if place.Image != "" {
 																<img
-																	class="venue-image-preview place-image-preview"
+																	class="venue-image-preview place-image-preview dashboard-lazy-image"
 																	id={ fmt.Sprintf("honeymoon-image-preview-%d", idx) }
-																	src={ place.Image }
+																	data-src={ publicImageURL(place.Image) }
+																	loading="lazy"
+																	decoding="async"
 																	alt={ place.Label }
 																/>
 															} else {
@@ -1042,7 +1046,7 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 									</td>
 									<td data-label={ t("th.item_image") }>
 										if item.Image != "" {
-											<img class="registry-thumb" src={ item.Image } alt={ item.Name }/>
+											<img class="registry-thumb" src={ publicImageURL(item.Image) } loading="lazy" decoding="async" alt={ item.Name }/>
 										}
 									</td>
 									<td data-label={ t("th.item_name") }>{ item.Name }</td>
@@ -1250,9 +1254,9 @@ templ EditRegistryItem(item models.RegistryItem, settings models.WeddingSettings
 							data-target-input={ "registry-image-data-" + strconv.Itoa(item.ID) }
 							data-preview-target={ "registry-image-preview-" + strconv.Itoa(item.ID) }
 						/>
-						<input type="hidden" name="image" id={ "registry-image-data-" + strconv.Itoa(item.ID) } value={ item.Image }/>
+						<input type="hidden" name="image" id={ "registry-image-data-" + strconv.Itoa(item.ID) }/>
 						if item.Image != "" {
-							<img class="registry-thumb" id={ "registry-image-preview-" + strconv.Itoa(item.ID) } src={ item.Image } alt={ item.Name }/>
+							<img class="registry-thumb" id={ "registry-image-preview-" + strconv.Itoa(item.ID) } src={ publicImageURL(item.Image) } loading="lazy" decoding="async" alt={ item.Name }/>
 						} else {
 							<img class="registry-thumb" id={ "registry-image-preview-" + strconv.Itoa(item.ID) } style="display:none" alt={ item.Name }/>
 						}
