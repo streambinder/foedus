@@ -84,5 +84,7 @@ jobs:
       - uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f
         with:
           platforms: linux/arm64/v8
-          tags: ghcr.io/streambinder/foedus:latest
+          tags: |
+            ghcr.io/${{ github.repository }}:latest
+            ghcr.io/${{ github.repository }}:${{ github.sha }}
           push: ${{ github.event_name != 'pull_request' }}
