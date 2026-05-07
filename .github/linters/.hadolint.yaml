@@ -1,2 +1,2 @@
 ignored:
-  - DL3018  # apk add version pinning is brittle for ca-certificates rolling
+  - DL3018 # apk add version pinning is brittle for ca-certificates rolling
