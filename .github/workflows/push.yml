@@ -21,6 +21,27 @@ permissions:
   statuses: none
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      docker: ${{ steps.filter.outputs.docker }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          persist-credentials: false
+      - uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36
+        id: filter
+        with:
+          filters: |
+            docker:
+              - '**/*.go'
+              - 'go.mod'
+              - 'go.sum'
+              - 'Dockerfile'
+              - 'internal/**'
+              - 'static/**'
+              - 'templates/**'
+              - 'main.go'
   super-linter:
     runs-on: ubuntu-latest
     permissions:
@@ -41,9 +62,9 @@ jobs:
           VALIDATE_GO: false
           VALIDATE_GO_MODULES: false
   docker:
-    needs: [super-linter]
+    needs: [super-linter, changes]
     runs-on: ubuntu-latest
-    if: success() && github.event_name == 'push' && github.ref == 'refs/heads/master'
+    if: success() && github.event_name == 'push' && github.ref == 'refs/heads/master' && needs.changes.outputs.docker == 'true'
     permissions:
       contents: read
       packages: write
