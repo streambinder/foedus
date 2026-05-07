@@ -47,7 +47,7 @@ templ Invitation(inv models.Invitation, settings models.WeddingSettings, polls [
 			<div class="envelope">
 				<div class="envelope-shadow"></div>
 				<div class="envelope-back"></div>
-				<div id="invitation-content" class={ templ.KV("invitation-content--staged", !alreadyViewed) }>
+				<div id="invitation-content" class={ templ.KV("invitation-content-staged", !alreadyViewed) }>
 				<div class="invitation-page">
 					<header class="hero">
 						<p><small>{ t("home.getting_married") }</small></p>
@@ -310,7 +310,7 @@ templ Invitation(inv models.Invitation, settings models.WeddingSettings, polls [
 
 				function setInitialAnimationState() {
 					overlay.classList.remove('is-complete', 'opening');
-					content.classList.add('invitation-content--staged');
+					content.classList.add('invitation-content-staged');
 					content.classList.remove('is-opening');
 					document.body.classList.add('invitation-opening');
 				}
@@ -318,7 +318,7 @@ templ Invitation(inv models.Invitation, settings models.WeddingSettings, polls [
 				function finishAnimation(markViewed) {
 					overlay.classList.add('is-complete');
 					overlay.classList.remove('opening');
-					content.classList.remove('invitation-content--staged', 'is-opening');
+					content.classList.remove('invitation-content-staged', 'is-opening');
 					document.body.classList.remove('invitation-opening');
 					if (markViewed) {
 						fetch('/' + code + '/viewed', { method: 'POST' });

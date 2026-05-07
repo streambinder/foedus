@@ -184,7 +184,7 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 			<symbol id="chev-u" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></symbol>
 		</svg>
 		<!-- section 1: title -->
-		<section id="landing" class={ templ.Classes("vp-section", "vp-hero", templ.KV("vp-hero--with-background", heroBackground.DesktopMediaID > 0 || heroBackground.MobileMediaID > 0)) }>
+		<section id="landing" class={ templ.Classes("vp-section", "vp-hero", templ.KV("vp-hero-with-background", heroBackground.DesktopMediaID > 0 || heroBackground.MobileMediaID > 0)) }>
 			if heroBackground.DesktopMediaID > 0 || heroBackground.MobileMediaID > 0 {
 				<picture class="vp-hero-background-layer" aria-hidden="true">
 					if heroBackground.DesktopMediaID > 0 {
@@ -208,15 +208,15 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 					</p>
 				}
 			</div>
-			<a href="#venues" class="vp-arrow vp-arrow--down" aria-label={ t("home.ceremony") }>
+			<a href="#venues" class="vp-arrow vp-arrow-down" aria-label={ t("home.ceremony") }>
 				<svg width="20" height="20" aria-hidden="true"><use href="#chev-d"/></svg>
 			</a>
 		</section>
 		<!-- section 2: ceremony & celebration -->
 		<section id="venues" class="vp-section vp-venues">
-			<span class="vp-flora vp-flora--bl" aria-hidden="true"></span>
-			<span class="vp-flora vp-flora--tr" aria-hidden="true"></span>
-			<a href="#landing" class="vp-arrow vp-arrow--up" aria-label={ t("home.getting_married") }>
+			<span class="vp-flora vp-flora-bl" aria-hidden="true"></span>
+			<span class="vp-flora vp-flora-tr" aria-hidden="true"></span>
+			<a href="#landing" class="vp-arrow vp-arrow-up" aria-label={ t("home.getting_married") }>
 				<svg width="20" height="20" aria-hidden="true"><use href="#chev-u"/></svg>
 			</a>
 			<div class="vp-section-inner">
@@ -307,15 +307,15 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 					}
 				</div>
 				if len(settings.AccommodationSuggestions) > 0 {
-					<div class="calendar-cta calendar-cta--venues">
+					<div class="calendar-cta calendar-cta-venues">
 						if len(settings.AccommodationSuggestions) > 0 {
-							<button type="button" class="calendar-btn calendar-btn--secondary" data-open-accommodations>{ t("home.accommodations") }</button>
+							<button type="button" class="calendar-btn calendar-btn-secondary" data-open-accommodations>{ t("home.accommodations") }</button>
 						}
 					</div>
 				}
 			</div>
 			if nextSectionAfterVenues(settings.SpotifyPlaylist, settings.Places, settings.HoneymoonLocations, bankConfigured) != "" {
-				<a href={ templ.SafeURL(nextSectionAfterVenues(settings.SpotifyPlaylist, settings.Places, settings.HoneymoonLocations, bankConfigured)) } class="vp-arrow vp-arrow--down" aria-label={ t("home.registry") }>
+				<a href={ templ.SafeURL(nextSectionAfterVenues(settings.SpotifyPlaylist, settings.Places, settings.HoneymoonLocations, bankConfigured)) } class="vp-arrow vp-arrow-down" aria-label={ t("home.registry") }>
 					<svg width="20" height="20" aria-hidden="true"><use href="#chev-d"/></svg>
 				</a>
 			}
@@ -323,7 +323,7 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 		<!-- section: soundtrack (spotify collaborative playlist) -->
 		if hasSpotifyPlaylist(settings.SpotifyPlaylist) {
 			<section id="soundtrack" class="vp-section vp-soundtrack">
-				<a href="#venues" class="vp-arrow vp-arrow--up" aria-label={ t("home.ceremony") }>
+				<a href="#venues" class="vp-arrow vp-arrow-up" aria-label={ t("home.ceremony") }>
 					<svg width="20" height="20" aria-hidden="true"><use href="#chev-u"/></svg>
 				</a>
 				<div class="soundtrack-header">
@@ -361,7 +361,7 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 					loading="lazy"
 				></iframe>
 				if nextSectionAfterSoundtrack(settings.Places, settings.HoneymoonLocations, bankConfigured) != "" {
-					<a href={ templ.SafeURL(nextSectionAfterSoundtrack(settings.Places, settings.HoneymoonLocations, bankConfigured)) } class="vp-arrow vp-arrow--down">
+					<a href={ templ.SafeURL(nextSectionAfterSoundtrack(settings.Places, settings.HoneymoonLocations, bankConfigured)) } class="vp-arrow vp-arrow-down">
 						<svg width="20" height="20" aria-hidden="true"><use href="#chev-d"/></svg>
 					</a>
 				}
@@ -383,11 +383,11 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 			if len(settings.Places) > 0 {
 				<section id="places" class="vp-section vp-places" data-story-map-section="places">
 					if hasSpotifyPlaylist(settings.SpotifyPlaylist) {
-						<a href="#soundtrack" class="vp-arrow vp-arrow--up">
+						<a href="#soundtrack" class="vp-arrow vp-arrow-up">
 							<svg width="20" height="20" aria-hidden="true"><use href="#chev-u"/></svg>
 						</a>
 					} else {
-						<a href="#venues" class="vp-arrow vp-arrow--up">
+						<a href="#venues" class="vp-arrow vp-arrow-up">
 							<svg width="20" height="20" aria-hidden="true"><use href="#chev-u"/></svg>
 						</a>
 					}
@@ -419,7 +419,7 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 						</div>
 					</dialog>
 					if nextSectionAfterPlaces(settings.HoneymoonLocations, bankConfigured) != "" {
-						<a href={ templ.SafeURL(nextSectionAfterPlaces(settings.HoneymoonLocations, bankConfigured)) } class="vp-arrow vp-arrow--down">
+						<a href={ templ.SafeURL(nextSectionAfterPlaces(settings.HoneymoonLocations, bankConfigured)) } class="vp-arrow vp-arrow-down">
 							<svg width="20" height="20" aria-hidden="true"><use href="#chev-d"/></svg>
 						</a>
 					}
@@ -427,7 +427,7 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 			}
 			if len(settings.HoneymoonLocations) > 0 {
 				<section id="honeymoon" class="vp-section vp-honeymoon" data-story-map-section="honeymoon">
-					<a href={ templ.SafeURL(prevSectionBeforeHoneymoon(settings.Places, settings.SpotifyPlaylist)) } class="vp-arrow vp-arrow--up">
+					<a href={ templ.SafeURL(prevSectionBeforeHoneymoon(settings.Places, settings.SpotifyPlaylist)) } class="vp-arrow vp-arrow-up">
 						<svg width="20" height="20" aria-hidden="true"><use href="#chev-u"/></svg>
 					</a>
 					<div class="timeline-story-map-shell" aria-hidden="true">
@@ -446,7 +446,7 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 					</div>
 					<div class="timeline-data" style="display:none">{ locationTimelineJSON(settings.HoneymoonLocations, lang) }</div>
 					if nextSectionAfterHoneymoon(bankConfigured) != "" {
-						<a href={ templ.SafeURL(nextSectionAfterHoneymoon(bankConfigured)) } class="vp-arrow vp-arrow--down">
+						<a href={ templ.SafeURL(nextSectionAfterHoneymoon(bankConfigured)) } class="vp-arrow vp-arrow-down">
 							<svg width="20" height="20" aria-hidden="true"><use href="#chev-d"/></svg>
 						</a>
 					}
@@ -455,9 +455,9 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 		<!-- section: registry / gifts -->
 		if bankConfigured {
 			<section id="registry" class="vp-section vp-registry">
-				<span class="vp-flora vp-flora--bl" aria-hidden="true"></span>
-				<span class="vp-flora vp-flora--tr" aria-hidden="true"></span>
-				<a href={ templ.SafeURL(prevSectionBeforeRegistry(settings.Places, settings.HoneymoonLocations, settings.SpotifyPlaylist)) } class="vp-arrow vp-arrow--up" aria-label={ t("home.ceremony") }>
+				<span class="vp-flora vp-flora-bl" aria-hidden="true"></span>
+				<span class="vp-flora vp-flora-tr" aria-hidden="true"></span>
+				<a href={ templ.SafeURL(prevSectionBeforeRegistry(settings.Places, settings.HoneymoonLocations, settings.SpotifyPlaylist)) } class="vp-arrow vp-arrow-up" aria-label={ t("home.ceremony") }>
 					<svg width="20" height="20" aria-hidden="true"><use href="#chev-u"/></svg>
 				</a>
 				<div class="vp-section-inner">
@@ -470,7 +470,7 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 						</div>
 						<div class="registry-v2-carousel">
 							for _, item := range registryItems {
-								<div class={ "gift-tile", templ.KV("gift-tile--gifted", remainingAmount(item, claimedAmounts) == 0) }>
+								<div class={ "gift-tile", templ.KV("gift-tile-is-gifted", remainingAmount(item, claimedAmounts) == 0) }>
 									if item.MediaID > 0 {
 										<div class="gift-tile-image">
 											<img src={ publicImageURL(item.MediaID) } alt={ item.Name } width="400" height="300" loading="lazy" decoding="async"/>
@@ -698,7 +698,7 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 				function applyLandingState(isLanding) {
 					var chatBubble = document.getElementById("chat-bubble");
 					if (chatBubble) {
-						chatBubble.classList.toggle("chat-bubble--hidden-on-landing", isLanding);
+						chatBubble.classList.toggle("chat-bubble-hidden-on-landing", isLanding);
 					}
 					syncFloatingButtons();
 				}
@@ -725,21 +725,21 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 					var creatorBubble = document.getElementById("creator-bubble");
 					var chatVisible =
 						!!chatBubble &&
-						!chatBubble.classList.contains("chat-bubble--hidden-on-landing") &&
-						!chatBubble.classList.contains("chat-bubble--covered") &&
+						!chatBubble.classList.contains("chat-bubble-hidden-on-landing") &&
+						!chatBubble.classList.contains("chat-bubble-covered") &&
 						chatBubble.style.display !== "none";
 
 					if (inviteBubble) {
 						inviteBubble.classList.toggle(
-							"invite-update-bubble--shifted",
+							"invite-update-bubble-shifted",
 							chatVisible,
 						);
 					}
 
 					if (creatorBubble) {
-						creatorBubble.classList.toggle("creator-bubble--shift-chat", chatVisible);
+						creatorBubble.classList.toggle("creator-bubble-shift-chat", chatVisible);
 						creatorBubble.classList.toggle(
-							"creator-bubble--shift-invite",
+							"creator-bubble-shift-invite",
 							!!inviteBubble && inviteBubble.style.display !== "none",
 						);
 					}
@@ -804,7 +804,7 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 				var bottomSection = sections.length ? sections[sections.length - 1] : null;
 				function applyBottomState(creatorBubble, isBottom) {
 					if (!creatorBubble) return;
-					creatorBubble.classList.toggle("creator-bubble--visible", isBottom);
+					creatorBubble.classList.toggle("creator-bubble-visible", isBottom);
 					syncFloatingButtons();
 				}
 				function setupCreatorBubble() {
@@ -1130,12 +1130,12 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 					window.history.replaceState(null, "", url.pathname + (url.search ? url.search : "") + url.hash);
 					window.requestAnimationFrame(function () {
 						window.requestAnimationFrame(function () {
-							toast.classList.add("rsvp-submitted-toast--in");
+							toast.classList.add("rsvp-submitted-toast-in");
 						});
 					});
 					window.setTimeout(function () {
-						toast.classList.remove("rsvp-submitted-toast--in");
-						toast.classList.add("rsvp-submitted-toast--out");
+						toast.classList.remove("rsvp-submitted-toast-in");
+						toast.classList.add("rsvp-submitted-toast-out");
 						window.setTimeout(function () { toast.remove(); }, 400);
 					}, 3000);
 				})();

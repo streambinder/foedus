@@ -1,25 +1,27 @@
 (() => {
-  var chatPanel = document.getElementById("chat-panel");
+  const chatPanel = document.getElementById("chat-panel");
   if (!chatPanel) return;
 
-  var MSG_ERROR = chatPanel.dataset.msgError;
-  var MSG_RATE = chatPanel.dataset.msgRate;
-  var HISTORY_KEY = "foedus_chat_history";
-  var MAX_HISTORY = 20;
-  var bubble = document.getElementById("chat-bubble");
-  var closeBtn = document.getElementById("chat-close");
-  var form = document.getElementById("chat-form");
-  var input = document.getElementById("chat-input");
-  var msgs = document.getElementById("chat-messages");
+  const MSG_ERROR = chatPanel.dataset.msgError;
+  const MSG_RATE = chatPanel.dataset.msgRate;
+  const HISTORY_KEY = "foedus_chat_history";
+  const MAX_HISTORY = 20;
+  const bubble = document.getElementById("chat-bubble");
+  const closeBtn = document.getElementById("chat-close");
+  const form = document.getElementById("chat-form");
+  const input = document.getElementById("chat-input");
+  const msgs = document.getElementById("chat-messages");
 
-  var history = [];
-  var replaying = true;
+  let history = [];
+  let replaying = true;
   try {
     history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
-  } catch (e) {}
+  } catch {
+    // ignore
+  }
   history.forEach((m) => {
     if (m.role === "assistant") {
-      var tempBubble = appendBubble("assistant", "", false);
+      const tempBubble = appendBubble("assistant", "", false);
       finalize(m.content, tempBubble, false);
     } else {
       appendBubble(m.role, m.content, false);
@@ -38,41 +40,41 @@
 
   document.addEventListener("click", (e) => {
     if (chatPanel.style.display === "none") return;
-    if (chatPanel.classList.contains("chat-panel--closing")) return;
+    if (chatPanel.classList.contains("chat-panel-closing")) return;
     if (chatPanel.contains(e.target) || bubble.contains(e.target)) return;
     closePanel();
   });
 
   function openPanel() {
     chatPanel.style.display = "";
-    chatPanel.classList.remove("chat-panel--closing");
-    chatPanel.classList.add("chat-panel--opening");
-    bubble.classList.add("chat-bubble--covered");
+    chatPanel.classList.remove("chat-panel-closing");
+    chatPanel.classList.add("chat-panel-opening");
+    bubble.classList.add("chat-bubble-covered");
     input.focus();
     msgs.scrollTop = msgs.scrollHeight;
   }
 
   function closePanel() {
-    chatPanel.classList.remove("chat-panel--opening");
-    chatPanel.classList.add("chat-panel--closing");
+    chatPanel.classList.remove("chat-panel-opening");
+    chatPanel.classList.add("chat-panel-closing");
     chatPanel.addEventListener("animationend", function hide() {
       chatPanel.style.display = "none";
-      chatPanel.classList.remove("chat-panel--closing");
-      bubble.classList.remove("chat-bubble--covered");
+      chatPanel.classList.remove("chat-panel-closing");
+      bubble.classList.remove("chat-bubble-covered");
       chatPanel.removeEventListener("animationend", hide);
     });
   }
 
   form.addEventListener("submit", (e) => {
     e.preventDefault();
-    var text = input.value.trim();
+    const text = input.value.trim();
     if (!text || text.length > 500) return;
     input.value = "";
     appendBubble("user", text, false);
     addMessage("user", text);
 
-    var assistantBubble = appendBubble("assistant", "", true);
-    var full = "";
+    const assistantBubble = appendBubble("assistant", "", true);
+    let full = "";
 
     fetch("/chat", {
       method: "POST",
@@ -88,9 +90,9 @@
           finalize(MSG_ERROR, assistantBubble, true);
           return;
         }
-        var reader = res.body.getReader();
-        var decoder = new TextDecoder();
-        var buf = "";
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buf = "";
         function pump() {
           reader
             .read()
@@ -100,24 +102,21 @@
                 return;
               }
               buf += decoder.decode(chunk.value, { stream: true });
-              var lines = buf.split("\n");
+              const lines = buf.split("\n");
               buf = lines.pop();
               lines.forEach((line) => {
                 if (!line.startsWith("data:")) return;
-                var raw = line.slice(5).trim();
+                const raw = line.slice(5).trim();
                 if (raw === "[DONE]") return;
                 try {
-                  var obj = JSON.parse(raw);
-                  var delta =
-                    (obj.choices &&
-                      obj.choices[0] &&
-                      obj.choices[0].delta &&
-                      obj.choices[0].delta.content) ||
-                    "";
+                  const obj = JSON.parse(raw);
+                  const delta = obj.choices?.[0]?.delta?.content || "";
                   full += delta;
                   assistantBubble.textContent = full;
                   msgs.scrollTop = msgs.scrollHeight;
-                } catch (e) {}
+                } catch {
+                  // ignore
+                }
               });
               pump();
             })
@@ -135,26 +134,26 @@
   function finalize(text, bubbleEl, isError) {
     if (isError) {
       bubbleEl.textContent = text;
-      bubbleEl.classList.remove("chat-bubble--streaming");
+      bubbleEl.classList.remove("chat-bubble-streaming");
       return;
     }
     // extract trailing signature like "— Anna" or "- Anna"
-    var match = text.match(/[\u2014-]\s*(\S.+?)\s*$/);
-    var label = null;
-    var display = text;
+    const match = text.match(/[\u2014-]\s*(\S.+?)\s*$/);
+    let label = null;
+    let display = text;
     if (match) {
-      var candidate = match[1].trim();
+      const candidate = match[1].trim();
       if (candidate.length > 0 && candidate.length < 40) {
         label = capitalizePersonaLabel(candidate);
         display = text.slice(0, match.index).trim();
       }
     }
     bubbleEl.textContent = display;
-    bubbleEl.classList.remove("chat-bubble--streaming");
+    bubbleEl.classList.remove("chat-bubble-streaming");
     if (label) {
-      var span = document.createElement("span");
+      const span = document.createElement("span");
       span.className = "chat-persona-label";
-      span.textContent = "\u2014 " + label;
+      span.textContent = `\u2014 ${label}`;
       bubbleEl.parentNode.appendChild(span);
     }
     addMessage("assistant", text);
@@ -168,12 +167,12 @@
   }
 
   function appendBubble(role, text, streaming) {
-    var wrap = document.createElement("div");
-    wrap.className = "chat-msg chat-msg--" + role;
-    var p = document.createElement("p");
+    const wrap = document.createElement("div");
+    wrap.className = `chat-msg chat-msg--${role}`;
+    const p = document.createElement("p");
     p.className = "chat-bubble";
     p.textContent = text;
-    if (streaming) p.classList.add("chat-bubble--streaming");
+    if (streaming) p.classList.add("chat-bubble-streaming");
     wrap.appendChild(p);
     msgs.appendChild(wrap);
     msgs.scrollTop = msgs.scrollHeight;
@@ -191,6 +190,8 @@
   function persistHistory() {
     try {
       localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
-    } catch (e) {}
+    } catch {
+      // ignore
+    }
   }
 })();

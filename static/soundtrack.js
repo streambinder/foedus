@@ -1,37 +1,40 @@
 (() => {
-  var container = document.querySelector(".soundtrack-search");
+  const container = document.querySelector(".soundtrack-search");
   if (!container) {
     return;
   }
 
-  var MSG_ADDED = container.dataset.msgAdded;
-  var MSG_ERROR = container.dataset.msgError;
-  var MSG_RATE = container.dataset.msgRate;
-  var input = container.querySelector(".soundtrack-search-input");
-  var results = container.querySelector(".soundtrack-results");
-  var debounceTimer = null;
-  var searchController = null;
+  const MSG_ADDED = container.dataset.msgAdded;
+  const MSG_ERROR = container.dataset.msgError;
+  const MSG_RATE = container.dataset.msgRate;
+  const input = container.querySelector(".soundtrack-search-input");
+  const results = container.querySelector(".soundtrack-results");
+  let debounceTimer = null;
+  let searchController = null;
 
   // move results to body so it escapes overflow:hidden ancestors
   document.body.appendChild(results);
   function positionResults() {
-    var rect = input.getBoundingClientRect();
-    var viewport = window.visualViewport || null;
-    var viewportTop = viewport ? viewport.offsetTop : 0;
-    var viewportLeft = viewport ? viewport.offsetLeft : 0;
-    var viewportWidth = viewport ? viewport.width : window.innerWidth;
-    var viewportHeight = viewport ? viewport.height : window.innerHeight;
-    var margin = 12;
-    var gap = 4;
-    var width = Math.min(rect.width, Math.max(160, viewportWidth - margin * 2));
-    var left = Math.max(
+    const rect = input.getBoundingClientRect();
+    const viewport = window.visualViewport || null;
+    const viewportTop = viewport ? viewport.offsetTop : 0;
+    const viewportLeft = viewport ? viewport.offsetLeft : 0;
+    const viewportWidth = viewport ? viewport.width : window.innerWidth;
+    const viewportHeight = viewport ? viewport.height : window.innerHeight;
+    const margin = 12;
+    const gap = 4;
+    const width = Math.min(
+      rect.width,
+      Math.max(160, viewportWidth - margin * 2),
+    );
+    const left = Math.max(
       viewportLeft + margin,
       Math.min(rect.left, viewportLeft + viewportWidth - width - margin),
     );
-    var top = rect.bottom + gap;
-    var availableBelow = viewportTop + viewportHeight - top - margin;
-    var availableAbove = rect.top - viewportTop - margin;
-    var maxHeight = Math.min(
+    let top = rect.bottom + gap;
+    const availableBelow = viewportTop + viewportHeight - top - margin;
+    const availableAbove = rect.top - viewportTop - margin;
+    const maxHeight = Math.min(
       288,
       Math.max(160, Math.max(availableBelow, availableAbove)),
     );
@@ -40,17 +43,17 @@
       top = Math.max(viewportTop + margin, rect.top - gap - maxHeight);
     }
 
-    results.style.top = Math.round(top) + "px";
+    results.style.top = `${Math.round(top)}px`;
     results.style.bottom = "auto";
-    results.style.left = Math.round(left) + "px";
-    results.style.width = Math.round(width) + "px";
-    results.style.maxHeight = Math.round(maxHeight) + "px";
+    results.style.left = `${Math.round(left)}px`;
+    results.style.width = `${Math.round(width)}px`;
+    results.style.maxHeight = `${Math.round(maxHeight)}px`;
     results.style.transform = "none";
   }
 
   input.addEventListener("input", () => {
     clearTimeout(debounceTimer);
-    var query = input.value.trim();
+    const query = input.value.trim();
     if (query.length < 2) {
       results.innerHTML = "";
       results.style.display = "none";
@@ -109,7 +112,7 @@
     }
     searchController = window.AbortController ? new AbortController() : null;
     fetch(
-      "/soundtrack/search?q=" + encodeURIComponent(query),
+      `/soundtrack/search?q=${encodeURIComponent(query)}`,
       searchController ? { signal: searchController.signal } : undefined,
     )
       .then((res) => {
@@ -123,10 +126,10 @@
           return;
         }
         tracks.forEach((track) => {
-          var item = document.createElement("div");
+          const item = document.createElement("div");
           item.className = "soundtrack-result-item";
 
-          var img = "";
+          let img = "";
           if (track.image_url) {
             img =
               '<img class="soundtrack-result-art" src="' +
@@ -146,7 +149,7 @@
             "</div>" +
             '<button type="button" class="soundtrack-add-btn" aria-label="Add">+</button>';
 
-          var btn = item.querySelector(".soundtrack-add-btn");
+          const btn = item.querySelector(".soundtrack-add-btn");
           btn.addEventListener("click", (e) => {
             e.stopPropagation();
             addTrack(track, btn, item);
@@ -168,11 +171,13 @@
   }
 
   function addTrack(track, btn, row) {
-    var inviteID = "";
+    let inviteID = "";
     try {
       inviteID =
         new URLSearchParams(window.location.search).get("invite") || "";
-    } catch (_) {}
+    } catch {
+      // ignore
+    }
 
     btn.disabled = true;
     btn.textContent = "...";
@@ -183,7 +188,7 @@
         uri: track.uri,
         title: track.name,
         artist: track.artist,
-        url: track.id ? "https://open.spotify.com/track/" + track.id : "",
+        url: track.id ? `https://open.spotify.com/track/${track.id}` : "",
         invite_id: inviteID,
       }),
     })
@@ -204,10 +209,11 @@
         if (results.children.length === 0) {
           results.style.display = "none";
         }
-        var embed = document.querySelector(".soundtrack-embed");
+        const embed = document.querySelector(".soundtrack-embed");
         if (embed) {
           setTimeout(() => {
-            embed.src = embed.src;
+            // force iframe reload by re-setting src via attribute
+            embed.setAttribute("src", embed.getAttribute("src"));
           }, 2000);
         }
         showToast(MSG_ADDED, false);
@@ -220,17 +226,16 @@
   }
 
   function showToast(msg, isError) {
-    var existing = document.querySelector(".soundtrack-toast");
+    const existing = document.querySelector(".soundtrack-toast");
     if (existing) existing.remove();
 
-    var toast = document.createElement("div");
-    toast.className =
-      "soundtrack-toast" + (isError ? " soundtrack-toast--error" : "");
+    const toast = document.createElement("div");
+    toast.className = `soundtrack-toast${isError ? " soundtrack-toast-error" : ""}`;
     toast.textContent = msg;
     document.body.appendChild(toast);
 
     setTimeout(() => {
-      toast.classList.add("soundtrack-toast--fade");
+      toast.classList.add("soundtrack-toast-fade");
     }, 2000);
     setTimeout(() => {
       toast.remove();
@@ -238,7 +243,7 @@
   }
 
   function escapeHtml(str) {
-    var div = document.createElement("div");
+    const div = document.createElement("div");
     div.textContent = str;
     return div.innerHTML;
   }

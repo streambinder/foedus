@@ -15,11 +15,5 @@ export default [
         bootstrap: "readonly",
       },
     },
-    rules: {
-      "no-empty": ["error", { allowEmptyCatch: true }],
-      "no-unused-vars": ["error", { args: "none", caughtErrors: "none" }],
-      "no-useless-escape": "off",
-      "no-self-assign": "off",
-    },
   },
 ];

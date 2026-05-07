@@ -306,9 +306,9 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 															<input type="hidden" name={ fmt.Sprintf("homepage_hero_background_mobile_%d", idx) } id={ "homepage-hero-background-mobile-data-" + strconv.Itoa(idx) } class="hero-background-image-hidden"/>
 															<input type="hidden" name={ fmt.Sprintf("homepage_hero_background_mobile_media_id_%d", idx) } id={ "homepage-hero-background-mobile-media-id-" + strconv.Itoa(idx) } class="hero-background-media-id-hidden" value={ mediaIDValue(bg.MobileMediaID) }/>
 															if bg.MobileMediaID > 0 {
-																<img class="hero-background-preview hero-background-preview--portrait dashboard-lazy-image" id={ "homepage-hero-background-mobile-preview-" + strconv.Itoa(idx) } data-src={ publicImageURL(bg.MobileMediaID) } loading="lazy" decoding="async" alt="mobile background preview"/>
+																<img class="hero-background-preview hero-background-preview-portrait dashboard-lazy-image" id={ "homepage-hero-background-mobile-preview-" + strconv.Itoa(idx) } data-src={ publicImageURL(bg.MobileMediaID) } loading="lazy" decoding="async" alt="mobile background preview"/>
 															} else {
-																<img class="hero-background-preview hero-background-preview--portrait" id={ "homepage-hero-background-mobile-preview-" + strconv.Itoa(idx) } style="display:none" alt="mobile background preview"/>
+																<img class="hero-background-preview hero-background-preview-portrait" id={ "homepage-hero-background-mobile-preview-" + strconv.Itoa(idx) } style="display:none" alt="mobile background preview"/>
 															}
 														</div>
 													</div>
@@ -364,7 +364,7 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 													/>
 													<input type="hidden" name="homepage_hero_background_mobile___INDEX__" id="homepage-hero-background-mobile-data-__INDEX__" class="hero-background-image-hidden"/>
 													<input type="hidden" name="homepage_hero_background_mobile_token___INDEX__" id="homepage-hero-background-mobile-media-id-__INDEX__" class="hero-background-media-id-hidden"/>
-													<img class="hero-background-preview hero-background-preview--portrait" id="homepage-hero-background-mobile-preview-__INDEX__" style="display:none" alt="mobile background preview"/>
+													<img class="hero-background-preview hero-background-preview-portrait" id="homepage-hero-background-mobile-preview-__INDEX__" style="display:none" alt="mobile background preview"/>
 												</div>
 											</div>
 										</div>
@@ -723,7 +723,7 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 							</button>
 						</h2>
 						<div id="settings-homepage-labels-panel" class="accordion-collapse collapse" data-dashboard-key="settings-homepage-labels" aria-labelledby="settings-homepage-labels-heading">
-							<div class="accordion-body settings-section-body settings-section-body--labels">
+							<div class="accordion-body settings-section-body settings-section-body-labels">
 								for _, lang := range []string{"en", "it"} {
 									<div class="accordion dashboard-subaccordion">
 										<div class="accordion-item settings-subsection">

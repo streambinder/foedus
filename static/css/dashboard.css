@@ -352,7 +352,7 @@ button.outline.secondary:hover,
   background: var(--tblr-bg-surface);
 }
 
-.settings-section-body--labels {
+.settings-section-body-labels {
   display: grid;
   gap: 0.75rem;
 }
@@ -508,7 +508,7 @@ input[type="file"]:focus {
   background: var(--tblr-bg-surface);
 }
 
-.hero-background-preview--portrait {
+.hero-background-preview-portrait {
   height: 2.6rem;
   width: auto;
   aspect-ratio: 3 / 4;

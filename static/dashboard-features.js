@@ -19,12 +19,12 @@ function initDashboardFeatures() {
   }
 
   function loadDashboardLazyImages(root, force) {
-    var scope = root instanceof Element ? root : document;
+    const scope = root instanceof Element ? root : document;
     scope
       .querySelectorAll("img.dashboard-lazy-image[data-src]")
       .forEach((img) => {
         if (!force && img.closest(".accordion-collapse:not(.show)")) return;
-        var src = img.getAttribute("data-src");
+        const src = img.getAttribute("data-src");
         if (!src) return;
         img.src = src;
         img.removeAttribute("data-src");
@@ -61,8 +61,8 @@ function initDashboardFeatures() {
   });
 
   function bindLocationCollection(config) {
-    var container = config.container;
-    var addButton = config.addButton;
+    const container = config.container;
+    const addButton = config.addButton;
     if (!container || !addButton || container.dataset.bound) return;
 
     container.dataset.bound = "true";
@@ -72,20 +72,20 @@ function initDashboardFeatures() {
     });
 
     container.addEventListener("click", (e) => {
-      var target = e.target;
+      const target = e.target;
       if (target.classList.contains("place-remove")) {
         target.closest(".place-card").remove();
         reindexLocationCards(container, config);
       } else if (target.classList.contains("place-move-up")) {
-        var card = target.closest(".place-card");
-        var prev = card.previousElementSibling;
+        const card = target.closest(".place-card");
+        const prev = card.previousElementSibling;
         if (prev) {
           container.insertBefore(card, prev);
           reindexLocationCards(container, config);
         }
       } else if (target.classList.contains("place-move-down")) {
-        var movingCard = target.closest(".place-card");
-        var next = movingCard.nextElementSibling;
+        const movingCard = target.closest(".place-card");
+        const next = movingCard.nextElementSibling;
         if (next) {
           container.insertBefore(next, movingCard);
           reindexLocationCards(container, config);
@@ -99,8 +99,8 @@ function initDashboardFeatures() {
   }
 
   function addLocationCard(container, config) {
-    var idx = container.querySelectorAll(".place-card").length;
-    var card = document.createElement("div");
+    const idx = container.querySelectorAll(".place-card").length;
+    const card = document.createElement("div");
     card.className = "place-card";
     card.dataset.index = idx;
     card.innerHTML =
@@ -229,60 +229,56 @@ function initDashboardFeatures() {
   }
 
   function reindexLocationCards(container, config) {
-    var cards = container.querySelectorAll(".place-card");
+    const cards = container.querySelectorAll(".place-card");
     cards.forEach((card, idx) => {
       card.dataset.index = idx;
-      var num = card.querySelector(".place-number");
+      const num = card.querySelector(".place-number");
       if (num) num.textContent = idx + 1;
-      var label = card.querySelector(
-        'input[name^="' + config.prefix + '_label_"]',
+      const label = card.querySelector(
+        `input[name^="${config.prefix}_label_"]`,
       );
-      if (label) label.name = config.prefix + "_label_" + idx;
-      var date = card.querySelector(
-        'input[name^="' + config.prefix + '_date_"]',
-      );
-      if (date) date.name = config.prefix + "_date_" + idx;
-      var name = card.querySelector(".place-name-hidden");
-      if (name) name.name = config.prefix + "_name_" + idx;
-      var addr = card.querySelector(".place-address-hidden");
-      if (addr) addr.name = config.prefix + "_address_" + idx;
-      var lat = card.querySelector(".place-lat-hidden");
-      if (lat) lat.name = config.prefix + "_lat_" + idx;
-      var lng = card.querySelector(".place-lng-hidden");
-      if (lng) lng.name = config.prefix + "_lng_" + idx;
-      var image = card.querySelector(".place-image-hidden");
+      if (label) label.name = `${config.prefix}_label_${idx}`;
+      const date = card.querySelector(`input[name^="${config.prefix}_date_"]`);
+      if (date) date.name = `${config.prefix}_date_${idx}`;
+      const name = card.querySelector(".place-name-hidden");
+      if (name) name.name = `${config.prefix}_name_${idx}`;
+      const addr = card.querySelector(".place-address-hidden");
+      if (addr) addr.name = `${config.prefix}_address_${idx}`;
+      const lat = card.querySelector(".place-lat-hidden");
+      if (lat) lat.name = `${config.prefix}_lat_${idx}`;
+      const lng = card.querySelector(".place-lng-hidden");
+      if (lng) lng.name = `${config.prefix}_lng_${idx}`;
+      const image = card.querySelector(".place-image-hidden");
       if (image) {
-        image.name = config.prefix + "_image_" + idx;
-        image.id = config.imageIdPrefix + "-data-" + idx;
+        image.name = `${config.prefix}_image_${idx}`;
+        image.id = `${config.imageIdPrefix}-data-${idx}`;
       }
-      var imageToken = card.querySelector(".place-media-id-hidden");
+      const imageToken = card.querySelector(".place-media-id-hidden");
       if (imageToken) {
-        imageToken.name = config.prefix + "_media_id_" + idx;
-        imageToken.id = config.imageIdPrefix + "-media-id-" + idx;
+        imageToken.name = `${config.prefix}_media_id_${idx}`;
+        imageToken.id = `${config.imageIdPrefix}-media-id-${idx}`;
       }
-      var imageFile = card.querySelector(".managed-image-file");
+      const imageFile = card.querySelector(".managed-image-file");
       if (imageFile) {
-        imageFile.dataset.targetInput = config.imageIdPrefix + "-data-" + idx;
-        imageFile.dataset.previewTarget =
-          config.imageIdPrefix + "-preview-" + idx;
-        imageFile.dataset.mediaIdInput =
-          config.imageIdPrefix + "-media-id-" + idx;
+        imageFile.dataset.targetInput = `${config.imageIdPrefix}-data-${idx}`;
+        imageFile.dataset.previewTarget = `${config.imageIdPrefix}-preview-${idx}`;
+        imageFile.dataset.mediaIdInput = `${config.imageIdPrefix}-media-id-${idx}`;
         imageFile.dataset.format = config.imageFormat || "image/jpeg";
         imageFile.dataset.maxBytes = String(config.imageMaxBytes || 0);
       }
-      var imagePreview = card.querySelector(".place-image-preview");
+      const imagePreview = card.querySelector(".place-image-preview");
       if (imagePreview)
-        imagePreview.id = config.imageIdPrefix + "-preview-" + idx;
+        imagePreview.id = `${config.imageIdPrefix}-preview-${idx}`;
     });
   }
 
   // ---------------------------------------------------------------
   // accommodation suggestions management
   // ---------------------------------------------------------------
-  var accommodationsContainer = document.getElementById(
+  const accommodationsContainer = document.getElementById(
     "accommodations-container",
   );
-  var addAccommodationBtn = document.getElementById("add-accommodation-btn");
+  const addAccommodationBtn = document.getElementById("add-accommodation-btn");
 
   if (
     accommodationsContainer &&
@@ -304,10 +300,10 @@ function initDashboardFeatures() {
   }
 
   function addAccommodationCard() {
-    var idx = accommodationsContainer.querySelectorAll(
+    const idx = accommodationsContainer.querySelectorAll(
       ".accommodation-card",
     ).length;
-    var card = document.createElement("div");
+    const card = document.createElement("div");
     card.className = "accommodation-card";
     card.innerHTML =
       '<div class="accommodation-card-header">' +
@@ -340,18 +336,20 @@ function initDashboardFeatures() {
   }
 
   function reindexAccommodations() {
-    var cards = accommodationsContainer.querySelectorAll(".accommodation-card");
+    const cards = accommodationsContainer.querySelectorAll(
+      ".accommodation-card",
+    );
     cards.forEach((card, idx) => {
-      var num = card.querySelector(".accommodation-number");
+      const num = card.querySelector(".accommodation-number");
       if (num) num.textContent = idx + 1;
-      var name = card.querySelector('input[name^="accommodation_name_"]');
-      if (name) name.name = "accommodation_name_" + idx;
-      var url = card.querySelector('input[name^="accommodation_url_"]');
-      if (url) url.name = "accommodation_url_" + idx;
-      var description = card.querySelector(
+      const name = card.querySelector('input[name^="accommodation_name_"]');
+      if (name) name.name = `accommodation_name_${idx}`;
+      const url = card.querySelector('input[name^="accommodation_url_"]');
+      if (url) url.name = `accommodation_url_${idx}`;
+      const description = card.querySelector(
         'textarea[name^="accommodation_description_"]',
       );
-      if (description) description.name = "accommodation_description_" + idx;
+      if (description) description.name = `accommodation_description_${idx}`;
     });
   }
 
@@ -359,17 +357,17 @@ function initDashboardFeatures() {
   // place autocomplete (reuses Nominatim, same pattern as autocomplete.js)
   // ---------------------------------------------------------------
   function initPlaceAutocomplete(card) {
-    var input = card.querySelector(".place-location-input");
-    var dropdown = card.querySelector(".place-dropdown");
-    var nameHidden = card.querySelector(".place-name-hidden");
-    var addressHidden = card.querySelector(".place-address-hidden");
-    var latHidden = card.querySelector(".place-lat-hidden");
-    var lngHidden = card.querySelector(".place-lng-hidden");
+    const input = card.querySelector(".place-location-input");
+    const dropdown = card.querySelector(".place-dropdown");
+    const nameHidden = card.querySelector(".place-name-hidden");
+    const addressHidden = card.querySelector(".place-address-hidden");
+    const latHidden = card.querySelector(".place-lat-hidden");
+    const lngHidden = card.querySelector(".place-lng-hidden");
     if (!input || !dropdown || !nameHidden || !addressHidden) return;
 
-    var debounceTimer = null;
-    var activeIndex = -1;
-    var results = [];
+    let debounceTimer = null;
+    let activeIndex = -1;
+    let results = [];
 
     function hide() {
       dropdown.classList.add("hidden");
@@ -387,9 +385,9 @@ function initDashboardFeatures() {
         return;
       }
       items.forEach((item, idx) => {
-        var div = document.createElement("div");
-        var name = extractName(item);
-        var address = extractAddress(item, name);
+        const div = document.createElement("div");
+        const name = extractName(item);
+        const address = extractAddress(item, name);
         div.innerHTML =
           '<span style="font-weight:500;color:var(--charcoal-dark)">' +
           escapeHtml(name) +
@@ -409,30 +407,30 @@ function initDashboardFeatures() {
     }
 
     function highlight(idx) {
-      var children = dropdown.children;
-      for (var i = 0; i < children.length; i++) {
+      const children = dropdown.children;
+      for (let i = 0; i < children.length; i++) {
         children[i].style.background = i === idx ? "var(--ivory-deep)" : "";
       }
       activeIndex = idx;
     }
 
     function select(idx) {
-      var item = results[idx];
+      const item = results[idx];
       if (!item) return;
-      var name = extractName(item);
-      var address = extractAddress(item, name);
+      const name = extractName(item);
+      const address = extractAddress(item, name);
       nameHidden.value = name;
       addressHidden.value = address;
       latHidden.value = item.lat || "0";
       lngHidden.value = item.lon || "0";
-      input.value = name + (address ? ", " + address : "");
+      input.value = name + (address ? `, ${address}` : "");
       renderCoordsBadge(card, item.lat, item.lon);
       hide();
     }
 
     function search(query) {
-      var lang = document.documentElement.lang || "en";
-      var url =
+      const lang = document.documentElement.lang || "en";
+      const url =
         "https://nominatim.openstreetmap.org/search?q=" +
         encodeURIComponent(query) +
         "&format=jsonv2&addressdetails=1&namedetails=1&limit=5";
@@ -453,7 +451,7 @@ function initDashboardFeatures() {
       lngHidden.value = "0";
       renderCoordsBadge(card, "", "");
       clearTimeout(debounceTimer);
-      var q = input.value.trim();
+      const q = input.value.trim();
       if (q.length < 3) {
         hide();
         return;
@@ -488,19 +486,19 @@ function initDashboardFeatures() {
   // shared helpers
   // ---------------------------------------------------------------
   function extractName(item) {
-    if (item.namedetails && item.namedetails.name) return item.namedetails.name;
+    if (item.namedetails?.name) return item.namedetails.name;
     return item.display_name;
   }
 
   function renderCoordsBadge(card, lat, lng) {
-    var meta = card.querySelector(".place-card-meta");
+    const meta = card.querySelector(".place-card-meta");
     if (!meta) return;
 
-    var existing = meta.querySelector(".place-coords");
+    const existing = meta.querySelector(".place-coords");
     if (existing) existing.remove();
     if (!lat || !lng) return;
 
-    var coordsDiv = document.createElement("div");
+    const coordsDiv = document.createElement("div");
     coordsDiv.className = "place-coords";
     coordsDiv.innerHTML =
       '<span class="place-coords-check">&#10003;</span>' +
@@ -514,16 +512,16 @@ function initDashboardFeatures() {
 
   function extractAddress(item, name) {
     if (!item.display_name) return "";
-    var dn = item.display_name;
+    const dn = item.display_name;
     if (name && dn.indexOf(name) === 0) {
-      var rest = dn.substring(name.length).replace(/^,\s*/, "");
+      const rest = dn.substring(name.length).replace(/^,\s*/, "");
       return rest;
     }
     return dn;
   }
 
   function escapeHtml(str) {
-    var div = document.createElement("div");
+    const div = document.createElement("div");
     div.appendChild(document.createTextNode(str));
     return div.innerHTML;
   }
@@ -539,10 +537,10 @@ function initDashboardFeatures() {
   // ---------------------------------------------------------------
   // impersonations management
   // ---------------------------------------------------------------
-  var impersonationsContainer = document.getElementById(
+  const impersonationsContainer = document.getElementById(
     "impersonations-container",
   );
-  var addImpersonationBtn = document.getElementById("add-impersonation-btn");
+  const addImpersonationBtn = document.getElementById("add-impersonation-btn");
 
   if (
     impersonationsContainer &&
@@ -564,10 +562,10 @@ function initDashboardFeatures() {
   }
 
   function addImpersonationCard() {
-    var idx = impersonationsContainer.querySelectorAll(
+    const idx = impersonationsContainer.querySelectorAll(
       ".impersonation-card",
     ).length;
-    var card = document.createElement("div");
+    const card = document.createElement("div");
     card.className = "impersonation-card";
     card.innerHTML =
       '<div class="impersonation-card-header">' +
@@ -586,14 +584,16 @@ function initDashboardFeatures() {
   }
 
   function reindexImpersonations() {
-    var cards = impersonationsContainer.querySelectorAll(".impersonation-card");
+    const cards = impersonationsContainer.querySelectorAll(
+      ".impersonation-card",
+    );
     cards.forEach((card, idx) => {
-      var num = card.querySelector(".impersonation-number");
+      const num = card.querySelector(".impersonation-number");
       if (num) num.textContent = idx + 1;
-      var codename = card.querySelector('input[type="text"]');
-      if (codename) codename.name = "impersonation_codename_" + idx;
-      var profile = card.querySelector("textarea");
-      if (profile) profile.name = "impersonation_profile_" + idx;
+      const codename = card.querySelector('input[type="text"]');
+      if (codename) codename.name = `impersonation_codename_${idx}`;
+      const profile = card.querySelector("textarea");
+      if (profile) profile.name = `impersonation_profile_${idx}`;
     });
   }
 }
