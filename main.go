@@ -5,6 +5,7 @@ package main
 import (
 	"log/slog"
 	"os"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/compress"
@@ -50,7 +51,7 @@ func main() {
 		Compress:      true,
 		ByteRange:     true,
 		MaxAge:        60 * 60 * 24 * 30, // 30 days; bust via filename if needed
-		CacheDuration: 10 * 60,
+		CacheDuration: 10 * time.Minute,
 	})
 
 	// public
