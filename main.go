@@ -5,6 +5,7 @@ package main
 import (
 	"log/slog"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -45,7 +46,13 @@ func main() {
 	app.Use(middleware.RequestContext())
 	app.Use(middleware.AccessLog())
 	app.Use(fiberrecover.New())
-	app.Use(compress.New(compress.Config{Level: compress.LevelBestSpeed}))
+	app.Use(compress.New(compress.Config{
+		Level: compress.LevelBestSpeed,
+		Next: func(c *fiber.Ctx) bool {
+			// already-compressed binary: skip re-compression to save CPU
+			return strings.HasPrefix(c.Path(), "/media/")
+		},
+	}))
 	app.Use(middleware.LangDetect())
 	app.Static("/static", "./static", fiber.Static{
 		Compress:      true,
