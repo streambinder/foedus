@@ -1,6 +1,7 @@
 package templates
 
 import (
+	"strconv"
 	"strings"
 
 	"github.com/streambinder/foedus/internal/i18n"
@@ -26,12 +27,11 @@ func isPreloadableImageURL(raw string) bool {
 	return strings.HasPrefix(raw, "/") || strings.HasPrefix(raw, "https://") || strings.HasPrefix(raw, "http://")
 }
 
-func publicImageURL(raw string) string {
-	raw = strings.TrimSpace(raw)
-	if strings.HasPrefix(raw, "data:image/") {
-		return "/media/" + imageToken(raw)
+func publicImageURL(mediaID int) string {
+	if mediaID <= 0 {
+		return ""
 	}
-	return raw
+	return "/media/" + strconv.Itoa(mediaID)
 }
 
 func pageTitle(title, spouse1, spouse2 string) string {

@@ -139,7 +139,8 @@ func ChatStream(c *fiber.Ctx) error {
 
 	persona := settings.Impersonations[rand.IntN(len(settings.Impersonations))]
 	personaName := capitalizedPersonaName(persona.Codename)
-	logger.Info("chat request accepted",
+	logger.Info(
+		"chat request accepted",
 		"persona", persona.Codename,
 		"persona_pool", len(settings.Impersonations),
 		"message_len", len(req.Message),

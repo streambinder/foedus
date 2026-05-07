@@ -10,7 +10,7 @@ type Setting struct {
 type Place struct {
 	Label   string  `json:"label"`
 	Date    string  `json:"date"`
-	Image   string  `json:"image"`
+	MediaID int     `json:"media_id"`
 	Name    string  `json:"name"`
 	Address string  `json:"address"`
 	Lat     float64 `json:"lat"`
@@ -29,8 +29,8 @@ type AccommodationSuggestion struct {
 }
 
 type HomepageHeroBackground struct {
-	DesktopImage string `json:"desktop_image"`
-	MobileImage  string `json:"mobile_image"`
+	DesktopMediaID int `json:"desktop_media_id"`
+	MobileMediaID  int `json:"mobile_media_id"`
 }
 
 type WeddingSettings struct {
@@ -44,8 +44,8 @@ type WeddingSettings struct {
 	ReceptionLocation        string
 	ReceptionCity            string
 	ReceptionDatetime        string
-	CeremonyImage            string
-	ReceptionImage           string
+	CeremonyMediaID          int
+	ReceptionMediaID         int
 	BankAccountIBAN          string
 	BankAccountHolder        string
 	SpotifyPlaylist          string
@@ -55,7 +55,7 @@ type WeddingSettings struct {
 	Impersonations           []Impersonation
 	HomepageLabels           map[string]map[string]string
 	HomepageHeroBackgrounds  []HomepageHeroBackground
-	SharePreviewImage        string
+	SharePreviewMediaID      int
 }
 
 func (s WeddingSettings) IsConfigured() bool {
@@ -111,8 +111,8 @@ type Gift struct {
 type RegistryItem struct {
 	ID        int
 	Name      string
-	Price     int    // whole currency units (e.g. euros), no cents
-	Image     string // base64 data URI
+	Price     int // whole currency units (e.g. euros), no cents
+	MediaID   int
 	SortOrder int
 	CreatedAt time.Time
 }

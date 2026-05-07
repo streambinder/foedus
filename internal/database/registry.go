@@ -7,20 +7,39 @@ import (
 	"github.com/streambinder/foedus/internal/models"
 )
 
-func CreateRegistryItem(name string, price int, image string) error {
+func CreateRegistryItem(name string, price int, mediaID int) error {
 	var nextSortOrder int
 	if err := DB.QueryRow(`SELECT COALESCE(MAX(sort_order), 0) + 1 FROM registry_items`).Scan(&nextSortOrder); err != nil {
 		return err
 	}
+	var mid sql.NullInt64
+	if mediaID > 0 {
+		mid = sql.NullInt64{Int64: int64(mediaID), Valid: true}
+	}
 	_, err := DB.Exec(
-		`INSERT INTO registry_items (name, price, image, sort_order) VALUES (?, ?, ?, ?)`,
-		name, price, image, nextSortOrder,
+		`INSERT INTO registry_items (name, price, media_id, sort_order) VALUES (?, ?, ?, ?)`,
+		name, price, mid, nextSortOrder,
 	)
 	return err
 }
 
+func scanRegistryItem(s interface {
+	Scan(...any) error
+},
+) (models.RegistryItem, error) {
+	var item models.RegistryItem
+	var mid sql.NullInt64
+	if err := s.Scan(&item.ID, &item.Name, &item.Price, &mid, &item.SortOrder, &item.CreatedAt); err != nil {
+		return item, err
+	}
+	if mid.Valid {
+		item.MediaID = int(mid.Int64)
+	}
+	return item, nil
+}
+
 func GetAllRegistryItems() ([]models.RegistryItem, error) {
-	rows, err := DB.Query(`SELECT id, name, price, image, sort_order, created_at FROM registry_items ORDER BY sort_order ASC, created_at DESC, id DESC`)
+	rows, err := DB.Query(`SELECT id, name, price, media_id, sort_order, created_at FROM registry_items ORDER BY sort_order ASC, created_at DESC, id DESC`)
 	if err != nil {
 		return nil, err
 	}
@@ -28,8 +47,8 @@ func GetAllRegistryItems() ([]models.RegistryItem, error) {
 
 	var items []models.RegistryItem
 	for rows.Next() {
-		var item models.RegistryItem
-		if err := rows.Scan(&item.ID, &item.Name, &item.Price, &item.Image, &item.SortOrder, &item.CreatedAt); err != nil {
+		item, err := scanRegistryItem(rows)
+		if err != nil {
 			return nil, err
 		}
 		items = append(items, item)
@@ -38,17 +57,19 @@ func GetAllRegistryItems() ([]models.RegistryItem, error) {
 }
 
 func GetRegistryItem(id int) (models.RegistryItem, error) {
-	var item models.RegistryItem
-	err := DB.QueryRow(
-		`SELECT id, name, price, image, sort_order, created_at FROM registry_items WHERE id = ?`, id,
-	).Scan(&item.ID, &item.Name, &item.Price, &item.Image, &item.SortOrder, &item.CreatedAt)
-	return item, err
+	return scanRegistryItem(DB.QueryRow(
+		`SELECT id, name, price, media_id, sort_order, created_at FROM registry_items WHERE id = ?`, id,
+	))
 }
 
-func UpdateRegistryItem(id int, name string, price int, image string) error {
+func UpdateRegistryItem(id int, name string, price int, mediaID int) error {
+	var mid sql.NullInt64
+	if mediaID > 0 {
+		mid = sql.NullInt64{Int64: int64(mediaID), Valid: true}
+	}
 	_, err := DB.Exec(
-		`UPDATE registry_items SET name = ?, price = ?, image = ? WHERE id = ?`,
-		name, price, image, id,
+		`UPDATE registry_items SET name = ?, price = ?, media_id = ? WHERE id = ?`,
+		name, price, mid, id,
 	)
 	return err
 }
@@ -70,15 +91,11 @@ func MoveRegistryItem(id int, direction string) error {
 		}
 	}()
 
-	var item models.RegistryItem
-	err = tx.QueryRow(
-		`SELECT id, name, price, image, sort_order, created_at FROM registry_items WHERE id = ?`,
+	item, err := scanRegistryItem(tx.QueryRow(
+		`SELECT id, name, price, media_id, sort_order, created_at FROM registry_items WHERE id = ?`,
 		id,
-	).Scan(&item.ID, &item.Name, &item.Price, &item.Image, &item.SortOrder, &item.CreatedAt)
+	))
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return err
-		}
 		return err
 	}
 

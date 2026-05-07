@@ -3,6 +3,7 @@ package database
 import (
 	"encoding/json"
 	"log/slog"
+	"strconv"
 	"strings"
 
 	"github.com/streambinder/foedus/internal/models"
@@ -10,12 +11,12 @@ import (
 
 var settingsKeys = []string{
 	"spouse1_name", "spouse2_name", "ceremony_datetime",
-	"ceremony_address", "ceremony_location", "ceremony_city", "ceremony_image",
-	"reception_address", "reception_location", "reception_city", "reception_datetime", "reception_image",
+	"ceremony_address", "ceremony_location", "ceremony_city", "ceremony_media_id",
+	"reception_address", "reception_location", "reception_city", "reception_datetime", "reception_media_id",
 	"bank_account_iban", "bank_account_holder",
 	"spotify_playlists", "places", "honeymoon_locations", "accommodation_suggestions", "impersonations", "homepage_labels",
 	"homepage_hero_backgrounds",
-	"share_preview_image",
+	"share_preview_media_id",
 }
 
 // SeedSettings inserts default empty rows for any missing setting keys.
@@ -32,6 +33,14 @@ func SeedSettings() {
 		}
 	}
 	slog.Info("settings seeded", "keys", len(settingsKeys), "inserted", inserted)
+}
+
+func parseMediaID(raw string) int {
+	id, _ := strconv.Atoi(strings.TrimSpace(raw))
+	if id < 0 {
+		return 0
+	}
+	return id
 }
 
 func GetAllSettings() (models.WeddingSettings, error) {
@@ -104,13 +113,13 @@ func GetAllSettings() (models.WeddingSettings, error) {
 		CeremonyAddress:          m["ceremony_address"],
 		CeremonyLocation:         m["ceremony_location"],
 		CeremonyCity:             m["ceremony_city"],
-		CeremonyImage:            m["ceremony_image"],
+		CeremonyMediaID:          parseMediaID(m["ceremony_media_id"]),
 		CeremonyDatetime:         m["ceremony_datetime"],
 		ReceptionAddress:         m["reception_address"],
 		ReceptionLocation:        m["reception_location"],
 		ReceptionCity:            m["reception_city"],
 		ReceptionDatetime:        m["reception_datetime"],
-		ReceptionImage:           m["reception_image"],
+		ReceptionMediaID:         parseMediaID(m["reception_media_id"]),
 		BankAccountIBAN:          m["bank_account_iban"],
 		BankAccountHolder:        m["bank_account_holder"],
 		SpotifyPlaylist:          playlist,
@@ -120,7 +129,7 @@ func GetAllSettings() (models.WeddingSettings, error) {
 		Impersonations:           impersonations,
 		HomepageLabels:           homepageLabels,
 		HomepageHeroBackgrounds:  homepageHeroBackgrounds,
-		SharePreviewImage:        m["share_preview_image"],
+		SharePreviewMediaID:      parseMediaID(m["share_preview_media_id"]),
 	}, nil
 }
 

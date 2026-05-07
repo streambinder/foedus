@@ -34,7 +34,8 @@ func Init() *slog.Logger {
 	log.SetFlags(0)
 	log.SetOutput(stdLogger.Writer())
 
-	logger.Info("logger initialized",
+	logger.Info(
+		"logger initialized",
 		"format", logFormat(),
 		"level", level.String(),
 	)

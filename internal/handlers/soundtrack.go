@@ -139,7 +139,8 @@ func SoundtrackAdd(c *fiber.Ctx) error {
 	}
 
 	if err := spotify.AddToPlaylist(playlistID, req.URI); err != nil {
-		logger.Error("soundtrack add failed",
+		logger.Error(
+			"soundtrack add failed",
 			"playlist_id", observability.Redact(playlistID),
 			"track_uri", observability.Redact(req.URI),
 			"error", err.Error(),
@@ -147,13 +148,15 @@ func SoundtrackAdd(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to add track"})
 	}
 
-	logger.Info("soundtrack track added",
+	logger.Info(
+		"soundtrack track added",
 		"playlist_id", observability.Redact(playlistID),
 		"track_uri", observability.Redact(req.URI),
 	)
 
 	if err := database.CreateSoundtrackEvent(req.Title, req.Artist, req.URL, req.InviteID); err != nil {
-		logger.Error("soundtrack event save failed",
+		logger.Error(
+			"soundtrack event save failed",
 			"track_uri", observability.Redact(req.URI),
 			"invite_id", observability.Redact(req.InviteID),
 			"error", err.Error(),

@@ -1,10 +1,6 @@
 package handlers
 
 import (
-	"bytes"
-	"encoding/base64"
-	"image"
-	"strconv"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
@@ -21,7 +17,17 @@ const (
 )
 
 func BuildOGMeta(baseURL, pageURL, title, description string, settings models.WeddingSettings) templates.OGMeta {
-	imageType, imageWidth, imageHeight := sharePreviewMetadata(settings.SharePreviewImage)
+	imageType := defaultOGImageType
+	imageWidth := defaultOGImageWidth
+	imageHeight := defaultOGImageHeight
+	if settings.SharePreviewMediaID > 0 {
+		if mime, _, err := database.GetMediaMeta(settings.SharePreviewMediaID); err == nil && mime != "" {
+			imageType = mime
+			// dimensions unknown without decoding bytes — drop them
+			imageWidth = ""
+			imageHeight = ""
+		}
+	}
 	return templates.OGMeta{
 		Title:       title,
 		Description: description,
@@ -47,56 +53,14 @@ func ogCeremonyLocation(settings models.WeddingSettings) string {
 	return settings.CeremonyLocation
 }
 
-func sharePreviewMetadata(dataURI string) (string, string, string) {
-	if dataURI == "" {
-		return defaultOGImageType, defaultOGImageWidth, defaultOGImageHeight
-	}
-
-	mimeType, data, err := decodeDataURI(dataURI)
-	if err != nil {
-		return defaultOGImageType, defaultOGImageWidth, defaultOGImageHeight
-	}
-
-	cfg, _, err := image.DecodeConfig(bytes.NewReader(data))
-	if err != nil {
-		return mimeType, "", ""
-	}
-
-	return mimeType, strconv.Itoa(cfg.Width), strconv.Itoa(cfg.Height)
-}
-
-func decodeDataURI(dataURI string) (string, []byte, error) {
-	idx := strings.Index(dataURI, ",")
-	if idx == -1 {
-		return "", nil, fiber.ErrBadRequest
-	}
-
-	header := dataURI[:idx]
-	encoded := dataURI[idx+1:]
-	mimeType := defaultOGImageType
-	if start := strings.Index(header, ":"); start != -1 {
-		end := strings.Index(header, ";")
-		if end != -1 {
-			mimeType = header[start+1 : end]
-		}
-	}
-
-	data, err := base64.StdEncoding.DecodeString(encoded)
-	if err != nil {
-		return "", nil, err
-	}
-
-	return mimeType, data, nil
-}
-
 func OGImage(c *fiber.Ctx) error {
 	c.Set("Cache-Control", "public, max-age=3600")
 
 	settings, err := database.GetAllSettings()
-	if err == nil && settings.SharePreviewImage != "" {
-		if mimeType, data, decodeErr := decodeDataURI(settings.SharePreviewImage); decodeErr == nil {
-			c.Set("Content-Type", mimeType)
-			return c.Send(data)
+	if err == nil && settings.SharePreviewMediaID > 0 {
+		if media, mediaErr := database.GetMedia(settings.SharePreviewMediaID); mediaErr == nil {
+			c.Set(fiber.HeaderContentType, media.Mime)
+			return c.Send(media.Bytes)
 		}
 	}
 

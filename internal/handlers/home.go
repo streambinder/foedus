@@ -19,14 +19,14 @@ func pickHomepageHeroBackground(backgrounds []models.HomepageHeroBackground) mod
 
 	valid := make([]models.HomepageHeroBackground, 0, len(backgrounds))
 	for _, bg := range backgrounds {
-		if bg.DesktopImage == "" && bg.MobileImage == "" {
+		if bg.DesktopMediaID == 0 && bg.MobileMediaID == 0 {
 			continue
 		}
-		if bg.DesktopImage == "" {
-			bg.DesktopImage = bg.MobileImage
+		if bg.DesktopMediaID == 0 {
+			bg.DesktopMediaID = bg.MobileMediaID
 		}
-		if bg.MobileImage == "" {
-			bg.MobileImage = bg.DesktopImage
+		if bg.MobileMediaID == 0 {
+			bg.MobileMediaID = bg.DesktopMediaID
 		}
 		valid = append(valid, bg)
 	}

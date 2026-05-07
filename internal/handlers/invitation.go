@@ -66,7 +66,8 @@ func ViewInvitation(c *fiber.Ctx) error {
 		strings.Join(ogDescParts, " · "),
 		settings,
 	)
-	logger.Info("invitation rendered",
+	logger.Info(
+		"invitation rendered",
 		"invitation_code", observability.Redact(code),
 		"guest_count", len(inv.Guests),
 		"poll_count", len(polls),
@@ -139,7 +140,8 @@ func UpdateInvitationRSVP(c *fiber.Ctx) error {
 	}
 
 	redirectURL := "/?invite=" + code + "&submitted=1"
-	logger.Info("invitation rsvp updated",
+	logger.Info(
+		"invitation rsvp updated",
 		"invitation_code", observability.Redact(code),
 		"guest_count", len(inv.Guests),
 		"answered_guests", answeredGuests,

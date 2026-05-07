@@ -1,8 +1,6 @@
 package templates
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
 	"github.com/streambinder/foedus/internal/i18n"
 	"github.com/streambinder/foedus/internal/models"
@@ -142,12 +140,11 @@ func registryItemSelected(selectedID *int, itemID int) bool {
 	return selectedID != nil && *selectedID == itemID
 }
 
-func imageToken(image string) string {
-	if image == "" {
+func mediaIDValue(id int) string {
+	if id <= 0 {
 		return ""
 	}
-	sum := sha256.Sum256([]byte(image))
-	return hex.EncodeToString(sum[:])
+	return strconv.Itoa(id)
 }
 
 templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []models.Gift, registryItems []models.RegistryItem, invitations []models.Invitation, polls []models.Poll, soundtrackEvents []models.SoundtrackEvent, confirmedCeremony int, confirmedReception int, pendingGuests int, total int, page int, totalPages int, search string, csrfToken string, flash string, t i18n.T, lang string) {
@@ -196,9 +193,9 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 				<div class="venue-image-row">
 					<input type="file" id="ceremony-file" accept="image/*" class="venue-file-input"/>
 					<input type="hidden" name="ceremony_image" id="ceremony-image-data"/>
-					<input type="hidden" name="ceremony_image_token" id="ceremony-image-token" value={ imageToken(settings.CeremonyImage) }/>
-					if settings.CeremonyImage != "" {
-						<img class="venue-image-preview" id="ceremony-preview" src={ publicImageURL(settings.CeremonyImage) } loading="lazy" decoding="async" alt="ceremony"/>
+					<input type="hidden" name="ceremony_media_id" id="ceremony-media-id" value={ mediaIDValue(settings.CeremonyMediaID) }/>
+					if settings.CeremonyMediaID > 0 {
+						<img class="venue-image-preview" id="ceremony-preview" src={ publicImageURL(settings.CeremonyMediaID) } loading="lazy" decoding="async" alt="ceremony"/>
 					} else {
 						<img class="venue-image-preview" id="ceremony-preview" style="display:none" alt="ceremony"/>
 					}
@@ -217,9 +214,9 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 				<div class="venue-image-row">
 					<input type="file" id="reception-file" accept="image/*" class="venue-file-input"/>
 					<input type="hidden" name="reception_image" id="reception-image-data"/>
-					<input type="hidden" name="reception_image_token" id="reception-image-token" value={ imageToken(settings.ReceptionImage) }/>
-					if settings.ReceptionImage != "" {
-						<img class="venue-image-preview" id="reception-preview" src={ publicImageURL(settings.ReceptionImage) } loading="lazy" decoding="async" alt="reception"/>
+					<input type="hidden" name="reception_media_id" id="reception-media-id" value={ mediaIDValue(settings.ReceptionMediaID) }/>
+					if settings.ReceptionMediaID > 0 {
+						<img class="venue-image-preview" id="reception-preview" src={ publicImageURL(settings.ReceptionMediaID) } loading="lazy" decoding="async" alt="reception"/>
 					} else {
 						<img class="venue-image-preview" id="reception-preview" style="display:none" alt="reception"/>
 					}
@@ -235,9 +232,9 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 				<div class="venue-image-row">
 					<input type="file" id="share-preview-file" accept="image/*" class="venue-file-input"/>
 					<input type="hidden" name="share_preview_image" id="share-preview-image-data"/>
-					<input type="hidden" name="share_preview_image_token" id="share-preview-image-token" value={ imageToken(settings.SharePreviewImage) }/>
-					if settings.SharePreviewImage != "" {
-						<img class="venue-image-preview" id="share-preview-preview" src={ publicImageURL(settings.SharePreviewImage) } loading="lazy" decoding="async" alt="share preview"/>
+					<input type="hidden" name="share_preview_media_id" id="share-preview-media-id" value={ mediaIDValue(settings.SharePreviewMediaID) }/>
+					if settings.SharePreviewMediaID > 0 {
+						<img class="venue-image-preview" id="share-preview-preview" src={ publicImageURL(settings.SharePreviewMediaID) } loading="lazy" decoding="async" alt="share preview"/>
 						<button type="button" id="share-preview-remove" class="outline secondary" style="margin-top:0.5rem">Remove</button>
 					} else {
 						<img class="venue-image-preview" id="share-preview-preview" style="display:none" alt="share preview"/>
@@ -274,7 +271,7 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 																class="managed-image-file"
 																data-target-input={ "homepage-hero-background-desktop-data-" + strconv.Itoa(idx) }
 																data-preview-target={ "homepage-hero-background-desktop-preview-" + strconv.Itoa(idx) }
-																data-token-input={ "homepage-hero-background-desktop-token-" + strconv.Itoa(idx) }
+																data-media-id-input={ "homepage-hero-background-desktop-media-id-" + strconv.Itoa(idx) }
 																data-format="image/jpeg"
 																data-quality="0.78"
 																data-max-width="1600"
@@ -282,9 +279,9 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 																data-max-bytes="262144"
 															/>
 															<input type="hidden" name={ fmt.Sprintf("homepage_hero_background_desktop_%d", idx) } id={ "homepage-hero-background-desktop-data-" + strconv.Itoa(idx) } class="hero-background-image-hidden"/>
-															<input type="hidden" name={ fmt.Sprintf("homepage_hero_background_desktop_token_%d", idx) } id={ "homepage-hero-background-desktop-token-" + strconv.Itoa(idx) } class="hero-background-token-hidden" value={ imageToken(bg.DesktopImage) }/>
-															if bg.DesktopImage != "" {
-																<img class="hero-background-preview dashboard-lazy-image" id={ "homepage-hero-background-desktop-preview-" + strconv.Itoa(idx) } data-src={ publicImageURL(bg.DesktopImage) } loading="lazy" decoding="async" alt="desktop background preview"/>
+															<input type="hidden" name={ fmt.Sprintf("homepage_hero_background_desktop_media_id_%d", idx) } id={ "homepage-hero-background-desktop-media-id-" + strconv.Itoa(idx) } class="hero-background-media-id-hidden" value={ mediaIDValue(bg.DesktopMediaID) }/>
+															if bg.DesktopMediaID > 0 {
+																<img class="hero-background-preview dashboard-lazy-image" id={ "homepage-hero-background-desktop-preview-" + strconv.Itoa(idx) } data-src={ publicImageURL(bg.DesktopMediaID) } loading="lazy" decoding="async" alt="desktop background preview"/>
 															} else {
 																<img class="hero-background-preview" id={ "homepage-hero-background-desktop-preview-" + strconv.Itoa(idx) } style="display:none" alt="desktop background preview"/>
 															}
@@ -299,7 +296,7 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 																class="managed-image-file"
 																data-target-input={ "homepage-hero-background-mobile-data-" + strconv.Itoa(idx) }
 																data-preview-target={ "homepage-hero-background-mobile-preview-" + strconv.Itoa(idx) }
-																data-token-input={ "homepage-hero-background-mobile-token-" + strconv.Itoa(idx) }
+																data-media-id-input={ "homepage-hero-background-mobile-media-id-" + strconv.Itoa(idx) }
 																data-format="image/jpeg"
 																data-quality="0.78"
 																data-max-width="1080"
@@ -307,9 +304,9 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 																data-max-bytes="196608"
 															/>
 															<input type="hidden" name={ fmt.Sprintf("homepage_hero_background_mobile_%d", idx) } id={ "homepage-hero-background-mobile-data-" + strconv.Itoa(idx) } class="hero-background-image-hidden"/>
-															<input type="hidden" name={ fmt.Sprintf("homepage_hero_background_mobile_token_%d", idx) } id={ "homepage-hero-background-mobile-token-" + strconv.Itoa(idx) } class="hero-background-token-hidden" value={ imageToken(bg.MobileImage) }/>
-															if bg.MobileImage != "" {
-																<img class="hero-background-preview hero-background-preview--portrait dashboard-lazy-image" id={ "homepage-hero-background-mobile-preview-" + strconv.Itoa(idx) } data-src={ publicImageURL(bg.MobileImage) } loading="lazy" decoding="async" alt="mobile background preview"/>
+															<input type="hidden" name={ fmt.Sprintf("homepage_hero_background_mobile_media_id_%d", idx) } id={ "homepage-hero-background-mobile-media-id-" + strconv.Itoa(idx) } class="hero-background-media-id-hidden" value={ mediaIDValue(bg.MobileMediaID) }/>
+															if bg.MobileMediaID > 0 {
+																<img class="hero-background-preview hero-background-preview--portrait dashboard-lazy-image" id={ "homepage-hero-background-mobile-preview-" + strconv.Itoa(idx) } data-src={ publicImageURL(bg.MobileMediaID) } loading="lazy" decoding="async" alt="mobile background preview"/>
 															} else {
 																<img class="hero-background-preview hero-background-preview--portrait" id={ "homepage-hero-background-mobile-preview-" + strconv.Itoa(idx) } style="display:none" alt="mobile background preview"/>
 															}
@@ -337,7 +334,7 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 														class="managed-image-file"
 														data-target-input="homepage-hero-background-desktop-data-__INDEX__"
 														data-preview-target="homepage-hero-background-desktop-preview-__INDEX__"
-														data-token-input="homepage-hero-background-desktop-token-__INDEX__"
+														data-media-id-input="homepage-hero-background-desktop-media-id-__INDEX__"
 														data-format="image/jpeg"
 														data-quality="0.78"
 														data-max-width="1600"
@@ -345,7 +342,7 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 														data-max-bytes="262144"
 													/>
 													<input type="hidden" name="homepage_hero_background_desktop___INDEX__" id="homepage-hero-background-desktop-data-__INDEX__" class="hero-background-image-hidden"/>
-													<input type="hidden" name="homepage_hero_background_desktop_token___INDEX__" id="homepage-hero-background-desktop-token-__INDEX__" class="hero-background-token-hidden"/>
+													<input type="hidden" name="homepage_hero_background_desktop_token___INDEX__" id="homepage-hero-background-desktop-media-id-__INDEX__" class="hero-background-media-id-hidden"/>
 													<img class="hero-background-preview" id="homepage-hero-background-desktop-preview-__INDEX__" style="display:none" alt="desktop background preview"/>
 												</div>
 											</div>
@@ -358,7 +355,7 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 														class="managed-image-file"
 														data-target-input="homepage-hero-background-mobile-data-__INDEX__"
 														data-preview-target="homepage-hero-background-mobile-preview-__INDEX__"
-														data-token-input="homepage-hero-background-mobile-token-__INDEX__"
+														data-media-id-input="homepage-hero-background-mobile-media-id-__INDEX__"
 														data-format="image/jpeg"
 														data-quality="0.78"
 														data-max-width="1080"
@@ -366,7 +363,7 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 														data-max-bytes="196608"
 													/>
 													<input type="hidden" name="homepage_hero_background_mobile___INDEX__" id="homepage-hero-background-mobile-data-__INDEX__" class="hero-background-image-hidden"/>
-													<input type="hidden" name="homepage_hero_background_mobile_token___INDEX__" id="homepage-hero-background-mobile-token-__INDEX__" class="hero-background-token-hidden"/>
+													<input type="hidden" name="homepage_hero_background_mobile_token___INDEX__" id="homepage-hero-background-mobile-media-id-__INDEX__" class="hero-background-media-id-hidden"/>
 													<img class="hero-background-preview hero-background-preview--portrait" id="homepage-hero-background-mobile-preview-__INDEX__" style="display:none" alt="mobile background preview"/>
 												</div>
 											</div>
@@ -390,31 +387,31 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 
 												var desktopFile = card.querySelector('.managed-image-file[data-target-input^="homepage-hero-background-desktop-data-"]');
 												var desktopHidden = card.querySelector('.hero-background-image-hidden[id^="homepage-hero-background-desktop-data-"]');
-												var desktopToken = card.querySelector('.hero-background-token-hidden[id^="homepage-hero-background-desktop-token-"]');
+												var desktopToken = card.querySelector('.hero-background-media-id-hidden[id^="homepage-hero-background-desktop-media-id-"]');
 												var desktopPreview = card.querySelector('.hero-background-preview[id^="homepage-hero-background-desktop-preview-"]');
 												if (desktopFile && desktopHidden && desktopToken && desktopPreview) {
 													desktopFile.dataset.targetInput = "homepage-hero-background-desktop-data-" + idx;
 													desktopFile.dataset.previewTarget = "homepage-hero-background-desktop-preview-" + idx;
-													desktopFile.dataset.tokenInput = "homepage-hero-background-desktop-token-" + idx;
+													desktopFile.dataset.mediaIdInput = "homepage-hero-background-desktop-media-id-" + idx;
 													desktopHidden.name = "homepage_hero_background_desktop_" + idx;
 													desktopHidden.id = "homepage-hero-background-desktop-data-" + idx;
 													desktopToken.name = "homepage_hero_background_desktop_token_" + idx;
-													desktopToken.id = "homepage-hero-background-desktop-token-" + idx;
+													desktopToken.id = "homepage-hero-background-desktop-media-id-" + idx;
 													desktopPreview.id = "homepage-hero-background-desktop-preview-" + idx;
 												}
 
 												var mobileFile = card.querySelector('.managed-image-file[data-target-input^="homepage-hero-background-mobile-data-"]');
 												var mobileHidden = card.querySelector('.hero-background-image-hidden[id^="homepage-hero-background-mobile-data-"]');
-												var mobileToken = card.querySelector('.hero-background-token-hidden[id^="homepage-hero-background-mobile-token-"]');
+												var mobileToken = card.querySelector('.hero-background-media-id-hidden[id^="homepage-hero-background-mobile-media-id-"]');
 												var mobilePreview = card.querySelector('.hero-background-preview[id^="homepage-hero-background-mobile-preview-"]');
 												if (mobileFile && mobileHidden && mobileToken && mobilePreview) {
 													mobileFile.dataset.targetInput = "homepage-hero-background-mobile-data-" + idx;
 													mobileFile.dataset.previewTarget = "homepage-hero-background-mobile-preview-" + idx;
-													mobileFile.dataset.tokenInput = "homepage-hero-background-mobile-token-" + idx;
+													mobileFile.dataset.mediaIdInput = "homepage-hero-background-mobile-media-id-" + idx;
 													mobileHidden.name = "homepage_hero_background_mobile_" + idx;
 													mobileHidden.id = "homepage-hero-background-mobile-data-" + idx;
 													mobileToken.name = "homepage_hero_background_mobile_token_" + idx;
-													mobileToken.id = "homepage-hero-background-mobile-token-" + idx;
+													mobileToken.id = "homepage-hero-background-mobile-media-id-" + idx;
 													mobilePreview.id = "homepage-hero-background-mobile-preview-" + idx;
 												}
 											});
@@ -526,7 +523,7 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 																class="managed-image-file"
 																data-target-input={ fmt.Sprintf("place-image-data-%d", idx) }
 																data-preview-target={ fmt.Sprintf("place-image-preview-%d", idx) }
-																data-token-input={ fmt.Sprintf("place-image-token-%d", idx) }
+																data-media-id-input={ fmt.Sprintf("place-image-media-id-%d", idx) }
 																data-format="image/jpeg"
 																data-quality="0.88"
 																data-max-width="1200"
@@ -534,12 +531,12 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 																data-max-bytes="524288"
 															/>
 															<input type="hidden" name={ fmt.Sprintf("place_image_%d", idx) } id={ fmt.Sprintf("place-image-data-%d", idx) } class="place-image-hidden"/>
-															<input type="hidden" name={ fmt.Sprintf("place_image_token_%d", idx) } id={ fmt.Sprintf("place-image-token-%d", idx) } class="place-image-token-hidden" value={ imageToken(place.Image) }/>
-															if place.Image != "" {
+															<input type="hidden" name={ fmt.Sprintf("place_media_id_%d", idx) } id={ fmt.Sprintf("place-media-id-%d", idx) } class="place-media-id-hidden" value={ mediaIDValue(place.MediaID) }/>
+															if place.MediaID > 0 {
 																<img
 																	class="venue-image-preview place-image-preview dashboard-lazy-image"
 																	id={ fmt.Sprintf("place-image-preview-%d", idx) }
-																	data-src={ publicImageURL(place.Image) }
+																	data-src={ publicImageURL(place.MediaID) }
 																	loading="lazy"
 																	decoding="async"
 																	alt={ place.Label }
@@ -615,7 +612,7 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 																class="managed-image-file"
 																data-target-input={ fmt.Sprintf("honeymoon-image-data-%d", idx) }
 																data-preview-target={ fmt.Sprintf("honeymoon-image-preview-%d", idx) }
-																data-token-input={ fmt.Sprintf("honeymoon-image-token-%d", idx) }
+																data-media-id-input={ fmt.Sprintf("honeymoon-image-media-id-%d", idx) }
 																data-format="image/png"
 																data-quality="0.82"
 																data-max-width="900"
@@ -623,12 +620,12 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 																data-max-bytes="614400"
 															/>
 															<input type="hidden" name={ fmt.Sprintf("honeymoon_image_%d", idx) } id={ fmt.Sprintf("honeymoon-image-data-%d", idx) } class="place-image-hidden"/>
-															<input type="hidden" name={ fmt.Sprintf("honeymoon_image_token_%d", idx) } id={ fmt.Sprintf("honeymoon-image-token-%d", idx) } class="place-image-token-hidden" value={ imageToken(place.Image) }/>
-															if place.Image != "" {
+															<input type="hidden" name={ fmt.Sprintf("honeymoon_media_id_%d", idx) } id={ fmt.Sprintf("honeymoon-media-id-%d", idx) } class="place-media-id-hidden" value={ mediaIDValue(place.MediaID) }/>
+															if place.MediaID > 0 {
 																<img
 																	class="venue-image-preview place-image-preview dashboard-lazy-image"
 																	id={ fmt.Sprintf("honeymoon-image-preview-%d", idx) }
-																	data-src={ publicImageURL(place.Image) }
+																	data-src={ publicImageURL(place.MediaID) }
 																	loading="lazy"
 																	decoding="async"
 																	alt={ place.Label }
@@ -1045,8 +1042,8 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 										</div>
 									</td>
 									<td data-label={ t("th.item_image") }>
-										if item.Image != "" {
-											<img class="registry-thumb" src={ publicImageURL(item.Image) } loading="lazy" decoding="async" alt={ item.Name }/>
+										if item.MediaID > 0 {
+											<img class="registry-thumb" src={ publicImageURL(item.MediaID) } loading="lazy" decoding="async" alt={ item.Name }/>
 										}
 									</td>
 									<td data-label={ t("th.item_name") }>{ item.Name }</td>
@@ -1262,8 +1259,8 @@ templ EditRegistryItem(item models.RegistryItem, settings models.WeddingSettings
 							data-preview-target={ "registry-image-preview-" + strconv.Itoa(item.ID) }
 						/>
 						<input type="hidden" name="image" id={ "registry-image-data-" + strconv.Itoa(item.ID) }/>
-						if item.Image != "" {
-							<img class="registry-thumb" id={ "registry-image-preview-" + strconv.Itoa(item.ID) } src={ publicImageURL(item.Image) } loading="lazy" decoding="async" alt={ item.Name }/>
+						if item.MediaID > 0 {
+							<img class="registry-thumb" id={ "registry-image-preview-" + strconv.Itoa(item.ID) } src={ publicImageURL(item.MediaID) } loading="lazy" decoding="async" alt={ item.Name }/>
 						} else {
 							<img class="registry-thumb" id={ "registry-image-preview-" + strconv.Itoa(item.ID) } style="display:none" alt={ item.Name }/>
 						}

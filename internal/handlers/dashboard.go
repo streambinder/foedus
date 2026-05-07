@@ -1,11 +1,9 @@
 package handlers
 
 import (
-	"crypto/sha256"
 	"database/sql"
 	"encoding/base64"
 	"encoding/csv"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -118,7 +116,8 @@ func DashboardIndex(c *fiber.Ctx) error {
 		return c.Status(500).SendString("failed to load soundtrack events")
 	}
 	csrfToken, _ := c.Locals("csrf").(string)
-	logger.Info("dashboard rendered",
+	logger.Info(
+		"dashboard rendered",
 		"guest_count", len(guests),
 		"filtered_total", filteredTotal,
 		"gift_count", len(gifts),
@@ -136,72 +135,124 @@ func DashboardIndex(c *fiber.Ctx) error {
 	return Render(c, templates.Dashboard(settings, guests, gifts, registryItems, invitations, polls, soundtrackEvents, confirmedCeremony, confirmedReception, pendingGuests, totalGuests, page, totalPages, search, csrfToken, getFlash(c), getT(c), getLang(c)))
 }
 
-func imageToken(image string) string {
-	if image == "" {
-		return ""
+func resolveImageMediaID(rawImage, rawMediaID string, existingMediaID int, allowedAny bool) (int, error) {
+	image := strings.TrimSpace(rawImage)
+	if image != "" {
+		if allowedAny {
+			if err := validateBase64ImageAny(image); err != nil {
+				return 0, err
+			}
+		} else {
+			if err := validateBase64Image(image); err != nil {
+				return 0, err
+			}
+		}
+		mime, data, err := decodeDataURI(image)
+		if err != nil {
+			return 0, fiber.NewError(400, "invalid image data")
+		}
+		newID, err := database.InsertMedia(mime, data)
+		if err != nil {
+			return 0, err
+		}
+		// orphan cleanup: drop previous media row if it's being replaced
+		if existingMediaID > 0 && existingMediaID != newID {
+			_ = database.DeleteMedia(existingMediaID)
+		}
+		return newID, nil
 	}
-	sum := sha256.Sum256([]byte(image))
-	return hex.EncodeToString(sum[:])
+
+	keep := parseFormMediaID(rawMediaID)
+	if keep == 0 {
+		// cleared field — drop existing media if any
+		if existingMediaID > 0 {
+			_ = database.DeleteMedia(existingMediaID)
+		}
+		return 0, nil
+	}
+	if keep != existingMediaID {
+		// trying to reference a different media id than what we have stored — refuse
+		return 0, fiber.NewError(400, "invalid media id")
+	}
+	return keep, nil
 }
 
-func resolveExistingImage(rawImage, rawToken, existingImage string) (string, error) {
+// resolveImageMediaIDFromSet handles the multi-image case (places, hero backgrounds)
+// where many fields share the same "existing ids" set: the kept id must match one of
+// the previously stored media ids for this settings group.
+func resolveImageMediaIDFromSet(rawImage, rawMediaID string, allowedExistingIDs map[int]struct{}) (int, error) {
 	image := strings.TrimSpace(rawImage)
 	if image != "" {
 		if err := validateBase64ImageAny(image); err != nil {
-			return "", err
+			return 0, err
 		}
-		return image, nil
+		mime, data, err := decodeDataURI(image)
+		if err != nil {
+			return 0, fiber.NewError(400, "invalid image data")
+		}
+		return database.InsertMedia(mime, data)
 	}
-	if rawToken != "" && rawToken == imageToken(existingImage) {
-		return existingImage, nil
+
+	keep := parseFormMediaID(rawMediaID)
+	if keep == 0 {
+		return 0, nil
 	}
-	if rawToken != "" {
-		return "", fiber.NewError(400, "invalid image token")
+	if _, ok := allowedExistingIDs[keep]; !ok {
+		return 0, fiber.NewError(400, "invalid media id")
 	}
-	return "", nil
+	return keep, nil
 }
 
-func buildExistingImageMap(settings models.WeddingSettings) map[string]string {
-	images := make(map[string]string)
-	add := func(image string) {
-		if image == "" {
-			return
-		}
-		images[imageToken(image)] = image
+func parseFormMediaID(raw string) int {
+	id, _ := strconv.Atoi(strings.TrimSpace(raw))
+	if id < 0 {
+		return 0
 	}
+	return id
+}
 
-	add(settings.CeremonyImage)
-	add(settings.ReceptionImage)
-	add(settings.SharePreviewImage)
+func decodeDataURI(dataURI string) (string, []byte, error) {
+	idx := strings.Index(dataURI, ",")
+	if idx == -1 {
+		return "", nil, fiber.ErrBadRequest
+	}
+	header := dataURI[:idx]
+	encoded := dataURI[idx+1:]
+	mimeType := "image/png"
+	if start := strings.Index(header, ":"); start != -1 {
+		end := strings.Index(header, ";")
+		if end != -1 {
+			mimeType = header[start+1 : end]
+		}
+	}
+	data, err := base64.StdEncoding.DecodeString(encoded)
+	if err != nil {
+		return "", nil, err
+	}
+	return mimeType, data, nil
+}
+
+func collectExistingMediaIDs(settings models.WeddingSettings) map[int]struct{} {
+	ids := make(map[int]struct{})
+	add := func(id int) {
+		if id > 0 {
+			ids[id] = struct{}{}
+		}
+	}
+	add(settings.CeremonyMediaID)
+	add(settings.ReceptionMediaID)
+	add(settings.SharePreviewMediaID)
 	for _, place := range settings.Places {
-		add(place.Image)
+		add(place.MediaID)
 	}
 	for _, place := range settings.HoneymoonLocations {
-		add(place.Image)
+		add(place.MediaID)
 	}
 	for _, bg := range settings.HomepageHeroBackgrounds {
-		add(bg.DesktopImage)
-		add(bg.MobileImage)
+		add(bg.DesktopMediaID)
+		add(bg.MobileMediaID)
 	}
-	return images
-}
-
-func resolveMappedImage(rawImage, rawToken string, existingImages map[string]string) (string, error) {
-	image := strings.TrimSpace(rawImage)
-	if image != "" {
-		if err := validateBase64ImageAny(image); err != nil {
-			return "", err
-		}
-		return image, nil
-	}
-	if rawToken == "" {
-		return "", nil
-	}
-	image, ok := existingImages[rawToken]
-	if !ok {
-		return "", fiber.NewError(400, "invalid image token")
-	}
-	return image, nil
+	return ids
 }
 
 func SaveSettings(c *fiber.Ctx) error {
@@ -211,7 +262,7 @@ func SaveSettings(c *fiber.Ctx) error {
 		logger.Error("settings save failed to load existing settings", "error", err.Error())
 		return c.Status(500).SendString("failed to load settings")
 	}
-	existingImages := buildExistingImageMap(settings)
+	existingMediaIDs := collectExistingMediaIDs(settings)
 
 	keys := []string{
 		"spouse1_name", "spouse2_name", "ceremony_datetime",
@@ -227,33 +278,33 @@ func SaveSettings(c *fiber.Ctx) error {
 		}
 	}
 
-	ceremonyImage, err := resolveExistingImage(c.FormValue("ceremony_image"), c.FormValue("ceremony_image_token"), settings.CeremonyImage)
+	ceremonyMediaID, err := resolveImageMediaID(c.FormValue("ceremony_image"), c.FormValue("ceremony_media_id"), settings.CeremonyMediaID, true)
 	if err != nil {
 		logger.Warn("settings save rejected", "field", "ceremony_image", "error", err.Error())
 		return c.Status(400).SendString(err.Error())
 	}
-	if err := database.UpdateSetting("ceremony_image", ceremonyImage); err != nil {
-		logger.Error("settings save failed", "key", "ceremony_image", "error", err.Error())
+	if err := database.UpdateSetting("ceremony_media_id", strconv.Itoa(ceremonyMediaID)); err != nil {
+		logger.Error("settings save failed", "key", "ceremony_media_id", "error", err.Error())
 		return c.Status(500).SendString("failed to save settings")
 	}
 
-	receptionImage, err := resolveExistingImage(c.FormValue("reception_image"), c.FormValue("reception_image_token"), settings.ReceptionImage)
+	receptionMediaID, err := resolveImageMediaID(c.FormValue("reception_image"), c.FormValue("reception_media_id"), settings.ReceptionMediaID, true)
 	if err != nil {
 		logger.Warn("settings save rejected", "field", "reception_image", "error", err.Error())
 		return c.Status(400).SendString(err.Error())
 	}
-	if err := database.UpdateSetting("reception_image", receptionImage); err != nil {
-		logger.Error("settings save failed", "key", "reception_image", "error", err.Error())
+	if err := database.UpdateSetting("reception_media_id", strconv.Itoa(receptionMediaID)); err != nil {
+		logger.Error("settings save failed", "key", "reception_media_id", "error", err.Error())
 		return c.Status(500).SendString("failed to save settings")
 	}
 
-	sharePreviewImage, err := resolveExistingImage(c.FormValue("share_preview_image"), c.FormValue("share_preview_image_token"), settings.SharePreviewImage)
+	sharePreviewMediaID, err := resolveImageMediaID(c.FormValue("share_preview_image"), c.FormValue("share_preview_media_id"), settings.SharePreviewMediaID, true)
 	if err != nil {
 		logger.Warn("settings save rejected", "field", "share_preview_image", "error", err.Error())
 		return c.Status(400).SendString(err.Error())
 	}
-	if err := database.UpdateSetting("share_preview_image", sharePreviewImage); err != nil {
-		logger.Error("settings save failed", "key", "share_preview_image", "error", err.Error())
+	if err := database.UpdateSetting("share_preview_media_id", strconv.Itoa(sharePreviewMediaID)); err != nil {
+		logger.Error("settings save failed", "key", "share_preview_media_id", "error", err.Error())
 		return c.Status(500).SendString("failed to save settings")
 	}
 
@@ -276,12 +327,13 @@ func SaveSettings(c *fiber.Ctx) error {
 		name := strings.TrimSpace(c.FormValue(fmt.Sprintf("place_name_%d", i)))
 		address := strings.TrimSpace(c.FormValue(fmt.Sprintf("place_address_%d", i)))
 		date := strings.TrimSpace(c.FormValue(fmt.Sprintf("place_date_%d", i)))
-		image, err := resolveMappedImage(c.FormValue(fmt.Sprintf("place_image_%d", i)), c.FormValue(fmt.Sprintf("place_image_token_%d", i)), existingImages)
+		mediaIDRaw := c.FormValue(fmt.Sprintf("place_media_id_%d", i))
+		mediaID, err := resolveImageMediaIDFromSet(c.FormValue(fmt.Sprintf("place_image_%d", i)), mediaIDRaw, existingMediaIDs)
 		if err != nil {
 			logger.Warn("settings save rejected", "field", fmt.Sprintf("place_image_%d", i), "error", err.Error())
 			return c.Status(400).SendString(err.Error())
 		}
-		if label == "" && name == "" && address == "" && date == "" && image == "" && c.FormValue(fmt.Sprintf("place_image_token_%d", i)) == "" {
+		if label == "" && name == "" && address == "" && date == "" && mediaID == 0 && mediaIDRaw == "" {
 			break
 		}
 		lat, _ := strconv.ParseFloat(c.FormValue(fmt.Sprintf("place_lat_%d", i)), 64)
@@ -289,7 +341,7 @@ func SaveSettings(c *fiber.Ctx) error {
 		places = append(places, models.Place{
 			Label:   label,
 			Date:    date,
-			Image:   image,
+			MediaID: mediaID,
 			Name:    name,
 			Address: address,
 			Lat:     lat,
@@ -309,12 +361,13 @@ func SaveSettings(c *fiber.Ctx) error {
 		name := strings.TrimSpace(c.FormValue(fmt.Sprintf("honeymoon_name_%d", i)))
 		address := strings.TrimSpace(c.FormValue(fmt.Sprintf("honeymoon_address_%d", i)))
 		date := strings.TrimSpace(c.FormValue(fmt.Sprintf("honeymoon_date_%d", i)))
-		image, err := resolveMappedImage(c.FormValue(fmt.Sprintf("honeymoon_image_%d", i)), c.FormValue(fmt.Sprintf("honeymoon_image_token_%d", i)), existingImages)
+		mediaIDRaw := c.FormValue(fmt.Sprintf("honeymoon_media_id_%d", i))
+		mediaID, err := resolveImageMediaIDFromSet(c.FormValue(fmt.Sprintf("honeymoon_image_%d", i)), mediaIDRaw, existingMediaIDs)
 		if err != nil {
 			logger.Warn("settings save rejected", "field", fmt.Sprintf("honeymoon_image_%d", i), "error", err.Error())
 			return c.Status(400).SendString(err.Error())
 		}
-		if label == "" && name == "" && address == "" && date == "" && image == "" && c.FormValue(fmt.Sprintf("honeymoon_image_token_%d", i)) == "" {
+		if label == "" && name == "" && address == "" && date == "" && mediaID == 0 && mediaIDRaw == "" {
 			break
 		}
 		lat, _ := strconv.ParseFloat(c.FormValue(fmt.Sprintf("honeymoon_lat_%d", i)), 64)
@@ -322,7 +375,7 @@ func SaveSettings(c *fiber.Ctx) error {
 		honeymoonLocations = append(honeymoonLocations, models.Place{
 			Label:   label,
 			Date:    date,
-			Image:   image,
+			MediaID: mediaID,
 			Name:    name,
 			Address: address,
 			Lat:     lat,
@@ -396,22 +449,22 @@ func SaveSettings(c *fiber.Ctx) error {
 	backgroundCount, _ := strconv.Atoi(c.FormValue("homepage_hero_background_count"))
 	var homepageHeroBackgrounds []models.HomepageHeroBackground
 	for i := 0; i < backgroundCount; i++ {
-		desktopImage, err := resolveMappedImage(c.FormValue(fmt.Sprintf("homepage_hero_background_desktop_%d", i)), c.FormValue(fmt.Sprintf("homepage_hero_background_desktop_token_%d", i)), existingImages)
+		desktopMediaID, err := resolveImageMediaIDFromSet(c.FormValue(fmt.Sprintf("homepage_hero_background_desktop_%d", i)), c.FormValue(fmt.Sprintf("homepage_hero_background_desktop_media_id_%d", i)), existingMediaIDs)
 		if err != nil {
 			logger.Warn("settings save rejected", "field", fmt.Sprintf("homepage_hero_background_desktop_%d", i), "error", err.Error())
 			return c.Status(400).SendString(err.Error())
 		}
-		mobileImage, err := resolveMappedImage(c.FormValue(fmt.Sprintf("homepage_hero_background_mobile_%d", i)), c.FormValue(fmt.Sprintf("homepage_hero_background_mobile_token_%d", i)), existingImages)
+		mobileMediaID, err := resolveImageMediaIDFromSet(c.FormValue(fmt.Sprintf("homepage_hero_background_mobile_%d", i)), c.FormValue(fmt.Sprintf("homepage_hero_background_mobile_media_id_%d", i)), existingMediaIDs)
 		if err != nil {
 			logger.Warn("settings save rejected", "field", fmt.Sprintf("homepage_hero_background_mobile_%d", i), "error", err.Error())
 			return c.Status(400).SendString(err.Error())
 		}
-		if desktopImage == "" && mobileImage == "" {
+		if desktopMediaID == 0 && mobileMediaID == 0 {
 			continue
 		}
 		homepageHeroBackgrounds = append(homepageHeroBackgrounds, models.HomepageHeroBackground{
-			DesktopImage: desktopImage,
-			MobileImage:  mobileImage,
+			DesktopMediaID: desktopMediaID,
+			MobileMediaID:  mobileMediaID,
 		})
 	}
 	homepageHeroBackgroundsJSON, _ := json.Marshal(homepageHeroBackgrounds)
@@ -420,7 +473,35 @@ func SaveSettings(c *fiber.Ctx) error {
 		return c.Status(500).SendString("failed to save settings")
 	}
 
-	logger.Info("settings updated",
+	// orphan cleanup for list-based images: drop media rows that were referenced
+	// before the save but are no longer referenced after.
+	keptIDs := make(map[int]struct{})
+	keep := func(id int) {
+		if id > 0 {
+			keptIDs[id] = struct{}{}
+		}
+	}
+	keep(ceremonyMediaID)
+	keep(receptionMediaID)
+	keep(sharePreviewMediaID)
+	for _, place := range places {
+		keep(place.MediaID)
+	}
+	for _, place := range honeymoonLocations {
+		keep(place.MediaID)
+	}
+	for _, bg := range homepageHeroBackgrounds {
+		keep(bg.DesktopMediaID)
+		keep(bg.MobileMediaID)
+	}
+	for id := range existingMediaIDs {
+		if _, stillUsed := keptIDs[id]; !stillUsed {
+			_ = database.DeleteMedia(id)
+		}
+	}
+
+	logger.Info(
+		"settings updated",
 		"places", len(places),
 		"honeymoon_locations", len(honeymoonLocations),
 		"accommodation_suggestions", len(accommodationSuggestions),
@@ -429,7 +510,6 @@ func SaveSettings(c *fiber.Ctx) error {
 		"hero_backgrounds", len(homepageHeroBackgrounds),
 		"spotify_playlist_configured", playlist != "",
 	)
-	invalidateMediaCache()
 	setFlash(c, getT(c)("flash.settings_saved"))
 	return c.Redirect("/dashboard")
 }
@@ -625,19 +705,20 @@ func AddRegistryItem(c *fiber.Ctx) error {
 		logger.Warn("registry item create rejected", "name", name, "price", c.FormValue("price"))
 		return c.Status(400).SendString("invalid price")
 	}
-	image := c.FormValue("image")
-	if image != "" {
-		if err := validateBase64Image(image); err != nil {
-			logger.Warn("registry item create rejected", "name", name, "error", err.Error())
-			return c.Status(400).SendString(err.Error())
-		}
+	mediaID, err := resolveImageMediaID(c.FormValue("image"), "", 0, false)
+	if err != nil {
+		logger.Warn("registry item create rejected", "name", name, "error", err.Error())
+		return c.Status(400).SendString(err.Error())
 	}
-	if err := database.CreateRegistryItem(name, price, image); err != nil {
+	if err := database.CreateRegistryItem(name, price, mediaID); err != nil {
+		// orphan: media row is now unreferenced, drop it
+		if mediaID > 0 {
+			_ = database.DeleteMedia(mediaID)
+		}
 		logger.Error("registry item create failed", "name", name, "price", price, "error", err.Error())
 		return c.Status(500).SendString("failed to add item")
 	}
-	invalidateMediaCache()
-	logger.Info("registry item created", "name", name, "price", price, "has_image", image != "")
+	logger.Info("registry item created", "name", name, "price", price, "has_image", mediaID > 0)
 	setFlash(c, getT(c)("flash.item_added"))
 	return c.Redirect("/dashboard")
 }
@@ -682,22 +763,16 @@ func UpdateRegistryItem(c *fiber.Ctx) error {
 		logger.Warn("registry item update rejected", "item_id", id, "price", c.FormValue("price"))
 		return c.Status(400).SendString("invalid price")
 	}
-	image := c.FormValue("image")
-	if image == "" {
-		image = item.Image
+	mediaID, err := resolveImageMediaID(c.FormValue("image"), c.FormValue("media_id"), item.MediaID, true)
+	if err != nil {
+		logger.Warn("registry item update rejected", "item_id", id, "error", err.Error())
+		return c.Status(400).SendString(err.Error())
 	}
-	if image != "" {
-		if err := validateBase64ImageAny(image); err != nil {
-			logger.Warn("registry item update rejected", "item_id", id, "error", err.Error())
-			return c.Status(400).SendString(err.Error())
-		}
-	}
-	if err := database.UpdateRegistryItem(id, name, price, image); err != nil {
+	if err := database.UpdateRegistryItem(id, name, price, mediaID); err != nil {
 		logger.Error("registry item update failed", "item_id", id, "error", err.Error())
 		return c.Status(500).SendString("failed to update item")
 	}
-	invalidateMediaCache()
-	logger.Info("registry item updated", "item_id", id, "name", name, "price", price, "has_image", image != "")
+	logger.Info("registry item updated", "item_id", id, "name", name, "price", price, "has_image", mediaID > 0)
 	setFlash(c, getT(c)("flash.item_updated"))
 	return c.Redirect("/dashboard")
 }
@@ -709,11 +784,17 @@ func DeleteRegistryItem(c *fiber.Ctx) error {
 		logger.Warn("registry item delete rejected", "item_id", c.Params("id"), "error", err.Error())
 		return c.Status(400).SendString("invalid id")
 	}
+	mediaIDToDrop := 0
+	if item, err := database.GetRegistryItem(id); err == nil {
+		mediaIDToDrop = item.MediaID
+	}
 	if err := database.DeleteRegistryItem(id); err != nil {
 		logger.Error("registry item delete failed", "item_id", id, "error", err.Error())
 		return c.Status(500).SendString("failed to delete item")
 	}
-	invalidateMediaCache()
+	if mediaIDToDrop > 0 {
+		_ = database.DeleteMedia(mediaIDToDrop)
+	}
 	logger.Info("registry item deleted", "item_id", id)
 	setFlash(c, getT(c)("flash.item_deleted"))
 	return c.Redirect("/dashboard")

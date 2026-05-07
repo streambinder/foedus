@@ -445,7 +445,7 @@
         var file = fileInput.files && fileInput.files[0];
         if (!file) return;
         var targetInput = document.getElementById(fileInput.dataset.targetInput || "");
-        var tokenInput = document.getElementById(fileInput.dataset.tokenInput || "");
+        var tokenInput = document.getElementById(fileInput.dataset.mediaIdInput || "");
         var previewImg = document.getElementById(fileInput.dataset.previewTarget || "");
         if (!targetInput) return;
 

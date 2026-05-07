@@ -54,11 +54,17 @@ func migrate() {
 			confirmed        INTEGER NOT NULL DEFAULT 0,
 			created_at       DATETIME DEFAULT CURRENT_TIMESTAMP
 		)`,
+		`CREATE TABLE IF NOT EXISTS media (
+			id         INTEGER PRIMARY KEY AUTOINCREMENT,
+			mime       TEXT NOT NULL,
+			bytes      BLOB NOT NULL,
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+		)`,
 		`CREATE TABLE IF NOT EXISTS registry_items (
 			id         INTEGER PRIMARY KEY AUTOINCREMENT,
 			name       TEXT NOT NULL,
 			price      INTEGER NOT NULL,
-			image      TEXT NOT NULL DEFAULT '',
+			media_id   INTEGER REFERENCES media(id),
 			sort_order INTEGER NOT NULL DEFAULT 0,
 			created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 		)`,

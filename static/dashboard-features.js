@@ -140,9 +140,9 @@ function initDashboardFeatures() {
         "<div>" +
           "<label>Image</label>" +
           '<div class="managed-image-field">' +
-            '<input type="file" accept="image/*" class="managed-image-file" data-target-input="' + config.imageIdPrefix + '-data-' + idx + '" data-preview-target="' + config.imageIdPrefix + '-preview-' + idx + '" data-token-input="' + config.imageIdPrefix + '-token-' + idx + '" data-format="' + escapeAttr(config.imageFormat || "image/jpeg") + '" data-quality="0.88" data-max-width="' + config.imageMaxWidth + '" data-max-height="' + config.imageMaxHeight + '" data-max-bytes="' + (config.imageMaxBytes || 0) + '"/>' +
+            '<input type="file" accept="image/*" class="managed-image-file" data-target-input="' + config.imageIdPrefix + '-data-' + idx + '" data-preview-target="' + config.imageIdPrefix + '-preview-' + idx + '" data-media-id-input="' + config.imageIdPrefix + '-media-id-' + idx + '" data-format="' + escapeAttr(config.imageFormat || "image/jpeg") + '" data-quality="0.88" data-max-width="' + config.imageMaxWidth + '" data-max-height="' + config.imageMaxHeight + '" data-max-bytes="' + (config.imageMaxBytes || 0) + '"/>' +
             '<input type="hidden" name="' + config.prefix + '_image_' + idx + '" id="' + config.imageIdPrefix + '-data-' + idx + '" class="place-image-hidden"/>' +
-            '<input type="hidden" name="' + config.prefix + '_image_token_' + idx + '" id="' + config.imageIdPrefix + '-token-' + idx + '" class="place-image-token-hidden"/>' +
+            '<input type="hidden" name="' + config.prefix + '_media_id_' + idx + '" id="' + config.imageIdPrefix + '-media-id-' + idx + '" class="place-media-id-hidden"/>' +
             '<img class="venue-image-preview place-image-preview" id="' + config.imageIdPrefix + '-preview-' + idx + '" style="display:none" alt="' + escapeAttr(config.imageAlt) + '"/>' +
           "</div>" +
         "</div>" +
@@ -177,16 +177,16 @@ function initDashboardFeatures() {
         image.name = config.prefix + "_image_" + idx;
         image.id = config.imageIdPrefix + "-data-" + idx;
       }
-      var imageToken = card.querySelector(".place-image-token-hidden");
+      var imageToken = card.querySelector(".place-media-id-hidden");
       if (imageToken) {
-        imageToken.name = config.prefix + "_image_token_" + idx;
-        imageToken.id = config.imageIdPrefix + "-token-" + idx;
+        imageToken.name = config.prefix + "_media_id_" + idx;
+        imageToken.id = config.imageIdPrefix + "-media-id-" + idx;
       }
       var imageFile = card.querySelector(".managed-image-file");
       if (imageFile) {
         imageFile.dataset.targetInput = config.imageIdPrefix + "-data-" + idx;
         imageFile.dataset.previewTarget = config.imageIdPrefix + "-preview-" + idx;
-        imageFile.dataset.tokenInput = config.imageIdPrefix + "-token-" + idx;
+        imageFile.dataset.mediaIdInput = config.imageIdPrefix + "-media-id-" + idx;
         imageFile.dataset.format = config.imageFormat || "image/jpeg";
         imageFile.dataset.maxBytes = String(config.imageMaxBytes || 0);
       }

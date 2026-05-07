@@ -63,7 +63,8 @@ func ClaimGift(c *fiber.Ctx) error {
 		logger.Error("gift claim save failed", "amount", req.Amount, "donor", observability.Redact(req.Donor), "error", err.Error())
 		return c.Status(500).JSON(fiber.Map{"error": "failed to save gift"})
 	}
-	logger.Info("gift claim recorded",
+	logger.Info(
+		"gift claim recorded",
 		"amount", req.Amount,
 		"donor", observability.Redact(req.Donor),
 		"registry_item_id", req.RegistryItemID,

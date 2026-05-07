@@ -43,7 +43,7 @@ func locationTimelineJSON(places []models.Place, lang string) string {
 			"label":          place.Label,
 			"date":           place.Date,
 			"formatted_date": i18n.FormatDatetime(place.Date, lang),
-			"image":          publicImageURL(place.Image),
+			"image":          publicImageURL(place.MediaID),
 			"name":           place.Name,
 			"address":        place.Address,
 			"lat":            place.Lat,
@@ -140,26 +140,26 @@ func claimedPercent(item models.RegistryItem, claimed map[int]int) int {
 }
 
 func heroFallbackImage(heroBackground models.HomepageHeroBackground) string {
-	if heroBackground.MobileImage != "" {
-		return publicImageURL(heroBackground.MobileImage)
+	if heroBackground.MobileMediaID > 0 {
+		return publicImageURL(heroBackground.MobileMediaID)
 	}
-	return publicImageURL(heroBackground.DesktopImage)
+	return publicImageURL(heroBackground.DesktopMediaID)
 }
 
 func homepageHeroPreloads(heroBackground models.HomepageHeroBackground) []ImagePreload {
-	desktopImage := heroBackground.DesktopImage
-	mobileImage := heroBackground.MobileImage
-	if desktopImage == "" {
-		desktopImage = mobileImage
+	desktopID := heroBackground.DesktopMediaID
+	mobileID := heroBackground.MobileMediaID
+	if desktopID == 0 {
+		desktopID = mobileID
 	}
-	if mobileImage == "" {
-		mobileImage = desktopImage
+	if mobileID == 0 {
+		mobileID = desktopID
 	}
-	if desktopImage == "" && mobileImage == "" {
+	if desktopID == 0 && mobileID == 0 {
 		return nil
 	}
-	desktopURL := publicImageURL(desktopImage)
-	mobileURL := publicImageURL(mobileImage)
+	desktopURL := publicImageURL(desktopID)
+	mobileURL := publicImageURL(mobileID)
 	if desktopURL == mobileURL {
 		if isPreloadableImageURL(desktopURL) {
 			return []ImagePreload{{Href: desktopURL}}
@@ -184,11 +184,11 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 			<symbol id="chev-u" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></symbol>
 		</svg>
 		<!-- section 1: title -->
-		<section id="landing" class={ templ.Classes("vp-section", "vp-hero", templ.KV("vp-hero--with-background", heroBackground.DesktopImage != "" || heroBackground.MobileImage != "")) }>
-			if heroBackground.DesktopImage != "" || heroBackground.MobileImage != "" {
+		<section id="landing" class={ templ.Classes("vp-section", "vp-hero", templ.KV("vp-hero--with-background", heroBackground.DesktopMediaID > 0 || heroBackground.MobileMediaID > 0)) }>
+			if heroBackground.DesktopMediaID > 0 || heroBackground.MobileMediaID > 0 {
 				<picture class="vp-hero-background-layer" aria-hidden="true">
-					if heroBackground.DesktopImage != "" {
-						<source media="(min-width: 768px)" srcset={ publicImageURL(heroBackground.DesktopImage) }/>
+					if heroBackground.DesktopMediaID > 0 {
+						<source media="(min-width: 768px)" srcset={ publicImageURL(heroBackground.DesktopMediaID) }/>
 					}
 					<img src={ heroFallbackImage(heroBackground) } alt="" width="1600" height="1000" loading="eager" fetchpriority="high" decoding="async"/>
 				</picture>
@@ -231,9 +231,9 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 						<div class="venue venue-ceremony">
 							<h2>{ t("home.ceremony") }</h2>
 							<a href={ templ.SafeURL(mapsURL(settings.CeremonyAddress, settings.CeremonyLocation)) } target="_blank" class="venue-link">
-								if settings.CeremonyImage != "" {
+								if settings.CeremonyMediaID > 0 {
 									<div class="venue-image-wrapper">
-										<img class="venue-image" src={ publicImageURL(settings.CeremonyImage) } alt={ t("home.ceremony") } width="800" height="500" loading="lazy" decoding="async"/>
+										<img class="venue-image" src={ publicImageURL(settings.CeremonyMediaID) } alt={ t("home.ceremony") } width="800" height="500" loading="lazy" decoding="async"/>
 										<div class="venue-overlay venue-overlay-top">
 											<div class="venue-overlay-badge">
 												<span class="venue-overlay-icon" aria-hidden="true"></span>
@@ -270,9 +270,9 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 						<div class="venue venue-reception">
 							<h2>{ t("home.reception") }</h2>
 							<a href={ templ.SafeURL(mapsURL(settings.ReceptionAddress, settings.ReceptionLocation)) } target="_blank" class="venue-link">
-								if settings.ReceptionImage != "" {
+								if settings.ReceptionMediaID > 0 {
 									<div class="venue-image-wrapper">
-										<img class="venue-image" src={ publicImageURL(settings.ReceptionImage) } alt={ t("home.reception") } width="800" height="500" loading="lazy" decoding="async"/>
+										<img class="venue-image" src={ publicImageURL(settings.ReceptionMediaID) } alt={ t("home.reception") } width="800" height="500" loading="lazy" decoding="async"/>
 										<div class="venue-overlay venue-overlay-top">
 											<div class="venue-overlay-badge">
 												<span class="venue-overlay-icon" aria-hidden="true"></span>
@@ -471,9 +471,9 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 						<div class="registry-v2-carousel">
 							for _, item := range registryItems {
 								<div class={ "gift-tile", templ.KV("gift-tile--gifted", remainingAmount(item, claimedAmounts) == 0) }>
-									if item.Image != "" {
+									if item.MediaID > 0 {
 										<div class="gift-tile-image">
-											<img src={ publicImageURL(item.Image) } alt={ item.Name } width="400" height="300" loading="lazy" decoding="async"/>
+											<img src={ publicImageURL(item.MediaID) } alt={ item.Name } width="400" height="300" loading="lazy" decoding="async"/>
 											if item.Price > 0 {
 												<span class="gift-tile-price">{ formatPrice(item.Price) }</span>
 											}
