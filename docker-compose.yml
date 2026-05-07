@@ -8,8 +8,8 @@ services:
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-changeme}
       - DATABASE_URL=/data/foedus.db
       - PORT=3000
-      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}      # optional: enables AI chatbot
-      - OPENROUTER_MODEL=${OPENROUTER_MODEL:-}          # optional: defaults to meta-llama/llama-3.3-70b-instruct:free
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-} # optional: enables AI chatbot
+      - OPENROUTER_MODEL=${OPENROUTER_MODEL:-} # optional: defaults to meta-llama/llama-3.3-70b-instruct:free
     volumes:
       - foedus_data:/data
 

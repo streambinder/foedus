@@ -7,9 +7,10 @@
   --sage-dark: #8a9178;
   --charcoal: #36454f;
   --charcoal-dark: #2a3439;
-  --white: #ffffff;
+  --white: #fff;
   --dashboard-radius: 12px;
-  --dashboard-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px rgba(15, 23, 42, 0.06);
+  --dashboard-shadow:
+    0 1px 2px rgb(15 23 42 / 4%), 0 8px 24px rgb(15 23 42 / 6%);
   --tblr-primary: var(--sage-dark);
   --tblr-primary-rgb: 184, 135, 124;
   --tblr-secondary: var(--sage-dark);
@@ -159,7 +160,7 @@ label {
   gap: 0.875rem;
 }
 
-input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+input:not([type="checkbox"], [type="radio"], [type="hidden"]),
 select,
 textarea {
   width: 100%;
@@ -171,10 +172,12 @@ textarea {
   padding: 0.625rem 0.875rem;
   font-size: 0.9375rem;
   line-height: 1.35;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
-input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]) {
+input:not([type="checkbox"], [type="radio"], [type="hidden"]) {
   min-height: 2.6rem;
 }
 
@@ -200,7 +203,11 @@ button,
   font-size: 0.875rem;
   line-height: 1.2;
   cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 button[type="submit"],
@@ -263,6 +270,7 @@ button.outline.secondary:hover,
 .dashboard-subaccordion,
 .dashboard-subsection-accordion {
   min-width: 0;
+
   --tblr-accordion-bg: var(--tblr-bg-surface);
   --tblr-accordion-border-color: var(--tblr-border-color);
   --tblr-accordion-btn-bg: var(--tblr-bg-surface-secondary);
@@ -280,7 +288,7 @@ button.outline.secondary:hover,
   border-radius: 10px;
   background: var(--tblr-bg-surface);
   overflow: hidden;
-  box-shadow: 0 1px 1px rgba(15, 23, 42, 0.02);
+  box-shadow: 0 1px 1px rgb(15 23 42 / 2%);
 }
 
 .dashboard-accordion .accordion-item + .accordion-item {
@@ -797,7 +805,7 @@ input[role="switch"] {
   align-items: flex-end;
   justify-content: center;
   padding: 1rem;
-  background: rgba(15, 23, 42, 0.48);
+  background: rgb(15 23 42 / 48%);
 }
 
 .modal-box {
@@ -806,7 +814,7 @@ input[role="switch"] {
   color: var(--tblr-body-color);
   border-radius: 16px;
   padding: 1.25rem;
-  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.24);
+  box-shadow: 0 24px 48px rgb(15 23 42 / 24%);
 }
 
 .modal-box h3 {
@@ -844,7 +852,7 @@ code {
   color: var(--tblr-emphasis-color);
 }
 
-@media (max-width: 575px) {
+@media (width <= 575px) {
   .page-header .container-xl,
   .page-body .container-xl {
     padding-left: 0.75rem;
@@ -933,7 +941,7 @@ code {
   }
 }
 
-@media (min-width: 768px) {
+@media (width >= 768px) {
   .counters-row {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }

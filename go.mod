@@ -4,7 +4,7 @@ go 1.24.0
 
 require (
 	github.com/a-h/templ v0.3.1001
-	github.com/gofiber/fiber/v2 v2.52.11
+	github.com/gofiber/fiber/v2 v2.52.13
 	modernc.org/sqlite v1.46.0
 )
 

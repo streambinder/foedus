@@ -1,15 +1,21 @@
-(function () {
-  "use strict";
-
+(() => {
   var placesSection = document.getElementById("places");
   var honeymoonSection = document.getElementById("honeymoon");
   if (!placesSection && !honeymoonSection) return;
 
-  var modalEl = placesSection ? placesSection.querySelector("#places-modal") : null;
-  var modalImage = modalEl ? modalEl.querySelector("#places-modal-image") : null;
-  var modalLabel = modalEl ? modalEl.querySelector("#places-modal-label") : null;
+  var modalEl = placesSection
+    ? placesSection.querySelector("#places-modal")
+    : null;
+  var modalImage = modalEl
+    ? modalEl.querySelector("#places-modal-image")
+    : null;
+  var modalLabel = modalEl
+    ? modalEl.querySelector("#places-modal-label")
+    : null;
   var modalDate = modalEl ? modalEl.querySelector("#places-modal-date") : null;
-  var modalClose = modalEl ? modalEl.querySelector("#places-modal-close") : null;
+  var modalClose = modalEl
+    ? modalEl.querySelector("#places-modal-close")
+    : null;
   var activePin = null;
   var LEAFLET_CSS_URL = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
   var LEAFLET_JS_URL = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
@@ -33,13 +39,16 @@
     var initStarted = false;
 
     if ("IntersectionObserver" in window) {
-      var observer = new IntersectionObserver(function (observed) {
-        observed.forEach(function (entry) {
-          if (!entry.isIntersecting) return;
-          init();
-          observer.disconnect();
-        });
-      }, { rootMargin: "240px 0px" });
+      var observer = new IntersectionObserver(
+        (observed) => {
+          observed.forEach((entry) => {
+            if (!entry.isIntersecting) return;
+            init();
+            observer.disconnect();
+          });
+        },
+        { rootMargin: "240px 0px" },
+      );
       observer.observe(sectionEl);
     } else {
       init();
@@ -48,9 +57,11 @@
     function init() {
       if (map || initStarted) return;
       initStarted = true;
-      ensureLeaflet().then(startMap).catch(function () {
-        initStarted = false;
-      });
+      ensureLeaflet()
+        .then(startMap)
+        .catch(() => {
+          initStarted = false;
+        });
     }
 
     function startMap() {
@@ -65,26 +76,33 @@
         tap: true,
         touchZoom: true,
         zoomControl: false,
-        attributionControl: true
+        attributionControl: true,
       });
 
-      L.tileLayer("https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png", {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
-        subdomains: "abcd",
-        maxZoom: 19
-      }).addTo(map);
+      L.tileLayer(
+        "https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png",
+        {
+          attribution:
+            '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
+          subdomains: "abcd",
+          maxZoom: 19,
+        },
+      ).addTo(map);
 
-      L.tileLayer("https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png", {
-        attribution: "",
-        subdomains: "abcd",
-        maxZoom: 19,
-        pane: "overlayPane"
-      }).addTo(map);
+      L.tileLayer(
+        "https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png",
+        {
+          attribution: "",
+          subdomains: "abcd",
+          maxZoom: 19,
+          pane: "overlayPane",
+        },
+      ).addTo(map);
 
       entries = buildEntries(mode, items, pinsEl, map);
 
       if (mode === "honeymoon" && entries.length > 1) {
-        L.polyline(createCurvedRoute(entries.map(function (e) { return e.latlng; })), {
+        L.polyline(createCurvedRoute(entries.map((e) => e.latlng)), {
           color: "#8a6a4d",
           weight: 3,
           opacity: 0.95,
@@ -92,14 +110,14 @@
           lineJoin: "round",
           dashArray: "2 12",
           interactive: false,
-          className: "timeline-route timeline-route--active"
+          className: "timeline-route timeline-route--active",
         }).addTo(map);
       }
 
       map.on("move zoom resize load", render);
 
       fitMap(true);
-      window.setTimeout(function () {
+      window.setTimeout(() => {
         map.invalidateSize();
         fitMap(true);
         render();
@@ -113,19 +131,28 @@
       var maxZoom = mode === "places" ? 14 : 8;
 
       if (entries.length === 1) {
-        map.setView(entries[0].latlng, Math.max(minZoom, Math.min(maxZoom, 13)), { animate: !immediate });
+        map.setView(
+          entries[0].latlng,
+          Math.max(minZoom, Math.min(maxZoom, 13)),
+          { animate: !immediate },
+        );
         return;
       }
 
-      var bounds = L.latLngBounds(entries.map(function (e) { return e.latlng; }));
-      var pad = mode === "places"
-        ? L.point(80, 80)
-        : L.point(
-            Math.max(36, Math.round(mapEl.clientWidth * 0.08)) * 2,
-            Math.max(32, Math.round(mapEl.clientHeight * 0.08)) + Math.max(120, Math.round(mapEl.clientHeight * 0.18))
-          );
+      var bounds = L.latLngBounds(entries.map((e) => e.latlng));
+      var pad =
+        mode === "places"
+          ? L.point(80, 80)
+          : L.point(
+              Math.max(36, Math.round(mapEl.clientWidth * 0.08)) * 2,
+              Math.max(32, Math.round(mapEl.clientHeight * 0.08)) +
+                Math.max(120, Math.round(mapEl.clientHeight * 0.18)),
+            );
 
-      var fitZoom = Math.max(minZoom, Math.min(maxZoom, map.getBoundsZoom(bounds, false, pad)));
+      var fitZoom = Math.max(
+        minZoom,
+        Math.min(maxZoom, map.getBoundsZoom(bounds, false, pad)),
+      );
       map.setView(weightedCentroid(entries), fitZoom, { animate: !immediate });
     }
 
@@ -138,7 +165,7 @@
       var edgeMargin = 18;
       var honeymoonOverflow = 240;
 
-      entries.forEach(function (entry, idx) {
+      entries.forEach((entry, idx) => {
         var point = map.latLngToContainerPoint(entry.latlng);
 
         if (mode === "honeymoon") {
@@ -160,10 +187,7 @@
         }
 
         var inside =
-          point.x >= 0 &&
-          point.y >= 0 &&
-          point.x <= width &&
-          point.y <= height;
+          point.x >= 0 && point.y >= 0 && point.x <= width && point.y <= height;
 
         // animated pins use class toggling instead of display:none so transitions can run
         entry.element.classList.remove("places-pin--hidden");
@@ -174,7 +198,10 @@
           setPinScale(entry, 1);
           entry.element.style.left = point.x + "px";
           entry.element.style.top = point.y + "px";
-          entry.element.classList.toggle("places-pin--active", idx === getActivePlaceIndex());
+          entry.element.classList.toggle(
+            "places-pin--active",
+            idx === getActivePlaceIndex(),
+          );
           visibleEntries.push(entry);
         } else {
           var clamped = clampToEdge(point, width, height, edgeMargin);
@@ -200,14 +227,14 @@
     if (leafletAssetsPromise) return leafletAssetsPromise;
 
     loadLeafletStylesheet();
-    leafletAssetsPromise = new Promise(function (resolve, reject) {
+    leafletAssetsPromise = new Promise((resolve, reject) => {
       var script = document.createElement("script");
       script.src = LEAFLET_JS_URL;
       script.async = true;
       script.defer = true;
       script.crossOrigin = "anonymous";
       script.setAttribute("fetchpriority", "low");
-      script.onload = function () {
+      script.onload = () => {
         if (window.L) {
           resolve();
         } else {
@@ -215,7 +242,7 @@
           reject(new Error("Leaflet did not initialize"));
         }
       };
-      script.onerror = function () {
+      script.onerror = () => {
         leafletAssetsPromise = null;
         reject(new Error("Leaflet failed to load"));
       };
@@ -257,39 +284,47 @@
 
     var halfW = Math.max(1, cx - margin);
     var halfH = Math.max(1, cy - margin);
-    var scale = Math.min(halfW / Math.abs(dx || 1e-6), halfH / Math.abs(dy || 1e-6));
+    var scale = Math.min(
+      halfW / Math.abs(dx || 1e-6),
+      halfH / Math.abs(dy || 1e-6),
+    );
     return {
       x: cx + dx * scale,
-      y: cy + dy * scale
+      y: cy + dy * scale,
     };
   }
 
   // collapse edge pins that are too close along the same border into a single representative pin.
   // hidden pins reappear automatically next render once spacing increases.
   function collapseEdgeClusters(edgeEntries) {
-    edgeEntries.forEach(function (entry) {
+    edgeEntries.forEach((entry) => {
       entry.element.classList.remove("places-pin--cluster");
     });
     if (edgeEntries.length < 2) return;
 
     var clusterDistance = 28;
     var sides = { top: [], bottom: [], left: [], right: [] };
-    edgeEntries.forEach(function (entry) {
+    edgeEntries.forEach((entry) => {
       sides[classifyEdge(entry)].push(entry);
     });
 
-    Object.keys(sides).forEach(function (side) {
+    Object.keys(sides).forEach((side) => {
       var group = sides[side];
       if (group.length < 2) return;
-      var axisProp = (side === "top" || side === "bottom") ? "left" : "top";
-      group.sort(function (a, b) {
-        return (parseFloat(a.element.style[axisProp]) || 0) - (parseFloat(b.element.style[axisProp]) || 0);
-      });
+      var axisProp = side === "top" || side === "bottom" ? "left" : "top";
+      group.sort(
+        (a, b) =>
+          (parseFloat(a.element.style[axisProp]) || 0) -
+          (parseFloat(b.element.style[axisProp]) || 0),
+      );
 
       var clusterStart = 0;
       for (var i = 1; i <= group.length; i++) {
         var prevPos = parseFloat(group[i - 1].element.style[axisProp]) || 0;
-        var curPos = i < group.length ? (parseFloat(group[i].element.style[axisProp]) || 0) : Infinity;
+        var curPos =
+          i < group.length
+            ? parseFloat(group[i].element.style[axisProp]) || 0
+            : Infinity;
         if (curPos - prevPos >= clusterDistance) {
           if (i - clusterStart > 1) {
             // hide cluster members except the first; survivor stays visible
@@ -311,9 +346,13 @@
     var w = parent ? parent.clientWidth : 0;
     var h = parent ? parent.clientHeight : 0;
     var distances = { left: x, right: w - x, top: y, bottom: h - y };
-    var min = Infinity, side = "top";
-    Object.keys(distances).forEach(function (key) {
-      if (distances[key] < min) { min = distances[key]; side = key; }
+    var min = Infinity,
+      side = "top";
+    Object.keys(distances).forEach((key) => {
+      if (distances[key] < min) {
+        min = distances[key];
+        side = key;
+      }
     });
     return side;
   }
@@ -321,15 +360,20 @@
   function buildEntries(mode, items, pinsEl, map) {
     var entries = [];
 
-    items.forEach(function (place, idx) {
-      if (typeof place.lat !== "number" || typeof place.lng !== "number" || (!place.lat && !place.lng)) return;
+    items.forEach((place, idx) => {
+      if (
+        typeof place.lat !== "number" ||
+        typeof place.lng !== "number" ||
+        (!place.lat && !place.lng)
+      )
+        return;
 
       var latlng = L.latLng(place.lat, place.lng);
       var pin = buildPin(place, idx, mode);
       if (!pin) return;
 
       if (mode === "places") {
-        pin.addEventListener("click", function () {
+        pin.addEventListener("click", () => {
           openPlace(place, pin);
         });
       }
@@ -357,19 +401,41 @@
     pin.dataset.placeIndex = String(idx);
     if (!place.image) {
       pin.classList.add("places-pin--placeholder");
-      pin.innerHTML = '<span>' + escapeHtml(initials(place.label || place.name || "P")) + "</span>";
+      pin.innerHTML =
+        "<span>" +
+        escapeHtml(initials(place.label || place.name || "P")) +
+        "</span>";
     } else {
-      pin.innerHTML = '<img src="' + escapeAttr(place.image) + '" alt="' + escapeAttr(place.label || "Place") + '" loading="lazy" decoding="async" fetchpriority="low"/>';
+      pin.innerHTML =
+        '<img src="' +
+        escapeAttr(place.image) +
+        '" alt="' +
+        escapeAttr(place.label || "Place") +
+        '" loading="lazy" decoding="async" fetchpriority="low"/>';
     }
     return pin;
   }
 
   function renderHoneymoonPin(place) {
     var title = escapeHtml(place.label || place.name || "Stop");
-    var transparentClass = supportsTransparency(place.image) ? " places-pin-media--transparent" : "";
+    var transparentClass = supportsTransparency(place.image)
+      ? " places-pin-media--transparent"
+      : "";
     return place.image
-      ? '<div class="places-pin-media' + transparentClass + '"><img src="' + escapeAttr(place.image) + '" alt="' + escapeAttr(place.label || place.name || "Stop") + '" loading="lazy" decoding="async" fetchpriority="low"/><div class="places-pin-overlay"><h3>' + title + '</h3></div></div>'
-      : '<div class="places-pin-media places-pin-media--placeholder"><span>' + escapeHtml(initials(place.label || place.name || "H")) + '</span><div class="places-pin-overlay"><h3>' + title + '</h3></div></div>';
+      ? '<div class="places-pin-media' +
+          transparentClass +
+          '"><img src="' +
+          escapeAttr(place.image) +
+          '" alt="' +
+          escapeAttr(place.label || place.name || "Stop") +
+          '" loading="lazy" decoding="async" fetchpriority="low"/><div class="places-pin-overlay"><h3>' +
+          title +
+          "</h3></div></div>"
+      : '<div class="places-pin-media places-pin-media--placeholder"><span>' +
+          escapeHtml(initials(place.label || place.name || "H")) +
+          '</span><div class="places-pin-overlay"><h3>' +
+          title +
+          "</h3></div></div>";
   }
 
   function applyOverlapLayout(entries, mode) {
@@ -378,33 +444,55 @@
     var minScale = mode === "honeymoon" ? 0.58 : 0.72;
     var overlapTarget = 0.25;
     var maxOffset = mode === "honeymoon" ? 32 : 14;
-    var layouts = entries.map(function () {
-      return { scale: 1, offsetX: 0, offsetY: 0 };
-    });
+    var layouts = entries.map(() => ({ scale: 1, offsetX: 0, offsetY: 0 }));
 
     for (var pass = 0; pass < 10; pass++) {
       var changed = false;
 
       for (var i = 0; i < entries.length; i++) {
         for (var j = i + 1; j < entries.length; j++) {
-          var overlapRatio = getOverlapRatio(buildPinRect(entries[i], layouts[i]), buildPinRect(entries[j], layouts[j]));
+          var overlapRatio = getOverlapRatio(
+            buildPinRect(entries[i], layouts[i]),
+            buildPinRect(entries[j], layouts[j]),
+          );
 
           if (overlapRatio <= overlapTarget) continue;
 
           var nextScaleA = Math.max(minScale, layouts[i].scale - 0.05);
           var nextScaleB = Math.max(minScale, layouts[j].scale - 0.05);
-          if (nextScaleA !== layouts[i].scale || nextScaleB !== layouts[j].scale) {
+          if (
+            nextScaleA !== layouts[i].scale ||
+            nextScaleB !== layouts[j].scale
+          ) {
             layouts[i].scale = nextScaleA;
             layouts[j].scale = nextScaleB;
             changed = true;
           }
 
-          overlapRatio = getOverlapRatio(buildPinRect(entries[i], layouts[i]), buildPinRect(entries[j], layouts[j]));
+          overlapRatio = getOverlapRatio(
+            buildPinRect(entries[i], layouts[i]),
+            buildPinRect(entries[j], layouts[j]),
+          );
           if (overlapRatio <= overlapTarget) continue;
 
-          var separation = getSeparationVector(entries[i], entries[j], layouts[i], layouts[j], i, j);
+          var separation = getSeparationVector(
+            entries[i],
+            entries[j],
+            layouts[i],
+            layouts[j],
+            i,
+            j,
+          );
           var nudgeDistance = mode === "honeymoon" ? 8 : 5;
-          if (nudgeEntries(layouts[i], layouts[j], separation, nudgeDistance, maxOffset)) {
+          if (
+            nudgeEntries(
+              layouts[i],
+              layouts[j],
+              separation,
+              nudgeDistance,
+              maxOffset,
+            )
+          ) {
             changed = true;
           }
         }
@@ -413,7 +501,7 @@
       if (!changed) break;
     }
 
-    entries.forEach(function (entry, index) {
+    entries.forEach((entry, index) => {
       setPinScale(entry, layouts[index].scale);
       setPinOffset(entry, layouts[index].offsetX, layouts[index].offsetY);
     });
@@ -430,24 +518,29 @@
       top: center.y - height / 2,
       right: center.x + width / 2,
       bottom: center.y + height / 2,
-      area: width * height
+      area: width * height,
     };
   }
 
   function getPinCenter(entry, layout) {
     return {
       x: (parseFloat(entry.element.style.left) || 0) + (layout.offsetX || 0),
-      y: (parseFloat(entry.element.style.top) || 0) + (layout.offsetY || 0)
+      y: (parseFloat(entry.element.style.top) || 0) + (layout.offsetY || 0),
     };
   }
 
   function getPinVisualScale(entry, scale) {
-    return scale * (entry.element.classList.contains("places-pin--active") ? 1.12 : 1);
+    return (
+      scale *
+      (entry.element.classList.contains("places-pin--active") ? 1.12 : 1)
+    );
   }
 
   function getOverlapRatio(rectA, rectB) {
-    var overlapWidth = Math.min(rectA.right, rectB.right) - Math.max(rectA.left, rectB.left);
-    var overlapHeight = Math.min(rectA.bottom, rectB.bottom) - Math.max(rectA.top, rectB.top);
+    var overlapWidth =
+      Math.min(rectA.right, rectB.right) - Math.max(rectA.left, rectB.left);
+    var overlapHeight =
+      Math.min(rectA.bottom, rectB.bottom) - Math.max(rectA.top, rectB.top);
     if (overlapWidth <= 0 || overlapHeight <= 0) return 0;
 
     return (overlapWidth * overlapHeight) / Math.min(rectA.area, rectB.area);
@@ -462,7 +555,14 @@
     entry.element.style.setProperty("--places-pin-offset-y", offsetY + "px");
   }
 
-  function getSeparationVector(entryA, entryB, layoutA, layoutB, indexA, indexB) {
+  function getSeparationVector(
+    entryA,
+    entryB,
+    layoutA,
+    layoutB,
+    indexA,
+    indexB,
+  ) {
     var centerA = getPinCenter(entryA, layoutA);
     var centerB = getPinCenter(entryB, layoutB);
     var dx = centerB.x - centerA.x;
@@ -475,13 +575,14 @@
     var angle = ((indexA + indexB + 1) * 137.5 * Math.PI) / 180;
     return {
       x: Math.cos(angle),
-      y: Math.sin(angle)
+      y: Math.sin(angle),
     };
   }
 
   function weightedCentroid(entries) {
-    var sumLat = 0, sumLng = 0;
-    entries.forEach(function (entry) {
+    var sumLat = 0,
+      sumLng = 0;
+    entries.forEach((entry) => {
       sumLat += entry.latlng.lat;
       sumLng += entry.latlng.lng;
     });
@@ -492,14 +593,26 @@
     var length = Math.sqrt(dx * dx + dy * dy) || 1;
     return {
       x: dx / length,
-      y: dy / length
+      y: dy / length,
     };
   }
 
   function nudgeEntries(layoutA, layoutB, separation, distance, maxOffset) {
-    var nextA = clampOffset(layoutA.offsetX - separation.x * distance, layoutA.offsetY - separation.y * distance, maxOffset);
-    var nextB = clampOffset(layoutB.offsetX + separation.x * distance, layoutB.offsetY + separation.y * distance, maxOffset);
-    var changed = nextA.x !== layoutA.offsetX || nextA.y !== layoutA.offsetY || nextB.x !== layoutB.offsetX || nextB.y !== layoutB.offsetY;
+    var nextA = clampOffset(
+      layoutA.offsetX - separation.x * distance,
+      layoutA.offsetY - separation.y * distance,
+      maxOffset,
+    );
+    var nextB = clampOffset(
+      layoutB.offsetX + separation.x * distance,
+      layoutB.offsetY + separation.y * distance,
+      maxOffset,
+    );
+    var changed =
+      nextA.x !== layoutA.offsetX ||
+      nextA.y !== layoutA.offsetY ||
+      nextB.x !== layoutB.offsetX ||
+      nextB.y !== layoutB.offsetY;
 
     layoutA.offsetX = nextA.x;
     layoutA.offsetY = nextA.y;
@@ -518,7 +631,7 @@
     var ratio = maxDistance / distance;
     return {
       x: x * ratio,
-      y: y * ratio
+      y: y * ratio,
     };
   }
 
@@ -538,11 +651,11 @@
       var offset = length * 0.26;
       var control1 = L.latLng(
         start.lat + dy * 0.22 + normalLat * offset * sign,
-        start.lng + dx * 0.22 + normalLng * offset * sign
+        start.lng + dx * 0.22 + normalLng * offset * sign,
       );
       var control2 = L.latLng(
         start.lat + dy * 0.78 + normalLat * offset * sign,
-        start.lng + dx * 0.78 + normalLng * offset * sign
+        start.lng + dx * 0.78 + normalLng * offset * sign,
       );
       var sampled = sampleBezier(start, control1, control2, end, 14);
       for (var j = 1; j < sampled.length; j++) {
@@ -580,7 +693,8 @@
       modalImage.style.display = place.image ? "" : "none";
     }
     if (modalLabel) modalLabel.textContent = place.label || place.name || "";
-    if (modalDate) modalDate.textContent = place.formatted_date || place.date || "";
+    if (modalDate)
+      modalDate.textContent = place.formatted_date || place.date || "";
 
     setActivePin(pin);
     modalEl.classList.remove("is-closing");
@@ -597,10 +711,10 @@
       modalClose.addEventListener("click", closeModal);
     }
     if (modalEl) {
-      modalEl.addEventListener("click", function (event) {
+      modalEl.addEventListener("click", (event) => {
         if (event.target === modalEl) closeModal();
       });
-      modalEl.addEventListener("close", function () {
+      modalEl.addEventListener("close", () => {
         modalEl.classList.remove("is-closing");
         document.body.style.overflow = "";
         setActivePin(null);
@@ -665,7 +779,10 @@
   }
 
   function prefersReducedMotion() {
-    return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    return (
+      window.matchMedia &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    );
   }
 
   function escapeHtml(str) {
@@ -687,7 +804,7 @@
       .split(/\s+/)
       .filter(Boolean)
       .slice(0, 2)
-      .map(function (part) { return part.charAt(0).toUpperCase(); })
+      .map((part) => part.charAt(0).toUpperCase())
       .join("");
   }
 

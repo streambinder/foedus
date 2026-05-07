@@ -1,6 +1,4 @@
-(function () {
-  "use strict";
-
+(() => {
   function initAutocomplete(config) {
     var input = document.getElementById(config.inputId);
     var dropdown = document.getElementById(config.dropdownId);
@@ -28,14 +26,20 @@
         hide();
         return;
       }
-      items.forEach(function (item, idx) {
+      items.forEach((item, idx) => {
         var div = document.createElement("div");
         var name = extractName(item);
         var address = extractAddress(item, name);
         div.innerHTML =
-          '<span style="font-weight:500;color:var(--charcoal-dark)">' + escapeHtml(name) + "</span>" +
-          (address ? '<br><span style="font-size:var(--fs-xs);color:var(--sage-dark)">' + escapeHtml(address) + "</span>" : "");
-        div.addEventListener("mousedown", function (e) {
+          '<span style="font-weight:500;color:var(--charcoal-dark)">' +
+          escapeHtml(name) +
+          "</span>" +
+          (address
+            ? '<br><span style="font-size:var(--fs-xs);color:var(--sage-dark)">' +
+              escapeHtml(address) +
+              "</span>"
+            : "");
+        div.addEventListener("mousedown", (e) => {
           e.preventDefault();
           select(idx);
         });
@@ -54,7 +58,13 @@
 
     function extractCity(item) {
       if (!item.address) return "";
-      return item.address.city || item.address.town || item.address.village || item.address.municipality || "";
+      return (
+        item.address.city ||
+        item.address.town ||
+        item.address.village ||
+        item.address.municipality ||
+        ""
+      );
     }
 
     function select(idx) {
@@ -70,7 +80,8 @@
     }
 
     function extractName(item) {
-      if (item.namedetails && item.namedetails.name) return item.namedetails.name;
+      if (item.namedetails && item.namedetails.name)
+        return item.namedetails.name;
       return item.display_name;
     }
 
@@ -100,12 +111,16 @@
       fetch(url, {
         headers: { "Accept-Language": lang },
       })
-        .then(function (res) { return res.json(); })
-        .then(function (data) { render(data); })
-        .catch(function () { hide(); });
+        .then((res) => res.json())
+        .then((data) => {
+          render(data);
+        })
+        .catch(() => {
+          hide();
+        });
     }
 
-    input.addEventListener("input", function () {
+    input.addEventListener("input", () => {
       nameHidden.value = "";
       addressHidden.value = "";
       if (cityHidden) cityHidden.value = "";
@@ -115,10 +130,12 @@
         hide();
         return;
       }
-      debounceTimer = setTimeout(function () { search(q); }, 350);
+      debounceTimer = setTimeout(() => {
+        search(q);
+      }, 350);
     });
 
-    input.addEventListener("keydown", function (e) {
+    input.addEventListener("keydown", (e) => {
       if (results.length === 0) return;
       if (e.key === "ArrowDown") {
         e.preventDefault();
@@ -134,11 +151,11 @@
       }
     });
 
-    input.addEventListener("blur", function () {
+    input.addEventListener("blur", () => {
       setTimeout(hide, 200);
     });
 
-    document.addEventListener("click", function (e) {
+    document.addEventListener("click", (e) => {
       if (!input.contains(e.target) && !dropdown.contains(e.target)) {
         hide();
       }

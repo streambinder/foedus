@@ -1,0 +1,25 @@
+{
+  "extends": ["stylelint-config-standard"],
+  "rules": {
+    "selector-class-pattern": null,
+    "no-descending-specificity": null,
+    "custom-property-empty-line-before": null,
+    "declaration-block-no-duplicate-properties": [
+      true,
+      { "ignore": ["consecutive-duplicates-with-different-values"] }
+    ],
+    "no-duplicate-selectors": null,
+    "declaration-block-no-shorthand-property-overrides": null,
+    "selector-pseudo-element-no-unknown": [
+      true,
+      { "ignorePseudoElements": ["input-placeholder"] }
+    ]
+  },
+  "overrides": [
+    {
+      "extends": ["stylelint-config-recommended-scss"],
+      "files": ["*.scss", "**/*.scss"],
+      "customSyntax": "postcss-scss"
+    }
+  ]
+}

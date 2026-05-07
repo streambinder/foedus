@@ -36,6 +36,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VALIDATE_ALL_CODEBASE: ${{ !contains(github.event_name, 'pull_request') }}
           VALIDATE_JSCPD: false
+          # Go validation handled by build pipeline; super-linter golangci-lint
+          # multi-package mode misreports cross-dir typecheck errors
+          VALIDATE_GO: false
+          VALIDATE_GO_MODULES: false
   docker:
     needs: [super-linter]
     runs-on: ubuntu-latest

@@ -1,8 +1,8 @@
-(function () {
-  "use strict";
-
+(() => {
   var container = document.querySelector(".soundtrack-search");
-  if (!container) { return; }
+  if (!container) {
+    return;
+  }
 
   var MSG_ADDED = container.dataset.msgAdded;
   var MSG_ERROR = container.dataset.msgError;
@@ -24,11 +24,17 @@
     var margin = 12;
     var gap = 4;
     var width = Math.min(rect.width, Math.max(160, viewportWidth - margin * 2));
-    var left = Math.max(viewportLeft + margin, Math.min(rect.left, viewportLeft + viewportWidth - width - margin));
+    var left = Math.max(
+      viewportLeft + margin,
+      Math.min(rect.left, viewportLeft + viewportWidth - width - margin),
+    );
     var top = rect.bottom + gap;
     var availableBelow = viewportTop + viewportHeight - top - margin;
     var availableAbove = rect.top - viewportTop - margin;
-    var maxHeight = Math.min(288, Math.max(160, Math.max(availableBelow, availableAbove)));
+    var maxHeight = Math.min(
+      288,
+      Math.max(160, Math.max(availableBelow, availableAbove)),
+    );
 
     if (availableBelow < 160 && availableAbove > availableBelow) {
       top = Math.max(viewportTop + margin, rect.top - gap - maxHeight);
@@ -42,7 +48,7 @@
     results.style.transform = "none";
   }
 
-  input.addEventListener("input", function () {
+  input.addEventListener("input", () => {
     clearTimeout(debounceTimer);
     var query = input.value.trim();
     if (query.length < 2) {
@@ -50,7 +56,7 @@
       results.style.display = "none";
       return;
     }
-    debounceTimer = setTimeout(function () {
+    debounceTimer = setTimeout(() => {
       search(query);
     }, 300);
   });
@@ -60,21 +66,21 @@
     results.style.display = "none";
   }
 
-  document.addEventListener("click", function (e) {
+  document.addEventListener("click", (e) => {
     if (!container.contains(e.target) && !results.contains(e.target)) {
       dismissResults();
     }
   });
 
-  input.addEventListener("focus", function () {
+  input.addEventListener("focus", () => {
     if (results.children.length > 0) {
       positionResults();
       results.style.display = "block";
     }
   });
 
-  input.addEventListener("blur", function () {
-    setTimeout(function () {
+  input.addEventListener("blur", () => {
+    setTimeout(() => {
       dismissResults();
     }, 150);
   });
@@ -84,10 +90,17 @@
     if (results.style.display === "block") positionResults();
   }
   window.addEventListener("resize", repositionIfVisible, { passive: true });
-  window.addEventListener("scroll", repositionIfVisible, { capture: true, passive: true });
+  window.addEventListener("scroll", repositionIfVisible, {
+    capture: true,
+    passive: true,
+  });
   if (window.visualViewport) {
-    window.visualViewport.addEventListener("resize", repositionIfVisible, { passive: true });
-    window.visualViewport.addEventListener("scroll", repositionIfVisible, { passive: true });
+    window.visualViewport.addEventListener("resize", repositionIfVisible, {
+      passive: true,
+    });
+    window.visualViewport.addEventListener("scroll", repositionIfVisible, {
+      passive: true,
+    });
   }
 
   function search(query) {
@@ -97,19 +110,19 @@
     searchController = window.AbortController ? new AbortController() : null;
     fetch(
       "/soundtrack/search?q=" + encodeURIComponent(query),
-      searchController ? { signal: searchController.signal } : undefined
+      searchController ? { signal: searchController.signal } : undefined,
     )
-      .then(function (res) {
+      .then((res) => {
         if (!res.ok) return [];
         return res.json();
       })
-      .then(function (tracks) {
+      .then((tracks) => {
         results.innerHTML = "";
         if (!tracks || tracks.length === 0) {
           results.style.display = "none";
           return;
         }
-        tracks.forEach(function (track) {
+        tracks.forEach((track) => {
           var item = document.createElement("div");
           item.className = "soundtrack-result-item";
 
@@ -134,11 +147,11 @@
             '<button type="button" class="soundtrack-add-btn" aria-label="Add">+</button>';
 
           var btn = item.querySelector(".soundtrack-add-btn");
-          btn.addEventListener("click", function (e) {
+          btn.addEventListener("click", (e) => {
             e.stopPropagation();
             addTrack(track, btn, item);
           });
-          item.addEventListener("click", function () {
+          item.addEventListener("click", () => {
             addTrack(track, btn, item);
           });
           item.style.cursor = "pointer";
@@ -148,7 +161,7 @@
         results.style.display = "block";
         positionResults();
       })
-      .catch(function (err) {
+      .catch((err) => {
         if (err && err.name === "AbortError") return;
         results.style.display = "none";
       });
@@ -157,7 +170,8 @@
   function addTrack(track, btn, row) {
     var inviteID = "";
     try {
-      inviteID = new URLSearchParams(window.location.search).get("invite") || "";
+      inviteID =
+        new URLSearchParams(window.location.search).get("invite") || "";
     } catch (_) {}
 
     btn.disabled = true;
@@ -169,11 +183,11 @@
         uri: track.uri,
         title: track.name,
         artist: track.artist,
-        url: track.id ? ("https://open.spotify.com/track/" + track.id) : "",
-        invite_id: inviteID
+        url: track.id ? "https://open.spotify.com/track/" + track.id : "",
+        invite_id: inviteID,
       }),
     })
-      .then(function (res) {
+      .then((res) => {
         if (res.status === 429) {
           showToast(MSG_RATE, true);
           btn.disabled = false;
@@ -192,11 +206,13 @@
         }
         var embed = document.querySelector(".soundtrack-embed");
         if (embed) {
-          setTimeout(function () { embed.src = embed.src; }, 2000);
+          setTimeout(() => {
+            embed.src = embed.src;
+          }, 2000);
         }
         showToast(MSG_ADDED, false);
       })
-      .catch(function () {
+      .catch(() => {
         showToast(MSG_ERROR, true);
         btn.disabled = false;
         btn.textContent = "+";
@@ -208,14 +224,15 @@
     if (existing) existing.remove();
 
     var toast = document.createElement("div");
-    toast.className = "soundtrack-toast" + (isError ? " soundtrack-toast--error" : "");
+    toast.className =
+      "soundtrack-toast" + (isError ? " soundtrack-toast--error" : "");
     toast.textContent = msg;
     document.body.appendChild(toast);
 
-    setTimeout(function () {
+    setTimeout(() => {
       toast.classList.add("soundtrack-toast--fade");
     }, 2000);
-    setTimeout(function () {
+    setTimeout(() => {
       toast.remove();
     }, 2600);
   }
@@ -227,6 +244,10 @@
   }
 
   function escapeAttr(str) {
-    return str.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    return str
+      .replace(/&/g, "&amp;")
+      .replace(/"/g, "&quot;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
   }
 })();

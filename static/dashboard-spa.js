@@ -1,6 +1,4 @@
-(function () {
-  "use strict";
-
+(() => {
   var selectedGuestIds = new Set();
   var guestSearchTimer = null;
   var invitationSearchValue = "";
@@ -11,7 +9,7 @@
     "dashboard-guests",
     "dashboard-invitations",
     "dashboard-registry",
-    "dashboard-soundtrack-events"
+    "dashboard-soundtrack-events",
   ];
 
   function init() {
@@ -30,20 +28,24 @@
     document.addEventListener("submit", handleSubmit);
     document.addEventListener("change", handleChange);
     document.addEventListener("input", handleInput);
-    window.addEventListener("popstate", function () {
+    window.addEventListener("popstate", () => {
       refreshSections(window.location.href, ["dashboard-guests"]);
     });
   }
 
   function handleClick(event) {
-    var editLink = event.target.closest('.actions a[href^="/dashboard/"][href$="/edit"]');
+    var editLink = event.target.closest(
+      '.actions a[href^="/dashboard/"][href$="/edit"]',
+    );
     if (editLink) {
       event.preventDefault();
       openDashboardEditModal(editLink.href);
       return;
     }
 
-    var paginationLink = event.target.closest('#dashboard-guests .pagination a[href^="/dashboard"]');
+    var paginationLink = event.target.closest(
+      '#dashboard-guests .pagination a[href^="/dashboard"]',
+    );
     if (paginationLink) {
       event.preventDefault();
       history.pushState({}, "", paginationLink.href);
@@ -71,12 +73,13 @@
 
   function handleInput(event) {
     if (event.target.id === "invitation-label-input") {
-      event.target.dataset.userEdited = event.target.value.trim() === "" ? "" : "1";
+      event.target.dataset.userEdited =
+        event.target.value.trim() === "" ? "" : "1";
       return;
     }
     if (event.target.id === "guest-search") {
       clearTimeout(guestSearchTimer);
-      guestSearchTimer = setTimeout(function () {
+      guestSearchTimer = setTimeout(() => {
         var url = new URL(window.location.href);
         var value = event.target.value.trim();
         if (value) {
@@ -104,7 +107,7 @@
     if (!isDashboardForm(form)) return;
 
     event.preventDefault();
-    submitForm(form).catch(function (err) {
+    submitForm(form).catch((err) => {
       console.error(err);
       window.alert("Dashboard request failed.");
     });
@@ -130,7 +133,7 @@
       method: method,
       body: method === "GET" ? null : formData,
       credentials: "same-origin",
-      headers: buildRequestHeaders(csrfToken)
+      headers: buildRequestHeaders(csrfToken),
     });
     if (!response.ok) {
       throw new Error("Request failed: " + response.status);
@@ -149,7 +152,10 @@
       selectedGuestIds.delete(extractTrailingID(action));
     }
 
-    await refreshSections(window.location.href, getRefreshSections(action, form));
+    await refreshSections(
+      window.location.href,
+      getRefreshSections(action, form),
+    );
     closeDashboardModal();
   }
 
@@ -167,13 +173,27 @@
   }
 
   function getRefreshSections(action, form) {
-    if (/\/dashboard\/guests\/\d+\/confirm\/(ceremony|reception)$/.test(action)) {
+    if (
+      /\/dashboard\/guests\/\d+\/confirm\/(ceremony|reception)$/.test(action)
+    ) {
       return ["dashboard-counters", "dashboard-guests"];
     }
-    if (/\/dashboard\/guests(\/import)?$/.test(action) || /\/dashboard\/guests\/\d+$/.test(action) || /\/dashboard\/guests\/\d+\/delete$/.test(action)) {
-      return ["dashboard-flash", "dashboard-counters", "dashboard-guests", "dashboard-invitations"];
+    if (
+      /\/dashboard\/guests(\/import)?$/.test(action) ||
+      /\/dashboard\/guests\/\d+$/.test(action) ||
+      /\/dashboard\/guests\/\d+\/delete$/.test(action)
+    ) {
+      return [
+        "dashboard-flash",
+        "dashboard-counters",
+        "dashboard-guests",
+        "dashboard-invitations",
+      ];
     }
-    if (/\/dashboard\/invitations$/.test(action) || /\/dashboard\/invitations\/\d+\/delete$/.test(action)) {
+    if (
+      /\/dashboard\/invitations$/.test(action) ||
+      /\/dashboard\/invitations\/\d+\/delete$/.test(action)
+    ) {
       return ["dashboard-flash", "dashboard-guests", "dashboard-invitations"];
     }
     if (/\/dashboard\/polls(\/\d+\/delete)?$/.test(action)) {
@@ -182,14 +202,24 @@
     if (/\/dashboard\/gifts\/\d+(\/delete)?$/.test(action)) {
       return ["dashboard-flash", "dashboard-registry"];
     }
-    if (/\/dashboard\/registry(?:\/\d+(?:\/(?:move\/(?:up|down)|delete))?)?$/.test(action)) {
+    if (
+      /\/dashboard\/registry(?:\/\d+(?:\/(?:move\/(?:up|down)|delete))?)?$/.test(
+        action,
+      )
+    ) {
       return ["dashboard-flash", "dashboard-registry"];
     }
     if (/\/dashboard\/soundtrack\/\d+\/delete$/.test(action)) {
       return ["dashboard-flash", "dashboard-soundtrack-events"];
     }
     if (/\/dashboard\/settings$/.test(action)) {
-      return ["dashboard-flash", "dashboard-counters", "dashboard-settings", "dashboard-invitations", "dashboard-registry"];
+      return [
+        "dashboard-flash",
+        "dashboard-counters",
+        "dashboard-settings",
+        "dashboard-invitations",
+        "dashboard-registry",
+      ];
     }
     return SECTION_IDS;
   }
@@ -207,7 +237,7 @@
   async function refreshSections(url, sectionIds) {
     var openDetails = getOpenAccordionKeys();
     var doc = await fetchDocument(url);
-    sectionIds.forEach(function (id) {
+    sectionIds.forEach((id) => {
       replaceSection(id, doc);
     });
     restoreOpenAccordions(openDetails);
@@ -223,7 +253,7 @@
   async function fetchDocument(url) {
     var response = await fetch(url, {
       credentials: "same-origin",
-      headers: { "X-Requested-With": "fetch" }
+      headers: { "X-Requested-With": "fetch" },
     });
     if (!response.ok) {
       throw new Error("Request failed: " + response.status);
@@ -242,7 +272,7 @@
 
   function syncGuestSelectionUI() {
     var checkboxes = document.querySelectorAll(".guest-checkbox");
-    checkboxes.forEach(function (checkbox) {
+    checkboxes.forEach((checkbox) => {
       checkbox.checked = selectedGuestIds.has(checkbox.value);
     });
 
@@ -265,12 +295,14 @@
     if (input.dataset.userEdited === "1") return;
 
     var firstNamesById = {};
-    document.querySelectorAll(".guest-checkbox").forEach(function (checkbox) {
-      firstNamesById[checkbox.value] = (checkbox.dataset.firstName || "").trim();
+    document.querySelectorAll(".guest-checkbox").forEach((checkbox) => {
+      firstNamesById[checkbox.value] = (
+        checkbox.dataset.firstName || ""
+      ).trim();
     });
 
     var firstNames = [];
-    selectedGuestIds.forEach(function (id) {
+    selectedGuestIds.forEach((id) => {
       var name = firstNamesById[id];
       if (name) firstNames.push(name);
     });
@@ -301,25 +333,31 @@
     }
 
     var query = invitationSearchValue.trim().toLowerCase();
-    var rows = document.querySelectorAll("#dashboard-invitations tbody tr[data-invitation-guests]");
-    rows.forEach(function (row) {
+    var rows = document.querySelectorAll(
+      "#dashboard-invitations tbody tr[data-invitation-guests]",
+    );
+    rows.forEach((row) => {
       var guestNames = (row.dataset.invitationGuests || "").toLowerCase();
       row.hidden = query !== "" && guestNames.indexOf(query) === -1;
     });
   }
 
   function getOpenAccordionKeys() {
-    return Array.from(document.querySelectorAll(".accordion-collapse.show[data-dashboard-key]")).map(function (el) {
-      return el.dataset.dashboardKey;
-    });
+    return Array.from(
+      document.querySelectorAll(".accordion-collapse.show[data-dashboard-key]"),
+    ).map((el) => el.dataset.dashboardKey);
   }
 
   function restoreOpenAccordions(keys) {
-    keys.forEach(function (key) {
-      var panel = document.querySelector('.accordion-collapse[data-dashboard-key="' + key + '"]');
+    keys.forEach((key) => {
+      var panel = document.querySelector(
+        '.accordion-collapse[data-dashboard-key="' + key + '"]',
+      );
       if (!panel) return;
       panel.classList.add("show");
-      var button = document.querySelector('[data-bs-target="#' + panel.id + '"]');
+      var button = document.querySelector(
+        '[data-bs-target="#' + panel.id + '"]',
+      );
       if (!button) return;
       button.classList.remove("collapsed");
       button.setAttribute("aria-expanded", "true");
@@ -337,14 +375,16 @@
 
     root.innerHTML =
       '<div class="modal-overlay" data-dashboard-modal-overlay>' +
-        '<div class="modal-box dashboard-edit-modal-box">' +
-          '<div class="dashboard-modal-header">' +
-            '<h3>' + escapeHtml(title ? title.textContent.trim() : "Edit") + '</h3>' +
-            '<button type="button" class="outline secondary" data-dashboard-modal-close>Close</button>' +
-          '</div>' +
-          article.innerHTML +
-        '</div>' +
-      '</div>';
+      '<div class="modal-box dashboard-edit-modal-box">' +
+      '<div class="dashboard-modal-header">' +
+      "<h3>" +
+      escapeHtml(title ? title.textContent.trim() : "Edit") +
+      "</h3>" +
+      '<button type="button" class="outline secondary" data-dashboard-modal-close>Close</button>' +
+      "</div>" +
+      article.innerHTML +
+      "</div>" +
+      "</div>";
     bindManagedImageResizers(root);
   }
 
@@ -354,30 +394,86 @@
   }
 
   function initImageResizers() {
-    bindImageResize("registry-file", "registry-image-data", null, null, null, false, null, null, false);
-    bindImageResize("ceremony-file", "ceremony-image-data", "ceremony-preview", "image/webp", 0.9, false, "ceremony-image-token", 1600, true);
-    bindImageResize("reception-file", "reception-image-data", "reception-preview", "image/webp", 0.9, false, "reception-image-token", 1600, true);
-    bindImageResize("share-preview-file", "share-preview-image-data", "share-preview-preview", null, null, true, "share-preview-image-token", null, true);
+    bindImageResize(
+      "registry-file",
+      "registry-image-data",
+      null,
+      null,
+      null,
+      false,
+      null,
+      null,
+      false,
+    );
+    bindImageResize(
+      "ceremony-file",
+      "ceremony-image-data",
+      "ceremony-preview",
+      "image/webp",
+      0.9,
+      false,
+      "ceremony-image-token",
+      1600,
+      true,
+    );
+    bindImageResize(
+      "reception-file",
+      "reception-image-data",
+      "reception-preview",
+      "image/webp",
+      0.9,
+      false,
+      "reception-image-token",
+      1600,
+      true,
+    );
+    bindImageResize(
+      "share-preview-file",
+      "share-preview-image-data",
+      "share-preview-preview",
+      null,
+      null,
+      true,
+      "share-preview-image-token",
+      null,
+      true,
+    );
     bindManagedImageResizers();
   }
 
-  function bindImageResize(fileId, dataId, previewId, format, quality, withRemove, tokenId, maxDim, passthrough) {
+  function bindImageResize(
+    fileId,
+    dataId,
+    previewId,
+    format,
+    quality,
+    withRemove,
+    tokenId,
+    maxDim,
+    passthrough,
+  ) {
     var fileInput = document.getElementById(fileId);
     var dataInput = document.getElementById(dataId);
     var tokenInput = tokenId ? document.getElementById(tokenId) : null;
     var previewImg = previewId ? document.getElementById(previewId) : null;
-    if (!fileInput || !dataInput || fileInput.dataset.resizeBound === "true") return;
+    if (!fileInput || !dataInput || fileInput.dataset.resizeBound === "true")
+      return;
     fileInput.dataset.resizeBound = "true";
 
-    fileInput.addEventListener("change", function () {
+    fileInput.addEventListener("change", () => {
       var file = fileInput.files && fileInput.files[0];
       if (!file) return;
 
       // skip canvas re-encode when source already fits server cap — preserves original quality
       var serverCapBytes = 5 * 1024 * 1024;
-      if (passthrough && file.type && file.type.indexOf("image/") === 0 && file.size <= serverCapBytes) {
+      if (
+        passthrough &&
+        file.type &&
+        file.type.indexOf("image/") === 0 &&
+        file.size <= serverCapBytes
+      ) {
         var reader = new FileReader();
-        reader.onload = function () {
+        reader.onload = () => {
           dataInput.value = reader.result;
           if (tokenInput) tokenInput.value = "";
           if (previewImg) {
@@ -393,7 +489,7 @@
       }
 
       var img = new Image();
-      img.onload = function () {
+      img.onload = () => {
         var max = maxDim || 400;
         var w = img.width;
         var h = img.height;
@@ -423,7 +519,7 @@
       var removeBtn = document.getElementById("share-preview-remove");
       if (removeBtn && removeBtn.dataset.bound !== "true") {
         removeBtn.dataset.bound = "true";
-        removeBtn.addEventListener("click", function () {
+        removeBtn.addEventListener("click", () => {
           dataInput.value = "";
           if (tokenInput) tokenInput.value = "";
           if (previewImg) {
@@ -438,19 +534,25 @@
 
   function bindManagedImageResizers(root) {
     var scope = root instanceof Element ? root : document;
-    scope.querySelectorAll(".managed-image-file").forEach(function (fileInput) {
+    scope.querySelectorAll(".managed-image-file").forEach((fileInput) => {
       if (fileInput.dataset.resizeBound === "true") return;
       fileInput.dataset.resizeBound = "true";
-      fileInput.addEventListener("change", function () {
+      fileInput.addEventListener("change", () => {
         var file = fileInput.files && fileInput.files[0];
         if (!file) return;
-        var targetInput = document.getElementById(fileInput.dataset.targetInput || "");
-        var tokenInput = document.getElementById(fileInput.dataset.mediaIdInput || "");
-        var previewImg = document.getElementById(fileInput.dataset.previewTarget || "");
+        var targetInput = document.getElementById(
+          fileInput.dataset.targetInput || "",
+        );
+        var tokenInput = document.getElementById(
+          fileInput.dataset.mediaIdInput || "",
+        );
+        var previewImg = document.getElementById(
+          fileInput.dataset.previewTarget || "",
+        );
         if (!targetInput) return;
 
         var img = new Image();
-        img.onload = function () {
+        img.onload = () => {
           var w = img.width;
           var h = img.height;
           var format = fileInput.dataset.format || "image/png";
@@ -469,7 +571,12 @@
           canvas.width = w;
           canvas.height = h;
           canvas.getContext("2d").drawImage(img, 0, 0, w, h);
-          targetInput.value = encodeManagedImage(canvas, format, quality, maxBytes);
+          targetInput.value = encodeManagedImage(
+            canvas,
+            format,
+            quality,
+            maxBytes,
+          );
           if (tokenInput) tokenInput.value = "";
           if (previewImg) {
             setPreviewImage(previewImg, targetInput.value);
@@ -503,7 +610,8 @@
   function encodeManagedImage(canvas, format, quality, maxBytes) {
     var mimeType = format || "image/png";
     var currentQuality = normalizeQuality(quality);
-    var supportsQuality = mimeType === "image/jpeg" || mimeType === "image/webp";
+    var supportsQuality =
+      mimeType === "image/jpeg" || mimeType === "image/webp";
     var dataUrl = canvas.toDataURL(mimeType, currentQuality);
     if (!maxBytes || estimateDataURLBytes(dataUrl) <= maxBytes) {
       return dataUrl;
@@ -514,10 +622,26 @@
     var currentWidth = canvas.width;
     var currentHeight = canvas.height;
 
-    while (estimateDataURLBytes(dataUrl) > maxBytes && currentWidth > 80 && currentHeight > 80) {
+    while (
+      estimateDataURLBytes(dataUrl) > maxBytes &&
+      currentWidth > 80 &&
+      currentHeight > 80
+    ) {
       if (supportsQuality) {
-        for (var nextQuality = currentQuality - 0.07; nextQuality >= 0.45; nextQuality -= 0.07) {
-          dataUrl = renderManagedImage(canvas, workCanvas, workCtx, currentWidth, currentHeight, mimeType, nextQuality);
+        for (
+          var nextQuality = currentQuality - 0.07;
+          nextQuality >= 0.45;
+          nextQuality -= 0.07
+        ) {
+          dataUrl = renderManagedImage(
+            canvas,
+            workCanvas,
+            workCtx,
+            currentWidth,
+            currentHeight,
+            mimeType,
+            nextQuality,
+          );
           if (estimateDataURLBytes(dataUrl) <= maxBytes) {
             return dataUrl;
           }
@@ -526,13 +650,29 @@
 
       currentWidth = Math.max(80, Math.round(currentWidth * 0.85));
       currentHeight = Math.max(80, Math.round(currentHeight * 0.85));
-      dataUrl = renderManagedImage(canvas, workCanvas, workCtx, currentWidth, currentHeight, mimeType, currentQuality);
+      dataUrl = renderManagedImage(
+        canvas,
+        workCanvas,
+        workCtx,
+        currentWidth,
+        currentHeight,
+        mimeType,
+        currentQuality,
+      );
     }
 
     return dataUrl;
   }
 
-  function renderManagedImage(sourceCanvas, targetCanvas, targetContext, width, height, format, quality) {
+  function renderManagedImage(
+    sourceCanvas,
+    targetCanvas,
+    targetContext,
+    width,
+    height,
+    format,
+    quality,
+  ) {
     targetCanvas.width = width;
     targetCanvas.height = height;
     targetContext.clearRect(0, 0, width, height);
@@ -541,7 +681,8 @@
   }
 
   function normalizeQuality(quality) {
-    var parsed = typeof quality === "number" ? quality : parseFloat(quality || "0.92");
+    var parsed =
+      typeof quality === "number" ? quality : parseFloat(quality || "0.92");
     if (!isFinite(parsed)) return 0.92;
     return Math.min(Math.max(parsed, 0.1), 0.92);
   }
@@ -553,11 +694,11 @@
     var padding = 0;
     if (base64.endsWith("==")) padding = 2;
     else if (base64.endsWith("=")) padding = 1;
-    return Math.floor(base64.length * 3 / 4) - padding;
+    return Math.floor((base64.length * 3) / 4) - padding;
   }
 
-  window.dashboardSubmitForm = function (form) {
-    submitForm(form).catch(function (err) {
+  window.dashboardSubmitForm = (form) => {
+    submitForm(form).catch((err) => {
       console.error(err);
       window.alert("Dashboard request failed.");
     });

@@ -1,6 +1,4 @@
 function initDashboardFeatures() {
-  "use strict";
-
   initDashboardLazyImages();
 
   // ---------------------------------------------------------------
@@ -9,22 +7,28 @@ function initDashboardFeatures() {
   function initDashboardLazyImages() {
     loadDashboardLazyImages(document, false);
 
-    if (!document.body || document.body.dataset.dashboardLazyImagesBound === "true") return;
+    if (
+      !document.body ||
+      document.body.dataset.dashboardLazyImagesBound === "true"
+    )
+      return;
     document.body.dataset.dashboardLazyImagesBound = "true";
-    document.addEventListener("shown.bs.collapse", function (event) {
+    document.addEventListener("shown.bs.collapse", (event) => {
       loadDashboardLazyImages(event.target, true);
     });
   }
 
   function loadDashboardLazyImages(root, force) {
     var scope = root instanceof Element ? root : document;
-    scope.querySelectorAll("img.dashboard-lazy-image[data-src]").forEach(function (img) {
-      if (!force && img.closest(".accordion-collapse:not(.show)")) return;
-      var src = img.getAttribute("data-src");
-      if (!src) return;
-      img.src = src;
-      img.removeAttribute("data-src");
-    });
+    scope
+      .querySelectorAll("img.dashboard-lazy-image[data-src]")
+      .forEach((img) => {
+        if (!force && img.closest(".accordion-collapse:not(.show)")) return;
+        var src = img.getAttribute("data-src");
+        if (!src) return;
+        img.src = src;
+        img.removeAttribute("data-src");
+      });
   }
 
   // ---------------------------------------------------------------
@@ -40,7 +44,7 @@ function initDashboardFeatures() {
     imageMaxHeight: 1200,
     imageMaxBytes: 524288,
     imageAlt: "Place preview",
-    includeDate: true
+    includeDate: true,
   });
 
   bindLocationCollection({
@@ -53,7 +57,7 @@ function initDashboardFeatures() {
     imageMaxHeight: 900,
     imageMaxBytes: 614400,
     imageAlt: "Honeymoon preview",
-    includeDate: false
+    includeDate: false,
   });
 
   function bindLocationCollection(config) {
@@ -62,12 +66,12 @@ function initDashboardFeatures() {
     if (!container || !addButton || container.dataset.bound) return;
 
     container.dataset.bound = "true";
-    addButton.addEventListener("click", function () {
+    addButton.addEventListener("click", () => {
       addLocationCard(container, config);
       reindexLocationCards(container, config);
     });
 
-    container.addEventListener("click", function (e) {
+    container.addEventListener("click", (e) => {
       var target = e.target;
       if (target.classList.contains("place-remove")) {
         target.closest(".place-card").remove();
@@ -89,7 +93,7 @@ function initDashboardFeatures() {
       }
     });
 
-    container.querySelectorAll(".place-card").forEach(function (card) {
+    container.querySelectorAll(".place-card").forEach((card) => {
       initPlaceAutocomplete(card);
     });
   }
@@ -101,51 +105,121 @@ function initDashboardFeatures() {
     card.dataset.index = idx;
     card.innerHTML =
       '<div class="place-card-header">' +
-        '<div class="place-card-meta">' +
-          '<span class="place-number">' + (idx + 1) + "</span>" +
-        "</div>" +
-        '<div class="place-card-actions">' +
-          '<button type="button" class="place-move-up" aria-label="Move up">&uarr;</button>' +
-          '<button type="button" class="place-move-down" aria-label="Move down">&darr;</button>' +
-          '<button type="button" class="place-remove outline secondary" aria-label="Remove">&times;</button>' +
-        "</div>" +
+      '<div class="place-card-meta">' +
+      '<span class="place-number">' +
+      (idx + 1) +
+      "</span>" +
       "</div>" +
-      (
-        config.includeDate
-          ? '<div class="grid">' +
-              "<div>" +
-                "<label>Label</label>" +
-                '<input type="text" name="' + config.prefix + '_label_' + idx + '" placeholder="e.g. First date"/>' +
-              "</div>" +
-              "<div>" +
-                "<label>Date</label>" +
-                '<input type="date" name="' + config.prefix + '_date_' + idx + '"/>' +
-              "</div>" +
-            "</div>"
-          : "<div>" +
-              "<label>Label</label>" +
-              '<input type="text" name="' + config.prefix + '_label_' + idx + '" placeholder="e.g. First date"/>' +
-            "</div>"
-      ) +
-      '<div class="grid">' +
-        '<div style="position:relative">' +
-          "<label>Address</label>" +
-          '<input type="text" class="place-location-input" autocomplete="off" placeholder="Search for an address..."/>' +
-          '<div class="autocomplete-dropdown place-dropdown"></div>' +
-          '<input type="hidden" name="' + config.prefix + '_name_' + idx + '" class="place-name-hidden"/>' +
-          '<input type="hidden" name="' + config.prefix + '_address_' + idx + '" class="place-address-hidden"/>' +
-          '<input type="hidden" name="' + config.prefix + '_lat_' + idx + '" class="place-lat-hidden" value="0"/>' +
-          '<input type="hidden" name="' + config.prefix + '_lng_' + idx + '" class="place-lng-hidden" value="0"/>' +
-        "</div>" +
-        "<div>" +
-          "<label>Image</label>" +
-          '<div class="managed-image-field">' +
-            '<input type="file" accept="image/*" class="managed-image-file" data-target-input="' + config.imageIdPrefix + '-data-' + idx + '" data-preview-target="' + config.imageIdPrefix + '-preview-' + idx + '" data-media-id-input="' + config.imageIdPrefix + '-media-id-' + idx + '" data-format="' + escapeAttr(config.imageFormat || "image/jpeg") + '" data-quality="0.88" data-max-width="' + config.imageMaxWidth + '" data-max-height="' + config.imageMaxHeight + '" data-max-bytes="' + (config.imageMaxBytes || 0) + '"/>' +
-            '<input type="hidden" name="' + config.prefix + '_image_' + idx + '" id="' + config.imageIdPrefix + '-data-' + idx + '" class="place-image-hidden"/>' +
-            '<input type="hidden" name="' + config.prefix + '_media_id_' + idx + '" id="' + config.imageIdPrefix + '-media-id-' + idx + '" class="place-media-id-hidden"/>' +
-            '<img class="venue-image-preview place-image-preview" id="' + config.imageIdPrefix + '-preview-' + idx + '" style="display:none" alt="' + escapeAttr(config.imageAlt) + '"/>' +
+      '<div class="place-card-actions">' +
+      '<button type="button" class="place-move-up" aria-label="Move up">&uarr;</button>' +
+      '<button type="button" class="place-move-down" aria-label="Move down">&darr;</button>' +
+      '<button type="button" class="place-remove outline secondary" aria-label="Remove">&times;</button>' +
+      "</div>" +
+      "</div>" +
+      (config.includeDate
+        ? '<div class="grid">' +
+          "<div>" +
+          "<label>Label</label>" +
+          '<input type="text" name="' +
+          config.prefix +
+          "_label_" +
+          idx +
+          '" placeholder="e.g. First date"/>' +
           "</div>" +
-        "</div>" +
+          "<div>" +
+          "<label>Date</label>" +
+          '<input type="date" name="' +
+          config.prefix +
+          "_date_" +
+          idx +
+          '"/>' +
+          "</div>" +
+          "</div>"
+        : "<div>" +
+          "<label>Label</label>" +
+          '<input type="text" name="' +
+          config.prefix +
+          "_label_" +
+          idx +
+          '" placeholder="e.g. First date"/>' +
+          "</div>") +
+      '<div class="grid">' +
+      '<div style="position:relative">' +
+      "<label>Address</label>" +
+      '<input type="text" class="place-location-input" autocomplete="off" placeholder="Search for an address..."/>' +
+      '<div class="autocomplete-dropdown place-dropdown"></div>' +
+      '<input type="hidden" name="' +
+      config.prefix +
+      "_name_" +
+      idx +
+      '" class="place-name-hidden"/>' +
+      '<input type="hidden" name="' +
+      config.prefix +
+      "_address_" +
+      idx +
+      '" class="place-address-hidden"/>' +
+      '<input type="hidden" name="' +
+      config.prefix +
+      "_lat_" +
+      idx +
+      '" class="place-lat-hidden" value="0"/>' +
+      '<input type="hidden" name="' +
+      config.prefix +
+      "_lng_" +
+      idx +
+      '" class="place-lng-hidden" value="0"/>' +
+      "</div>" +
+      "<div>" +
+      "<label>Image</label>" +
+      '<div class="managed-image-field">' +
+      '<input type="file" accept="image/*" class="managed-image-file" data-target-input="' +
+      config.imageIdPrefix +
+      "-data-" +
+      idx +
+      '" data-preview-target="' +
+      config.imageIdPrefix +
+      "-preview-" +
+      idx +
+      '" data-media-id-input="' +
+      config.imageIdPrefix +
+      "-media-id-" +
+      idx +
+      '" data-format="' +
+      escapeAttr(config.imageFormat || "image/jpeg") +
+      '" data-quality="0.88" data-max-width="' +
+      config.imageMaxWidth +
+      '" data-max-height="' +
+      config.imageMaxHeight +
+      '" data-max-bytes="' +
+      (config.imageMaxBytes || 0) +
+      '"/>' +
+      '<input type="hidden" name="' +
+      config.prefix +
+      "_image_" +
+      idx +
+      '" id="' +
+      config.imageIdPrefix +
+      "-data-" +
+      idx +
+      '" class="place-image-hidden"/>' +
+      '<input type="hidden" name="' +
+      config.prefix +
+      "_media_id_" +
+      idx +
+      '" id="' +
+      config.imageIdPrefix +
+      "-media-id-" +
+      idx +
+      '" class="place-media-id-hidden"/>' +
+      '<img class="venue-image-preview place-image-preview" id="' +
+      config.imageIdPrefix +
+      "-preview-" +
+      idx +
+      '" style="display:none" alt="' +
+      escapeAttr(config.imageAlt) +
+      '"/>' +
+      "</div>" +
+      "</div>" +
       "</div>";
     container.appendChild(card);
     initPlaceAutocomplete(card);
@@ -156,13 +230,17 @@ function initDashboardFeatures() {
 
   function reindexLocationCards(container, config) {
     var cards = container.querySelectorAll(".place-card");
-    cards.forEach(function (card, idx) {
+    cards.forEach((card, idx) => {
       card.dataset.index = idx;
       var num = card.querySelector(".place-number");
       if (num) num.textContent = idx + 1;
-      var label = card.querySelector('input[name^="' + config.prefix + '_label_"]');
+      var label = card.querySelector(
+        'input[name^="' + config.prefix + '_label_"]',
+      );
       if (label) label.name = config.prefix + "_label_" + idx;
-      var date = card.querySelector('input[name^="' + config.prefix + '_date_"]');
+      var date = card.querySelector(
+        'input[name^="' + config.prefix + '_date_"]',
+      );
       if (date) date.name = config.prefix + "_date_" + idx;
       var name = card.querySelector(".place-name-hidden");
       if (name) name.name = config.prefix + "_name_" + idx;
@@ -185,30 +263,39 @@ function initDashboardFeatures() {
       var imageFile = card.querySelector(".managed-image-file");
       if (imageFile) {
         imageFile.dataset.targetInput = config.imageIdPrefix + "-data-" + idx;
-        imageFile.dataset.previewTarget = config.imageIdPrefix + "-preview-" + idx;
-        imageFile.dataset.mediaIdInput = config.imageIdPrefix + "-media-id-" + idx;
+        imageFile.dataset.previewTarget =
+          config.imageIdPrefix + "-preview-" + idx;
+        imageFile.dataset.mediaIdInput =
+          config.imageIdPrefix + "-media-id-" + idx;
         imageFile.dataset.format = config.imageFormat || "image/jpeg";
         imageFile.dataset.maxBytes = String(config.imageMaxBytes || 0);
       }
       var imagePreview = card.querySelector(".place-image-preview");
-      if (imagePreview) imagePreview.id = config.imageIdPrefix + "-preview-" + idx;
+      if (imagePreview)
+        imagePreview.id = config.imageIdPrefix + "-preview-" + idx;
     });
   }
 
   // ---------------------------------------------------------------
   // accommodation suggestions management
   // ---------------------------------------------------------------
-  var accommodationsContainer = document.getElementById("accommodations-container");
+  var accommodationsContainer = document.getElementById(
+    "accommodations-container",
+  );
   var addAccommodationBtn = document.getElementById("add-accommodation-btn");
 
-  if (accommodationsContainer && addAccommodationBtn && !accommodationsContainer.dataset.bound) {
+  if (
+    accommodationsContainer &&
+    addAccommodationBtn &&
+    !accommodationsContainer.dataset.bound
+  ) {
     accommodationsContainer.dataset.bound = "true";
-    addAccommodationBtn.addEventListener("click", function () {
+    addAccommodationBtn.addEventListener("click", () => {
       addAccommodationCard();
       reindexAccommodations();
     });
 
-    accommodationsContainer.addEventListener("click", function (e) {
+    accommodationsContainer.addEventListener("click", (e) => {
       if (e.target.classList.contains("accommodation-remove")) {
         e.target.closest(".accommodation-card").remove();
         reindexAccommodations();
@@ -217,41 +304,53 @@ function initDashboardFeatures() {
   }
 
   function addAccommodationCard() {
-    var idx = accommodationsContainer.querySelectorAll(".accommodation-card").length;
+    var idx = accommodationsContainer.querySelectorAll(
+      ".accommodation-card",
+    ).length;
     var card = document.createElement("div");
     card.className = "accommodation-card";
     card.innerHTML =
       '<div class="accommodation-card-header">' +
-        '<span class="accommodation-number">' + (idx + 1) + "</span>" +
-        '<button type="button" class="accommodation-remove outline secondary" aria-label="Remove">&times;</button>' +
+      '<span class="accommodation-number">' +
+      (idx + 1) +
+      "</span>" +
+      '<button type="button" class="accommodation-remove outline secondary" aria-label="Remove">&times;</button>' +
       "</div>" +
       '<div class="grid">' +
-        "<div>" +
-          "<label>Name</label>" +
-          '<input type="text" name="accommodation_name_' + idx + '" placeholder="e.g. Agriturismo Il Gelsomino"/>' +
-        "</div>" +
-        "<div>" +
-          "<label>Link</label>" +
-          '<input type="url" name="accommodation_url_' + idx + '" placeholder="https://..."/>' +
-        "</div>" +
+      "<div>" +
+      "<label>Name</label>" +
+      '<input type="text" name="accommodation_name_' +
+      idx +
+      '" placeholder="e.g. Agriturismo Il Gelsomino"/>' +
       "</div>" +
       "<div>" +
-        "<label>Description</label>" +
-        '<textarea name="accommodation_description_' + idx + '" rows="3" placeholder="Optional note for guests"></textarea>' +
+      "<label>Link</label>" +
+      '<input type="url" name="accommodation_url_' +
+      idx +
+      '" placeholder="https://..."/>' +
+      "</div>" +
+      "</div>" +
+      "<div>" +
+      "<label>Description</label>" +
+      '<textarea name="accommodation_description_' +
+      idx +
+      '" rows="3" placeholder="Optional note for guests"></textarea>' +
       "</div>";
     accommodationsContainer.appendChild(card);
   }
 
   function reindexAccommodations() {
     var cards = accommodationsContainer.querySelectorAll(".accommodation-card");
-    cards.forEach(function (card, idx) {
+    cards.forEach((card, idx) => {
       var num = card.querySelector(".accommodation-number");
       if (num) num.textContent = idx + 1;
       var name = card.querySelector('input[name^="accommodation_name_"]');
       if (name) name.name = "accommodation_name_" + idx;
       var url = card.querySelector('input[name^="accommodation_url_"]');
       if (url) url.name = "accommodation_url_" + idx;
-      var description = card.querySelector('textarea[name^="accommodation_description_"]');
+      var description = card.querySelector(
+        'textarea[name^="accommodation_description_"]',
+      );
       if (description) description.name = "accommodation_description_" + idx;
     });
   }
@@ -283,15 +382,24 @@ function initDashboardFeatures() {
       results = items;
       activeIndex = -1;
       dropdown.innerHTML = "";
-      if (items.length === 0) { hide(); return; }
-      items.forEach(function (item, idx) {
+      if (items.length === 0) {
+        hide();
+        return;
+      }
+      items.forEach((item, idx) => {
         var div = document.createElement("div");
         var name = extractName(item);
         var address = extractAddress(item, name);
         div.innerHTML =
-          '<span style="font-weight:500;color:var(--charcoal-dark)">' + escapeHtml(name) + "</span>" +
-          (address ? '<br><span style="font-size:var(--fs-xs);color:var(--sage-dark)">' + escapeHtml(address) + "</span>" : "");
-        div.addEventListener("mousedown", function (e) {
+          '<span style="font-weight:500;color:var(--charcoal-dark)">' +
+          escapeHtml(name) +
+          "</span>" +
+          (address
+            ? '<br><span style="font-size:var(--fs-xs);color:var(--sage-dark)">' +
+              escapeHtml(address) +
+              "</span>"
+            : "");
+        div.addEventListener("mousedown", (e) => {
           e.preventDefault();
           select(idx);
         });
@@ -329,12 +437,16 @@ function initDashboardFeatures() {
         encodeURIComponent(query) +
         "&format=jsonv2&addressdetails=1&namedetails=1&limit=5";
       fetch(url, { headers: { "Accept-Language": lang } })
-        .then(function (res) { return res.json(); })
-        .then(function (data) { render(data); })
-        .catch(function () { hide(); });
+        .then((res) => res.json())
+        .then((data) => {
+          render(data);
+        })
+        .catch(() => {
+          hide();
+        });
     }
 
-    input.addEventListener("input", function () {
+    input.addEventListener("input", () => {
       nameHidden.value = "";
       addressHidden.value = "";
       latHidden.value = "0";
@@ -342,11 +454,16 @@ function initDashboardFeatures() {
       renderCoordsBadge(card, "", "");
       clearTimeout(debounceTimer);
       var q = input.value.trim();
-      if (q.length < 3) { hide(); return; }
-      debounceTimer = setTimeout(function () { search(q); }, 350);
+      if (q.length < 3) {
+        hide();
+        return;
+      }
+      debounceTimer = setTimeout(() => {
+        search(q);
+      }, 350);
     });
 
-    input.addEventListener("keydown", function (e) {
+    input.addEventListener("keydown", (e) => {
       if (results.length === 0) return;
       if (e.key === "ArrowDown") {
         e.preventDefault();
@@ -362,7 +479,7 @@ function initDashboardFeatures() {
       }
     });
 
-    input.addEventListener("blur", function () {
+    input.addEventListener("blur", () => {
       setTimeout(hide, 200);
     });
   }
@@ -387,7 +504,11 @@ function initDashboardFeatures() {
     coordsDiv.className = "place-coords";
     coordsDiv.innerHTML =
       '<span class="place-coords-check">&#10003;</span>' +
-      "<code>" + parseFloat(lat).toFixed(4) + ", " + parseFloat(lng).toFixed(4) + "</code>";
+      "<code>" +
+      parseFloat(lat).toFixed(4) +
+      ", " +
+      parseFloat(lng).toFixed(4) +
+      "</code>";
     meta.appendChild(coordsDiv);
   }
 
@@ -408,23 +529,33 @@ function initDashboardFeatures() {
   }
 
   function escapeAttr(str) {
-    return str.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    return str
+      .replace(/&/g, "&amp;")
+      .replace(/"/g, "&quot;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
   }
 
   // ---------------------------------------------------------------
   // impersonations management
   // ---------------------------------------------------------------
-  var impersonationsContainer = document.getElementById("impersonations-container");
+  var impersonationsContainer = document.getElementById(
+    "impersonations-container",
+  );
   var addImpersonationBtn = document.getElementById("add-impersonation-btn");
 
-  if (impersonationsContainer && addImpersonationBtn && !impersonationsContainer.dataset.bound) {
+  if (
+    impersonationsContainer &&
+    addImpersonationBtn &&
+    !impersonationsContainer.dataset.bound
+  ) {
     impersonationsContainer.dataset.bound = "true";
-    addImpersonationBtn.addEventListener("click", function () {
+    addImpersonationBtn.addEventListener("click", () => {
       addImpersonationCard();
       reindexImpersonations();
     });
 
-    impersonationsContainer.addEventListener("click", function (e) {
+    impersonationsContainer.addEventListener("click", (e) => {
       if (e.target.classList.contains("impersonation-remove")) {
         e.target.closest(".impersonation-card").remove();
         reindexImpersonations();
@@ -433,22 +564,30 @@ function initDashboardFeatures() {
   }
 
   function addImpersonationCard() {
-    var idx = impersonationsContainer.querySelectorAll(".impersonation-card").length;
+    var idx = impersonationsContainer.querySelectorAll(
+      ".impersonation-card",
+    ).length;
     var card = document.createElement("div");
     card.className = "impersonation-card";
     card.innerHTML =
       '<div class="impersonation-card-header">' +
-        '<span class="impersonation-number">' + (idx + 1) + "</span>" +
-        '<button type="button" class="impersonation-remove outline secondary" aria-label="Remove">&times;</button>' +
+      '<span class="impersonation-number">' +
+      (idx + 1) +
+      "</span>" +
+      '<button type="button" class="impersonation-remove outline secondary" aria-label="Remove">&times;</button>' +
       "</div>" +
-      '<input type="text" name="impersonation_codename_' + idx + '" placeholder="e.g. Anna"/>' +
-      '<textarea name="impersonation_profile_' + idx + '" rows="3" placeholder="Describe how this person writes..."></textarea>';
+      '<input type="text" name="impersonation_codename_' +
+      idx +
+      '" placeholder="e.g. Anna"/>' +
+      '<textarea name="impersonation_profile_' +
+      idx +
+      '" rows="3" placeholder="Describe how this person writes..."></textarea>';
     impersonationsContainer.appendChild(card);
   }
 
   function reindexImpersonations() {
     var cards = impersonationsContainer.querySelectorAll(".impersonation-card");
-    cards.forEach(function (card, idx) {
+    cards.forEach((card, idx) => {
       var num = card.querySelector(".impersonation-number");
       if (num) num.textContent = idx + 1;
       var codename = card.querySelector('input[type="text"]');

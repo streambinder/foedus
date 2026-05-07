@@ -1,23 +1,23 @@
-(function () {
-  "use strict";
-
+(() => {
   var chatPanel = document.getElementById("chat-panel");
   if (!chatPanel) return;
 
   var MSG_ERROR = chatPanel.dataset.msgError;
-  var MSG_RATE  = chatPanel.dataset.msgRate;
+  var MSG_RATE = chatPanel.dataset.msgRate;
   var HISTORY_KEY = "foedus_chat_history";
   var MAX_HISTORY = 20;
-  var bubble   = document.getElementById("chat-bubble");
+  var bubble = document.getElementById("chat-bubble");
   var closeBtn = document.getElementById("chat-close");
-  var form     = document.getElementById("chat-form");
-  var input    = document.getElementById("chat-input");
-  var msgs     = document.getElementById("chat-messages");
+  var form = document.getElementById("chat-form");
+  var input = document.getElementById("chat-input");
+  var msgs = document.getElementById("chat-messages");
 
   var history = [];
   var replaying = true;
-  try { history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"); } catch(e) {}
-  history.forEach(function(m) {
+  try {
+    history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+  } catch (e) {}
+  history.forEach((m) => {
     if (m.role === "assistant") {
       var tempBubble = appendBubble("assistant", "", false);
       finalize(m.content, tempBubble, false);
@@ -27,7 +27,7 @@
   });
   replaying = false;
 
-  bubble.addEventListener("click", function() {
+  bubble.addEventListener("click", () => {
     if (chatPanel.style.display === "none") {
       openPanel();
     } else {
@@ -36,7 +36,7 @@
   });
   closeBtn.addEventListener("click", closePanel);
 
-  document.addEventListener("click", function(e) {
+  document.addEventListener("click", (e) => {
     if (chatPanel.style.display === "none") return;
     if (chatPanel.classList.contains("chat-panel--closing")) return;
     if (chatPanel.contains(e.target) || bubble.contains(e.target)) return;
@@ -63,7 +63,7 @@
     });
   }
 
-  form.addEventListener("submit", function(e) {
+  form.addEventListener("submit", (e) => {
     e.preventDefault();
     var text = input.value.trim();
     if (!text || text.length > 500) return;
@@ -77,36 +77,59 @@
     fetch("/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: text, history: history.slice(-20) })
-    }).then(function(res) {
-      if (res.status === 429) { finalize(MSG_RATE, assistantBubble, true); return; }
-      if (!res.ok) { finalize(MSG_ERROR, assistantBubble, true); return; }
-      var reader = res.body.getReader();
-      var decoder = new TextDecoder();
-      var buf = "";
-      function pump() {
-        reader.read().then(function(chunk) {
-          if (chunk.done) { finalize(full, assistantBubble, false); return; }
-          buf += decoder.decode(chunk.value, { stream: true });
-          var lines = buf.split("\n");
-          buf = lines.pop();
-          lines.forEach(function(line) {
-            if (!line.startsWith("data:")) return;
-            var raw = line.slice(5).trim();
-            if (raw === "[DONE]") return;
-            try {
-              var obj = JSON.parse(raw);
-              var delta = (obj.choices && obj.choices[0] && obj.choices[0].delta && obj.choices[0].delta.content) || "";
-              full += delta;
-              assistantBubble.textContent = full;
-              msgs.scrollTop = msgs.scrollHeight;
-            } catch(e) {}
-          });
-          pump();
-        }).catch(function() { finalize(MSG_ERROR, assistantBubble, true); });
-      }
-      pump();
-    }).catch(function() { finalize(MSG_ERROR, assistantBubble, true); });
+      body: JSON.stringify({ message: text, history: history.slice(-20) }),
+    })
+      .then((res) => {
+        if (res.status === 429) {
+          finalize(MSG_RATE, assistantBubble, true);
+          return;
+        }
+        if (!res.ok) {
+          finalize(MSG_ERROR, assistantBubble, true);
+          return;
+        }
+        var reader = res.body.getReader();
+        var decoder = new TextDecoder();
+        var buf = "";
+        function pump() {
+          reader
+            .read()
+            .then((chunk) => {
+              if (chunk.done) {
+                finalize(full, assistantBubble, false);
+                return;
+              }
+              buf += decoder.decode(chunk.value, { stream: true });
+              var lines = buf.split("\n");
+              buf = lines.pop();
+              lines.forEach((line) => {
+                if (!line.startsWith("data:")) return;
+                var raw = line.slice(5).trim();
+                if (raw === "[DONE]") return;
+                try {
+                  var obj = JSON.parse(raw);
+                  var delta =
+                    (obj.choices &&
+                      obj.choices[0] &&
+                      obj.choices[0].delta &&
+                      obj.choices[0].delta.content) ||
+                    "";
+                  full += delta;
+                  assistantBubble.textContent = full;
+                  msgs.scrollTop = msgs.scrollHeight;
+                } catch (e) {}
+              });
+              pump();
+            })
+            .catch(() => {
+              finalize(MSG_ERROR, assistantBubble, true);
+            });
+        }
+        pump();
+      })
+      .catch(() => {
+        finalize(MSG_ERROR, assistantBubble, true);
+      });
   });
 
   function finalize(text, bubbleEl, isError) {
@@ -116,7 +139,7 @@
       return;
     }
     // extract trailing signature like "— Anna" or "- Anna"
-    var match = text.match(/[\u2014\-]\s*(\S.+?)\s*$/);
+    var match = text.match(/[\u2014-]\s*(\S.+?)\s*$/);
     var label = null;
     var display = text;
     if (match) {
@@ -159,12 +182,15 @@
 
   function capitalizePersonaLabel(label) {
     if (!label) return label;
-    return label.replace(/(^|[\s-])([A-Za-zÀ-ÖØ-öø-ÿ])/g, function(_, prefix, letter) {
-      return prefix + letter.toUpperCase();
-    });
+    return label.replace(
+      /(^|[\s-])([A-Za-zÀ-ÖØ-öø-ÿ])/g,
+      (_, prefix, letter) => prefix + letter.toUpperCase(),
+    );
   }
 
   function persistHistory() {
-    try { localStorage.setItem(HISTORY_KEY, JSON.stringify(history)); } catch(e) {}
+    try {
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+    } catch (e) {}
   }
 })();
