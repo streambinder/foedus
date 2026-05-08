@@ -575,7 +575,7 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 				data-copy-label={ t("btn.copy") }
 				data-copied-label={ t("btn.copied") }
 			></div>
-			<dialog id="transfer-modal" class="modal-overlay" data-hide-floating="true">
+			<dialog id="transfer-modal" class="modal-overlay">
 				<div class="modal-box">
 					<p class="modal-intro">{ t("modal.transfer_intro") }<br/>{ t("modal.transfer_confirm_text") }</p>
 					<div class="modal-field">
@@ -614,7 +614,7 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 				</div>
 			</dialog>
 			<!-- percentage selector modal -->
-			<dialog id="pct-modal" class="modal-overlay" data-hide-floating="true">
+			<dialog id="pct-modal" class="modal-overlay">
 				<div class="modal-box">
 					<h3 id="pct-item-name"></h3>
 					<p id="pct-item-price"></p>
@@ -635,7 +635,7 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 				</div>
 			</dialog>
 			<!-- thank you modal -->
-			<dialog id="thanks-modal" class="modal-overlay" data-hide-floating="true">
+			<dialog id="thanks-modal" class="modal-overlay">
 				<div class="modal-box thanks-box">
 					<h3>{ t("gift.thank_you") }</h3>
 					<p>{ t("gift.thanks_message") }</p>
@@ -834,24 +834,14 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 					}
 				}
 
-				var hideFloatingCount = 0;
-				function applyFloatingVisibility(m, opening) {
-					if (!m || m.dataset.hideFloating !== "true") return;
-					hideFloatingCount += opening ? 1 : -1;
-					if (hideFloatingCount < 0) hideFloatingCount = 0;
-					document.body.classList.toggle("floating-bubbles-hidden", hideFloatingCount > 0);
-				}
-
 				function openModal(m) {
 					if (!m) return;
 					if (typeof m.showModal === "function" && !m.open) m.showModal();
 					else m.style.display = "";
-					applyFloatingVisibility(m, true);
 				}
 
 				function closeModal(m) {
 					if (!m) return;
-					applyFloatingVisibility(m, false);
 					if (typeof m.close === "function" && m.open) m.close();
 					else m.style.display = "none";
 				}
