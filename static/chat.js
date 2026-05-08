@@ -50,8 +50,9 @@
     chatPanel.classList.remove("chat-panel-closing");
     chatPanel.classList.add("chat-panel-opening");
     bubble.classList.add("chat-bubble-covered");
+    document.documentElement.classList.add("chat-open");
     msgs.scrollTop = msgs.scrollHeight;
-    // skip auto-focus on touch — soft keyboard can still nudge layout
+    // skip auto-focus on touch — user taps input themselves to open keyboard
     if (!matchMedia("(hover: none)").matches) {
       input.focus({ preventScroll: true });
     }
@@ -64,6 +65,7 @@
       chatPanel.style.display = "none";
       chatPanel.classList.remove("chat-panel-closing");
       bubble.classList.remove("chat-bubble-covered");
+      document.documentElement.classList.remove("chat-open");
       chatPanel.removeEventListener("animationend", hide);
     });
   }

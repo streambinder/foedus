@@ -183,10 +183,7 @@ html:has(.vp-section) body {
   min-height: 100vh;
   min-height: 100svh;
   height: 100vh;
-
-  /* svh (small viewport) stays static when mobile keyboard opens.
-     dvh would shrink and reflow the snap container, jerking sections */
-  height: 100svh;
+  height: 100dvh;
   overflow-y: scroll;
   scroll-snap-type: y mandatory;
   overscroll-behavior-y: contain;
@@ -198,6 +195,7 @@ html:has(.vp-section) body {
 .vp-section {
   min-height: 100vh;
   min-height: 100svh;
+  min-height: 100dvh;
   margin: 0;
   display: flex;
   flex-direction: column;
@@ -210,7 +208,7 @@ html:has(.vp-section) body {
 
 .vp-section:not(#landing) {
   content-visibility: auto;
-  contain-intrinsic-size: auto 100svh;
+  contain-intrinsic-size: auto 100dvh;
 }
 
 .vp-section::after {
@@ -5402,26 +5400,24 @@ td [role="switch"] {
   }
 
   #chat-panel {
-    left: calc(
-      var(--floating-action-edge-offset) + env(safe-area-inset-left, 0)
-    );
-    right: calc(
-      var(--floating-action-edge-offset) + env(safe-area-inset-right, 0)
-    );
+    inset: 0;
     width: auto;
-    border-radius: var(--radius-xl);
-    max-height: 70vh;
-    max-height: min(
-      74dvh,
-      calc(
-        100dvh - var(--sp-10) - env(safe-area-inset-top, 0) -
-          env(safe-area-inset-bottom, 0)
-      )
-    );
+    height: 100dvh;
+    max-height: none;
+    border: 0;
+    border-radius: 0;
+    backdrop-filter: none;
+  }
+
+  /* lock body so underlying snap stays put while chat owns the viewport */
+  html.chat-open,
+  html.chat-open body {
+    overflow: hidden;
   }
 
   #chat-form {
     align-items: stretch;
+    padding-bottom: calc(var(--sp-2) + env(safe-area-inset-bottom, 0));
   }
 
   #chat-form input {

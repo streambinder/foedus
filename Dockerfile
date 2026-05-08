@@ -8,7 +8,7 @@ RUN go mod download
 
 COPY . .
 RUN templ generate
-RUN ASSET_VERSION="$(date -u +%Y%m%d)" && \
+RUN ASSET_VERSION="$(date -u +%Y%m%d%H%M%S)" && \
     CGO_ENABLED=0 go build \
     -ldflags "-X github.com/streambinder/foedus/internal/buildinfo.AssetVersion=${ASSET_VERSION}" \
     -o foedus .
