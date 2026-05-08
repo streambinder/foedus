@@ -50,8 +50,11 @@
     chatPanel.classList.remove("chat-panel-closing");
     chatPanel.classList.add("chat-panel-opening");
     bubble.classList.add("chat-bubble-covered");
-    input.focus();
     msgs.scrollTop = msgs.scrollHeight;
+    // skip auto-focus on touch — soft keyboard can still nudge layout
+    if (!matchMedia("(hover: none)").matches) {
+      input.focus({ preventScroll: true });
+    }
   }
 
   function closePanel() {

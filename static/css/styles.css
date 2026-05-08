@@ -183,7 +183,9 @@ html:has(.vp-section) body {
   min-height: 100vh;
   min-height: 100svh;
   height: 100vh;
-  height: 100dvh;
+  /* svh (small viewport) stays static when mobile keyboard opens.
+     dvh would shrink and reflow the snap container, jerking sections */
+  height: 100svh;
   overflow-y: scroll;
   scroll-snap-type: y mandatory;
   overscroll-behavior-y: contain;
@@ -195,7 +197,6 @@ html:has(.vp-section) body {
 .vp-section {
   min-height: 100vh;
   min-height: 100svh;
-  min-height: 100dvh;
   margin: 0;
   display: flex;
   flex-direction: column;
@@ -208,7 +209,7 @@ html:has(.vp-section) body {
 
 .vp-section:not(#landing) {
   content-visibility: auto;
-  contain-intrinsic-size: auto 100dvh;
+  contain-intrinsic-size: auto 100svh;
 }
 
 .vp-section::after {
@@ -5161,7 +5162,6 @@ td [role="switch"] {
   background:
     linear-gradient(180deg, rgb(255 255 255 / 86%), rgb(252 248 243 / 96%)),
     var(--ivory);
-  border: 1px solid rgb(178 184 163 / 42%);
   border-radius: var(--radius-xl);
   box-shadow: 0 18px 48px rgb(42 52 57 / 18%);
   z-index: 151;
