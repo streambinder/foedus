@@ -2,6 +2,9 @@
   const selectedGuestIds = new Set();
   let guestSearchTimer = null;
   let invitationSearchValue = "";
+  let invitationLabelValue = "";
+  let invitationLabelUserEdited = false;
+  const guestFirstNames = {};
   const SECTION_IDS = [
     "dashboard-flash",
     "dashboard-counters",
@@ -73,8 +76,9 @@
 
   function handleInput(event) {
     if (event.target.id === "invitation-label-input") {
-      event.target.dataset.userEdited =
-        event.target.value.trim() === "" ? "" : "1";
+      invitationLabelValue = event.target.value;
+      invitationLabelUserEdited = event.target.value.trim() !== "";
+      event.target.dataset.userEdited = invitationLabelUserEdited ? "1" : "";
       return;
     }
     if (event.target.id === "guest-search") {
@@ -141,6 +145,8 @@
 
     if (form.id === "invitation-form") {
       selectedGuestIds.clear();
+      invitationLabelValue = "";
+      invitationLabelUserEdited = false;
       const labelInput = form.querySelector("#invitation-label-input");
       if (labelInput) {
         labelInput.value = "";
@@ -292,21 +298,30 @@
   function syncInvitationLabelDefault() {
     const input = document.getElementById("invitation-label-input");
     if (!input) return;
-    if (input.dataset.userEdited === "1") return;
 
-    const firstNamesById = {};
+    // cache first names from currently rendered guests so filtered-out selections keep their names
     document.querySelectorAll(".guest-checkbox").forEach((checkbox) => {
-      firstNamesById[checkbox.value] = (
-        checkbox.dataset.firstName || ""
-      ).trim();
+      const name = (checkbox.dataset.firstName || "").trim();
+      if (name) guestFirstNames[checkbox.value] = name;
     });
+
+    // restore user-typed label across guest section refreshes (search/pagination)
+    if (invitationLabelUserEdited) {
+      input.dataset.userEdited = "1";
+      if (input.value !== invitationLabelValue) {
+        input.value = invitationLabelValue;
+      }
+      return;
+    }
+    if (input.dataset.userEdited === "1") return;
 
     const firstNames = [];
     selectedGuestIds.forEach((id) => {
-      const name = firstNamesById[id];
+      const name = guestFirstNames[id];
       if (name) firstNames.push(name);
     });
     input.value = composeDefaultInvitationLabel(firstNames);
+    invitationLabelValue = input.value;
   }
 
   function composeDefaultInvitationLabel(firstNames) {
