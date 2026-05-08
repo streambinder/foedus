@@ -95,7 +95,11 @@
         url.searchParams.delete("page");
         history.replaceState({}, "", url);
         const seq = ++guestSearchSeq;
-        refreshSections(url.toString(), ["dashboard-guests"], () => seq === guestSearchSeq);
+        refreshSections(
+          url.toString(),
+          ["dashboard-guests"],
+          () => seq === guestSearchSeq,
+        );
       }, 350);
       return;
     }

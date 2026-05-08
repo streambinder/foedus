@@ -228,6 +228,7 @@ button[type="submit"]:hover,
 
 button.outline.secondary,
 .copy-btn,
+.actions > a,
 .place-card-actions button,
 .place-remove,
 .accommodation-remove,
@@ -237,15 +238,25 @@ button.outline.secondary,
   color: var(--tblr-body-color);
   padding: 0.45rem 0.7rem;
   min-height: 2.25rem;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.8125rem;
+  line-height: 1.2;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
 }
 
 button.outline.secondary:hover,
 .copy-btn:hover,
+.actions > a:hover,
 .place-card-actions button:hover,
 .place-remove:hover,
 .accommodation-remove:hover,
 .impersonation-remove:hover {
   background: var(--tblr-bg-surface-secondary);
+  color: var(--tblr-body-color);
 }
 
 .add-entry-btn {
