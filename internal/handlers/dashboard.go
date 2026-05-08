@@ -1067,6 +1067,21 @@ func DeleteInvitation(c *fiber.Ctx) error {
 	return c.Redirect("/dashboard")
 }
 
+func ResetInvitationViewed(c *fiber.Ctx) error {
+	logger := handlerLogger(c)
+	id, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		logger.Warn("invitation reset viewed rejected", "invitation_id", c.Params("id"), "error", err.Error())
+		return c.Status(400).SendString("invalid id")
+	}
+	if err := database.ResetInvitationViewed(id); err != nil {
+		logger.Error("invitation reset viewed failed", "invitation_id", id, "error", err.Error())
+		return c.Status(500).SendString("failed to reset viewed")
+	}
+	logger.Info("invitation viewed reset", "invitation_id", id)
+	return c.Redirect("/dashboard")
+}
+
 func EditInvitationPage(c *fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {

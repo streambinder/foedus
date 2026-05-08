@@ -726,6 +726,20 @@ input[role="switch"] {
   align-items: center;
 }
 
+.inline-reset-form {
+  display: inline-flex;
+  margin: 0 0 0 0.4rem;
+  padding: 0;
+  vertical-align: middle;
+}
+
+.reset-viewed-btn {
+  min-height: 0;
+  padding: 0.05rem 0.4rem;
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
 .copy-btn {
   min-height: 0;
 }

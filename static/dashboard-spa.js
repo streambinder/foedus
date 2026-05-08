@@ -5,6 +5,7 @@
   let invitationLabelValue = "";
   let invitationLabelUserEdited = false;
   const guestFirstNames = {};
+  let guestSearchSeq = 0;
   const SECTION_IDS = [
     "dashboard-flash",
     "dashboard-counters",
@@ -93,8 +94,9 @@
         }
         url.searchParams.delete("page");
         history.replaceState({}, "", url);
-        refreshSections(url.toString(), ["dashboard-guests"]);
-      }, 250);
+        const seq = ++guestSearchSeq;
+        refreshSections(url.toString(), ["dashboard-guests"], () => seq === guestSearchSeq);
+      }, 350);
       return;
     }
 
@@ -198,7 +200,8 @@
     }
     if (
       /\/dashboard\/invitations$/.test(action) ||
-      /\/dashboard\/invitations\/\d+\/delete$/.test(action)
+      /\/dashboard\/invitations\/\d+\/delete$/.test(action) ||
+      /\/dashboard\/invitations\/\d+\/viewed\/reset$/.test(action)
     ) {
       return ["dashboard-flash", "dashboard-guests", "dashboard-invitations"];
     }
@@ -240,9 +243,10 @@
     return match ? match[1] : "";
   }
 
-  async function refreshSections(url, sectionIds) {
+  async function refreshSections(url, sectionIds, isStillCurrent) {
     const openDetails = getOpenAccordionKeys();
     const doc = await fetchDocument(url);
+    if (typeof isStillCurrent === "function" && !isStillCurrent()) return;
     sectionIds.forEach((id) => {
       replaceSection(id, doc);
     });

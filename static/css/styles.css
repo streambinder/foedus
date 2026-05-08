@@ -1300,19 +1300,34 @@ tbody td:first-child {
   display: none !important;
 }
 
-.actions a {
+.actions a,
+.actions button {
+  background: var(--ivory);
+  border: 1px solid var(--sage-light);
+  border-radius: var(--radius-sm);
   color: var(--charcoal);
-  text-decoration: underline;
-  text-decoration-color: var(--sage-light);
-  font-size: var(--fs-sm);
+  text-decoration: none;
+  cursor: pointer;
+  padding: 0.3rem 0.6rem;
+  margin: 0;
+  font-size: var(--fs-xs);
+  width: auto;
+  box-shadow: none;
   min-height: 2.75rem;
   display: inline-flex;
   align-items: center;
+  white-space: nowrap;
+  transition:
+    background var(--duration) var(--ease),
+    color var(--duration) var(--ease),
+    border-color var(--duration) var(--ease);
 }
 
-.actions a:hover {
-  color: var(--sage-dark);
-  text-decoration-color: var(--sage);
+.actions a:hover,
+.actions button:hover {
+  background: var(--cream);
+  color: var(--charcoal);
+  box-shadow: none;
 }
 
 .actions form {
@@ -1320,27 +1335,15 @@ tbody td:first-child {
   padding: 0;
 }
 
-.actions button {
-  background: none;
-  border: none;
+/* delete keeps semantic red accent */
+.actions form[action$="/delete"] button {
   color: var(--red-500);
-  text-decoration: underline;
-  cursor: pointer;
-  padding: 0;
-  margin: 0;
-  font-size: var(--fs-sm);
-  width: auto;
-  box-shadow: none;
-  min-height: 2.75rem;
-  display: inline-flex;
-  align-items: center;
-  transition: color var(--duration) var(--ease);
+  border-color: color-mix(in srgb, var(--red-500) 35%, var(--sage-light));
 }
 
-.actions button:hover {
-  background: none;
+.actions form[action$="/delete"] button:hover {
+  background: color-mix(in srgb, var(--red-500) 8%, var(--ivory));
   color: var(--red-700);
-  box-shadow: none;
 }
 
 /* ---------------------------------------------------------------

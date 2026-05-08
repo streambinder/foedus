@@ -905,6 +905,10 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 									<td data-label={ t("th.viewed") }>
 										if inv.ViewedAt != nil {
 											{ i18n.FormatDate(*inv.ViewedAt, lang) }
+											<form method="POST" action={ templ.SafeURL("/dashboard/invitations/" + strconv.Itoa(inv.ID) + "/viewed/reset") } class="inline-reset-form">
+												<input type="hidden" name="_csrf" value={ csrfToken }/>
+												<button type="submit" class="reset-viewed-btn outline secondary" aria-label={ t("btn.reset_viewed") } title={ t("btn.reset_viewed") }>&times;</button>
+											</form>
 										} else {
 											—
 										}

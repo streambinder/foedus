@@ -105,6 +105,7 @@ func main() {
 	admin.Get("/invitations/:id/edit", handlers.EditInvitationPage)
 	admin.Post("/invitations/:id", handlers.UpdateInvitation)
 	admin.Post("/invitations/:id/delete", handlers.DeleteInvitation)
+	admin.Post("/invitations/:id/viewed/reset", handlers.ResetInvitationViewed)
 	admin.Post("/polls", handlers.AddPoll)
 	admin.Get("/polls/:id/edit", handlers.EditPollPage)
 	admin.Post("/polls/:id", handlers.UpdatePoll)

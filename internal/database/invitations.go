@@ -177,6 +177,11 @@ func MarkInvitationViewed(id int) error {
 	return err
 }
 
+func ResetInvitationViewed(id int) error {
+	_, err := DB.Exec(`UPDATE invitations SET viewed_at = NULL WHERE id = ?`, id)
+	return err
+}
+
 func SetGuestRSVP(id int, ceremony, reception *bool) error {
 	_, err := DB.Exec(
 		`UPDATE guests SET confirmed_ceremony = ?, confirmed_reception = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
