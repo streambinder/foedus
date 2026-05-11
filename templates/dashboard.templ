@@ -33,6 +33,18 @@ func paginationURL(page int, search string) string {
 	return "/dashboard?page=" + strconv.Itoa(page) + "&q=" + search
 }
 
+// helper to build invitation pagination URL preserving guest page/search
+func invitePaginationURL(invitePage, guestPage int, search string) string {
+	parts := []string{"ipage=" + strconv.Itoa(invitePage)}
+	if guestPage > 1 {
+		parts = append(parts, "page="+strconv.Itoa(guestPage))
+	}
+	if search != "" {
+		parts = append(parts, "q="+search)
+	}
+	return "/dashboard?" + strings.Join(parts, "&") + "#dashboard-invitations"
+}
+
 func formatGiftAmount(amount int) string {
 	return fmt.Sprintf("%d €", amount)
 }
@@ -219,7 +231,7 @@ templ Donut(title string, primaryValue, primaryTotal int, slices []DonutSlice) {
 	</div>
 }
 
-templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []models.Gift, registryItems []models.RegistryItem, invitations []models.Invitation, polls []models.Poll, soundtrackEvents []models.SoundtrackEvent, confirmedReception int, refusedReception int, pendingRSVP int, invitedGuests int, nonVisualizedInvited int, total int, page int, totalPages int, search string, csrfToken string, flash string, t i18n.T, lang string) {
+templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []models.Gift, registryItems []models.RegistryItem, invitations []models.Invitation, pagedInvitations []models.Invitation, invitePage int, inviteTotalPages int, polls []models.Poll, soundtrackEvents []models.SoundtrackEvent, confirmedReception int, refusedReception int, pendingRSVP int, invitedGuests int, nonVisualizedInvited int, total int, page int, totalPages int, search string, csrfToken string, flash string, t i18n.T, lang string) {
 	@DashboardLayout(pageTitle(t("title.dashboard"), settings.Spouse1Name, settings.Spouse2Name), lang) {
 		<div id="dashboard-flash">
 			if flash != "" {
@@ -961,7 +973,7 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 							</tr>
 						</thead>
 						<tbody>
-							for _, inv := range invitations {
+							for _, inv := range pagedInvitations {
 								<tr data-invitation-guests={ invitationGuestNames(inv) }>
 									<td data-label={ t("th.code") }>
 										<code class="invitation-code">{ inv.Code }</code>
@@ -1002,6 +1014,21 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 						</tbody>
 					</table>
 				</div>
+				if inviteTotalPages > 1 {
+					<nav class="pagination">
+						if invitePage > 1 {
+							<a href={ templ.SafeURL(invitePaginationURL(invitePage-1, page, search)) }>{ t("btn.prev") }</a>
+						} else {
+							<span class="disabled">{ t("btn.prev") }</span>
+						}
+						<span class="page-info">{ strconv.Itoa(invitePage) } / { strconv.Itoa(inviteTotalPages) }</span>
+						if invitePage < inviteTotalPages {
+							<a href={ templ.SafeURL(invitePaginationURL(invitePage+1, page, search)) }>{ t("btn.next") }</a>
+						} else {
+							<span class="disabled">{ t("btn.next") }</span>
+						}
+					</nav>
+				}
 			}
 			<div class="accordion dashboard-accordion dashboard-subsection-accordion">
 				<div class="accordion-item dashboard-subsection">

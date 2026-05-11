@@ -60,6 +60,7 @@ func getLang(c *fiber.Ctx) string {
 }
 
 const guestsPerPage = 10
+const invitationsPerPage = 10
 
 func DashboardIndex(c *fiber.Ctx) error {
 	logger := handlerLogger(c)
@@ -105,6 +106,23 @@ func DashboardIndex(c *fiber.Ctx) error {
 		logger.Error("dashboard failed to load invitations", "error", err.Error())
 		return c.Status(500).SendString("failed to load invitations")
 	}
+	invitePage, _ := strconv.Atoi(c.Query("ipage", "1"))
+	if invitePage < 1 {
+		invitePage = 1
+	}
+	inviteTotalPages := (len(invitations) + invitationsPerPage - 1) / invitationsPerPage
+	if inviteTotalPages < 1 {
+		inviteTotalPages = 1
+	}
+	if invitePage > inviteTotalPages {
+		invitePage = inviteTotalPages
+	}
+	inviteStart := (invitePage - 1) * invitationsPerPage
+	inviteEnd := inviteStart + invitationsPerPage
+	if inviteEnd > len(invitations) {
+		inviteEnd = len(invitations)
+	}
+	pagedInvitations := invitations[inviteStart:inviteEnd]
 	polls, err := database.GetAllPollsWithCounts()
 	if err != nil {
 		logger.Error("dashboard failed to load polls", "error", err.Error())
@@ -134,7 +152,7 @@ func DashboardIndex(c *fiber.Ctx) error {
 		"non_visualized_invited", nonVisualizedInvited,
 		"total_guests", totalGuests,
 	)
-	return Render(c, templates.Dashboard(settings, guests, gifts, registryItems, invitations, polls, soundtrackEvents, confirmedReception, refusedReception, pendingRSVP, invitedGuests, nonVisualizedInvited, totalGuests, page, totalPages, search, csrfToken, getFlash(c), getT(c), getLang(c)))
+	return Render(c, templates.Dashboard(settings, guests, gifts, registryItems, invitations, pagedInvitations, invitePage, inviteTotalPages, polls, soundtrackEvents, confirmedReception, refusedReception, pendingRSVP, invitedGuests, nonVisualizedInvited, totalGuests, page, totalPages, search, csrfToken, getFlash(c), getT(c), getLang(c)))
 }
 
 func resolveImageMediaID(rawImage, rawMediaID string, existingMediaID int, allowedAny bool) (int, error) {

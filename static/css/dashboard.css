@@ -427,6 +427,10 @@ button.outline.secondary:hover,
   --tblr-accordion-btn-focus-box-shadow: none;
 }
 
+#dashboard-invitations > .dashboard-accordion.dashboard-subsection-accordion {
+  margin-top: 1rem;
+}
+
 .dashboard-accordion .accordion-item,
 .dashboard-subaccordion .accordion-item,
 .dashboard-subsection-accordion .accordion-item {
