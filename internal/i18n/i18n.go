@@ -228,7 +228,7 @@ var translations = map[string]map[string]string{
 		// invitation public page
 		"invitation.title":             "Invitation",
 		"invitation.rsvp":              "We Look Forward to Seeing You",
-		"invitation.rsvp_description":  "Let us know if you can join us on this special day",
+		"invitation.rsvp_description":  "Let us know if you can join us",
 		"invitation.confirm":           "Confirm",
 		"invitation.already_answered":  "You have already sent your confirmation.",
 		"invitation.change_answer":     "change my answer",
@@ -506,7 +506,7 @@ var translations = map[string]map[string]string{
 		// invitation public page
 		"invitation.title":             "Invito",
 		"invitation.rsvp":              "Vi aspettiamo",
-		"invitation.rsvp_description":  "Fateci sapere se potrete essere con noi in questo giorno speciale",
+		"invitation.rsvp_description":  "Fateci sapere se potrete essere con noi",
 		"invitation.confirm":           "Conferma",
 		"invitation.already_answered":  "Avete già inviato la vostra conferma.",
 		"invitation.change_answer":     "modifica risposta",
