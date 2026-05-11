@@ -42,7 +42,7 @@ func invitePaginationURL(invitePage, guestPage int, search string) string {
 	if search != "" {
 		parts = append(parts, "q="+search)
 	}
-	return "/dashboard?" + strings.Join(parts, "&") + "#dashboard-invitations"
+	return "/dashboard?" + strings.Join(parts, "&")
 }
 
 func formatGiftAmount(amount int) string {

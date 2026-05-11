@@ -33,7 +33,10 @@
     document.addEventListener("change", handleChange);
     document.addEventListener("input", handleInput);
     window.addEventListener("popstate", () => {
-      refreshSections(window.location.href, ["dashboard-guests"]);
+      refreshSections(window.location.href, [
+        "dashboard-guests",
+        "dashboard-invitations",
+      ]);
     });
   }
 
@@ -54,6 +57,16 @@
       event.preventDefault();
       history.pushState({}, "", paginationLink.href);
       refreshSections(paginationLink.href, ["dashboard-guests"]);
+      return;
+    }
+
+    const invitePaginationLink = event.target.closest(
+      '#dashboard-invitations .pagination a[href^="/dashboard"]',
+    );
+    if (invitePaginationLink) {
+      event.preventDefault();
+      history.pushState({}, "", invitePaginationLink.href);
+      refreshSections(invitePaginationLink.href, ["dashboard-invitations"]);
       return;
     }
 
