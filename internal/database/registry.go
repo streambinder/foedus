@@ -75,8 +75,21 @@ func UpdateRegistryItem(id int, name string, price int, mediaID int) error {
 }
 
 func DeleteRegistryItem(id int) error {
-	_, err := DB.Exec(`DELETE FROM registry_items WHERE id = ?`, id)
-	return err
+	// gifts.registry_item_id has a FK to registry_items(id); with foreign_keys=ON
+	// we must null out dependent gifts first or the DELETE fails. Keep gift rows
+	// (they're real money received) but detach them from the deleted item.
+	tx, err := DB.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if _, err := tx.Exec(`UPDATE gifts SET registry_item_id = NULL WHERE registry_item_id = ?`, id); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(`DELETE FROM registry_items WHERE id = ?`, id); err != nil {
+		return err
+	}
+	return tx.Commit()
 }
 
 func MoveRegistryItem(id int, direction string) error {

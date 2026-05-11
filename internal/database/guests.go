@@ -50,8 +50,20 @@ func UpdateGuest(id int, firstName, lastName string) error {
 }
 
 func DeleteGuest(id int) error {
-	_, err := DB.Exec(`DELETE FROM guests WHERE id = ?`, id)
-	return err
+	// poll_answers.guest_id has a FK to guests(id); with foreign_keys=ON we
+	// must purge dependents first or the DELETE fails with constraint error.
+	tx, err := DB.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if _, err := tx.Exec(`DELETE FROM poll_answers WHERE guest_id = ?`, id); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(`DELETE FROM guests WHERE id = ?`, id); err != nil {
+		return err
+	}
+	return tx.Commit()
 }
 
 // CycleConfirmed cycles a confirmation field through NULL → 1 → 0 → NULL.
