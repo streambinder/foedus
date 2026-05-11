@@ -38,10 +38,43 @@ func main() {
 
 	spotify.Init(os.Getenv("SPOTIFY_CLIENT_ID"), os.Getenv("SPOTIFY_CLIENT_SECRET"), os.Getenv("SPOTIFY_REFRESH_TOKEN"))
 
+	// trust the loopback reverse proxy (nginx on the same host) so c.IP() returns
+	// the real client IP from X-Forwarded-For instead of 127.0.0.1. Without this,
+	// every per-IP rate limiter collapses to a single bucket.
+	trustedProxies := []string{"127.0.0.1", "::1"}
+	if extra := os.Getenv("TRUSTED_PROXIES"); extra != "" {
+		for p := range strings.SplitSeq(extra, ",") {
+			if p = strings.TrimSpace(p); p != "" {
+				trustedProxies = append(trustedProxies, p)
+			}
+		}
+	}
+
 	app := fiber.New(fiber.Config{
-		BodyLimit:    16 * 1024 * 1024,
-		ErrorHandler: middleware.ErrorHandler,
+		// admin /dashboard/settings POSTs base64 image fields; keep generous
+		// global cap, but restrict public POSTs via publicBodyLimit below.
+		BodyLimit:               32 * 1024 * 1024,
+		ReadTimeout:             15 * time.Second,
+		WriteTimeout:            120 * time.Second, // long enough for SSE streaming reply
+		IdleTimeout:             60 * time.Second,
+		ErrorHandler:            middleware.ErrorHandler,
+		ProxyHeader:             fiber.HeaderXForwardedFor,
+		EnableTrustedProxyCheck: true,
+		TrustedProxies:          trustedProxies,
 	})
+
+	// rejects public POSTs with body > 256KB before fasthttp materializes them.
+	// Content-Length is set by fasthttp from the parsed request line; missing
+	// or negative means chunked/unknown — reject conservatively.
+	publicBodyLimit := func(c *fiber.Ctx) error {
+		const maxBytes = 256 * 1024
+		if c.Method() == fiber.MethodPost {
+			if cl := c.Request().Header.ContentLength(); cl < 0 || cl > maxBytes {
+				return c.Status(fiber.StatusRequestEntityTooLarge).SendString("payload too large")
+			}
+		}
+		return c.Next()
+	}
 
 	app.Use(middleware.RequestContext())
 	app.Use(middleware.AccessLog())
@@ -61,14 +94,31 @@ func main() {
 		CacheDuration: 10 * time.Minute,
 	})
 
+	// public CSRF: cookie issued on every GET, validated on every state-changing
+	// public POST. Token exposed via Locals("csrf") so templates inject it into
+	// the RSVP <form>; JS endpoints read it from the cookie and send X-Csrf-Token.
+	publicCSRF := csrf.New(csrf.Config{
+		Extractor: func(c *fiber.Ctx) (string, error) {
+			if token := c.Get("X-Csrf-Token"); token != "" {
+				return token, nil
+			}
+			return c.FormValue("_csrf"), nil
+		},
+		ContextKey:     "csrf",
+		CookieName:     "csrf_public",
+		CookieSameSite: "Lax",
+		CookieHTTPOnly: false, // JS reads it on /chat and /soundtrack
+		Expiration:     12 * time.Hour,
+	})
+
 	// public
-	app.Get("/", handlers.Home)
+	app.Get("/", publicCSRF, handlers.Home)
 	app.Get("/media/:id", handlers.MediaImage)
 	app.Get("/og-image", handlers.OGImage)
-	app.Post("/gift/claim", handlers.ClaimGift)
-	app.Post("/chat", handlers.ChatStream)
+	app.Post("/gift/claim", publicBodyLimit, publicCSRF, handlers.ClaimGift)
+	app.Post("/chat", publicBodyLimit, publicCSRF, handlers.ChatStream)
 	app.Get("/soundtrack/search", handlers.SoundtrackSearch)
-	app.Post("/soundtrack/add", handlers.SoundtrackAdd)
+	app.Post("/soundtrack/add", publicBodyLimit, publicCSRF, handlers.SoundtrackAdd)
 
 	// admin group (must be registered before the /:code catch-all)
 	admin := app.Group("/dashboard", middleware.BasicAuth())
@@ -113,9 +163,9 @@ func main() {
 	admin.Post("/soundtrack/:id/delete", handlers.DeleteSoundtrackEvent)
 
 	// invitation public routes (catch-all, must be last)
-	app.Get("/:code", handlers.ViewInvitation)
-	app.Post("/:code/viewed", handlers.MarkInvitationViewed)
-	app.Post("/:code/rsvp", handlers.UpdateInvitationRSVP)
+	app.Get("/:code", publicCSRF, handlers.ViewInvitation)
+	app.Post("/:code/viewed", publicBodyLimit, publicCSRF, handlers.MarkInvitationViewed)
+	app.Post("/:code/rsvp", publicBodyLimit, publicCSRF, handlers.UpdateInvitationRSVP)
 
 	port := os.Getenv("PORT")
 	if port == "" {

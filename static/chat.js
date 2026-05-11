@@ -2,6 +2,13 @@
   const chatPanel = document.getElementById("chat-panel");
   if (!chatPanel) return;
 
+  // public CSRF cookie issued by Fiber middleware on every GET; not HttpOnly
+  // by design so JSON endpoints can echo it back as X-Csrf-Token.
+  function readCookie(name) {
+    const m = document.cookie.match(new RegExp("(?:^|; )" + name + "=([^;]*)"));
+    return m ? decodeURIComponent(m[1]) : "";
+  }
+
   const MSG_ERROR = chatPanel.dataset.msgError;
   const MSG_RATE = chatPanel.dataset.msgRate;
   const HISTORY_KEY = "foedus_chat_history";
@@ -83,7 +90,10 @@
 
     fetch("/chat", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "X-Csrf-Token": readCookie("csrf_public"),
+      },
       body: JSON.stringify({ message: text, history: history.slice(-20) }),
     })
       .then((res) => {

@@ -296,6 +296,26 @@ templ Invitation(inv models.Invitation, settings models.WeddingSettings, polls [
 				var openButton = document.getElementById('envelope-open-button');
 				var replayButton = document.getElementById('replay-invitation-animation');
 				var code = window.location.pathname.replace('/', '');
+				// public CSRF cookie issued by Fiber; readable from JS so /viewed and the
+				// RSVP <form> can echo it back. Also injects hidden _csrf into the form
+				// pre-submit so the server's csrf middleware accepts the POST.
+				function readCsrfPublic() {
+					var m = document.cookie.match(/(?:^|; )csrf_public=([^;]*)/);
+					return m ? decodeURIComponent(m[1]) : '';
+				}
+				var rsvpForm = document.getElementById('rsvp-form');
+				if (rsvpForm) {
+					rsvpForm.addEventListener('submit', function() {
+						var existing = rsvpForm.querySelector('input[name="_csrf"]');
+						if (!existing) {
+							existing = document.createElement('input');
+							existing.type = 'hidden';
+							existing.name = '_csrf';
+							rsvpForm.appendChild(existing);
+						}
+						existing.value = readCsrfPublic();
+					});
+				}
 				if (!overlay || !content || !openButton || !replayButton) return;
 				var shouldMarkViewed = !overlay.classList.contains('is-complete');
 				var reducedMotionQuery = window.matchMedia
@@ -321,7 +341,10 @@ templ Invitation(inv models.Invitation, settings models.WeddingSettings, polls [
 					content.classList.remove('invitation-content-staged', 'is-opening');
 					document.body.classList.remove('invitation-opening');
 					if (markViewed) {
-						fetch('/' + code + '/viewed', { method: 'POST' });
+						fetch('/' + code + '/viewed', {
+							method: 'POST',
+							headers: { 'X-Csrf-Token': readCsrfPublic() },
+						});
 					}
 				}
 

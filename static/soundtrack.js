@@ -4,6 +4,11 @@
     return;
   }
 
+  function readCookie(name) {
+    const m = document.cookie.match(new RegExp("(?:^|; )" + name + "=([^;]*)"));
+    return m ? decodeURIComponent(m[1]) : "";
+  }
+
   const MSG_ADDED = container.dataset.msgAdded;
   const MSG_ERROR = container.dataset.msgError;
   const MSG_RATE = container.dataset.msgRate;
@@ -183,7 +188,10 @@
     btn.textContent = "...";
     fetch("/soundtrack/add", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "X-Csrf-Token": readCookie("csrf_public"),
+      },
       body: JSON.stringify({
         uri: track.uri,
         title: track.name,
