@@ -962,6 +962,12 @@ func CreateInvitation(c *fiber.Ctx) error {
 	}
 	logger.Info("invitation created", "invitation_code", observability.Redact(code), "guest_count", len(guestIDs), "custom_label", label != "")
 	setFlash(c, getT(c)("flash.invitation_created")+" "+code)
+	// SPA fetch caller needs the code in a header to build the URL + copy to clipboard;
+	// redirect responses would swallow the header after follow, so short-circuit here.
+	c.Set("X-Invitation-Code", code)
+	if c.Get("X-Requested-With") == "fetch" {
+		return c.SendStatus(204)
+	}
 	return c.Redirect("/dashboard")
 }
 

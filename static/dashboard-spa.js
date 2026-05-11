@@ -158,6 +158,10 @@
         labelInput.value = "";
         labelInput.dataset.userEdited = "";
       }
+      const code = response.headers.get("X-Invitation-Code");
+      if (code && typeof window.copyInvitationURL === "function") {
+        window.copyInvitationURL(code);
+      }
     }
 
     if (isGuestDeleteForm(form)) {

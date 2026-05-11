@@ -917,7 +917,7 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 									<td data-label={ t("th.actions") }>
 										<div class="actions">
 											<a href={ templ.SafeURL("/dashboard/invitations/" + strconv.Itoa(inv.ID) + "/edit") }>{ t("btn.edit") }</a>
-											<button type="button" class="copy-btn" data-code={ inv.Code } onclick="copyInvitationURL(this)">{ t("btn.copy") }</button>
+											<button type="button" class="copy-btn" data-code={ inv.Code } onclick="copyInvitationURL(this.dataset.code, this)">{ t("btn.copy") }</button>
 											<form method="POST" action={ templ.SafeURL("/dashboard/invitations/" + strconv.Itoa(inv.ID) + "/delete") } data-confirm={ t("confirm.delete_invitation") } onsubmit="return confirm(this.dataset.confirm)">
 												<input type="hidden" name="_csrf" value={ csrfToken }/>
 												<button type="submit" class="outline secondary">{ t("btn.delete") }</button>
@@ -1194,12 +1194,12 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 			});
 		</script>
 		<script>
-			// copy invitation URL to clipboard
-			function copyInvitationURL(btn) {
-				const code = btn.dataset.code;
+			// copy invitation URL to clipboard; btn optional (visual feedback when invoked from a button)
+			function copyInvitationURL(code, btn) {
 				const url =
 					window.location.protocol + "//" + window.location.host + "/" + code;
 				navigator.clipboard.writeText(url).then(function () {
+					if (!btn) return;
 					const orig = btn.textContent;
 					btn.textContent = "\u2713";
 					setTimeout(function () {
@@ -1207,6 +1207,7 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 					}, 1500);
 				});
 			}
+			window.copyInvitationURL = copyInvitationURL;
 		</script>
 		<script src={ templ.SafeURL(assetURL("/static/autocomplete.js")) }></script>
 		<script src={ templ.SafeURL(assetURL("/static/dashboard-features.js")) }></script>
