@@ -20,9 +20,11 @@ func BasicAuth() fiber.Handler {
 		}
 	}
 	if len(users) == 0 {
-		users["admin"] = "admin"
+		// refuse to boot rather than expose dashboard with admin/admin
+		slog.Error("no admin credentials configured: set ADMIN_USER and ADMIN_PASSWORD (or ADMIN_USER1..9 / ADMIN_PASSWORD1..9)")
+		panic("no admin credentials configured")
 	}
-	slog.Info("basic auth configured", "admin_users", len(users), "using_default_credentials", len(users) == 1 && users["admin"] == "admin")
+	slog.Info("basic auth configured", "admin_users", len(users))
 	return basicauth.New(basicauth.Config{
 		Users: users,
 		Unauthorized: func(c *fiber.Ctx) error {
