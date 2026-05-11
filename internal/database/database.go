@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"log/slog"
+	"strings"
 	"time"
 
 	_ "modernc.org/sqlite"
@@ -10,22 +11,41 @@ import (
 
 var DB *sql.DB
 
+// pragmas applied via DSN so they take effect on every pooled connection.
+// WAL = concurrent readers + 1 writer; busy_timeout makes writers wait on lock
+// instead of failing; foreign_keys turns on the FK constraints declared in the
+// schema (sqlite default is OFF); synchronous=NORMAL is the WAL-recommended
+// durability/perf tradeoff (only loses last txn on power-loss, never corrupts).
+const sqlitePragmas = "_pragma=journal_mode(WAL)&_pragma=busy_timeout(5000)&_pragma=foreign_keys(ON)&_pragma=synchronous(NORMAL)"
+
 func Init(dsn string) {
 	start := time.Now()
 	var err error
-	DB, err = sql.Open("sqlite", dsn)
+	DB, err = sql.Open("sqlite", dsnWithPragmas(dsn))
 	if err != nil {
 		slog.Error("failed to open database", "dsn", dsn, "error", err.Error())
 		panic(err)
 	}
 
-	// single connection prevents "database is locked" on concurrent writes
-	DB.SetMaxOpenConns(1)
-	slog.Info("database connection opened", "dsn", dsn, "max_open_conns", 1)
+	// WAL allows multiple readers in parallel — bump pool so the dashboard's
+	// N+1 reads don't serialize the whole site behind a single connection.
+	DB.SetMaxOpenConns(8)
+	DB.SetMaxIdleConns(4)
+	DB.SetConnMaxIdleTime(5 * time.Minute)
+	slog.Info("database connection opened", "dsn", dsn, "max_open_conns", 8)
 
 	migrate()
 	SeedSettings()
 	slog.Info("database initialized", "dsn", dsn, "duration_ms", time.Since(start).Milliseconds())
+}
+
+// modernc.org/sqlite parses ?_pragma=foo(bar)&_pragma=... from the DSN tail.
+func dsnWithPragmas(dsn string) string {
+	sep := "?"
+	if strings.Contains(dsn, "?") {
+		sep = "&"
+	}
+	return dsn + sep + sqlitePragmas
 }
 
 func migrate() {
