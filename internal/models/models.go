@@ -79,9 +79,14 @@ type Poll struct {
 	ID          int
 	Question    string
 	Description string
-	TotalCount  int      // computed at query time
-	YesVoters   []string // guest names who answered yes
+	TotalCount  int         // computed at query time
+	YesVoters   []PollVoter // guests who answered yes
 	CreatedAt   time.Time
+}
+
+type PollVoter struct {
+	Name  string
+	Notes string
 }
 
 type PollAnswer struct {

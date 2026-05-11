@@ -63,19 +63,19 @@ func GetAllPollsWithCounts() ([]models.Poll, error) {
 	// load yes-voter names per poll
 	for i := range polls {
 		voterRows, err := DB.Query(
-			`SELECT g.first_name || ' ' || g.last_name FROM poll_answers pa JOIN guests g ON g.id = pa.guest_id WHERE pa.poll_id = ? AND pa.answer = 1 ORDER BY g.first_name`,
+			`SELECT g.first_name || ' ' || g.last_name, pa.notes FROM poll_answers pa JOIN guests g ON g.id = pa.guest_id WHERE pa.poll_id = ? AND pa.answer = 1 ORDER BY g.first_name`,
 			polls[i].ID,
 		)
 		if err != nil {
 			return nil, err
 		}
 		for voterRows.Next() {
-			var name string
-			if err := voterRows.Scan(&name); err != nil {
+			var voter models.PollVoter
+			if err := voterRows.Scan(&voter.Name, &voter.Notes); err != nil {
 				voterRows.Close()
 				return nil, err
 			}
-			polls[i].YesVoters = append(polls[i].YesVoters, name)
+			polls[i].YesVoters = append(polls[i].YesVoters, voter)
 		}
 		voterRows.Close()
 	}

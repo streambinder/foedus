@@ -1061,8 +1061,17 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 											<div class="modal-box">
 												<h3>{ p.Question }</h3>
 												<ul>
-													for _, name := range p.YesVoters {
-														<li>{ name }</li>
+													for _, voter := range p.YesVoters {
+														<li>
+															if voter.Notes != "" {
+																<details>
+																	<summary>{ voter.Name }</summary>
+																	<p>{ voter.Notes }</p>
+																</details>
+															} else {
+																{ voter.Name }
+															}
+														</li>
 													}
 												</ul>
 												<div class="modal-actions">
