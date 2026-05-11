@@ -20,6 +20,10 @@ var (
 	mu          sync.Mutex
 	accessToken string
 	tokenExpiry time.Time
+
+	// dedicated client w/ overall timeout — http.DefaultClient has none, so a
+	// hung Spotify response would tie up a SQLite conn forever.
+	httpClient = &http.Client{Timeout: 10 * time.Second}
 )
 
 type Track struct {
@@ -63,7 +67,12 @@ func getAccessToken() (string, error) {
 		"client_secret": {clientSecret},
 	}
 
-	resp, err := http.Post("https://accounts.spotify.com/api/token", "application/x-www-form-urlencoded", strings.NewReader(data.Encode()))
+	tokReq, err := http.NewRequest("POST", "https://accounts.spotify.com/api/token", strings.NewReader(data.Encode()))
+	if err != nil {
+		return "", fmt.Errorf("token refresh request build failed: %w", err)
+	}
+	tokReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	resp, err := httpClient.Do(tokReq)
 	if err != nil {
 		return "", fmt.Errorf("token refresh request failed: %w", err)
 	}
@@ -109,7 +118,7 @@ func Search(query string, limit int) ([]Track, error) {
 	}
 	req.Header.Set("Authorization", "Bearer "+token)
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -182,7 +191,7 @@ func AddToPlaylist(playlistID, trackURI string) error {
 	req.Header.Set("Authorization", "Bearer "+token)
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return err
 	}

@@ -31,6 +31,18 @@ var (
 	openrouterKey   string
 	openrouterModel string
 	chatRateLimiter sync.Map // ip -> []time.Time
+
+	// dedicated client w/ explicit timeouts. SSE responses can stream a while,
+	// so the per-request timeout is generous; per-connection timeouts catch
+	// hung TCP. Without these, http.DefaultClient never times out and a hung
+	// upstream pins the goroutine + connection forever.
+	chatHTTPClient = &http.Client{
+		Timeout: 90 * time.Second,
+		Transport: &http.Transport{
+			ResponseHeaderTimeout: 20 * time.Second,
+			IdleConnTimeout:       60 * time.Second,
+		},
+	}
 )
 
 func InitChat(key, model string) {
@@ -236,8 +248,24 @@ func ChatStream(c *fiber.Ctx) error {
 	start := time.Now()
 	c.Context().SetBodyStreamWriter(func(w *bufio.Writer) {
 		streamLogger := logger.With("persona", persona.Codename)
+		// fasthttp's stream writer runs in its own goroutine after the handler
+		// returns; a panic here would crash the whole process — recover() turns
+		// it into a log line + a clean SSE error frame.
+		defer func() {
+			if r := recover(); r != nil {
+				streamLogger.Error("chat stream panic", "panic", fmt.Sprintf("%v", r))
+				fmt.Fprintf(w, "data: {\"error\":\"stream error\"}\n\n")
+				w.Flush()
+			}
+		}()
 
-		upstreamReq, err := http.NewRequestWithContext(context.Background(), "POST", "https://openrouter.ai/api/v1/chat/completions", bytes.NewReader(payload))
+		// independent deadline: c.UserContext() is invalid past the handler
+		// return, so we cap the upstream call at 80s here. Cancel propagates
+		// through req.Context() if anything stalls.
+		ctx, cancel := context.WithTimeout(context.Background(), 80*time.Second)
+		defer cancel()
+
+		upstreamReq, err := http.NewRequestWithContext(ctx, "POST", "https://openrouter.ai/api/v1/chat/completions", bytes.NewReader(payload))
 		if err != nil {
 			streamLogger.Error("chat upstream request build failed", "error", err.Error())
 			fmt.Fprintf(w, "data: {\"error\":\"upstream error\"}\n\n")
@@ -248,7 +276,7 @@ func ChatStream(c *fiber.Ctx) error {
 		upstreamReq.Header.Set("Content-Type", "application/json")
 		upstreamReq.Header.Set("HTTP-Referer", "https://foedus.wedding")
 
-		resp, err := http.DefaultClient.Do(upstreamReq)
+		resp, err := chatHTTPClient.Do(upstreamReq)
 		if err != nil {
 			streamLogger.Error("chat upstream request failed", "error", err.Error())
 			fmt.Fprintf(w, "data: {\"error\":\"upstream error\"}\n\n")
