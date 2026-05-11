@@ -157,3 +157,48 @@ func scanGuest(rows *sql.Rows) (models.Guest, error) {
 	err := rows.Scan(&g.ID, &g.FirstName, &g.LastName, &g.ConfirmedCeremony, &g.ConfirmedReception, &g.InvitationID, &g.CreatedAt, &g.UpdatedAt)
 	return g, err
 }
+
+// GuestNamesByCounter returns guest "First Last" names matching a counter
+// category. Categories mirror the dashboard donut slices in CountConfirmed.
+// Empty/unknown category returns ErrUnknownCategory.
+func GuestNamesByCounter(category string) ([]string, error) {
+	clause, ok := counterWhereClauses[category]
+	if !ok {
+		return nil, ErrUnknownCategory
+	}
+	rows, err := DB.Query(`
+		SELECT TRIM(COALESCE(g.first_name, '') || ' ' || COALESCE(g.last_name, ''))
+		FROM guests g
+		LEFT JOIN invitations i ON i.id = g.invitation_id
+		WHERE ` + clause + `
+		ORDER BY g.first_name, g.last_name
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var names []string
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			return nil, err
+		}
+		names = append(names, name)
+	}
+	return names, rows.Err()
+}
+
+// counterWhereClauses pins each clickable counter to the predicate that
+// produced its number in CountConfirmed — keep these two in sync if the
+// definition of a category ever changes.
+var counterWhereClauses = map[string]string{
+	"confirmed_reception": "g.invitation_id IS NOT NULL AND g.confirmed_reception = 1",
+	"refused_reception":   "g.invitation_id IS NOT NULL AND g.confirmed_reception = 0",
+	"pending_rsvp":        "g.invitation_id IS NOT NULL AND g.confirmed_reception IS NULL",
+	"viewed":              "g.invitation_id IS NOT NULL AND i.viewed_at IS NOT NULL",
+	"nonvisualized":       "g.invitation_id IS NOT NULL AND i.viewed_at IS NULL",
+	"invited":             "g.invitation_id IS NOT NULL",
+	"uninvited":           "g.invitation_id IS NULL",
+}
+
+var ErrUnknownCategory = fmt.Errorf("unknown counter category")

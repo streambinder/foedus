@@ -270,6 +270,48 @@ hr.footer-separator {
   color: var(--tblr-emphasis-color);
 }
 
+a.donut-legend-value.counter-names-trigger {
+  cursor: pointer;
+  text-decoration: none;
+}
+
+/* prevent outer page scroll while a dashboard modal is open */
+body.dashboard-modal-open {
+  overflow: hidden !important;
+}
+
+/* counter modal: bound height + scroll inner list. !important to win against
+   any base .modal-box rule that might leak through. */
+.modal-box.dashboard-counter-modal-box {
+  width: min(100%, 28rem) !important;
+  max-height: 80vh !important;
+  display: flex !important;
+  flex-direction: column !important;
+  padding: 1rem 0 !important;
+  overflow: hidden !important;
+}
+
+.modal-box.dashboard-counter-modal-box .dashboard-modal-header {
+  flex: 0 0 auto;
+  padding: 0 1.25rem 0.5rem;
+}
+
+.counter-names-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto !important;
+  padding: 0 1.5rem 1rem;
+}
+
+.counter-names-list ol {
+  margin: 0;
+  padding-left: 1.5rem;
+}
+
+.counter-names-list li {
+  padding: 0.15rem 0;
+}
+
 form {
   margin: 0;
 }

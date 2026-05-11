@@ -1199,3 +1199,22 @@ func UpdateInvitation(c *fiber.Ctx) error {
 	setFlash(c, getT(c)("flash.invitation_updated"))
 	return c.Redirect("/dashboard")
 }
+
+func CounterGuestNames(c *fiber.Ctx) error {
+	logger := handlerLogger(c)
+	category := c.Params("category")
+	names, err := database.GuestNamesByCounter(category)
+	if err == database.ErrUnknownCategory {
+		logger.Warn("counter names unknown category", "category", category)
+		return c.Status(400).JSON(fiber.Map{"error": "unknown category"})
+	}
+	if err != nil {
+		logger.Error("counter names failed", "category", category, "error", err.Error())
+		return c.Status(500).JSON(fiber.Map{"error": "failed to load names"})
+	}
+	if names == nil {
+		names = []string{}
+	}
+	logger.Info("counter names", "category", category, "count", len(names))
+	return c.JSON(fiber.Map{"category": category, "names": names})
+}

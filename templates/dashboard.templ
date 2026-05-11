@@ -176,6 +176,7 @@ type DonutSlice struct {
 	Value     int
 	ClassName string
 	Label     string
+	Category  string // optional: when set, the legend value becomes a clickable button that opens the counter-names modal
 }
 
 // fixed donut geometry shared by all charts. pathLength=100 lets us treat
@@ -236,7 +237,11 @@ templ Donut(title string, primaryValue, primaryTotal int, slices []DonutSlice) {
 				<li>
 					<span class={ "donut-swatch", slice.ClassName }></span>
 					<span class="donut-legend-label">{ slice.Label }</span>
-					<span class="donut-legend-value">{ strconv.Itoa(slice.Value) }</span>
+					if slice.Category != "" && slice.Value > 0 {
+						<a href="#" class="donut-legend-value counter-names-trigger" role="button" data-counter-category={ slice.Category } data-counter-label={ slice.Label }>{ strconv.Itoa(slice.Value) }</a>
+					} else {
+						<span class="donut-legend-value">{ strconv.Itoa(slice.Value) }</span>
+					}
 				</li>
 			}
 		</ul>
@@ -253,17 +258,17 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, pagedGif
 		<!-- counters -->
 		<div id="dashboard-counters" class="counters-row">
 			@Donut(t("counter.rsvp"), confirmedReception, invitedGuests, []DonutSlice{
-				{Value: confirmedReception, ClassName: "donut-confirmed", Label: t("counter.confirmed")},
-				{Value: refusedReception, ClassName: "donut-refused", Label: t("counter.refused")},
-				{Value: pendingRSVP, ClassName: "donut-pending", Label: t("counter.pending_rsvp")},
+				{Value: confirmedReception, ClassName: "donut-confirmed", Label: t("counter.confirmed"), Category: "confirmed_reception"},
+				{Value: refusedReception, ClassName: "donut-refused", Label: t("counter.refused"), Category: "refused_reception"},
+				{Value: pendingRSVP, ClassName: "donut-pending", Label: t("counter.pending_rsvp"), Category: "pending_rsvp"},
 			})
 			@Donut(t("counter.visualization"), invitedGuests-nonVisualizedInvited, invitedGuests, []DonutSlice{
-				{Value: invitedGuests - nonVisualizedInvited, ClassName: "donut-viewed", Label: t("counter.viewed")},
-				{Value: nonVisualizedInvited, ClassName: "donut-nonvisualized", Label: t("counter.nonvisualized")},
+				{Value: invitedGuests - nonVisualizedInvited, ClassName: "donut-viewed", Label: t("counter.viewed"), Category: "viewed"},
+				{Value: nonVisualizedInvited, ClassName: "donut-nonvisualized", Label: t("counter.nonvisualized"), Category: "nonvisualized"},
 			})
 			@Donut(t("counter.reach"), invitedGuests, total, []DonutSlice{
-				{Value: invitedGuests, ClassName: "donut-invited", Label: t("counter.invited")},
-				{Value: total - invitedGuests, ClassName: "donut-uninvited", Label: t("counter.uninvited")},
+				{Value: invitedGuests, ClassName: "donut-invited", Label: t("counter.invited"), Category: "invited"},
+				{Value: total - invitedGuests, ClassName: "donut-uninvited", Label: t("counter.uninvited"), Category: "uninvited"},
 			})
 		</div>
 		<!-- details -->

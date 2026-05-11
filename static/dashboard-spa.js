@@ -96,6 +96,25 @@
       return;
     }
 
+    const counterTrigger = event.target.closest(".counter-names-trigger");
+    if (counterTrigger) {
+      event.preventDefault();
+      openCounterNamesModal(
+        counterTrigger.dataset.counterCategory,
+        counterTrigger.dataset.counterLabel,
+        counterTrigger.textContent.trim(),
+      );
+      return;
+    }
+
+    const modalOverlay = event.target.closest("[data-dashboard-modal-overlay]");
+    if (modalOverlay && event.target === modalOverlay) {
+      // click landed on the backdrop itself, not on inner modal content
+      event.preventDefault();
+      closeDashboardModal();
+      return;
+    }
+
     const modalClose = event.target.closest("[data-dashboard-modal-close]");
     if (modalClose) {
       event.preventDefault();
@@ -472,11 +491,66 @@
       "</div>" +
       "</div>";
     bindManagedImageResizers(root);
+    lockBodyScrollForModal();
   }
 
   function closeDashboardModal() {
     const root = document.getElementById("dashboard-modal-root");
     if (root) root.innerHTML = "";
+    document.body.classList.remove("dashboard-modal-open");
+  }
+
+  function lockBodyScrollForModal() {
+    document.body.classList.add("dashboard-modal-open");
+  }
+
+  async function openCounterNamesModal(category, label, count) {
+    if (!category) return;
+    const root = document.getElementById("dashboard-modal-root");
+    if (!root) return;
+
+    // skeleton first so the user sees immediate feedback
+    root.innerHTML =
+      '<div class="modal-overlay" data-dashboard-modal-overlay>' +
+      '<div class="modal-box dashboard-counter-modal-box">' +
+      '<div class="dashboard-modal-header">' +
+      "<h3>" +
+      escapeHtml(label || "") +
+      " <small>(" +
+      escapeHtml(count || "") +
+      ")</small></h3>" +
+      '<button type="button" class="outline secondary" data-dashboard-modal-close>Close</button>' +
+      "</div>" +
+      '<div class="counter-names-list">…</div>' +
+      "</div>" +
+      "</div>";
+    lockBodyScrollForModal();
+
+    try {
+      const res = await fetch(
+        `/dashboard/counters/${encodeURIComponent(category)}`,
+        {
+          credentials: "same-origin",
+          headers: { "X-Requested-With": "fetch" },
+        },
+      );
+      if (!res.ok) throw new Error(`status ${res.status}`);
+      const data = await res.json();
+      const names = Array.isArray(data.names) ? data.names : [];
+      const list = root.querySelector(".counter-names-list");
+      if (!list) return;
+      if (names.length === 0) {
+        list.textContent = "—";
+        return;
+      }
+      list.innerHTML =
+        "<ol>" +
+        names.map((n) => "<li>" + escapeHtml(n) + "</li>").join("") +
+        "</ol>";
+    } catch (err) {
+      const list = root.querySelector(".counter-names-list");
+      if (list) list.textContent = "Error: " + err.message;
+    }
   }
 
   function initImageResizers() {
