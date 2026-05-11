@@ -1050,9 +1050,119 @@ body:has(.hero) {
    --------------------------------------------------------------- */
 .counters-row {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
   gap: var(--sp-2);
   margin-bottom: var(--sp-4);
+}
+
+.donut-card {
+  align-items: stretch;
+  gap: var(--sp-2);
+  padding: var(--sp-3);
+}
+
+.donut-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 9rem;
+  margin: 0 auto;
+  aspect-ratio: 1;
+}
+
+.donut-svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg); /* start at 12 o'clock */
+}
+
+.donut-track {
+  fill: none;
+  stroke: var(--sage-light);
+  stroke-width: 3.5;
+}
+
+.donut-slice {
+  fill: none;
+  stroke-width: 3.5;
+  stroke-linecap: butt;
+  transition: stroke-width 120ms ease;
+}
+
+.donut-slice:hover {
+  stroke-width: 4.2;
+}
+
+.donut-confirmed,
+.donut-viewed,
+.donut-invited {
+  stroke: var(--sage-dark);
+}
+
+.donut-refused,
+.donut-uninvited {
+  stroke: var(--charcoal);
+}
+
+.donut-pending,
+.donut-nonvisualized {
+  stroke: var(--sage);
+}
+
+.donut-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  pointer-events: none;
+}
+
+.donut-legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-family: Inter, sans-serif;
+  font-size: var(--fs-xs);
+  color: var(--sage-dark);
+}
+
+.donut-legend li {
+  display: grid;
+  grid-template-columns: 0.6rem 1fr auto;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.donut-swatch {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.donut-swatch.donut-confirmed,
+.donut-swatch.donut-viewed,
+.donut-swatch.donut-invited {
+  background: var(--sage-dark);
+}
+
+.donut-swatch.donut-refused,
+.donut-swatch.donut-uninvited {
+  background: var(--charcoal);
+}
+
+.donut-swatch.donut-pending,
+.donut-swatch.donut-nonvisualized {
+  background: var(--sage);
+}
+
+.donut-legend-value {
+  font-weight: 500;
+  color: var(--charcoal-dark);
 }
 
 .counter-card {
@@ -1092,21 +1202,6 @@ body:has(.hero) {
 
 .counter-label[class]::before {
   display: none;
-}
-
-.counter-card:first-child {
-  border-left-color: var(--sage-light);
-  border-left-width: 2px;
-}
-
-.counter-card:nth-child(2) {
-  border-left-color: var(--sage);
-  border-left-width: 2px;
-}
-
-.counter-card:nth-child(3) {
-  border-left-color: var(--charcoal);
-  border-left-width: 2px;
 }
 
 /* ---------------------------------------------------------------

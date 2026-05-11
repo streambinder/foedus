@@ -147,7 +147,79 @@ func mediaIDValue(id int) string {
 	return strconv.Itoa(id)
 }
 
-templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []models.Gift, registryItems []models.RegistryItem, invitations []models.Invitation, polls []models.Poll, soundtrackEvents []models.SoundtrackEvent, confirmedCeremony int, confirmedReception int, pendingGuests int, total int, page int, totalPages int, search string, csrfToken string, flash string, t i18n.T, lang string) {
+// donut chart inputs: each slice is (count, css-class, legend-label)
+type DonutSlice struct {
+	Value     int
+	ClassName string
+	Label     string
+}
+
+// fixed donut geometry shared by all charts. pathLength=100 lets us treat
+// stroke-dasharray as percent regardless of actual circumference.
+const donutRadius = 16
+
+// donutDashArray returns the SVG stroke-dasharray for a slice of `value/total`
+// of the circle, expressed in the normalized 0..100 space.
+func donutDashArray(value, total int) string {
+	if total <= 0 || value <= 0 {
+		return "0 100"
+	}
+	pct := float64(value) * 100 / float64(total)
+	return fmt.Sprintf("%.4f %.4f", pct, 100-pct)
+}
+
+// donutDashOffset returns the offset that places this slice after the
+// preceding ones. SVG circles draw clockwise from the 3 o'clock position;
+// we rotate the <svg> -90deg in CSS so 0 starts at 12 o'clock.
+func donutDashOffset(precedingTotal, total int) string {
+	if total <= 0 {
+		return "0"
+	}
+	// negative offset shifts the dash forward
+	return fmt.Sprintf("%.4f", -float64(precedingTotal)*100/float64(total))
+}
+
+templ Donut(title string, primaryValue, primaryTotal int, slices []DonutSlice) {
+	<div class="counter-card donut-card">
+		<span class="counter-label">{ title }</span>
+		<div class="donut-wrap">
+			<svg class="donut-svg" viewBox="0 0 36 36" role="img" aria-label={ title }>
+				<circle class="donut-track" cx="18" cy="18" r={ strconv.Itoa(donutRadius) } pathLength="100"></circle>
+				{{ runningTotal := 0 }}
+				for _, slice := range slices {
+					if slice.Value > 0 {
+						<circle
+							class={ "donut-slice", slice.ClassName }
+							cx="18"
+							cy="18"
+							r={ strconv.Itoa(donutRadius) }
+							pathLength="100"
+							stroke-dasharray={ donutDashArray(slice.Value, primaryTotal) }
+							stroke-dashoffset={ donutDashOffset(runningTotal, primaryTotal) }
+						>
+							<title>{ fmt.Sprintf("%s: %d", slice.Label, slice.Value) }</title>
+						</circle>
+						{{ runningTotal += slice.Value }}
+					}
+				}
+			</svg>
+			<div class="donut-center">
+				<span class="counter-value">{ strconv.Itoa(primaryValue) }<small>/{ strconv.Itoa(primaryTotal) }</small></span>
+			</div>
+		</div>
+		<ul class="donut-legend">
+			for _, slice := range slices {
+				<li>
+					<span class={ "donut-swatch", slice.ClassName }></span>
+					<span class="donut-legend-label">{ slice.Label }</span>
+					<span class="donut-legend-value">{ strconv.Itoa(slice.Value) }</span>
+				</li>
+			}
+		</ul>
+	</div>
+}
+
+templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []models.Gift, registryItems []models.RegistryItem, invitations []models.Invitation, polls []models.Poll, soundtrackEvents []models.SoundtrackEvent, confirmedReception int, refusedReception int, pendingRSVP int, invitedGuests int, nonVisualizedInvited int, total int, page int, totalPages int, search string, csrfToken string, flash string, t i18n.T, lang string) {
 	@DashboardLayout(pageTitle(t("title.dashboard"), settings.Spouse1Name, settings.Spouse2Name), lang) {
 		<div id="dashboard-flash">
 			if flash != "" {
@@ -156,18 +228,19 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 		</div>
 		<!-- counters -->
 		<div id="dashboard-counters" class="counters-row">
-			<div class="counter-card">
-				<span class="counter-value">{ strconv.Itoa(confirmedCeremony) }<small>/{ strconv.Itoa(total) }</small></span>
-				<span class="counter-label">{ t("counter.ceremony") }</span>
-			</div>
-			<div class="counter-card">
-				<span class="counter-value">{ strconv.Itoa(confirmedReception) }<small>/{ strconv.Itoa(total) }</small></span>
-				<span class="counter-label">{ t("counter.reception") }</span>
-			</div>
-			<div class="counter-card">
-				<span class="counter-value">{ strconv.Itoa(pendingGuests) }<small>/{ strconv.Itoa(total) }</small></span>
-				<span class="counter-label">{ t("counter.pending") }</span>
-			</div>
+			@Donut(t("counter.rsvp"), confirmedReception, invitedGuests, []DonutSlice{
+				{Value: confirmedReception, ClassName: "donut-confirmed", Label: t("counter.confirmed")},
+				{Value: refusedReception, ClassName: "donut-refused", Label: t("counter.refused")},
+				{Value: pendingRSVP, ClassName: "donut-pending", Label: t("counter.pending_rsvp")},
+			})
+			@Donut(t("counter.visualization"), invitedGuests-nonVisualizedInvited, invitedGuests, []DonutSlice{
+				{Value: invitedGuests - nonVisualizedInvited, ClassName: "donut-viewed", Label: t("counter.viewed")},
+				{Value: nonVisualizedInvited, ClassName: "donut-nonvisualized", Label: t("counter.nonvisualized")},
+			})
+			@Donut(t("counter.reach"), invitedGuests, total, []DonutSlice{
+				{Value: invitedGuests, ClassName: "donut-invited", Label: t("counter.invited")},
+				{Value: total - invitedGuests, ClassName: "donut-uninvited", Label: t("counter.uninvited")},
+			})
 		</div>
 		<!-- details -->
 		<article id="dashboard-settings">

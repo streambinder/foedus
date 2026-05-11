@@ -73,8 +73,24 @@ func CycleConfirmed(id int, field string) error {
 	return err
 }
 
-func CountConfirmed() (ceremony, reception, pending, total int, err error) {
-	err = DB.QueryRow(`SELECT COALESCE(SUM(confirmed_ceremony),0), COALESCE(SUM(confirmed_reception),0), COALESCE(SUM(CASE WHEN confirmed_ceremony IS NULL AND confirmed_reception IS NULL THEN 1 ELSE 0 END),0), COUNT(*) FROM guests`).Scan(&ceremony, &reception, &pending, &total)
+func CountConfirmed() (confirmedReception, refusedReception, pendingRSVP, invited, nonVisualizedInvited, total int, err error) {
+	// reception-only metrics (we don't pay for ceremony-only guests)
+	// confirmedReception: said yes to reception
+	// refusedReception: said no to reception
+	// pendingRSVP: invited but reception not yet actioned
+	// invited: linked to any invitation
+	// nonVisualizedInvited: invited but invitation never viewed
+	err = DB.QueryRow(`
+		SELECT
+			COALESCE(SUM(CASE WHEN g.invitation_id IS NOT NULL AND g.confirmed_reception = 1 THEN 1 ELSE 0 END), 0),
+			COALESCE(SUM(CASE WHEN g.invitation_id IS NOT NULL AND g.confirmed_reception = 0 THEN 1 ELSE 0 END), 0),
+			COALESCE(SUM(CASE WHEN g.invitation_id IS NOT NULL AND g.confirmed_reception IS NULL THEN 1 ELSE 0 END), 0),
+			COALESCE(SUM(CASE WHEN g.invitation_id IS NOT NULL THEN 1 ELSE 0 END), 0),
+			COALESCE(SUM(CASE WHEN g.invitation_id IS NOT NULL AND i.viewed_at IS NULL THEN 1 ELSE 0 END), 0),
+			COUNT(*)
+		FROM guests g
+		LEFT JOIN invitations i ON i.id = g.invitation_id
+	`).Scan(&confirmedReception, &refusedReception, &pendingRSVP, &invited, &nonVisualizedInvited, &total)
 	return
 }
 

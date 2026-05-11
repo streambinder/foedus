@@ -47,9 +47,16 @@ var translations = map[string]map[string]string{
 		"label.reception": "Celebration",
 
 		// dashboard - counters
-		"counter.ceremony":  "Ceremony",
-		"counter.reception": "Celebration",
-		"counter.pending":   "Pending",
+		"counter.rsvp":          "RSVP",
+		"counter.visualization": "Invitation Views",
+		"counter.reach":         "Invitation Reach",
+		"counter.confirmed":     "Confirmed",
+		"counter.refused":       "Refused",
+		"counter.pending_rsvp":  "Pending",
+		"counter.viewed":        "Viewed",
+		"counter.nonvisualized": "Not Viewed",
+		"counter.invited":       "Invited",
+		"counter.uninvited":     "Not Invited",
 
 		// dashboard - placeholders
 		"placeholder.name":              "Name",
@@ -325,9 +332,16 @@ var translations = map[string]map[string]string{
 		"label.reception": "Festa",
 
 		// dashboard - counters
-		"counter.ceremony":  "Rito",
-		"counter.reception": "Festa",
-		"counter.pending":   "In attesa",
+		"counter.rsvp":          "RSVP",
+		"counter.visualization": "Visualizzazioni",
+		"counter.reach":         "Copertura inviti",
+		"counter.confirmed":     "Confermati",
+		"counter.refused":       "Rifiutati",
+		"counter.pending_rsvp":  "In attesa",
+		"counter.viewed":        "Visti",
+		"counter.nonvisualized": "Non visti",
+		"counter.invited":       "Invitati",
+		"counter.uninvited":     "Non invitati",
 
 		// dashboard - placeholders
 		"placeholder.name":              "Nome",

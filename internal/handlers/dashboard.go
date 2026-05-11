@@ -68,7 +68,7 @@ func DashboardIndex(c *fiber.Ctx) error {
 		logger.Error("dashboard failed to load settings", "error", err.Error())
 		return c.Status(500).SendString("failed to load settings")
 	}
-	confirmedCeremony, confirmedReception, pendingGuests, totalGuests, err := database.CountConfirmed()
+	confirmedReception, refusedReception, pendingRSVP, invitedGuests, nonVisualizedInvited, totalGuests, err := database.CountConfirmed()
 	if err != nil {
 		logger.Error("dashboard failed to count guests", "error", err.Error())
 		return c.Status(500).SendString("failed to count guests")
@@ -127,12 +127,14 @@ func DashboardIndex(c *fiber.Ctx) error {
 		"soundtrack_event_count", len(soundtrackEvents),
 		"page", page,
 		"search_len", len(search),
-		"confirmed_ceremony", confirmedCeremony,
 		"confirmed_reception", confirmedReception,
-		"pending_guests", pendingGuests,
+		"refused_reception", refusedReception,
+		"invited_guests", invitedGuests,
+		"pending_rsvp", pendingRSVP,
+		"non_visualized_invited", nonVisualizedInvited,
 		"total_guests", totalGuests,
 	)
-	return Render(c, templates.Dashboard(settings, guests, gifts, registryItems, invitations, polls, soundtrackEvents, confirmedCeremony, confirmedReception, pendingGuests, totalGuests, page, totalPages, search, csrfToken, getFlash(c), getT(c), getLang(c)))
+	return Render(c, templates.Dashboard(settings, guests, gifts, registryItems, invitations, polls, soundtrackEvents, confirmedReception, refusedReception, pendingRSVP, invitedGuests, nonVisualizedInvited, totalGuests, page, totalPages, search, csrfToken, getFlash(c), getT(c), getLang(c)))
 }
 
 func resolveImageMediaID(rawImage, rawMediaID string, existingMediaID int, allowedAny bool) (int, error) {
