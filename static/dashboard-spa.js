@@ -72,6 +72,30 @@
       return;
     }
 
+    const registryPaginationLink = event.target.closest(
+      '#dashboard-registry .pagination a[href^="/dashboard"]',
+    );
+    if (registryPaginationLink) {
+      event.preventDefault();
+      history.pushState({}, "", registryPaginationLink.href);
+      // gifts table also lives inside #dashboard-registry, so a single section
+      // refresh covers rpage and gpage links
+      refreshSections(registryPaginationLink.href, ["dashboard-registry"]);
+      return;
+    }
+
+    const soundtrackPaginationLink = event.target.closest(
+      '#dashboard-soundtrack-events .pagination a[href^="/dashboard"]',
+    );
+    if (soundtrackPaginationLink) {
+      event.preventDefault();
+      history.pushState({}, "", soundtrackPaginationLink.href);
+      refreshSections(soundtrackPaginationLink.href, [
+        "dashboard-soundtrack-events",
+      ]);
+      return;
+    }
+
     const modalClose = event.target.closest("[data-dashboard-modal-close]");
     if (modalClose) {
       event.preventDefault();

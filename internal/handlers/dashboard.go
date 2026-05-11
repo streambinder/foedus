@@ -61,6 +61,30 @@ func getLang(c *fiber.Ctx) string {
 
 const guestsPerPage = 10
 const invitationsPerPage = 10
+const registryPerPage = 10
+const giftsPerPage = 10
+const soundtrackPerPage = 10
+
+// paginateSlice clamps page to [1,totalPages] and returns the requested window.
+// Empty input returns nil + page=1, totalPages=1 so callers don't need guards.
+func paginateSlice[T any](items []T, page, perPage int) (window []T, currentPage, totalPages int) {
+	totalPages = (len(items) + perPage - 1) / perPage
+	if totalPages < 1 {
+		totalPages = 1
+	}
+	if page < 1 {
+		page = 1
+	}
+	if page > totalPages {
+		page = totalPages
+	}
+	start := (page - 1) * perPage
+	end := start + perPage
+	if end > len(items) {
+		end = len(items)
+	}
+	return items[start:end], page, totalPages
+}
 
 // filterInvitations narrows by case-insensitive substring match against the
 // label or any guest's first/last name. Empty query returns input unchanged.
@@ -158,6 +182,15 @@ func DashboardIndex(c *fiber.Ctx) error {
 		logger.Error("dashboard failed to load soundtrack events", "error", err.Error())
 		return c.Status(500).SendString("failed to load soundtrack events")
 	}
+
+	// table-level pagination — small datasets so slicing in Go is fine
+	registryPage, _ := strconv.Atoi(c.Query("rpage", "1"))
+	pagedRegistry, registryPage, registryTotalPages := paginateSlice(registryItems, registryPage, registryPerPage)
+	giftsPage, _ := strconv.Atoi(c.Query("gpage", "1"))
+	pagedGifts, giftsPage, giftsTotalPages := paginateSlice(gifts, giftsPage, giftsPerPage)
+	soundtrackPage, _ := strconv.Atoi(c.Query("spage", "1"))
+	pagedSoundtrack, soundtrackPage, soundtrackTotalPages := paginateSlice(soundtrackEvents, soundtrackPage, soundtrackPerPage)
+
 	csrfToken, _ := c.Locals("csrf").(string)
 	logger.Info(
 		"dashboard rendered",
@@ -177,7 +210,7 @@ func DashboardIndex(c *fiber.Ctx) error {
 		"non_visualized_invited", nonVisualizedInvited,
 		"total_guests", totalGuests,
 	)
-	return Render(c, templates.Dashboard(settings, guests, gifts, registryItems, invitations, pagedInvitations, invitePage, inviteTotalPages, inviteSearch, polls, soundtrackEvents, confirmedReception, refusedReception, pendingRSVP, invitedGuests, nonVisualizedInvited, totalGuests, page, totalPages, search, csrfToken, getFlash(c), getT(c), getLang(c)))
+	return Render(c, templates.Dashboard(settings, guests, pagedGifts, giftsPage, giftsTotalPages, pagedRegistry, registryPage, registryTotalPages, registryItems, invitations, pagedInvitations, invitePage, inviteTotalPages, inviteSearch, polls, pagedSoundtrack, soundtrackPage, soundtrackTotalPages, confirmedReception, refusedReception, pendingRSVP, invitedGuests, nonVisualizedInvited, totalGuests, page, totalPages, search, csrfToken, getFlash(c), getT(c), getLang(c)))
 }
 
 func resolveImageMediaID(rawImage, rawMediaID string, existingMediaID int, allowedAny bool) (int, error) {

@@ -33,6 +33,15 @@ func paginationURL(page int, search string) string {
 	return "/dashboard?page=" + strconv.Itoa(page) + "&q=" + search
 }
 
+// tablePaginationURL builds a /dashboard URL setting just one page param,
+// e.g. "rpage" for registry. Other params (q, iq, page, ipage, gpage, etc.)
+// would be lost unless preserved — but since these tables live in collapsed
+// accordions and clicking navigates server-side, only the target param matters
+// for the next render. JS fragment scroll keeps the user where they were.
+func tablePaginationURL(param string, page int) string {
+	return "/dashboard?" + param + "=" + strconv.Itoa(page)
+}
+
 // helper to build invitation pagination URL preserving guest page/search
 func invitePaginationURL(invitePage, guestPage int, search, inviteSearch string) string {
 	parts := []string{"ipage=" + strconv.Itoa(invitePage)}
@@ -234,7 +243,7 @@ templ Donut(title string, primaryValue, primaryTotal int, slices []DonutSlice) {
 	</div>
 }
 
-templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []models.Gift, registryItems []models.RegistryItem, invitations []models.Invitation, pagedInvitations []models.Invitation, invitePage int, inviteTotalPages int, inviteSearch string, polls []models.Poll, soundtrackEvents []models.SoundtrackEvent, confirmedReception int, refusedReception int, pendingRSVP int, invitedGuests int, nonVisualizedInvited int, total int, page int, totalPages int, search string, csrfToken string, flash string, t i18n.T, lang string) {
+templ Dashboard(settings models.WeddingSettings, guests []models.Guest, pagedGifts []models.Gift, giftsPage int, giftsTotalPages int, pagedRegistry []models.RegistryItem, registryPage int, registryTotalPages int, registryItems []models.RegistryItem, invitations []models.Invitation, pagedInvitations []models.Invitation, invitePage int, inviteTotalPages int, inviteSearch string, polls []models.Poll, pagedSoundtrack []models.SoundtrackEvent, soundtrackPage int, soundtrackTotalPages int, confirmedReception int, refusedReception int, pendingRSVP int, invitedGuests int, nonVisualizedInvited int, total int, page int, totalPages int, search string, csrfToken string, flash string, t i18n.T, lang string) {
 	@DashboardLayout(pageTitle(t("title.dashboard"), settings.Spouse1Name, settings.Spouse2Name), lang) {
 		<div id="dashboard-flash">
 			if flash != "" {
@@ -1146,17 +1155,18 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 							</tr>
 						</thead>
 						<tbody>
-							for i, item := range registryItems {
+							for i, item := range pagedRegistry {
+								{{ absIdx := (registryPage-1)*10 + i }}
 								<tr>
 									<td data-label={ t("th.item_order") }>
 										<div class="actions registry-order-actions">
 											<form method="POST" action={ templ.SafeURL("/dashboard/registry/" + strconv.Itoa(item.ID) + "/move/up") }>
 												<input type="hidden" name="_csrf" value={ csrfToken }/>
-												<button type="submit" class="outline secondary" aria-label={ t("btn.move_up") } disabled?={ i == 0 }>&uarr;</button>
+												<button type="submit" class="outline secondary" aria-label={ t("btn.move_up") } disabled?={ absIdx == 0 }>&uarr;</button>
 											</form>
 											<form method="POST" action={ templ.SafeURL("/dashboard/registry/" + strconv.Itoa(item.ID) + "/move/down") }>
 												<input type="hidden" name="_csrf" value={ csrfToken }/>
-												<button type="submit" class="outline secondary" aria-label={ t("btn.move_down") } disabled?={ i == len(registryItems)-1 }>&darr;</button>
+												<button type="submit" class="outline secondary" aria-label={ t("btn.move_down") } disabled?={ absIdx == len(registryItems)-1 }>&darr;</button>
 											</form>
 										</div>
 									</td>
@@ -1181,8 +1191,23 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 						</tbody>
 					</table>
 				</div>
+				if registryTotalPages > 1 {
+					<nav class="pagination">
+						if registryPage > 1 {
+							<a href={ templ.SafeURL(tablePaginationURL("rpage", registryPage-1)) }>{ t("btn.prev") }</a>
+						} else {
+							<span class="disabled">{ t("btn.prev") }</span>
+						}
+						<span class="page-info">{ strconv.Itoa(registryPage) } / { strconv.Itoa(registryTotalPages) }</span>
+						if registryPage < registryTotalPages {
+							<a href={ templ.SafeURL(tablePaginationURL("rpage", registryPage+1)) }>{ t("btn.next") }</a>
+						} else {
+							<span class="disabled">{ t("btn.next") }</span>
+						}
+					</nav>
+				}
 			}
-			if len(gifts) > 0 {
+			if len(pagedGifts) > 0 {
 				<div class="accordion dashboard-accordion dashboard-subsection-accordion">
 					<div class="accordion-item dashboard-subsection">
 						<h2 class="accordion-header" id="registry-gifts-heading">
@@ -1205,7 +1230,7 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 											</tr>
 										</thead>
 										<tbody>
-											for _, g := range gifts {
+											for _, g := range pagedGifts {
 												<tr>
 													<td data-label={ t("th.donor") }>{ g.Donor }</td>
 													<td data-label={ t("th.amount") }>{ formatGiftAmount(g.Amount) }</td>
@@ -1232,6 +1257,21 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 										</tbody>
 									</table>
 								</div>
+								if giftsTotalPages > 1 {
+									<nav class="pagination">
+										if giftsPage > 1 {
+											<a href={ templ.SafeURL(tablePaginationURL("gpage", giftsPage-1)) }>{ t("btn.prev") }</a>
+										} else {
+											<span class="disabled">{ t("btn.prev") }</span>
+										}
+										<span class="page-info">{ strconv.Itoa(giftsPage) } / { strconv.Itoa(giftsTotalPages) }</span>
+										if giftsPage < giftsTotalPages {
+											<a href={ templ.SafeURL(tablePaginationURL("gpage", giftsPage+1)) }>{ t("btn.next") }</a>
+										} else {
+											<span class="disabled">{ t("btn.next") }</span>
+										}
+									</nav>
+								}
 							</div>
 						</div>
 					</div>
@@ -1240,7 +1280,7 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 		</article>
 		<article id="dashboard-soundtrack-events">
 			<h2>{ t("dashboard.track_additions") }</h2>
-			if len(soundtrackEvents) > 0 {
+			if len(pagedSoundtrack) > 0 {
 				<div class="overflow-auto">
 					<table>
 						<thead>
@@ -1248,7 +1288,7 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 								<th>{ t("th.track_title") }</th>
 								<th>{ t("th.track_artist") }</th>
 								<th>{ t("th.track_url") }</th>
-								if soundtrackHasInviteIDs(soundtrackEvents) {
+								if soundtrackHasInviteIDs(pagedSoundtrack) {
 									<th>{ t("th.invite_id") }</th>
 									<th>{ t("th.invite_guests") }</th>
 								}
@@ -1257,7 +1297,7 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 							</tr>
 						</thead>
 						<tbody>
-							for _, event := range soundtrackEvents {
+							for _, event := range pagedSoundtrack {
 								<tr>
 									<td data-label={ t("th.track_title") }>{ event.Title }</td>
 									<td data-label={ t("th.track_artist") }>{ event.Artist }</td>
@@ -1266,7 +1306,7 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 											<a href={ templ.SafeURL(event.URL) } target="_blank" rel="noreferrer">{ event.URL }</a>
 										}
 									</td>
-									if soundtrackHasInviteIDs(soundtrackEvents) {
+									if soundtrackHasInviteIDs(pagedSoundtrack) {
 										<td data-label={ t("th.invite_id") }>
 											if strings.TrimSpace(event.InviteID) != "" {
 												<code>{ event.InviteID }</code>
@@ -1294,6 +1334,21 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 						</tbody>
 					</table>
 				</div>
+				if soundtrackTotalPages > 1 {
+					<nav class="pagination">
+						if soundtrackPage > 1 {
+							<a href={ templ.SafeURL(tablePaginationURL("spage", soundtrackPage-1)) }>{ t("btn.prev") }</a>
+						} else {
+							<span class="disabled">{ t("btn.prev") }</span>
+						}
+						<span class="page-info">{ strconv.Itoa(soundtrackPage) } / { strconv.Itoa(soundtrackTotalPages) }</span>
+						if soundtrackPage < soundtrackTotalPages {
+							<a href={ templ.SafeURL(tablePaginationURL("spage", soundtrackPage+1)) }>{ t("btn.next") }</a>
+						} else {
+							<span class="disabled">{ t("btn.next") }</span>
+						}
+					</nav>
+				}
 			}
 		</article>
 		<div id="dashboard-modal-root"></div>
