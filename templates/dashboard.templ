@@ -34,13 +34,16 @@ func paginationURL(page int, search string) string {
 }
 
 // helper to build invitation pagination URL preserving guest page/search
-func invitePaginationURL(invitePage, guestPage int, search string) string {
+func invitePaginationURL(invitePage, guestPage int, search, inviteSearch string) string {
 	parts := []string{"ipage=" + strconv.Itoa(invitePage)}
 	if guestPage > 1 {
 		parts = append(parts, "page="+strconv.Itoa(guestPage))
 	}
 	if search != "" {
-		parts = append(parts, "q="+search)
+		parts = append(parts, "q="+url.QueryEscape(search))
+	}
+	if inviteSearch != "" {
+		parts = append(parts, "iq="+url.QueryEscape(inviteSearch))
 	}
 	return "/dashboard?" + strings.Join(parts, "&")
 }
@@ -231,7 +234,7 @@ templ Donut(title string, primaryValue, primaryTotal int, slices []DonutSlice) {
 	</div>
 }
 
-templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []models.Gift, registryItems []models.RegistryItem, invitations []models.Invitation, pagedInvitations []models.Invitation, invitePage int, inviteTotalPages int, polls []models.Poll, soundtrackEvents []models.SoundtrackEvent, confirmedReception int, refusedReception int, pendingRSVP int, invitedGuests int, nonVisualizedInvited int, total int, page int, totalPages int, search string, csrfToken string, flash string, t i18n.T, lang string) {
+templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []models.Gift, registryItems []models.RegistryItem, invitations []models.Invitation, pagedInvitations []models.Invitation, invitePage int, inviteTotalPages int, inviteSearch string, polls []models.Poll, soundtrackEvents []models.SoundtrackEvent, confirmedReception int, refusedReception int, pendingRSVP int, invitedGuests int, nonVisualizedInvited int, total int, page int, totalPages int, search string, csrfToken string, flash string, t i18n.T, lang string) {
 	@DashboardLayout(pageTitle(t("title.dashboard"), settings.Spouse1Name, settings.Spouse2Name), lang) {
 		<div id="dashboard-flash">
 			if flash != "" {
@@ -956,9 +959,12 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 		<article id="dashboard-invitations">
 			<h2>{ t("dashboard.invitations") }</h2>
 			if len(invitations) > 0 {
-				<div class="guest-search-row">
-					<input type="search" id="invitation-search" value="" placeholder={ t("placeholder.invitation_search") } autocomplete="off"/>
-				</div>
+				<form class="guest-search-row" method="GET" action="/dashboard" role="search">
+					<input type="search" id="invitation-search" name="iq" value={ inviteSearch } placeholder={ t("placeholder.invitation_search") } autocomplete="off"/>
+					if search != "" {
+						<input type="hidden" name="q" value={ search }/>
+					}
+				</form>
 				<div class="overflow-auto">
 					<table>
 						<thead>
@@ -1017,13 +1023,13 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, gifts []
 				if inviteTotalPages > 1 {
 					<nav class="pagination">
 						if invitePage > 1 {
-							<a href={ templ.SafeURL(invitePaginationURL(invitePage-1, page, search)) }>{ t("btn.prev") }</a>
+							<a href={ templ.SafeURL(invitePaginationURL(invitePage-1, page, search, inviteSearch)) }>{ t("btn.prev") }</a>
 						} else {
 							<span class="disabled">{ t("btn.prev") }</span>
 						}
 						<span class="page-info">{ strconv.Itoa(invitePage) } / { strconv.Itoa(inviteTotalPages) }</span>
 						if invitePage < inviteTotalPages {
-							<a href={ templ.SafeURL(invitePaginationURL(invitePage+1, page, search)) }>{ t("btn.next") }</a>
+							<a href={ templ.SafeURL(invitePaginationURL(invitePage+1, page, search, inviteSearch)) }>{ t("btn.next") }</a>
 						} else {
 							<span class="disabled">{ t("btn.next") }</span>
 						}

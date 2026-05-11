@@ -1,11 +1,13 @@
 (() => {
   const selectedGuestIds = new Set();
   let guestSearchTimer = null;
+  let invitationSearchTimer = null;
   let invitationSearchValue = "";
   let invitationLabelValue = "";
   let invitationLabelUserEdited = false;
   const guestFirstNames = {};
   let guestSearchSeq = 0;
+  let invitationSearchSeq = 0;
   const SECTION_IDS = [
     "dashboard-flash",
     "dashboard-counters",
@@ -21,7 +23,7 @@
     initDashboardFeatures();
     initImageResizers();
     syncGuestSelectionUI();
-    applyInvitationFilter();
+    syncInvitationSearchInput();
   }
 
   function bindGlobalListeners() {
@@ -119,7 +121,24 @@
 
     if (event.target.id === "invitation-search") {
       invitationSearchValue = event.target.value;
-      applyInvitationFilter();
+      clearTimeout(invitationSearchTimer);
+      invitationSearchTimer = setTimeout(() => {
+        const url = new URL(window.location.href);
+        const value = event.target.value.trim();
+        if (value) {
+          url.searchParams.set("iq", value);
+        } else {
+          url.searchParams.delete("iq");
+        }
+        url.searchParams.delete("ipage");
+        history.replaceState({}, "", url);
+        const seq = ++invitationSearchSeq;
+        refreshSections(
+          url.toString(),
+          ["dashboard-invitations"],
+          () => seq === invitationSearchSeq,
+        );
+      }, 350);
     }
   }
 
@@ -275,9 +294,12 @@
     initDashboardFeatures();
     initImageResizers();
     syncGuestSelectionUI();
-    applyInvitationFilter();
+    syncInvitationSearchInput();
     if (sectionIds.indexOf("dashboard-guests") !== -1) {
       focusGuestSearchIfPresent();
+    }
+    if (sectionIds.indexOf("dashboard-invitations") !== -1) {
+      focusInvitationSearchIfPresent();
     }
   }
 
@@ -364,22 +386,24 @@
     input.setSelectionRange(end, end);
   }
 
-  function applyInvitationFilter() {
+  function syncInvitationSearchInput() {
+    // server renders the input w/ value=iq from URL; track locally so the
+    // SPA refresh path doesn't lose what user is typing
     const input = document.getElementById("invitation-search");
     if (!input) return;
-
-    if (input.value !== invitationSearchValue) {
+    if (invitationSearchValue && input.value !== invitationSearchValue) {
       input.value = invitationSearchValue;
+    } else {
+      invitationSearchValue = input.value;
     }
+  }
 
-    const query = invitationSearchValue.trim().toLowerCase();
-    const rows = document.querySelectorAll(
-      "#dashboard-invitations tbody tr[data-invitation-guests]",
-    );
-    rows.forEach((row) => {
-      const guestNames = (row.dataset.invitationGuests || "").toLowerCase();
-      row.hidden = query !== "" && guestNames.indexOf(query) === -1;
-    });
+  function focusInvitationSearchIfPresent() {
+    const input = document.getElementById("invitation-search");
+    if (!input) return;
+    input.focus();
+    const end = input.value.length;
+    input.setSelectionRange(end, end);
   }
 
   function getOpenAccordionKeys() {
