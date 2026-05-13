@@ -936,18 +936,22 @@ input[role="switch"] {
   border-radius: 999px;
   font: inherit;
 }
+
 .guest-type-adult {
   background: color-mix(in srgb, var(--tblr-success, #2fb344) 16%, white);
   color: var(--tblr-success, #2fb344);
 }
+
 .guest-type-child {
   background: color-mix(in srgb, var(--tblr-warning, #f76707) 16%, white);
   color: var(--tblr-warning, #f76707);
 }
+
 .guest-type-infant {
   background: color-mix(in srgb, #d96b9e 18%, white);
   color: #d96b9e;
 }
+
 .guest-type-vendor {
   background: color-mix(in srgb, #6c7a91 16%, white);
   color: #6c7a91;
@@ -959,24 +963,31 @@ input[role="switch"] {
 .donut-type-adult {
   stroke: var(--tblr-success, #2fb344) !important;
 }
+
 .donut-type-child {
   stroke: var(--tblr-warning, #f76707) !important;
 }
+
 .donut-type-infant {
   stroke: #d96b9e !important;
 }
+
 .donut-type-vendor {
   stroke: #6c7a91 !important;
 }
+
 .donut-swatch.donut-type-adult {
   background: var(--tblr-success, #2fb344) !important;
 }
+
 .donut-swatch.donut-type-child {
   background: var(--tblr-warning, #f76707) !important;
 }
+
 .donut-swatch.donut-type-infant {
   background: #d96b9e !important;
 }
+
 .donut-swatch.donut-type-vendor {
   background: #6c7a91 !important;
 }
