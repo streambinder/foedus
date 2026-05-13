@@ -66,6 +66,7 @@ type Guest struct {
 	ID                 int
 	FirstName          string
 	LastName           string
+	Type               string // adult | child | infant | vendor — non-counted: infant, vendor
 	ConfirmedCeremony  *bool
 	ConfirmedReception *bool
 	InvitationID       *int

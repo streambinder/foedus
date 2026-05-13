@@ -248,7 +248,7 @@ templ Donut(title string, primaryValue, primaryTotal int, slices []DonutSlice) {
 	</div>
 }
 
-templ Dashboard(settings models.WeddingSettings, guests []models.Guest, pagedGifts []models.Gift, giftsPage int, giftsTotalPages int, pagedRegistry []models.RegistryItem, registryPage int, registryTotalPages int, registryItems []models.RegistryItem, invitations []models.Invitation, pagedInvitations []models.Invitation, invitePage int, inviteTotalPages int, inviteSearch string, polls []models.Poll, pagedSoundtrack []models.SoundtrackEvent, soundtrackPage int, soundtrackTotalPages int, confirmedReception int, refusedReception int, pendingRSVP int, invitedGuests int, nonVisualizedInvited int, total int, page int, totalPages int, search string, csrfToken string, flash string, t i18n.T, lang string) {
+templ Dashboard(settings models.WeddingSettings, guests []models.Guest, pagedGifts []models.Gift, giftsPage int, giftsTotalPages int, pagedRegistry []models.RegistryItem, registryPage int, registryTotalPages int, registryItems []models.RegistryItem, invitations []models.Invitation, pagedInvitations []models.Invitation, invitePage int, inviteTotalPages int, inviteSearch string, polls []models.Poll, pagedSoundtrack []models.SoundtrackEvent, soundtrackPage int, soundtrackTotalPages int, confirmedReception int, refusedReception int, pendingRSVP int, invitedGuests int, nonVisualizedInvited int, total int, confirmedAdults int, confirmedChildren int, confirmedInfants int, confirmedVendors int, page int, totalPages int, search string, csrfToken string, flash string, t i18n.T, lang string) {
 	@DashboardLayout(pageTitle(t("title.dashboard"), settings.Spouse1Name, settings.Spouse2Name), lang) {
 		<div id="dashboard-flash">
 			if flash != "" {
@@ -257,10 +257,16 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, pagedGif
 		</div>
 		<!-- counters -->
 		<div id="dashboard-counters" class="counters-row">
-			@Donut(t("counter.rsvp"), confirmedReception, invitedGuests, []DonutSlice{
+			@Donut(t("counter.rsvp"), confirmedReception, confirmedReception+refusedReception+pendingRSVP, []DonutSlice{
 				{Value: confirmedReception, ClassName: "donut-confirmed", Label: t("counter.confirmed"), Category: "confirmed_reception"},
 				{Value: refusedReception, ClassName: "donut-refused", Label: t("counter.refused"), Category: "refused_reception"},
 				{Value: pendingRSVP, ClassName: "donut-pending", Label: t("counter.pending_rsvp"), Category: "pending_rsvp"},
+			})
+			@Donut(t("counter.confirmed_by_type"), confirmedAdults+confirmedChildren+confirmedVendors, confirmedAdults+confirmedChildren+confirmedInfants+confirmedVendors, []DonutSlice{
+				{Value: confirmedAdults, ClassName: "donut-type-adult", Label: t("guest_type.adult"), Category: "confirmed_reception_adult"},
+				{Value: confirmedChildren, ClassName: "donut-type-child", Label: t("guest_type.child"), Category: "confirmed_reception_child"},
+				{Value: confirmedInfants, ClassName: "donut-type-infant", Label: t("guest_type.infant"), Category: "confirmed_reception_infant"},
+				{Value: confirmedVendors, ClassName: "donut-type-vendor", Label: t("guest_type.vendor"), Category: "confirmed_reception_vendor"},
 			})
 			@Donut(t("counter.visualization"), invitedGuests-nonVisualizedInvited, invitedGuests, []DonutSlice{
 				{Value: invitedGuests - nonVisualizedInvited, ClassName: "donut-viewed", Label: t("counter.viewed"), Category: "viewed"},
@@ -864,12 +870,20 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, pagedGif
 					<input type="hidden" name="_csrf" value={ csrfToken }/>
 					<input type="text" name="first_name" placeholder={ t("placeholder.first_name") }/>
 					<input type="text" name="last_name" placeholder={ t("placeholder.last_name") }/>
-					<button type="submit">{ t("btn.add") }</button>
+					<div class="add-guest-form-actions">
+						<select name="type" aria-label={ t("label.type") }>
+							<option value="adult">{ t("guest_type.adult") }</option>
+							<option value="child">{ t("guest_type.child") }</option>
+							<option value="infant">{ t("guest_type.infant") }</option>
+							<option value="vendor">{ t("guest_type.vendor") }</option>
+						</select>
+						<button type="submit">{ t("btn.add") }</button>
+					</div>
 				</form>
 				<form class="import-csv-form" method="POST" action="/dashboard/guests/import" enctype="multipart/form-data">
 					<input type="hidden" name="_csrf" value={ csrfToken }/>
 					<input type="file" name="csv_file" accept=".csv"/>
-					<pre class="csv-format-hint">Marco Rossi</pre>
+					<pre class="csv-format-hint">Marco Rossi,adult</pre>
 					<button type="submit">{ t("btn.import_csv") }</button>
 				</form>
 			</div>
@@ -894,6 +908,7 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, pagedGif
 								<th class="checkbox-col"></th>
 								<th>{ t("th.first_name") }</th>
 								<th>{ t("th.last_name") }</th>
+								<th>{ t("th.type") }</th>
 								<th>{ t("th.ceremony") }</th>
 								<th>{ t("th.reception") }</th>
 								<th>{ t("th.actions") }</th>
@@ -914,6 +929,9 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, pagedGif
 										}
 									</td>
 									<td data-label={ t("th.last_name") }>{ g.LastName }</td>
+									<td data-label={ t("th.type") }>
+										<span class={ "guest-type-badge", "guest-type-" + g.Type }>{ t("guest_type." + g.Type) }</span>
+									</td>
 									<td data-label={ t("th.ceremony") }>
 										<form method="POST" action={ templ.SafeURL("/dashboard/guests/" + strconv.Itoa(g.ID) + "/confirm/ceremony") }>
 											<input type="hidden" name="_csrf" value={ csrfToken }/>
@@ -1404,6 +1422,15 @@ templ EditGuest(guest models.Guest, settings models.WeddingSettings, csrfToken s
 				<div class="grid">
 					@settingInput("first_name", t("label.first_name"), guest.FirstName)
 					@settingInput("last_name", t("label.last_name"), guest.LastName)
+					<label>
+						{ t("label.type") }
+						<select name="type">
+							<option value="adult" selected?={ guest.Type == "adult" }>{ t("guest_type.adult") }</option>
+							<option value="child" selected?={ guest.Type == "child" }>{ t("guest_type.child") }</option>
+							<option value="infant" selected?={ guest.Type == "infant" }>{ t("guest_type.infant") }</option>
+							<option value="vendor" selected?={ guest.Type == "vendor" }>{ t("guest_type.vendor") }</option>
+						</select>
+					</label>
 				</div>
 				<button type="submit">{ t("btn.update_guest") }</button>
 			</form>

@@ -806,6 +806,15 @@ input[type="file"]:focus {
   gap: 0.75rem;
 }
 
+/* type select + add button share a row 50/50 inside the grid form. tabler's
+   global `select { width: 100% }` is fine here because each child is sized
+   by its own grid track, not by intrinsic width. */
+.add-guest-form-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
 .csv-format-hint {
   margin: 0;
   padding: 0.75rem 0.9rem;
@@ -917,6 +926,59 @@ input[role="switch"] {
   color: var(--tblr-primary);
   font-size: 0.6875rem;
   font-weight: 700;
+}
+
+/* guest type pill — color tinted from per-type palette to match the donut.
+   inherit table cell typography so it doesn't read as a different font. */
+.guest-type-badge {
+  display: inline-flex;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font: inherit;
+}
+.guest-type-adult {
+  background: color-mix(in srgb, var(--tblr-success, #2fb344) 16%, white);
+  color: var(--tblr-success, #2fb344);
+}
+.guest-type-child {
+  background: color-mix(in srgb, var(--tblr-warning, #f76707) 16%, white);
+  color: var(--tblr-warning, #f76707);
+}
+.guest-type-infant {
+  background: color-mix(in srgb, #d96b9e 18%, white);
+  color: #d96b9e;
+}
+.guest-type-vendor {
+  background: color-mix(in srgb, #6c7a91 16%, white);
+  color: #6c7a91;
+}
+
+/* per-type donut colors live here (not styles.css) so they win cascade vs
+   tabler/dashboard rules. !important defends against any svg stroke reset
+   from tabler/pico that may target circle elements globally. */
+.donut-type-adult {
+  stroke: var(--tblr-success, #2fb344) !important;
+}
+.donut-type-child {
+  stroke: var(--tblr-warning, #f76707) !important;
+}
+.donut-type-infant {
+  stroke: #d96b9e !important;
+}
+.donut-type-vendor {
+  stroke: #6c7a91 !important;
+}
+.donut-swatch.donut-type-adult {
+  background: var(--tblr-success, #2fb344) !important;
+}
+.donut-swatch.donut-type-child {
+  background: var(--tblr-warning, #f76707) !important;
+}
+.donut-swatch.donut-type-infant {
+  background: #d96b9e !important;
+}
+.donut-swatch.donut-type-vendor {
+  background: #6c7a91 !important;
 }
 
 .copyable {

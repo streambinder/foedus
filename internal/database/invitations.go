@@ -105,7 +105,7 @@ func GetAllInvitations() ([]models.Invitation, error) {
 	// load guests per invitation
 	for i := range invitations {
 		guestRows, err := DB.Query(
-			`SELECT id, first_name, last_name, confirmed_ceremony, confirmed_reception, invitation_id, invitation_guest_order, created_at, updated_at
+			`SELECT id, first_name, last_name, type, confirmed_ceremony, confirmed_reception, invitation_id, invitation_guest_order, created_at, updated_at
 			FROM guests
 			WHERE invitation_id = ?
 			ORDER BY COALESCE(invitation_guest_order, id), id`,
@@ -116,7 +116,7 @@ func GetAllInvitations() ([]models.Invitation, error) {
 		}
 		for guestRows.Next() {
 			var g models.Guest
-			if err := guestRows.Scan(&g.ID, &g.FirstName, &g.LastName, &g.ConfirmedCeremony, &g.ConfirmedReception, &g.InvitationID, &g.InvitationOrder, &g.CreatedAt, &g.UpdatedAt); err != nil {
+			if err := guestRows.Scan(&g.ID, &g.FirstName, &g.LastName, &g.Type, &g.ConfirmedCeremony, &g.ConfirmedReception, &g.InvitationID, &g.InvitationOrder, &g.CreatedAt, &g.UpdatedAt); err != nil {
 				guestRows.Close()
 				return nil, err
 			}
@@ -215,7 +215,7 @@ func GetInvitationByCode(code string) (models.Invitation, error) {
 
 func loadInvitationGuestsAndPollAnswers(inv models.Invitation) (models.Invitation, error) {
 	rows, err := DB.Query(
-		`SELECT id, first_name, last_name, confirmed_ceremony, confirmed_reception, invitation_id, invitation_guest_order, created_at, updated_at
+		`SELECT id, first_name, last_name, type, confirmed_ceremony, confirmed_reception, invitation_id, invitation_guest_order, created_at, updated_at
 		FROM guests
 		WHERE invitation_id = ?
 		ORDER BY COALESCE(invitation_guest_order, id), id`,
@@ -227,7 +227,7 @@ func loadInvitationGuestsAndPollAnswers(inv models.Invitation) (models.Invitatio
 	defer rows.Close()
 	for rows.Next() {
 		var g models.Guest
-		if err := rows.Scan(&g.ID, &g.FirstName, &g.LastName, &g.ConfirmedCeremony, &g.ConfirmedReception, &g.InvitationID, &g.InvitationOrder, &g.CreatedAt, &g.UpdatedAt); err != nil {
+		if err := rows.Scan(&g.ID, &g.FirstName, &g.LastName, &g.Type, &g.ConfirmedCeremony, &g.ConfirmedReception, &g.InvitationID, &g.InvitationOrder, &g.CreatedAt, &g.UpdatedAt); err != nil {
 			return inv, err
 		}
 		inv.Guests = append(inv.Guests, g)

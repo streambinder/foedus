@@ -121,6 +121,11 @@ func DashboardIndex(c *fiber.Ctx) error {
 		logger.Error("dashboard failed to count guests", "error", err.Error())
 		return c.Status(500).SendString("failed to count guests")
 	}
+	confirmedAdults, confirmedChildren, confirmedInfants, confirmedVendors, err := database.CountConfirmedByType()
+	if err != nil {
+		logger.Error("dashboard failed to count guests by type", "error", err.Error())
+		return c.Status(500).SendString("failed to count guests by type")
+	}
 	gifts, err := database.GetAllGifts()
 	if err != nil {
 		logger.Error("dashboard failed to load gifts", "error", err.Error())
@@ -210,7 +215,7 @@ func DashboardIndex(c *fiber.Ctx) error {
 		"non_visualized_invited", nonVisualizedInvited,
 		"total_guests", totalGuests,
 	)
-	return Render(c, templates.Dashboard(settings, guests, pagedGifts, giftsPage, giftsTotalPages, pagedRegistry, registryPage, registryTotalPages, registryItems, invitations, pagedInvitations, invitePage, inviteTotalPages, inviteSearch, polls, pagedSoundtrack, soundtrackPage, soundtrackTotalPages, confirmedReception, refusedReception, pendingRSVP, invitedGuests, nonVisualizedInvited, totalGuests, page, totalPages, search, csrfToken, getFlash(c), getT(c), getLang(c)))
+	return Render(c, templates.Dashboard(settings, guests, pagedGifts, giftsPage, giftsTotalPages, pagedRegistry, registryPage, registryTotalPages, registryItems, invitations, pagedInvitations, invitePage, inviteTotalPages, inviteSearch, polls, pagedSoundtrack, soundtrackPage, soundtrackTotalPages, confirmedReception, refusedReception, pendingRSVP, invitedGuests, nonVisualizedInvited, totalGuests, confirmedAdults, confirmedChildren, confirmedInfants, confirmedVendors, page, totalPages, search, csrfToken, getFlash(c), getT(c), getLang(c)))
 }
 
 func resolveImageMediaID(rawImage, rawMediaID string, existingMediaID int, allowedAny bool) (int, error) {
@@ -596,16 +601,30 @@ func AddGuest(c *fiber.Ctx) error {
 	logger := handlerLogger(c)
 	firstName := strings.TrimSpace(c.FormValue("first_name"))
 	lastName := strings.TrimSpace(c.FormValue("last_name"))
+	guestType := normalizeGuestType(c.FormValue("type"))
 	if err := database.CreateGuest(
 		firstName,
 		lastName,
+		guestType,
 	); err != nil {
-		logger.Error("guest create failed", "first_name", firstName, "last_name", lastName, "error", err.Error())
+		logger.Error("guest create failed", "first_name", firstName, "last_name", lastName, "type", guestType, "error", err.Error())
 		return c.Status(500).SendString("failed to add guest")
 	}
-	logger.Info("guest created", "first_name", firstName, "last_name", lastName)
+	logger.Info("guest created", "first_name", firstName, "last_name", lastName, "type", guestType)
 	setFlash(c, getT(c)("flash.guest_added"))
 	return c.Redirect("/dashboard")
+}
+
+// normalizeGuestType maps a form value to a valid CHECK-allowed guest type.
+// empty / unknown collapse to "adult" — the DB CHECK constraint enforces the
+// closed set; this is just a defensive belt before the SQL layer.
+func normalizeGuestType(raw string) string {
+	switch strings.TrimSpace(raw) {
+	case "child", "infant", "vendor":
+		return raw
+	default:
+		return "adult"
+	}
 }
 
 func ImportGuestsCSV(c *fiber.Ctx) error {
@@ -635,8 +654,19 @@ func ImportGuestsCSV(c *fiber.Ctx) error {
 		if err != nil {
 			continue
 		}
-		// join all columns into a single full name
-		fullName := strings.TrimSpace(strings.Join(record, " "))
+		// last column may be a guest type (adult|child|infant|vendor); peel it
+		// off if it matches, otherwise treat the whole row as the name. keeps
+		// single-column "Marco Rossi" rows working unchanged.
+		guestType := "adult"
+		nameCols := record
+		if len(record) >= 2 {
+			candidate := strings.ToLower(strings.TrimSpace(record[len(record)-1]))
+			if candidate == "adult" || candidate == "child" || candidate == "infant" || candidate == "vendor" {
+				guestType = candidate
+				nameCols = record[:len(record)-1]
+			}
+		}
+		fullName := strings.TrimSpace(strings.Join(nameCols, " "))
 		if fullName == "" {
 			continue
 		}
@@ -654,7 +684,7 @@ func ImportGuestsCSV(c *fiber.Ctx) error {
 			lastName = parts[len(parts)-1]
 			firstName = strings.Join(parts[:len(parts)-1], " ")
 		}
-		if err := database.CreateGuest(firstName, lastName); err != nil {
+		if err := database.CreateGuest(firstName, lastName, guestType); err != nil {
 			continue
 		}
 		imported++
@@ -705,15 +735,17 @@ func UpdateGuest(c *fiber.Ctx) error {
 	}
 	firstName := strings.TrimSpace(c.FormValue("first_name"))
 	lastName := strings.TrimSpace(c.FormValue("last_name"))
+	guestType := normalizeGuestType(c.FormValue("type"))
 	if err := database.UpdateGuest(
 		id,
 		firstName,
 		lastName,
+		guestType,
 	); err != nil {
 		logger.Error("guest update failed", "guest_id", id, "error", err.Error())
 		return c.Status(500).SendString("failed to update guest")
 	}
-	logger.Info("guest updated", "guest_id", id, "first_name", firstName, "last_name", lastName)
+	logger.Info("guest updated", "guest_id", id, "first_name", firstName, "last_name", lastName, "type", guestType)
 	setFlash(c, getT(c)("flash.guest_updated"))
 	return c.Redirect("/dashboard")
 }

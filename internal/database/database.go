@@ -59,6 +59,7 @@ func migrate() {
 			id                  INTEGER PRIMARY KEY AUTOINCREMENT,
 			first_name          TEXT NOT NULL,
 			last_name           TEXT NOT NULL DEFAULT '',
+			type                TEXT NOT NULL DEFAULT 'adult' CHECK (type IN ('adult','child','infant','vendor')),
 			confirmed_ceremony  INTEGER,
 			confirmed_reception INTEGER,
 			invitation_id       INTEGER REFERENCES invitations(id),
@@ -127,45 +128,5 @@ func migrate() {
 		slog.Debug("migration statement applied", "index", index, "duration_ms", time.Since(stmtStart).Milliseconds())
 	}
 
-	ensureColumn("guests", "invitation_guest_order", `ALTER TABLE guests ADD COLUMN invitation_guest_order INTEGER`)
-	if _, err := DB.Exec(`UPDATE guests SET invitation_guest_order = id WHERE invitation_id IS NOT NULL AND invitation_guest_order IS NULL`); err != nil {
-		slog.Error("migration backfill failed", "table", "guests", "column", "invitation_guest_order", "error", err.Error())
-		panic(err)
-	}
 	slog.Info("database migrations complete", "statements", len(statements), "duration_ms", time.Since(start).Milliseconds())
-}
-
-func ensureColumn(tableName, columnName, alterStmt string) {
-	rows, err := DB.Query(`PRAGMA table_info(` + tableName + `)`)
-	if err != nil {
-		slog.Error("migration pragma failed", "table", tableName, "error", err.Error())
-		panic(err)
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var cid int
-		var name string
-		var columnType string
-		var notNull int
-		var defaultValue any
-		var pk int
-		if err := rows.Scan(&cid, &name, &columnType, &notNull, &defaultValue, &pk); err != nil {
-			slog.Error("migration pragma scan failed", "table", tableName, "error", err.Error())
-			panic(err)
-		}
-		if name == columnName {
-			slog.Debug("migration column already present", "table", tableName, "column", columnName)
-			return
-		}
-	}
-	if err := rows.Err(); err != nil {
-		slog.Error("migration pragma iteration failed", "table", tableName, "error", err.Error())
-		panic(err)
-	}
-	if _, err := DB.Exec(alterStmt); err != nil {
-		slog.Error("migration alter failed", "table", tableName, "column", columnName, "error", err.Error())
-		panic(err)
-	}
-	slog.Info("migration column added", "table", tableName, "column", columnName)
 }
