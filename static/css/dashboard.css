@@ -1151,16 +1151,10 @@ code {
     overflow-x: auto;
   }
 
-  .venue-image-row,
-  .managed-image-field {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
   .venue-file-input,
   .managed-image-field .managed-image-file {
-    flex: none;
-    width: 100%;
+    flex: 1 1 0;
+    min-width: 0;
   }
 
   .modal-overlay {
