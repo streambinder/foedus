@@ -112,6 +112,7 @@ func main() {
 	})
 
 	// public
+	app.Get("/healthz", func(c *fiber.Ctx) error { return c.SendStatus(fiber.StatusOK) })
 	app.Get("/", publicCSRF, handlers.Home)
 	app.Get("/media/:id", handlers.MediaImage)
 	app.Get("/og-image", handlers.OGImage)

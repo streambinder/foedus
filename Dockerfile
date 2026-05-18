@@ -23,5 +23,5 @@ RUN addgroup -S foedus && adduser -S foedus -G foedus
 USER foedus
 
 EXPOSE 3000
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 CMD wget --quiet --spider --tries=1 http://localhost:3000/ || exit 1
+HEALTHCHECK --interval=60s --timeout=3s --start-period=5s --retries=3 CMD wget --quiet --spider --tries=1 http://localhost:3000/healthz || exit 1
 CMD ["./foedus"]

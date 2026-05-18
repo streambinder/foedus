@@ -24,6 +24,11 @@ func RequestContext() fiber.Handler {
 
 func AccessLog() fiber.Handler {
 	return func(c *fiber.Ctx) error {
+		// skip healthcheck pings: high-frequency, low-signal, would swamp the journal
+		if c.Path() == "/healthz" {
+			return c.Next()
+		}
+
 		start := time.Now()
 		err := c.Next()
 
