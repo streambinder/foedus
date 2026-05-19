@@ -5,7 +5,7 @@ go 1.25.0
 require (
 	github.com/a-h/templ v0.3.1020
 	github.com/gofiber/fiber/v2 v2.52.13
-	modernc.org/sqlite v1.50.0
+	modernc.org/sqlite v1.50.1
 )
 
 require (
@@ -24,7 +24,7 @@ require (
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasthttp v1.71.0 // indirect
 	golang.org/x/sys v0.44.0 // indirect
-	modernc.org/libc v1.72.2 // indirect
+	modernc.org/libc v1.72.3 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect
 )
