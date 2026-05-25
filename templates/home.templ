@@ -333,21 +333,33 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 							<p class="section-subtitle">{ t("home.soundtrack_description") }</p>
 						}
 						if soundtrackEnabled {
-							<div
-								class="soundtrack-search"
-								data-msg-added={ t("soundtrack.added") }
-								data-msg-error={ t("soundtrack.error") }
-								data-msg-rate={ t("soundtrack.rate_limited") }
-							>
-								<input
-									type="text"
-									class="soundtrack-search-input"
-									placeholder={ t("soundtrack.search_placeholder") }
-									maxlength="100"
-									autocomplete="off"
-								/>
-								<div class="soundtrack-results"></div>
-							</div>
+							if inviteUpdateURL != "" {
+								<div
+									class="soundtrack-search"
+									data-msg-added={ t("soundtrack.added") }
+									data-msg-error={ t("soundtrack.error") }
+									data-msg-rate={ t("soundtrack.rate_limited") }
+								>
+									<input
+										type="text"
+										class="soundtrack-search-input"
+										placeholder={ t("soundtrack.search_placeholder") }
+										maxlength="100"
+										autocomplete="off"
+									/>
+									<div class="soundtrack-results"></div>
+								</div>
+							} else {
+								<div class="soundtrack-search soundtrack-search-locked">
+									<input
+										type="text"
+										class="soundtrack-search-input"
+										placeholder={ t("soundtrack.invite_required") }
+										disabled
+										aria-disabled="true"
+									/>
+								</div>
+							}
 						}
 					</div>
 				</div>
