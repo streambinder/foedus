@@ -47,4 +47,4 @@ The bot is fed the wedding settings as context, so it can answer common guest qu
 
 ### Collaborative soundtrack
 
-If `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET` and `SPOTIFY_REFRESH_TOKEN` are set, and a playlist URL is configured in the dashboard, invited guests can search Spotify and queue tracks to the wedding playlist directly from the homepage. The search box is gated on the invite query param — random visitors see a disabled hint instead.
+If `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET` and `SPOTIFY_REFRESH_TOKEN` are set, and a playlist URL is configured in the dashboard, invited guests can search Spotify and queue tracks to the wedding playlist directly from the homepage. The search box is gated on the invite query param — visitors arriving without an invite see a disabled hint instead.
