@@ -96,3 +96,24 @@ jobs:
             ghcr.io/${{ github.repository }}:latest
             ghcr.io/${{ github.repository }}:${{ github.sha }}
           push: ${{ github.event_name != 'pull_request' }}
+  notify:
+    needs: [super-linter]
+    if: success() && github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          persist-credentials: false
+      - uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d
+        id: filter
+        with:
+          filters: |
+            docs:
+              - 'docs/**'
+      - uses: peter-evans/repository-dispatch@28959ce8df70de7be546dd1250a005dd32156697
+        if: steps.filter.outputs.docs == 'true'
+        with:
+          token: ${{ secrets.REPOSITORY_DISPATCH_STREAMBINDER }}
+          repository: streambinder/streambinder
+          event-type: doc-sync
+          client-payload: '{"repo": "${{ github.repository }}", "ref": "${{ github.ref }}", "sha": "${{ github.sha }}"}'
