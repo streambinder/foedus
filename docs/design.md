@@ -2,13 +2,14 @@
 
 Fœdus is a single Go binary serving a [Fiber](https://github.com/gofiber/fiber)-based HTTP app, with views rendered server-side via [templ](https://templ.guide) and state persisted in a single SQLite file.
 
-There is no separate frontend build pipeline: the only JavaScript shipped is a handful of vanilla `.js` files under `static/`, served gzipped and cached aggressively. No SPA, no bundler, no node toolchain at runtime.
+There is no separate frontend build pipeline: the only first-party JavaScript shipped is a handful of vanilla `.js` files under `static/`, served gzipped and cached aggressively. No SPA, no bundler, no node toolchain at runtime. `static/places.js` is the one exception that loads a third-party library (Leaflet) at runtime from `unpkg.com` rather than bundling it.
 
 ## Routes
 
 The router is split into three logical groups, registered in this order:
 
-1. **Public unauthenticated** routes (`/`, `/media/*`, `/og-image`, `/gift/claim`, `/chat`, `/soundtrack/*`). All state-changing POSTs go through a per-IP rate limiter, a 256KB body cap and a CSRF token issued via a cookie on every public GET.
+1. **Public unauthenticated** routes (`/`, `/media/*`, `/og-image`, `/gift/claim`, `/chat`, `/soundtrack/*`). Every state-changing POST goes through a 256KB body cap and a CSRF token issued via a cookie on every public GET.
+   Per-IP rate limiting (10 req/min) is applied additionally to `/chat` and `/soundtrack/add` only, since those endpoints fan out to an LLM provider and to write-heavy SQLite paths respectively. RSVP, gift-claim and invitation-viewed POSTs rely on the CSRF + body-cap pair without an explicit rate limiter.
 2. **Admin** routes mounted under `/dashboard`, gated by HTTP basic auth and a stricter same-site CSRF policy. The dashboard accepts up to 32MB per request because the settings form ships base64-encoded photos inline.
 3. **Invitation catch-all** routes (`/:code`, `/:code/viewed`, `/:code/rsvp`), registered last so they don't shadow any other path.
 
