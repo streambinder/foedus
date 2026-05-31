@@ -450,7 +450,7 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, pagedGif
 														data-max-bytes="262144"
 													/>
 													<input type="hidden" name="homepage_hero_background_desktop___INDEX__" id="homepage-hero-background-desktop-data-__INDEX__" class="hero-background-image-hidden"/>
-													<input type="hidden" name="homepage_hero_background_desktop_token___INDEX__" id="homepage-hero-background-desktop-media-id-__INDEX__" class="hero-background-media-id-hidden"/>
+													<input type="hidden" name="homepage_hero_background_desktop_media_id___INDEX__" id="homepage-hero-background-desktop-media-id-__INDEX__" class="hero-background-media-id-hidden"/>
 													<img class="hero-background-preview" id="homepage-hero-background-desktop-preview-__INDEX__" style="display:none" alt="desktop background preview"/>
 												</div>
 											</div>
@@ -471,7 +471,7 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, pagedGif
 														data-max-bytes="196608"
 													/>
 													<input type="hidden" name="homepage_hero_background_mobile___INDEX__" id="homepage-hero-background-mobile-data-__INDEX__" class="hero-background-image-hidden"/>
-													<input type="hidden" name="homepage_hero_background_mobile_token___INDEX__" id="homepage-hero-background-mobile-media-id-__INDEX__" class="hero-background-media-id-hidden"/>
+													<input type="hidden" name="homepage_hero_background_mobile_media_id___INDEX__" id="homepage-hero-background-mobile-media-id-__INDEX__" class="hero-background-media-id-hidden"/>
 													<img class="hero-background-preview hero-background-preview-portrait" id="homepage-hero-background-mobile-preview-__INDEX__" style="display:none" alt="mobile background preview"/>
 												</div>
 											</div>
@@ -495,31 +495,31 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, pagedGif
 
 												var desktopFile = card.querySelector('.managed-image-file[data-target-input^="homepage-hero-background-desktop-data-"]');
 												var desktopHidden = card.querySelector('.hero-background-image-hidden[id^="homepage-hero-background-desktop-data-"]');
-												var desktopToken = card.querySelector('.hero-background-media-id-hidden[id^="homepage-hero-background-desktop-media-id-"]');
+												var desktopMediaId = card.querySelector('.hero-background-media-id-hidden[id^="homepage-hero-background-desktop-media-id-"]');
 												var desktopPreview = card.querySelector('.hero-background-preview[id^="homepage-hero-background-desktop-preview-"]');
-												if (desktopFile && desktopHidden && desktopToken && desktopPreview) {
+												if (desktopFile && desktopHidden && desktopMediaId && desktopPreview) {
 													desktopFile.dataset.targetInput = "homepage-hero-background-desktop-data-" + idx;
 													desktopFile.dataset.previewTarget = "homepage-hero-background-desktop-preview-" + idx;
 													desktopFile.dataset.mediaIdInput = "homepage-hero-background-desktop-media-id-" + idx;
 													desktopHidden.name = "homepage_hero_background_desktop_" + idx;
 													desktopHidden.id = "homepage-hero-background-desktop-data-" + idx;
-													desktopToken.name = "homepage_hero_background_desktop_token_" + idx;
-													desktopToken.id = "homepage-hero-background-desktop-media-id-" + idx;
+													desktopMediaId.name = "homepage_hero_background_desktop_media_id_" + idx;
+													desktopMediaId.id = "homepage-hero-background-desktop-media-id-" + idx;
 													desktopPreview.id = "homepage-hero-background-desktop-preview-" + idx;
 												}
 
 												var mobileFile = card.querySelector('.managed-image-file[data-target-input^="homepage-hero-background-mobile-data-"]');
 												var mobileHidden = card.querySelector('.hero-background-image-hidden[id^="homepage-hero-background-mobile-data-"]');
-												var mobileToken = card.querySelector('.hero-background-media-id-hidden[id^="homepage-hero-background-mobile-media-id-"]');
+												var mobileMediaId = card.querySelector('.hero-background-media-id-hidden[id^="homepage-hero-background-mobile-media-id-"]');
 												var mobilePreview = card.querySelector('.hero-background-preview[id^="homepage-hero-background-mobile-preview-"]');
-												if (mobileFile && mobileHidden && mobileToken && mobilePreview) {
+												if (mobileFile && mobileHidden && mobileMediaId && mobilePreview) {
 													mobileFile.dataset.targetInput = "homepage-hero-background-mobile-data-" + idx;
 													mobileFile.dataset.previewTarget = "homepage-hero-background-mobile-preview-" + idx;
 													mobileFile.dataset.mediaIdInput = "homepage-hero-background-mobile-media-id-" + idx;
 													mobileHidden.name = "homepage_hero_background_mobile_" + idx;
 													mobileHidden.id = "homepage-hero-background-mobile-data-" + idx;
-													mobileToken.name = "homepage_hero_background_mobile_token_" + idx;
-													mobileToken.id = "homepage-hero-background-mobile-media-id-" + idx;
+													mobileMediaId.name = "homepage_hero_background_mobile_media_id_" + idx;
+													mobileMediaId.id = "homepage-hero-background-mobile-media-id-" + idx;
 													mobilePreview.id = "homepage-hero-background-mobile-preview-" + idx;
 												}
 											});

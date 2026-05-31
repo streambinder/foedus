@@ -550,6 +550,15 @@ func SaveSettings(c *fiber.Ctx) error {
 			MobileMediaID:  mobileMediaID,
 		})
 	}
+	// guard against a silent wipe: if the form claimed N background cards but every
+	// media id resolved to 0, the submitted field names didn't match what we read
+	// here (client/server contract drift) — not a genuine "user cleared all". bail
+	// before persisting the empty value, otherwise the orphan cleanup below would
+	// delete the still-referenced background media bytes.
+	if backgroundCount > 0 && len(homepageHeroBackgrounds) == 0 {
+		logger.Error("settings save rejected", "field", "homepage_hero_backgrounds", "reason", "declared cards resolved to zero media ids", "declared_count", backgroundCount)
+		return c.Status(400).SendString("background image references missing — not saved")
+	}
 	homepageHeroBackgroundsJSON, _ := json.Marshal(homepageHeroBackgrounds)
 	if err := database.UpdateSetting("homepage_hero_backgrounds", string(homepageHeroBackgroundsJSON)); err != nil {
 		logger.Error("settings save failed", "key", "homepage_hero_backgrounds", "error", err.Error())
