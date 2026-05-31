@@ -59,11 +59,13 @@ func getLang(c *fiber.Ctx) string {
 	return "en"
 }
 
-const guestsPerPage = 10
-const invitationsPerPage = 10
-const registryPerPage = 10
-const giftsPerPage = 10
-const soundtrackPerPage = 10
+const (
+	guestsPerPage      = 10
+	invitationsPerPage = 10
+	registryPerPage    = 10
+	giftsPerPage       = 10
+	soundtrackPerPage  = 10
+)
 
 // paginateSlice clamps page to [1,totalPages] and returns the requested window.
 // Empty input returns nil + page=1, totalPages=1 so callers don't need guards.
