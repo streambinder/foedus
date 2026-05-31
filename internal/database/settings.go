@@ -133,7 +133,7 @@ func GetAllSettings() (models.WeddingSettings, error) {
 	}, nil
 }
 
-func UpdateSetting(key, value string) error {
-	_, err := DB.Exec(`UPDATE settings SET value = ? WHERE key = ?`, value, key)
+func UpdateSetting(q Querier, key, value string) error {
+	_, err := q.Exec(`UPDATE settings SET value = ? WHERE key = ?`, value, key)
 	return err
 }

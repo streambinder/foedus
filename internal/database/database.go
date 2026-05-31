@@ -11,6 +11,35 @@ import (
 
 var DB *sql.DB
 
+// Querier is the subset of *sql.DB and *sql.Tx that the data helpers need, so
+// the same helper can run either standalone (on DB) or inside a transaction.
+type Querier interface {
+	Exec(query string, args ...any) (sql.Result, error)
+	Query(query string, args ...any) (*sql.Rows, error)
+	QueryRow(query string, args ...any) *sql.Row
+}
+
+// WithTx runs fn inside a single transaction, committing on success and rolling
+// back on any error or panic. Callers get all-or-nothing semantics without
+// repeating the begin/commit/rollback dance.
+func WithTx(fn func(tx *sql.Tx) error) error {
+	tx, err := DB.Begin()
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if p := recover(); p != nil {
+			_ = tx.Rollback()
+			panic(p)
+		}
+	}()
+	if err := fn(tx); err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+	return tx.Commit()
+}
+
 // pragmas applied via DSN so they take effect on every pooled connection.
 // WAL = concurrent readers + 1 writer; busy_timeout makes writers wait on lock
 // instead of failing; foreign_keys turns on the FK constraints declared in the

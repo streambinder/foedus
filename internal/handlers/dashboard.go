@@ -218,7 +218,7 @@ func DashboardIndex(c *fiber.Ctx) error {
 	return Render(c, templates.Dashboard(settings, guests, pagedGifts, giftsPage, giftsTotalPages, pagedRegistry, registryPage, registryTotalPages, registryItems, invitations, pagedInvitations, invitePage, inviteTotalPages, inviteSearch, polls, pagedSoundtrack, soundtrackPage, soundtrackTotalPages, confirmedReception, refusedReception, pendingRSVP, invitedGuests, nonVisualizedInvited, totalGuests, confirmedAdults, confirmedChildren, confirmedInfants, confirmedVendors, page, totalPages, search, csrfToken, getFlash(c), getT(c), getLang(c)))
 }
 
-func resolveImageMediaID(rawImage, rawMediaID string, existingMediaID int, allowedAny bool) (int, error) {
+func resolveImageMediaID(q database.Querier, rawImage, rawMediaID string, existingMediaID int, allowedAny bool) (int, error) {
 	image := strings.TrimSpace(rawImage)
 	if image != "" {
 		if allowedAny {
@@ -234,13 +234,13 @@ func resolveImageMediaID(rawImage, rawMediaID string, existingMediaID int, allow
 		if err != nil {
 			return 0, fiber.NewError(400, "invalid image data")
 		}
-		newID, err := database.InsertMedia(mime, data)
+		newID, err := database.InsertMedia(q, mime, data)
 		if err != nil {
 			return 0, err
 		}
 		// orphan cleanup: drop previous media row if it's being replaced
 		if existingMediaID > 0 && existingMediaID != newID {
-			_ = database.DeleteMedia(existingMediaID)
+			_ = database.DeleteMedia(q, existingMediaID)
 		}
 		return newID, nil
 	}
@@ -249,7 +249,7 @@ func resolveImageMediaID(rawImage, rawMediaID string, existingMediaID int, allow
 	if keep == 0 {
 		// cleared field — drop existing media if any
 		if existingMediaID > 0 {
-			_ = database.DeleteMedia(existingMediaID)
+			_ = database.DeleteMedia(q, existingMediaID)
 		}
 		return 0, nil
 	}
@@ -263,7 +263,7 @@ func resolveImageMediaID(rawImage, rawMediaID string, existingMediaID int, allow
 // resolveImageMediaIDFromSet handles the multi-image case (places, hero backgrounds)
 // where many fields share the same "existing ids" set: the kept id must match one of
 // the previously stored media ids for this settings group.
-func resolveImageMediaIDFromSet(rawImage, rawMediaID string, allowedExistingIDs map[int]struct{}) (int, error) {
+func resolveImageMediaIDFromSet(q database.Querier, rawImage, rawMediaID string, allowedExistingIDs map[int]struct{}) (int, error) {
 	image := strings.TrimSpace(rawImage)
 	if image != "" {
 		if err := validateBase64ImageAny(image); err != nil {
@@ -273,7 +273,7 @@ func resolveImageMediaIDFromSet(rawImage, rawMediaID string, allowedExistingIDs 
 		if err != nil {
 			return 0, fiber.NewError(400, "invalid image data")
 		}
-		return database.InsertMedia(mime, data)
+		return database.InsertMedia(q, mime, data)
 	}
 
 	keep := parseFormMediaID(rawMediaID)
@@ -347,260 +347,284 @@ func SaveSettings(c *fiber.Ctx) error {
 	}
 	existingMediaIDs := collectExistingMediaIDs(settings)
 
-	keys := []string{
-		"spouse1_name", "spouse2_name", "ceremony_datetime",
-		"ceremony_address", "ceremony_location", "ceremony_city",
-		"reception_address", "reception_location", "reception_city", "reception_datetime",
-		"bank_account_iban", "bank_account_holder",
-	}
-	for _, key := range keys {
-		val := c.FormValue(key)
-		if err := database.UpdateSetting(key, val); err != nil {
-			logger.Error("settings save failed", "key", key, "error", err.Error())
-			return c.Status(500).SendString("failed to save settings")
+	// counts captured for the success log once the transaction commits.
+	var placeCount, honeymoonCount, accommodationCount, impersonationCount, labelLangCount, backgroundLen int
+	var playlistConfigured bool
+
+	// everything below runs in one transaction: a rejected save (bad image, contract
+	// drift, write failure) rolls back every prior write and every media insert/delete,
+	// so the dashboard never ends up in a half-saved state and media bytes are never
+	// dropped on a path that didn't actually persist. errors carry their HTTP status
+	// via *fiber.Error so the single mapping after WithTx returns the right code.
+	saveErr := database.WithTx(func(tx *sql.Tx) error {
+		set := func(key, value string) error {
+			if err := database.UpdateSetting(tx, key, value); err != nil {
+				logger.Error("settings save failed", "key", key, "error", err.Error())
+				return fiber.NewError(500, "failed to save settings")
+			}
+			return nil
 		}
-	}
 
-	ceremonyMediaID, err := resolveImageMediaID(c.FormValue("ceremony_image"), c.FormValue("ceremony_media_id"), settings.CeremonyMediaID, true)
-	if err != nil {
-		logger.Warn("settings save rejected", "field", "ceremony_image", "error", err.Error())
-		return c.Status(400).SendString(err.Error())
-	}
-	if err := database.UpdateSetting("ceremony_media_id", strconv.Itoa(ceremonyMediaID)); err != nil {
-		logger.Error("settings save failed", "key", "ceremony_media_id", "error", err.Error())
-		return c.Status(500).SendString("failed to save settings")
-	}
-
-	receptionMediaID, err := resolveImageMediaID(c.FormValue("reception_image"), c.FormValue("reception_media_id"), settings.ReceptionMediaID, true)
-	if err != nil {
-		logger.Warn("settings save rejected", "field", "reception_image", "error", err.Error())
-		return c.Status(400).SendString(err.Error())
-	}
-	if err := database.UpdateSetting("reception_media_id", strconv.Itoa(receptionMediaID)); err != nil {
-		logger.Error("settings save failed", "key", "reception_media_id", "error", err.Error())
-		return c.Status(500).SendString("failed to save settings")
-	}
-
-	sharePreviewMediaID, err := resolveImageMediaID(c.FormValue("share_preview_image"), c.FormValue("share_preview_media_id"), settings.SharePreviewMediaID, true)
-	if err != nil {
-		logger.Warn("settings save rejected", "field", "share_preview_image", "error", err.Error())
-		return c.Status(400).SendString(err.Error())
-	}
-	if err := database.UpdateSetting("share_preview_media_id", strconv.Itoa(sharePreviewMediaID)); err != nil {
-		logger.Error("settings save failed", "key", "share_preview_media_id", "error", err.Error())
-		return c.Status(500).SendString("failed to save settings")
-	}
-
-	// spotify playlist: store as a single-entry JSON array for backward compatibility
-	playlist := strings.TrimSpace(c.FormValue("spotify_playlist"))
-	var playlists []string
-	if playlist != "" {
-		playlists = append(playlists, playlist)
-	}
-	playlistsJSON, _ := json.Marshal(playlists)
-	if err := database.UpdateSetting("spotify_playlists", string(playlistsJSON)); err != nil {
-		logger.Error("settings save failed", "key", "spotify_playlists", "error", err.Error())
-		return c.Status(500).SendString("failed to save settings")
-	}
-
-	// places: collect ordered place entries
-	var places []models.Place
-	for i := 0; ; i++ {
-		label := strings.TrimSpace(c.FormValue(fmt.Sprintf("place_label_%d", i)))
-		name := strings.TrimSpace(c.FormValue(fmt.Sprintf("place_name_%d", i)))
-		address := strings.TrimSpace(c.FormValue(fmt.Sprintf("place_address_%d", i)))
-		date := strings.TrimSpace(c.FormValue(fmt.Sprintf("place_date_%d", i)))
-		mediaIDRaw := c.FormValue(fmt.Sprintf("place_media_id_%d", i))
-		mediaID, err := resolveImageMediaIDFromSet(c.FormValue(fmt.Sprintf("place_image_%d", i)), mediaIDRaw, existingMediaIDs)
-		if err != nil {
-			logger.Warn("settings save rejected", "field", fmt.Sprintf("place_image_%d", i), "error", err.Error())
-			return c.Status(400).SendString(err.Error())
-		}
-		if label == "" && name == "" && address == "" && date == "" && mediaID == 0 && mediaIDRaw == "" {
-			break
-		}
-		lat, _ := strconv.ParseFloat(c.FormValue(fmt.Sprintf("place_lat_%d", i)), 64)
-		lng, _ := strconv.ParseFloat(c.FormValue(fmt.Sprintf("place_lng_%d", i)), 64)
-		places = append(places, models.Place{
-			Label:   label,
-			Date:    date,
-			MediaID: mediaID,
-			Name:    name,
-			Address: address,
-			Lat:     lat,
-			Lng:     lng,
-		})
-	}
-	placesJSON, _ := json.Marshal(places)
-	if err := database.UpdateSetting("places", string(placesJSON)); err != nil {
-		logger.Error("settings save failed", "key", "places", "error", err.Error())
-		return c.Status(500).SendString("failed to save settings")
-	}
-
-	// honeymoon locations: collect ordered location entries
-	var honeymoonLocations []models.Place
-	for i := 0; ; i++ {
-		label := strings.TrimSpace(c.FormValue(fmt.Sprintf("honeymoon_label_%d", i)))
-		name := strings.TrimSpace(c.FormValue(fmt.Sprintf("honeymoon_name_%d", i)))
-		address := strings.TrimSpace(c.FormValue(fmt.Sprintf("honeymoon_address_%d", i)))
-		date := strings.TrimSpace(c.FormValue(fmt.Sprintf("honeymoon_date_%d", i)))
-		mediaIDRaw := c.FormValue(fmt.Sprintf("honeymoon_media_id_%d", i))
-		mediaID, err := resolveImageMediaIDFromSet(c.FormValue(fmt.Sprintf("honeymoon_image_%d", i)), mediaIDRaw, existingMediaIDs)
-		if err != nil {
-			logger.Warn("settings save rejected", "field", fmt.Sprintf("honeymoon_image_%d", i), "error", err.Error())
-			return c.Status(400).SendString(err.Error())
-		}
-		if label == "" && name == "" && address == "" && date == "" && mediaID == 0 && mediaIDRaw == "" {
-			break
-		}
-		lat, _ := strconv.ParseFloat(c.FormValue(fmt.Sprintf("honeymoon_lat_%d", i)), 64)
-		lng, _ := strconv.ParseFloat(c.FormValue(fmt.Sprintf("honeymoon_lng_%d", i)), 64)
-		honeymoonLocations = append(honeymoonLocations, models.Place{
-			Label:   label,
-			Date:    date,
-			MediaID: mediaID,
-			Name:    name,
-			Address: address,
-			Lat:     lat,
-			Lng:     lng,
-		})
-	}
-	honeymoonLocationsJSON, _ := json.Marshal(honeymoonLocations)
-	if err := database.UpdateSetting("honeymoon_locations", string(honeymoonLocationsJSON)); err != nil {
-		logger.Error("settings save failed", "key", "honeymoon_locations", "error", err.Error())
-		return c.Status(500).SendString("failed to save settings")
-	}
-
-	// accommodation suggestions: collect name + description + url entries
-	var accommodationSuggestions []models.AccommodationSuggestion
-	for i := 0; ; i++ {
-		name := strings.TrimSpace(c.FormValue(fmt.Sprintf("accommodation_name_%d", i)))
-		if name == "" {
-			break
-		}
-		accommodationSuggestions = append(accommodationSuggestions, models.AccommodationSuggestion{
-			Name:        name,
-			Description: strings.TrimSpace(c.FormValue(fmt.Sprintf("accommodation_description_%d", i))),
-			URL:         strings.TrimSpace(c.FormValue(fmt.Sprintf("accommodation_url_%d", i))),
-		})
-	}
-	accommodationSuggestionsJSON, _ := json.Marshal(accommodationSuggestions)
-	if err := database.UpdateSetting("accommodation_suggestions", string(accommodationSuggestionsJSON)); err != nil {
-		logger.Error("settings save failed", "key", "accommodation_suggestions", "error", err.Error())
-		return c.Status(500).SendString("failed to save settings")
-	}
-
-	// impersonations: collect codename + profile pairs
-	var impersonations []models.Impersonation
-	for i := 0; ; i++ {
-		codename := strings.TrimSpace(c.FormValue(fmt.Sprintf("impersonation_codename_%d", i)))
-		if codename == "" {
-			break
-		}
-		impersonations = append(impersonations, models.Impersonation{
-			Codename: codename,
-			Profile:  strings.TrimSpace(c.FormValue(fmt.Sprintf("impersonation_profile_%d", i))),
-		})
-	}
-	impersonationsJSON, _ := json.Marshal(impersonations)
-	if err := database.UpdateSetting("impersonations", string(impersonationsJSON)); err != nil {
-		logger.Error("settings save failed", "key", "impersonations", "error", err.Error())
-		return c.Status(500).SendString("failed to save settings")
-	}
-
-	// homepage_labels: collect per-lang per-key overrides
-	homepageLabels := make(map[string]map[string]string)
-	for _, lang := range []string{"en", "it"} {
-		langOverrides := make(map[string]string)
-		for _, key := range i18n.HomepageKeys {
-			fieldName := "homepage_label_" + lang + "_" + key
-			if v := strings.TrimSpace(c.FormValue(fieldName)); v != "" {
-				langOverrides[key] = v
+		for _, key := range []string{
+			"spouse1_name", "spouse2_name", "ceremony_datetime",
+			"ceremony_address", "ceremony_location", "ceremony_city",
+			"reception_address", "reception_location", "reception_city", "reception_datetime",
+			"bank_account_iban", "bank_account_holder",
+		} {
+			if err := set(key, c.FormValue(key)); err != nil {
+				return err
 			}
 		}
-		if len(langOverrides) > 0 {
-			homepageLabels[lang] = langOverrides
-		}
-	}
-	homepageLabelsJSON, _ := json.Marshal(homepageLabels)
-	if err := database.UpdateSetting("homepage_labels", string(homepageLabelsJSON)); err != nil {
-		logger.Error("settings save failed", "key", "homepage_labels", "error", err.Error())
-		return c.Status(500).SendString("failed to save settings")
-	}
 
-	// homepage hero backgrounds: collect desktop/mobile pairs
-	backgroundCount, _ := strconv.Atoi(c.FormValue("homepage_hero_background_count"))
-	var homepageHeroBackgrounds []models.HomepageHeroBackground
-	for i := 0; i < backgroundCount; i++ {
-		desktopMediaID, err := resolveImageMediaIDFromSet(c.FormValue(fmt.Sprintf("homepage_hero_background_desktop_%d", i)), c.FormValue(fmt.Sprintf("homepage_hero_background_desktop_media_id_%d", i)), existingMediaIDs)
+		ceremonyMediaID, err := resolveImageMediaID(tx, c.FormValue("ceremony_image"), c.FormValue("ceremony_media_id"), settings.CeremonyMediaID, true)
 		if err != nil {
-			logger.Warn("settings save rejected", "field", fmt.Sprintf("homepage_hero_background_desktop_%d", i), "error", err.Error())
-			return c.Status(400).SendString(err.Error())
+			logger.Warn("settings save rejected", "field", "ceremony_image", "error", err.Error())
+			return err
 		}
-		mobileMediaID, err := resolveImageMediaIDFromSet(c.FormValue(fmt.Sprintf("homepage_hero_background_mobile_%d", i)), c.FormValue(fmt.Sprintf("homepage_hero_background_mobile_media_id_%d", i)), existingMediaIDs)
-		if err != nil {
-			logger.Warn("settings save rejected", "field", fmt.Sprintf("homepage_hero_background_mobile_%d", i), "error", err.Error())
-			return c.Status(400).SendString(err.Error())
+		if err := set("ceremony_media_id", strconv.Itoa(ceremonyMediaID)); err != nil {
+			return err
 		}
-		if desktopMediaID == 0 && mobileMediaID == 0 {
-			continue
-		}
-		homepageHeroBackgrounds = append(homepageHeroBackgrounds, models.HomepageHeroBackground{
-			DesktopMediaID: desktopMediaID,
-			MobileMediaID:  mobileMediaID,
-		})
-	}
-	// guard against a silent wipe: if the form claimed N background cards but every
-	// media id resolved to 0, the submitted field names didn't match what we read
-	// here (client/server contract drift) — not a genuine "user cleared all". bail
-	// before persisting the empty value, otherwise the orphan cleanup below would
-	// delete the still-referenced background media bytes.
-	if backgroundCount > 0 && len(homepageHeroBackgrounds) == 0 {
-		logger.Error("settings save rejected", "field", "homepage_hero_backgrounds", "reason", "declared cards resolved to zero media ids", "declared_count", backgroundCount)
-		return c.Status(400).SendString("background image references missing — not saved")
-	}
-	homepageHeroBackgroundsJSON, _ := json.Marshal(homepageHeroBackgrounds)
-	if err := database.UpdateSetting("homepage_hero_backgrounds", string(homepageHeroBackgroundsJSON)); err != nil {
-		logger.Error("settings save failed", "key", "homepage_hero_backgrounds", "error", err.Error())
-		return c.Status(500).SendString("failed to save settings")
-	}
 
-	// orphan cleanup for list-based images: drop media rows that were referenced
-	// before the save but are no longer referenced after.
-	keptIDs := make(map[int]struct{})
-	keep := func(id int) {
-		if id > 0 {
-			keptIDs[id] = struct{}{}
+		receptionMediaID, err := resolveImageMediaID(tx, c.FormValue("reception_image"), c.FormValue("reception_media_id"), settings.ReceptionMediaID, true)
+		if err != nil {
+			logger.Warn("settings save rejected", "field", "reception_image", "error", err.Error())
+			return err
 		}
-	}
-	keep(ceremonyMediaID)
-	keep(receptionMediaID)
-	keep(sharePreviewMediaID)
-	for _, place := range places {
-		keep(place.MediaID)
-	}
-	for _, place := range honeymoonLocations {
-		keep(place.MediaID)
-	}
-	for _, bg := range homepageHeroBackgrounds {
-		keep(bg.DesktopMediaID)
-		keep(bg.MobileMediaID)
-	}
-	for id := range existingMediaIDs {
-		if _, stillUsed := keptIDs[id]; !stillUsed {
-			_ = database.DeleteMedia(id)
+		if err := set("reception_media_id", strconv.Itoa(receptionMediaID)); err != nil {
+			return err
 		}
+
+		sharePreviewMediaID, err := resolveImageMediaID(tx, c.FormValue("share_preview_image"), c.FormValue("share_preview_media_id"), settings.SharePreviewMediaID, true)
+		if err != nil {
+			logger.Warn("settings save rejected", "field", "share_preview_image", "error", err.Error())
+			return err
+		}
+		if err := set("share_preview_media_id", strconv.Itoa(sharePreviewMediaID)); err != nil {
+			return err
+		}
+
+		// spotify playlist: store as a single-entry JSON array for backward compatibility
+		playlist := strings.TrimSpace(c.FormValue("spotify_playlist"))
+		var playlists []string
+		if playlist != "" {
+			playlists = append(playlists, playlist)
+		}
+		playlistConfigured = playlist != ""
+		playlistsJSON, _ := json.Marshal(playlists)
+		if err := set("spotify_playlists", string(playlistsJSON)); err != nil {
+			return err
+		}
+
+		// places: collect ordered place entries
+		var places []models.Place
+		for i := 0; ; i++ {
+			label := strings.TrimSpace(c.FormValue(fmt.Sprintf("place_label_%d", i)))
+			name := strings.TrimSpace(c.FormValue(fmt.Sprintf("place_name_%d", i)))
+			address := strings.TrimSpace(c.FormValue(fmt.Sprintf("place_address_%d", i)))
+			date := strings.TrimSpace(c.FormValue(fmt.Sprintf("place_date_%d", i)))
+			mediaIDRaw := c.FormValue(fmt.Sprintf("place_media_id_%d", i))
+			mediaID, err := resolveImageMediaIDFromSet(tx, c.FormValue(fmt.Sprintf("place_image_%d", i)), mediaIDRaw, existingMediaIDs)
+			if err != nil {
+				logger.Warn("settings save rejected", "field", fmt.Sprintf("place_image_%d", i), "error", err.Error())
+				return err
+			}
+			if label == "" && name == "" && address == "" && date == "" && mediaID == 0 && mediaIDRaw == "" {
+				break
+			}
+			lat, _ := strconv.ParseFloat(c.FormValue(fmt.Sprintf("place_lat_%d", i)), 64)
+			lng, _ := strconv.ParseFloat(c.FormValue(fmt.Sprintf("place_lng_%d", i)), 64)
+			places = append(places, models.Place{
+				Label:   label,
+				Date:    date,
+				MediaID: mediaID,
+				Name:    name,
+				Address: address,
+				Lat:     lat,
+				Lng:     lng,
+			})
+		}
+		placeCount = len(places)
+		placesJSON, _ := json.Marshal(places)
+		if err := set("places", string(placesJSON)); err != nil {
+			return err
+		}
+
+		// honeymoon locations: collect ordered location entries
+		var honeymoonLocations []models.Place
+		for i := 0; ; i++ {
+			label := strings.TrimSpace(c.FormValue(fmt.Sprintf("honeymoon_label_%d", i)))
+			name := strings.TrimSpace(c.FormValue(fmt.Sprintf("honeymoon_name_%d", i)))
+			address := strings.TrimSpace(c.FormValue(fmt.Sprintf("honeymoon_address_%d", i)))
+			date := strings.TrimSpace(c.FormValue(fmt.Sprintf("honeymoon_date_%d", i)))
+			mediaIDRaw := c.FormValue(fmt.Sprintf("honeymoon_media_id_%d", i))
+			mediaID, err := resolveImageMediaIDFromSet(tx, c.FormValue(fmt.Sprintf("honeymoon_image_%d", i)), mediaIDRaw, existingMediaIDs)
+			if err != nil {
+				logger.Warn("settings save rejected", "field", fmt.Sprintf("honeymoon_image_%d", i), "error", err.Error())
+				return err
+			}
+			if label == "" && name == "" && address == "" && date == "" && mediaID == 0 && mediaIDRaw == "" {
+				break
+			}
+			lat, _ := strconv.ParseFloat(c.FormValue(fmt.Sprintf("honeymoon_lat_%d", i)), 64)
+			lng, _ := strconv.ParseFloat(c.FormValue(fmt.Sprintf("honeymoon_lng_%d", i)), 64)
+			honeymoonLocations = append(honeymoonLocations, models.Place{
+				Label:   label,
+				Date:    date,
+				MediaID: mediaID,
+				Name:    name,
+				Address: address,
+				Lat:     lat,
+				Lng:     lng,
+			})
+		}
+		honeymoonCount = len(honeymoonLocations)
+		honeymoonLocationsJSON, _ := json.Marshal(honeymoonLocations)
+		if err := set("honeymoon_locations", string(honeymoonLocationsJSON)); err != nil {
+			return err
+		}
+
+		// accommodation suggestions: collect name + description + url entries
+		var accommodationSuggestions []models.AccommodationSuggestion
+		for i := 0; ; i++ {
+			name := strings.TrimSpace(c.FormValue(fmt.Sprintf("accommodation_name_%d", i)))
+			if name == "" {
+				break
+			}
+			accommodationSuggestions = append(accommodationSuggestions, models.AccommodationSuggestion{
+				Name:        name,
+				Description: strings.TrimSpace(c.FormValue(fmt.Sprintf("accommodation_description_%d", i))),
+				URL:         strings.TrimSpace(c.FormValue(fmt.Sprintf("accommodation_url_%d", i))),
+			})
+		}
+		accommodationCount = len(accommodationSuggestions)
+		accommodationSuggestionsJSON, _ := json.Marshal(accommodationSuggestions)
+		if err := set("accommodation_suggestions", string(accommodationSuggestionsJSON)); err != nil {
+			return err
+		}
+
+		// impersonations: collect codename + profile pairs
+		var impersonations []models.Impersonation
+		for i := 0; ; i++ {
+			codename := strings.TrimSpace(c.FormValue(fmt.Sprintf("impersonation_codename_%d", i)))
+			if codename == "" {
+				break
+			}
+			impersonations = append(impersonations, models.Impersonation{
+				Codename: codename,
+				Profile:  strings.TrimSpace(c.FormValue(fmt.Sprintf("impersonation_profile_%d", i))),
+			})
+		}
+		impersonationCount = len(impersonations)
+		impersonationsJSON, _ := json.Marshal(impersonations)
+		if err := set("impersonations", string(impersonationsJSON)); err != nil {
+			return err
+		}
+
+		// homepage_labels: collect per-lang per-key overrides
+		homepageLabels := make(map[string]map[string]string)
+		for _, lang := range []string{"en", "it"} {
+			langOverrides := make(map[string]string)
+			for _, key := range i18n.HomepageKeys {
+				fieldName := "homepage_label_" + lang + "_" + key
+				if v := strings.TrimSpace(c.FormValue(fieldName)); v != "" {
+					langOverrides[key] = v
+				}
+			}
+			if len(langOverrides) > 0 {
+				homepageLabels[lang] = langOverrides
+			}
+		}
+		labelLangCount = len(homepageLabels)
+		homepageLabelsJSON, _ := json.Marshal(homepageLabels)
+		if err := set("homepage_labels", string(homepageLabelsJSON)); err != nil {
+			return err
+		}
+
+		// homepage hero backgrounds: collect desktop/mobile pairs
+		backgroundCount, _ := strconv.Atoi(c.FormValue("homepage_hero_background_count"))
+		var homepageHeroBackgrounds []models.HomepageHeroBackground
+		for i := 0; i < backgroundCount; i++ {
+			desktopMediaID, err := resolveImageMediaIDFromSet(tx, c.FormValue(fmt.Sprintf("homepage_hero_background_desktop_%d", i)), c.FormValue(fmt.Sprintf("homepage_hero_background_desktop_media_id_%d", i)), existingMediaIDs)
+			if err != nil {
+				logger.Warn("settings save rejected", "field", fmt.Sprintf("homepage_hero_background_desktop_%d", i), "error", err.Error())
+				return err
+			}
+			mobileMediaID, err := resolveImageMediaIDFromSet(tx, c.FormValue(fmt.Sprintf("homepage_hero_background_mobile_%d", i)), c.FormValue(fmt.Sprintf("homepage_hero_background_mobile_media_id_%d", i)), existingMediaIDs)
+			if err != nil {
+				logger.Warn("settings save rejected", "field", fmt.Sprintf("homepage_hero_background_mobile_%d", i), "error", err.Error())
+				return err
+			}
+			if desktopMediaID == 0 && mobileMediaID == 0 {
+				continue
+			}
+			homepageHeroBackgrounds = append(homepageHeroBackgrounds, models.HomepageHeroBackground{
+				DesktopMediaID: desktopMediaID,
+				MobileMediaID:  mobileMediaID,
+			})
+		}
+		// guard against a silent wipe: if the form claimed N background cards but every
+		// media id resolved to 0, the submitted field names didn't match what we read
+		// here (client/server contract drift) — not a genuine "user cleared all". bail
+		// before persisting the empty value, otherwise the orphan cleanup below would
+		// delete the still-referenced background media bytes.
+		if backgroundCount > 0 && len(homepageHeroBackgrounds) == 0 {
+			logger.Error("settings save rejected", "field", "homepage_hero_backgrounds", "reason", "declared cards resolved to zero media ids", "declared_count", backgroundCount)
+			return fiber.NewError(400, "background image references missing — not saved")
+		}
+		backgroundLen = len(homepageHeroBackgrounds)
+		homepageHeroBackgroundsJSON, _ := json.Marshal(homepageHeroBackgrounds)
+		if err := set("homepage_hero_backgrounds", string(homepageHeroBackgroundsJSON)); err != nil {
+			return err
+		}
+
+		// orphan cleanup for list-based images: drop media rows that were referenced
+		// before the save but are no longer referenced after.
+		keptIDs := make(map[int]struct{})
+		keep := func(id int) {
+			if id > 0 {
+				keptIDs[id] = struct{}{}
+			}
+		}
+		keep(ceremonyMediaID)
+		keep(receptionMediaID)
+		keep(sharePreviewMediaID)
+		for _, place := range places {
+			keep(place.MediaID)
+		}
+		for _, place := range honeymoonLocations {
+			keep(place.MediaID)
+		}
+		for _, bg := range homepageHeroBackgrounds {
+			keep(bg.DesktopMediaID)
+			keep(bg.MobileMediaID)
+		}
+		for id := range existingMediaIDs {
+			if _, stillUsed := keptIDs[id]; !stillUsed {
+				if err := database.DeleteMedia(tx, id); err != nil {
+					logger.Error("settings save failed", "key", "media_cleanup", "media_id", id, "error", err.Error())
+					return fiber.NewError(500, "failed to save settings")
+				}
+			}
+		}
+		return nil
+	})
+	if saveErr != nil {
+		if fe, ok := saveErr.(*fiber.Error); ok {
+			return c.Status(fe.Code).SendString(fe.Message)
+		}
+		logger.Error("settings save transaction failed", "error", saveErr.Error())
+		return c.Status(500).SendString("failed to save settings")
 	}
 
 	logger.Info(
 		"settings updated",
-		"places", len(places),
-		"honeymoon_locations", len(honeymoonLocations),
-		"accommodation_suggestions", len(accommodationSuggestions),
-		"impersonations", len(impersonations),
-		"homepage_label_langs", len(homepageLabels),
-		"hero_backgrounds", len(homepageHeroBackgrounds),
-		"spotify_playlist_configured", playlist != "",
+		"places", placeCount,
+		"honeymoon_locations", honeymoonCount,
+		"accommodation_suggestions", accommodationCount,
+		"impersonations", impersonationCount,
+		"homepage_label_langs", labelLangCount,
+		"hero_backgrounds", backgroundLen,
+		"spotify_playlist_configured", playlistConfigured,
 	)
 	setFlash(c, getT(c)("flash.settings_saved"))
 	return c.Redirect("/dashboard")
@@ -824,7 +848,7 @@ func AddRegistryItem(c *fiber.Ctx) error {
 		logger.Warn("registry item create rejected", "name", name, "price", c.FormValue("price"))
 		return c.Status(400).SendString("invalid price")
 	}
-	mediaID, err := resolveImageMediaID(c.FormValue("image"), "", 0, false)
+	mediaID, err := resolveImageMediaID(database.DB, c.FormValue("image"), "", 0, false)
 	if err != nil {
 		logger.Warn("registry item create rejected", "name", name, "error", err.Error())
 		return c.Status(400).SendString(err.Error())
@@ -832,7 +856,7 @@ func AddRegistryItem(c *fiber.Ctx) error {
 	if err := database.CreateRegistryItem(name, price, mediaID); err != nil {
 		// orphan: media row is now unreferenced, drop it
 		if mediaID > 0 {
-			_ = database.DeleteMedia(mediaID)
+			_ = database.DeleteMedia(database.DB, mediaID)
 		}
 		logger.Error("registry item create failed", "name", name, "price", price, "error", err.Error())
 		return c.Status(500).SendString("failed to add item")
@@ -882,7 +906,7 @@ func UpdateRegistryItem(c *fiber.Ctx) error {
 		logger.Warn("registry item update rejected", "item_id", id, "price", c.FormValue("price"))
 		return c.Status(400).SendString("invalid price")
 	}
-	mediaID, err := resolveImageMediaID(c.FormValue("image"), c.FormValue("media_id"), item.MediaID, true)
+	mediaID, err := resolveImageMediaID(database.DB, c.FormValue("image"), c.FormValue("media_id"), item.MediaID, true)
 	if err != nil {
 		logger.Warn("registry item update rejected", "item_id", id, "error", err.Error())
 		return c.Status(400).SendString(err.Error())
@@ -912,7 +936,7 @@ func DeleteRegistryItem(c *fiber.Ctx) error {
 		return c.Status(500).SendString("failed to delete item")
 	}
 	if mediaIDToDrop > 0 {
-		_ = database.DeleteMedia(mediaIDToDrop)
+		_ = database.DeleteMedia(database.DB, mediaIDToDrop)
 	}
 	logger.Info("registry item deleted", "item_id", id)
 	setFlash(c, getT(c)("flash.item_deleted"))

@@ -10,8 +10,8 @@ type Media struct {
 	Bytes []byte
 }
 
-func InsertMedia(mime string, data []byte) (int, error) {
-	res, err := DB.Exec(`INSERT INTO media (mime, bytes) VALUES (?, ?)`, mime, data)
+func InsertMedia(q Querier, mime string, data []byte) (int, error) {
+	res, err := q.Exec(`INSERT INTO media (mime, bytes) VALUES (?, ?)`, mime, data)
 	if err != nil {
 		return 0, err
 	}
@@ -39,10 +39,10 @@ func GetMediaMeta(id int) (string, int, error) {
 	return mime, length, err
 }
 
-func DeleteMedia(id int) error {
+func DeleteMedia(q Querier, id int) error {
 	if id <= 0 {
 		return nil
 	}
-	_, err := DB.Exec(`DELETE FROM media WHERE id = ?`, id)
+	_, err := q.Exec(`DELETE FROM media WHERE id = ?`, id)
 	return err
 }

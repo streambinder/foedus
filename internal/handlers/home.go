@@ -12,6 +12,16 @@ import (
 	"github.com/streambinder/foedus/templates"
 )
 
+// mediaExists reports whether a media row is actually present. id<=0 is "absent"
+// so it doubles as the zero-id check.
+func mediaExists(id int) bool {
+	if id <= 0 {
+		return false
+	}
+	_, _, err := database.GetMediaMeta(id)
+	return err == nil
+}
+
 func pickHomepageHeroBackground(backgrounds []models.HomepageHeroBackground) models.HomepageHeroBackground {
 	if len(backgrounds) == 0 {
 		return models.HomepageHeroBackground{}
@@ -19,13 +29,19 @@ func pickHomepageHeroBackground(backgrounds []models.HomepageHeroBackground) mod
 
 	valid := make([]models.HomepageHeroBackground, 0, len(backgrounds))
 	for _, bg := range backgrounds {
-		if bg.DesktopMediaID == 0 && bg.MobileMediaID == 0 {
+		// only keep ids whose media bytes still exist — a dangling pointer (e.g.
+		// media deleted out from under the setting) would otherwise render a broken
+		// <img>. drop the dead side and fall back to the live one; drop the pair if
+		// neither survives.
+		desktopOK := mediaExists(bg.DesktopMediaID)
+		mobileOK := mediaExists(bg.MobileMediaID)
+		if !desktopOK && !mobileOK {
 			continue
 		}
-		if bg.DesktopMediaID == 0 {
+		if !desktopOK {
 			bg.DesktopMediaID = bg.MobileMediaID
 		}
-		if bg.MobileMediaID == 0 {
+		if !mobileOK {
 			bg.MobileMediaID = bg.DesktopMediaID
 		}
 		valid = append(valid, bg)
