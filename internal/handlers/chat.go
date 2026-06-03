@@ -236,8 +236,9 @@ func ChatStream(c *fiber.Ctx) error {
 		"messages":   messages,
 		"stream":     true,
 		"max_tokens": chatMaxReplyTokens,
-		// disable thinking/reasoning tokens — unnecessary cost and noise for a wedding chatbot
-		"reasoning": map[string]string{"effort": "none"},
+		// hide thinking tokens from the streamed response — gemini 3.5 flash
+		// requires reasoning and refuses effort=none, so exclude instead
+		"reasoning": map[string]any{"effort": "minimal", "exclude": true},
 	})
 
 	// set SSE headers before starting the stream writer — this lets the client
