@@ -236,8 +236,6 @@ func ChatStream(c *fiber.Ctx) error {
 		"messages":   messages,
 		"stream":     true,
 		"max_tokens": chatMaxReplyTokens,
-		// disable thinking/reasoning — unnecessary cost for a simple chatbot
-		"reasoning": map[string]any{"effort": "none"},
 	})
 
 	// set SSE headers before starting the stream writer — this lets the client
@@ -288,7 +286,10 @@ func ChatStream(c *fiber.Ctx) error {
 		defer resp.Body.Close()
 
 		if resp.StatusCode != http.StatusOK {
-			streamLogger.Error("chat upstream returned unexpected status", "status", resp.StatusCode)
+			// read a snippet of the response body to aid debugging
+			errSnippet := make([]byte, 512)
+			n, _ := resp.Body.Read(errSnippet)
+			streamLogger.Error("chat upstream returned unexpected status", "status", resp.StatusCode, "body", strings.TrimSpace(string(errSnippet[:n])))
 			fmt.Fprintf(w, "data: {\"error\":\"upstream error\"}\n\n")
 			w.Flush()
 			return
