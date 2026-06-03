@@ -1012,7 +1012,7 @@ func UpdateGift(c *fiber.Ctx) error {
 		logger.Warn("gift update rejected", "gift_id", id, "error", err.Error())
 		return c.Status(400).SendString(err.Error())
 	}
-	if err := validateGiftAssignment(amount, registryItemID, id); err != nil {
+	if err := validateGiftAssignment(registryItemID); err != nil {
 		logger.Warn("gift update rejected", "gift_id", id, "error", err.Message)
 		return c.Status(err.Code).SendString(err.Message)
 	}
@@ -1061,20 +1061,15 @@ func parseGiftRegistryItemID(raw string) (*int, error) {
 	return &id, nil
 }
 
-func validateGiftAssignment(amount int, registryItemID *int, excludeGiftID int) *fiber.Error {
+// validateGiftAssignment checks the registry item exists.
+// amount caps are only enforced on the public ClaimGift endpoint —
+// the admin is the authority and can always edit/confirm gifts.
+func validateGiftAssignment(registryItemID *int) *fiber.Error {
 	if registryItemID == nil {
 		return nil
 	}
-	item, err := database.GetRegistryItem(*registryItemID)
-	if err != nil {
+	if _, err := database.GetRegistryItem(*registryItemID); err != nil {
 		return fiber.NewError(404, "item not found")
-	}
-	claimed, err := database.GetClaimedAmountsByItemExcludingGift(excludeGiftID)
-	if err != nil {
-		return fiber.NewError(500, "failed to validate gift")
-	}
-	if amount > item.Price-claimed[item.ID] {
-		return fiber.NewError(400, "amount exceeds remaining")
 	}
 	return nil
 }

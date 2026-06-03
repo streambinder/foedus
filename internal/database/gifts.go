@@ -68,21 +68,3 @@ func GetClaimedAmountsByItem() (map[int]int, error) {
 	}
 	return claimed, nil
 }
-
-func GetClaimedAmountsByItemExcludingGift(giftID int) (map[int]int, error) {
-	rows, err := DB.Query(`SELECT registry_item_id, SUM(amount) FROM gifts WHERE registry_item_id IS NOT NULL AND id <> ? GROUP BY registry_item_id`, giftID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	claimed := make(map[int]int)
-	for rows.Next() {
-		var id, total int
-		if err := rows.Scan(&id, &total); err != nil {
-			return nil, err
-		}
-		claimed[id] = total
-	}
-	return claimed, nil
-}
