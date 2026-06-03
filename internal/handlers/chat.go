@@ -236,6 +236,8 @@ func ChatStream(c *fiber.Ctx) error {
 		"messages":   messages,
 		"stream":     true,
 		"max_tokens": chatMaxReplyTokens,
+		// disable thinking/reasoning tokens — unnecessary cost and noise for a wedding chatbot
+		"reasoning": map[string]string{"effort": "none"},
 	})
 
 	// set SSE headers before starting the stream writer — this lets the client
