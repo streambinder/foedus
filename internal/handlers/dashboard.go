@@ -1194,7 +1194,7 @@ func DeleteSoundtrackEvent(c *fiber.Ctx) error {
 	}
 	logger.Info("soundtrack event deleted", "event_id", id)
 	setFlash(c, getT(c)("flash.track_deleted"))
-	return c.Redirect("/dashboard#dashboard-soundtrack-events")
+	return c.Redirect("/dashboard")
 }
 
 func DeleteInvitation(c *fiber.Ctx) error {

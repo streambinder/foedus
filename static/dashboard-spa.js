@@ -424,7 +424,7 @@
   function focusGuestSearchIfPresent() {
     const input = document.getElementById("guest-search");
     if (!input) return;
-    input.focus();
+    input.focus({ preventScroll: true });
     const end = input.value.length;
     input.setSelectionRange(end, end);
   }
@@ -444,7 +444,7 @@
   function focusInvitationSearchIfPresent() {
     const input = document.getElementById("invitation-search");
     if (!input) return;
-    input.focus();
+    input.focus({ preventScroll: true });
     const end = input.value.length;
     input.setSelectionRange(end, end);
   }
