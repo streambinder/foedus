@@ -87,11 +87,16 @@ func main() {
 		},
 	}))
 	app.Use(middleware.LangDetect())
+	app.Use(middleware.SecurityHeaders())
 	app.Static("/static", "./static", fiber.Static{
 		Compress:      true,
 		ByteRange:     true,
 		MaxAge:        60 * 60 * 24 * 30, // 30 days; bust via filename if needed
 		CacheDuration: 10 * time.Minute,
+	})
+	app.Get("/robots.txt", func(c *fiber.Ctx) error {
+		c.Set("Content-Type", "text/plain")
+		return c.SendString("User-agent: *\nAllow: /\n")
 	})
 
 	// public CSRF: cookie issued on every GET, validated on every state-changing
@@ -107,6 +112,7 @@ func main() {
 		ContextKey:     "csrf",
 		CookieName:     "csrf_public",
 		CookieSameSite: "Lax",
+		CookieSecure:   true,
 		CookieHTTPOnly: false, // JS reads it on /chat and /soundtrack
 		Expiration:     12 * time.Hour,
 	})

@@ -190,7 +190,7 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 					if heroBackground.DesktopMediaID > 0 {
 						<source media="(min-width: 768px)" srcset={ publicImageURL(heroBackground.DesktopMediaID) }/>
 					}
-					<img src={ heroFallbackImage(heroBackground) } alt="" width="1600" height="1000" loading="eager" fetchpriority="high" decoding="async"/>
+					<img src={ heroFallbackImage(heroBackground) } alt={ settings.Spouse1Name + " & " + settings.Spouse2Name } width="1600" height="1000" loading="eager" fetchpriority="high" decoding="async"/>
 				</picture>
 				<div class="vp-hero-background-wash" aria-hidden="true"></div>
 			}
@@ -346,6 +346,7 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 										placeholder={ t("soundtrack.search_placeholder") }
 										maxlength="100"
 										autocomplete="off"
+										aria-label={ t("home.soundtrack") }
 									/>
 									<div class="soundtrack-results"></div>
 								</div>
@@ -373,7 +374,7 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 					loading="lazy"
 				></iframe>
 				if nextSectionAfterSoundtrack(settings.Places, settings.HoneymoonLocations, bankConfigured) != "" {
-					<a href={ templ.SafeURL(nextSectionAfterSoundtrack(settings.Places, settings.HoneymoonLocations, bankConfigured)) } class="vp-arrow vp-arrow-down">
+					<a href={ templ.SafeURL(nextSectionAfterSoundtrack(settings.Places, settings.HoneymoonLocations, bankConfigured)) } class="vp-arrow vp-arrow-down" aria-label="Next section">
 						<svg width="20" height="20" aria-hidden="true"><use href="#chev-d"/></svg>
 					</a>
 				}
@@ -395,11 +396,11 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 			if len(settings.Places) > 0 {
 				<section id="places" class="vp-section vp-places" data-story-map-section="places">
 					if hasSpotifyPlaylist(settings.SpotifyPlaylist) {
-						<a href="#soundtrack" class="vp-arrow vp-arrow-up">
+						<a href="#soundtrack" class="vp-arrow vp-arrow-up" aria-label="Previous section">
 							<svg width="20" height="20" aria-hidden="true"><use href="#chev-u"/></svg>
 						</a>
 					} else {
-						<a href="#venues" class="vp-arrow vp-arrow-up">
+						<a href="#venues" class="vp-arrow vp-arrow-up" aria-label="Previous section">
 							<svg width="20" height="20" aria-hidden="true"><use href="#chev-u"/></svg>
 						</a>
 					}
@@ -422,7 +423,7 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 						<div class="modal-box places-modal-box">
 							<button type="button" id="places-modal-close" class="places-modal-close" aria-label={ t("btn.close") }>&times;</button>
 							<div class="places-modal-media">
-								<img id="places-modal-image" src="" alt="" width="800" height="600" loading="lazy" fetchpriority="low" decoding="async"/>
+								<img id="places-modal-image" src="" alt={ t("home.places") } width="800" height="600" loading="lazy" fetchpriority="low" decoding="async"/>
 							</div>
 							<div class="places-modal-caption">
 								<h3 id="places-modal-label"></h3>
@@ -431,7 +432,7 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 						</div>
 					</dialog>
 					if nextSectionAfterPlaces(settings.HoneymoonLocations, bankConfigured) != "" {
-						<a href={ templ.SafeURL(nextSectionAfterPlaces(settings.HoneymoonLocations, bankConfigured)) } class="vp-arrow vp-arrow-down">
+						<a href={ templ.SafeURL(nextSectionAfterPlaces(settings.HoneymoonLocations, bankConfigured)) } class="vp-arrow vp-arrow-down" aria-label="Next section">
 							<svg width="20" height="20" aria-hidden="true"><use href="#chev-d"/></svg>
 						</a>
 					}
@@ -439,7 +440,7 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 			}
 			if len(settings.HoneymoonLocations) > 0 {
 				<section id="honeymoon" class="vp-section vp-honeymoon" data-story-map-section="honeymoon">
-					<a href={ templ.SafeURL(prevSectionBeforeHoneymoon(settings.Places, settings.SpotifyPlaylist)) } class="vp-arrow vp-arrow-up">
+					<a href={ templ.SafeURL(prevSectionBeforeHoneymoon(settings.Places, settings.SpotifyPlaylist)) } class="vp-arrow vp-arrow-up" aria-label="Previous section">
 						<svg width="20" height="20" aria-hidden="true"><use href="#chev-u"/></svg>
 					</a>
 					<div class="timeline-story-map-shell" aria-hidden="true">
@@ -458,7 +459,7 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 					</div>
 					<div class="timeline-data" style="display:none">{ locationTimelineJSON(settings.HoneymoonLocations, lang) }</div>
 					if nextSectionAfterHoneymoon(bankConfigured) != "" {
-						<a href={ templ.SafeURL(nextSectionAfterHoneymoon(bankConfigured)) } class="vp-arrow vp-arrow-down">
+						<a href={ templ.SafeURL(nextSectionAfterHoneymoon(bankConfigured)) } class="vp-arrow vp-arrow-down" aria-label="Next section">
 							<svg width="20" height="20" aria-hidden="true"><use href="#chev-d"/></svg>
 						</a>
 					}
@@ -617,7 +618,7 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 					</div>
 					<div class="modal-field">
 						<label>{ t("placeholder.donor") }</label>
-						<input type="text" id="modal-donor" placeholder={ t("placeholder.donor") } maxlength="200"/>
+						<input type="text" id="modal-donor" placeholder={ t("placeholder.donor") } maxlength="200" aria-label={ t("placeholder.donor") }/>
 					</div>
 					<div class="modal-actions">
 						<button type="button" id="modal-cancel" class="outline secondary">{ t("btn.cancel") }</button>
@@ -637,7 +638,7 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 						<button type="button" class="pct-btn" data-pct="100">100%</button>
 					</div>
 					<div class="pct-custom-row">
-						<input type="number" id="pct-custom" min="1" step="1" placeholder={ t("placeholder.custom_amount") }/>
+						<input type="number" id="pct-custom" min="1" step="1" placeholder={ t("placeholder.custom_amount") } aria-label={ t("placeholder.custom_amount") }/>
 						<span>€</span>
 					</div>
 					<div class="modal-actions">
@@ -1162,7 +1163,7 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 				</div>
 				<div id="chat-messages"></div>
 				<form id="chat-form">
-					<input id="chat-input" type="text" maxlength="500" placeholder={ t("chat.placeholder") } autocomplete="off"/>
+					<input id="chat-input" type="text" maxlength="500" placeholder={ t("chat.placeholder") } autocomplete="off" aria-label={ t("chat.title") }/>
 					<button type="submit">{ t("chat.send") }</button>
 				</form>
 			</div>
