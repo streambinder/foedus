@@ -14,6 +14,9 @@
   const MSG_RATE = container.dataset.msgRate;
   const input = container.querySelector(".soundtrack-search-input");
   const results = container.querySelector(".soundtrack-results");
+  if (!input || !results) {
+    return;
+  }
   let debounceTimer = null;
   let searchController = null;
 
