@@ -536,17 +536,27 @@
       );
       if (!res.ok) throw new Error(`status ${res.status}`);
       const data = await res.json();
-      const names = Array.isArray(data.names) ? data.names : [];
+      const groups = Array.isArray(data.groups) ? data.groups : [];
       const list = root.querySelector(".counter-names-list");
       if (!list) return;
-      if (names.length === 0) {
+      if (groups.length === 0) {
         list.textContent = "—";
         return;
       }
-      list.innerHTML =
-        "<ol>" +
-        names.map((n) => "<li>" + escapeHtml(n) + "</li>").join("") +
-        "</ol>";
+      // continuous numbering across groups, separated visually
+      let start = 1;
+      list.innerHTML = groups
+        .map((names) => {
+          const ol =
+            "<ol start=" +
+            start +
+            ">" +
+            names.map((n) => "<li>" + escapeHtml(n) + "</li>").join("") +
+            "</ol>";
+          start += names.length;
+          return ol;
+        })
+        .join('<hr class="counter-group-sep">');
     } catch (err) {
       const list = root.querySelector(".counter-names-list");
       if (list) list.textContent = "Error: " + err.message;

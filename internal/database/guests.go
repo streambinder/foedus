@@ -178,34 +178,70 @@ func scanGuest(rows *sql.Rows) (models.Guest, error) {
 	return g, err
 }
 
-// GuestNamesByCounter returns guest "First Last" names matching a counter
-// category. Categories mirror the dashboard donut slices in CountConfirmed.
-// Empty/unknown category returns ErrUnknownCategory.
-func GuestNamesByCounter(category string) ([]string, error) {
+// GuestNameGroupsByCounter returns guest names matching a counter category,
+// grouped by invitation. Each inner slice is one invite's guests; uninvited
+// guests appear as individual singleton groups at the end. Groups ordered by
+// invitation created_at, guests within a group by invitation_guest_order.
+func GuestNameGroupsByCounter(category string) ([][]string, error) {
 	clause, ok := counterWhereClauses[category]
 	if !ok {
 		return nil, ErrUnknownCategory
 	}
+	// coalesce invitation_id to a very large sentinel so NULL-invitation guests
+	// sort last; within an invitation, order by guest_order then guest id.
 	rows, err := DB.Query(`
-		SELECT TRIM(COALESCE(g.first_name, '') || ' ' || COALESCE(g.last_name, ''))
+		SELECT TRIM(COALESCE(g.first_name, '') || ' ' || COALESCE(g.last_name, '')),
+		       g.invitation_id
 		FROM guests g
 		LEFT JOIN invitations i ON i.id = g.invitation_id
 		WHERE ` + clause + `
-		ORDER BY g.first_name, g.last_name
+		ORDER BY CASE WHEN g.invitation_id IS NULL THEN 1 ELSE 0 END,
+		         i.created_at DESC,
+		         COALESCE(g.invitation_guest_order, g.id),
+		         g.id
 	`)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var names []string
+
+	var groups [][]string
+	var currentGroup []string
+	var currentInvID *int
+	first := true
 	for rows.Next() {
 		var name string
-		if err := rows.Scan(&name); err != nil {
+		var invID *int
+		if err := rows.Scan(&name, &invID); err != nil {
 			return nil, err
 		}
-		names = append(names, name)
+		if invID == nil {
+			// uninvited guests: each is its own group
+			if len(currentGroup) > 0 {
+				groups = append(groups, currentGroup)
+				currentGroup = nil
+			}
+			groups = append(groups, []string{name})
+			currentInvID = nil
+			first = true
+			continue
+		}
+		// new invitation boundary
+		if first || currentInvID == nil || *currentInvID != *invID {
+			if len(currentGroup) > 0 {
+				groups = append(groups, currentGroup)
+			}
+			currentGroup = []string{name}
+			currentInvID = invID
+			first = false
+		} else {
+			currentGroup = append(currentGroup, name)
+		}
 	}
-	return names, rows.Err()
+	if len(currentGroup) > 0 {
+		groups = append(groups, currentGroup)
+	}
+	return groups, rows.Err()
 }
 
 // counterWhereClauses pins each clickable counter to the predicate that

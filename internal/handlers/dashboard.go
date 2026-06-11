@@ -1265,7 +1265,7 @@ func UpdateInvitation(c *fiber.Ctx) error {
 func CounterGuestNames(c *fiber.Ctx) error {
 	logger := handlerLogger(c)
 	category := c.Params("category")
-	names, err := database.GuestNamesByCounter(category)
+	groups, err := database.GuestNameGroupsByCounter(category)
 	if err == database.ErrUnknownCategory {
 		logger.Warn("counter names unknown category", "category", category)
 		return c.Status(400).JSON(fiber.Map{"error": "unknown category"})
@@ -1274,9 +1274,13 @@ func CounterGuestNames(c *fiber.Ctx) error {
 		logger.Error("counter names failed", "category", category, "error", err.Error())
 		return c.Status(500).JSON(fiber.Map{"error": "failed to load names"})
 	}
-	if names == nil {
-		names = []string{}
+	if groups == nil {
+		groups = [][]string{}
 	}
-	logger.Info("counter names", "category", category, "count", len(names))
-	return c.JSON(fiber.Map{"category": category, "names": names})
+	total := 0
+	for _, g := range groups {
+		total += len(g)
+	}
+	logger.Info("counter names", "category", category, "count", total)
+	return c.JSON(fiber.Map{"category": category, "groups": groups})
 }
