@@ -11,9 +11,9 @@ func SecurityHeaders() fiber.Handler {
 		" script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com;" +
 		" style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com https://unpkg.com;" +
 		" font-src 'self' https://fonts.gstatic.com;" +
-		" img-src 'self' https://*.basemaps.cartocdn.com data:;" +
+		" img-src 'self' https://*.basemaps.cartocdn.com https://i.scdn.co data:;" +
 		" frame-src https://open.spotify.com;" +
-		" connect-src 'self' https://*.basemaps.cartocdn.com;" +
+		" connect-src 'self' https://*.basemaps.cartocdn.com https://nominatim.openstreetmap.org;" +
 		" base-uri 'none';" +
 		" form-action 'self'"
 
