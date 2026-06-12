@@ -4690,7 +4690,8 @@ td [role="switch"] {
   bottom: 0.8rem;
   display: flex;
   justify-content: center;
-  transform: translateX(-50%);
+  transform: translateX(-50%) scale(calc(1 / var(--places-pin-scale)));
+  transform-origin: center bottom;
   width: calc(100% - 1.5rem);
 }
 
