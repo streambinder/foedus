@@ -14,7 +14,7 @@ RUN ASSET_VERSION="$(date -u +%Y%m%d%H%M%S)" && \
     -o foedus .
 
 FROM alpine:3.24.0
-RUN apk add --no-cache ca-certificates=20260413-r0
+RUN apk add --no-cache ca-certificates=20260611-r0
 WORKDIR /app
 COPY --from=builder /app/foedus .
 COPY --from=builder /app/static ./static
