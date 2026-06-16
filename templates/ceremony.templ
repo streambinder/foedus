@@ -1,0 +1,72 @@
+package templates
+
+import (
+	"github.com/streambinder/foedus/internal/i18n"
+	"github.com/streambinder/foedus/internal/models"
+)
+
+templ Ceremony(settings models.WeddingSettings, t i18n.T, lang string, ogMeta OGMeta) {
+	@Layout(pageTitle(t("ceremony.title"), settings.Spouse1Name, settings.Spouse2Name), lang, t, ogMeta, false, nil) {
+		<section class="vp-section vp-hero vp-venues ceremony-standalone">
+			<span class="vp-flora vp-flora-bl" aria-hidden="true"></span>
+			<span class="vp-flora vp-flora-tr" aria-hidden="true"></span>
+			<div class="vp-section-inner">
+				<div class="section-heading">
+					<p class="hero-kicker">{ t("home.getting_married") }</p>
+					<h1>
+						{ settings.Spouse1Name } <span class="amp">&amp;</span> { settings.Spouse2Name }
+					</h1>
+					if settings.CeremonyDatetime != "" {
+						<p class="muted hero-datetime">
+							<span class="hero-datetime-date">{ i18n.FormatDatetimeDateLine(settings.CeremonyDatetime, lang) }</span>
+							if i18n.FormatDatetimeTimeLine(settings.CeremonyDatetime, lang) != "" {
+								<span class="hero-datetime-time">{ i18n.FormatDatetimeTimeLine(settings.CeremonyDatetime, lang) }</span>
+							}
+						</p>
+					}
+				</div>
+				if settings.CeremonyAddress != "" || settings.CeremonyLocation != "" {
+					<div class="venues-pair">
+						<div class="venue venue-ceremony">
+							<h2>{ t("home.ceremony") }</h2>
+							<a href={ templ.SafeURL(mapsURL(settings.CeremonyAddress, settings.CeremonyLocation)) } target="_blank" class="venue-link">
+								if settings.CeremonyMediaID > 0 {
+									<div class="venue-image-wrapper">
+										<img class="venue-image" src={ publicImageURL(settings.CeremonyMediaID) } alt={ t("home.ceremony") } width="800" height="500" loading="eager" decoding="async"/>
+										<div class="venue-overlay venue-overlay-top">
+											<div class="venue-overlay-badge">
+												<span class="venue-overlay-icon" aria-hidden="true"></span>
+												<strong>{ t("home.ceremony") }</strong>
+												if i18n.FormatDatetimeTimeLine(settings.CeremonyDatetime, lang) != "" {
+													<span class="venue-overlay-separator" aria-hidden="true">·</span>
+													<span class="venue-overlay-time">{ i18n.FormatDatetimeTimeLine(settings.CeremonyDatetime, lang) }</span>
+												}
+											</div>
+										</div>
+										<div class="venue-overlay venue-overlay-bottom">
+											if settings.CeremonyAddress != "" {
+												<strong>{ settings.CeremonyAddress }</strong>
+											}
+											<div class="venue-address-line">
+												<span class="venue-address-icon" aria-hidden="true"></span>
+												<span>{ t("home.directions") }</span>
+											</div>
+										</div>
+									</div>
+								} else {
+									if settings.CeremonyAddress != "" {
+										<p><strong>{ settings.CeremonyAddress }</strong></p>
+									}
+									<div class="venue-address-line">
+										<span class="venue-address-icon" aria-hidden="true"></span>
+										<span>{ t("home.directions") }</span>
+									</div>
+								}
+							</a>
+						</div>
+					</div>
+				}
+			</div>
+		</section>
+	}
+}

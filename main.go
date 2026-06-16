@@ -120,6 +120,7 @@ func main() {
 	// public
 	app.Get("/healthz", func(c *fiber.Ctx) error { return c.SendStatus(fiber.StatusOK) })
 	app.Get("/", publicCSRF, handlers.Home)
+	app.Get("/ceremony", handlers.Ceremony)
 	app.Get("/media/:id", handlers.MediaImage)
 	app.Get("/og-image", handlers.OGImage)
 	app.Post("/gift/claim", publicBodyLimit, publicCSRF, handlers.ClaimGift)

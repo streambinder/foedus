@@ -816,6 +816,26 @@ body:has(.hero) {
 }
 
 /* ---------------------------------------------------------------
+   ceremony page (/ceremony)
+   --------------------------------------------------------------- */
+.ceremony-standalone {
+  scroll-snap-align: none;
+}
+
+.ceremony-standalone::after {
+  z-index: 2;
+}
+
+.ceremony-standalone .venues-pair {
+  max-width: 36rem;
+  margin: 0 auto;
+}
+
+.ceremony-standalone.vp-venues .venue {
+  max-width: 100%;
+}
+
+/* ---------------------------------------------------------------
    venue sections
    --------------------------------------------------------------- */
 .venue {

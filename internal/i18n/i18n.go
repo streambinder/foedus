@@ -255,6 +255,9 @@ var translations = map[string]map[string]string{
 		"invitation.poll_notes":        "Notes",
 		"placeholder.poll_notes":       "Add a note",
 
+		// ceremony page
+		"ceremony.title": "Ceremony",
+
 		// setup guard
 		"setup.not_ready":       "This wedding hasn't been set up yet.",
 		"setup.go_to_dashboard": "Go to the dashboard to get started.",
@@ -548,6 +551,9 @@ var translations = map[string]map[string]string{
 		"invitation.brought_to_you_by": "Creato da Davide Pucci",
 		"invitation.poll_notes":        "Note",
 		"placeholder.poll_notes":       "Aggiungi una nota",
+
+		// ceremony page
+		"ceremony.title": "Cerimonia",
 
 		// setup guard
 		"setup.not_ready":       "Questo matrimonio non è ancora stato configurato.",
