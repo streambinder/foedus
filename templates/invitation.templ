@@ -24,13 +24,17 @@ func guestPollNotes(g models.Guest, pollID int) string {
 	return ""
 }
 
+// InvitationAnswered returns true if ALL guests have responded
 func InvitationAnswered(inv models.Invitation) bool {
+	if len(inv.Guests) == 0 {
+		return true
+	}
 	for _, g := range inv.Guests {
-		if g.ConfirmedCeremony != nil || g.ConfirmedReception != nil {
-			return true
+		if g.ConfirmedCeremony == nil && g.ConfirmedReception == nil {
+			return false
 		}
 	}
-	return false
+	return true
 }
 
 func invitationImagePreloads(alreadyViewed bool) []ImagePreload {
