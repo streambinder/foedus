@@ -248,7 +248,7 @@ templ Donut(title string, primaryValue, primaryTotal int, slices []DonutSlice) {
 	</div>
 }
 
-templ Dashboard(settings models.WeddingSettings, guests []models.Guest, pagedGifts []models.Gift, giftsPage int, giftsTotalPages int, giftsConfirmedTotal int, giftsTotal int, pagedRegistry []models.RegistryItem, registryPage int, registryTotalPages int, registryItems []models.RegistryItem, invitations []models.Invitation, pagedInvitations []models.Invitation, invitePage int, inviteTotalPages int, inviteSearch string, polls []models.Poll, pagedSoundtrack []models.SoundtrackEvent, soundtrackPage int, soundtrackTotalPages int, confirmedReception int, refusedReception int, pendingRSVP int, invitedGuests int, nonVisualizedInvited int, total int, confirmedAdults int, confirmedChildren int, confirmedInfants int, confirmedVendors int, page int, totalPages int, search string, csrfToken string, flash string, t i18n.T, lang string) {
+templ Dashboard(settings models.WeddingSettings, guests []models.Guest, pagedGifts []models.Gift, giftsPage int, giftsTotalPages int, giftsCount int, giftsTotal int, pagedRegistry []models.RegistryItem, registryPage int, registryTotalPages int, registryItems []models.RegistryItem, invitations []models.Invitation, pagedInvitations []models.Invitation, invitePage int, inviteTotalPages int, inviteSearch string, polls []models.Poll, pagedSoundtrack []models.SoundtrackEvent, soundtrackPage int, soundtrackTotalPages int, confirmedReception int, refusedReception int, pendingRSVP int, invitedGuests int, nonVisualizedInvited int, total int, confirmedAdults int, confirmedChildren int, confirmedInfants int, confirmedVendors int, page int, totalPages int, search string, csrfToken string, flash string, t i18n.T, lang string) {
 	@DashboardLayout(pageTitle(t("title.dashboard"), settings.Spouse1Name, settings.Spouse2Name), lang) {
 		<div id="dashboard-flash">
 			if flash != "" {
@@ -1235,7 +1235,7 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, pagedGif
 					<div class="accordion-item dashboard-subsection">
 						<h2 class="accordion-header" id="registry-gifts-heading">
 							<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#registry-gifts-panel" aria-expanded="false" aria-controls="registry-gifts-panel">
-								<span class="dashboard-subsection-title">{ t("dashboard.gifts") } ({ strings.ToLower(t("label.confirmed")) }: { formatGiftAmount(giftsConfirmedTotal) }, { strings.ToLower(t("label.total")) }: { formatGiftAmount(giftsTotal) })</span>
+								<span class="dashboard-subsection-title">{ strconv.Itoa(giftsCount) + " " + strings.ToLower(t("dashboard.gifts")) + " · " + formatGiftAmount(giftsTotal) }</span>
 							</button>
 						</h2>
 						<div id="registry-gifts-panel" class="accordion-collapse collapse" data-dashboard-key="registry-gifts" aria-labelledby="registry-gifts-heading">

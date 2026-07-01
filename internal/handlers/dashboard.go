@@ -195,12 +195,9 @@ func DashboardIndex(c *fiber.Ctx) error {
 	pagedRegistry, registryPage, registryTotalPages := paginateSlice(registryItems, registryPage, registryPerPage)
 	giftsPage, _ := strconv.Atoi(c.Query("gpage", "1"))
 	pagedGifts, giftsPage, giftsTotalPages := paginateSlice(gifts, giftsPage, giftsPerPage)
-	var giftsConfirmedTotal, giftsTotal int
+	var giftsTotal int
 	for _, g := range gifts {
 		giftsTotal += g.Amount
-		if g.Confirmed {
-			giftsConfirmedTotal += g.Amount
-		}
 	}
 	soundtrackPage, _ := strconv.Atoi(c.Query("spage", "1"))
 	pagedSoundtrack, soundtrackPage, soundtrackTotalPages := paginateSlice(soundtrackEvents, soundtrackPage, soundtrackPerPage)
@@ -224,7 +221,7 @@ func DashboardIndex(c *fiber.Ctx) error {
 		"non_visualized_invited", nonVisualizedInvited,
 		"total_guests", totalGuests,
 	)
-	return Render(c, templates.Dashboard(settings, guests, pagedGifts, giftsPage, giftsTotalPages, giftsConfirmedTotal, giftsTotal, pagedRegistry, registryPage, registryTotalPages, registryItems, invitations, pagedInvitations, invitePage, inviteTotalPages, inviteSearch, polls, pagedSoundtrack, soundtrackPage, soundtrackTotalPages, confirmedReception, refusedReception, pendingRSVP, invitedGuests, nonVisualizedInvited, totalGuests, confirmedAdults, confirmedChildren, confirmedInfants, confirmedVendors, page, totalPages, search, csrfToken, getFlash(c), getT(c), getLang(c)))
+	return Render(c, templates.Dashboard(settings, guests, pagedGifts, giftsPage, giftsTotalPages, len(gifts), giftsTotal, pagedRegistry, registryPage, registryTotalPages, registryItems, invitations, pagedInvitations, invitePage, inviteTotalPages, inviteSearch, polls, pagedSoundtrack, soundtrackPage, soundtrackTotalPages, confirmedReception, refusedReception, pendingRSVP, invitedGuests, nonVisualizedInvited, totalGuests, confirmedAdults, confirmedChildren, confirmedInfants, confirmedVendors, page, totalPages, search, csrfToken, getFlash(c), getT(c), getLang(c)))
 }
 
 func resolveImageMediaID(q database.Querier, rawImage, rawMediaID string, existingMediaID int, allowedAny bool) (int, error) {

@@ -76,7 +76,6 @@ var translations = map[string]map[string]string{
 		"label.donor":         "Donor",
 		"label.registry_item": "Registry Item",
 		"label.confirmed":     "Confirmed",
-		"label.total":         "Total",
 		// guest type enum (matches CHECK on guests.type)
 		"guest_type.adult":  "Adult",
 		"guest_type.child":  "Child",
@@ -374,7 +373,6 @@ var translations = map[string]map[string]string{
 		"label.donor":         "Da",
 		"label.registry_item": "Articolo lista",
 		"label.confirmed":     "Confermato",
-		"label.total":         "Totale",
 		// guest type enum (matches CHECK on guests.type)
 		"guest_type.adult":  "Adulto",
 		"guest_type.child":  "Bambino",
