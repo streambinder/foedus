@@ -1245,7 +1245,7 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, pagedGif
 										<thead>
 											<tr>
 												<th>{ t("th.donor") }</th>
-												<th>{ t("th.amount") }</th>
+												<th class="amount-cell">{ t("th.amount") }</th>
 												<th>{ t("th.registry_item") }</th>
 												<th>{ t("th.confirmed") }</th>
 												<th>{ t("th.date") }</th>
@@ -1256,7 +1256,7 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, pagedGif
 											for _, g := range pagedGifts {
 												<tr>
 													<td data-label={ t("th.donor") }>{ g.Donor }</td>
-													<td data-label={ t("th.amount") }>{ formatGiftAmount(g.Amount) }</td>
+													<td class="amount-cell" data-label={ t("th.amount") }>{ formatGiftAmount(g.Amount) }</td>
 													<td data-label={ t("th.registry_item") }>{ registryItemName(registryItems, g.RegistryItemID) }</td>
 													<td data-label={ t("th.confirmed") }>
 														if g.Confirmed {

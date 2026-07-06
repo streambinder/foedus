@@ -3978,6 +3978,11 @@ td [role="switch"] {
     padding-right: 0;
   }
 
+  /* gifts table: amount is 2nd column, right-align it like numeric columns */
+  .amount-cell {
+    text-align: right;
+  }
+
   thead tr {
     border-bottom: 1px solid var(--sage-light);
   }
