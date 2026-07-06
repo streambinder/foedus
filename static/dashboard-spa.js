@@ -548,10 +548,8 @@
       list.innerHTML = groups
         .map((names) => {
           const ol =
-            "<ol start=" +
-            start +
-            ">" +
-            names.map((n) => "<li>" + escapeHtml(n) + "</li>").join("") +
+            `<ol start=${start}>` +
+            names.map((n) => `<li>${escapeHtml(n)}</li>`).join("") +
             "</ol>";
           start += names.length;
           return ol;
@@ -559,7 +557,7 @@
         .join('<hr class="counter-group-sep">');
     } catch (err) {
       const list = root.querySelector(".counter-names-list");
-      if (list) list.textContent = "Error: " + err.message;
+      if (list) list.textContent = `Error: ${err.message}`;
     }
   }
 

@@ -5,7 +5,7 @@
   // public CSRF cookie issued by Fiber middleware on every GET; not HttpOnly
   // by design so JSON endpoints can echo it back as X-Csrf-Token.
   function readCookie(name) {
-    const m = document.cookie.match(new RegExp("(?:^|; )" + name + "=([^;]*)"));
+    const m = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
     return m ? decodeURIComponent(m[1]) : "";
   }
 
