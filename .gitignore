@@ -1,5 +1,11 @@
 *.db
+*.db-shm
+*.db-wal
+*.db.bak.*
 .env
 *_templ.go
 foedus
 *.fiber.gz
+.DS_Store
+*.bak
+*.bak[0-9]
