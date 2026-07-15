@@ -3903,6 +3903,12 @@ td [role="switch"] {
     display: none;
   }
 
+  /* cap the parking map card on larger screens so it stays a dialog, not a
+     full-viewport sheet (on mobile it fills the inset area instead) */
+  .parking-modal-box {
+    max-height: 40rem;
+  }
+
   .rsvp-card {
     max-width: 32rem;
   }
@@ -5621,17 +5627,33 @@ td [role="switch"] {
 }
 
 /* full-bleed map: the map + pins fill the whole modal box, edge to edge.
-   the box is the positioning context; padding is zeroed and the rounded top
+/* full-bleed map: the map + pins fill the whole modal box, edge to edge.
+   the box is the positioning context; padding is zeroed and the rounded
    corners are preserved via overflow:hidden. */
+
+/* the shared modal is a bottom sheet on mobile (align-items:flex-end, square
+   bottom). for the parking map we want a floating card inset symmetrically on
+   all four sides instead, so override the overlay + box just for this dialog. */
+#parking-modal.modal-overlay {
+  align-items: center;
+  padding: var(--sp-3);
+  padding-top: calc(var(--sp-3) + env(safe-area-inset-top, 0));
+  padding-bottom: calc(var(--sp-3) + env(safe-area-inset-bottom, 0));
+}
+
 .parking-modal-box {
   position: relative;
+  width: 100%;
+  height: 100%;
   max-width: 720px;
-  width: 92vw;
-  height: 80vh;
-  height: min(80dvh, 40rem);
-  max-height: none;
   padding: 0;
+  border-radius: var(--radius-xl);
   overflow: hidden;
+}
+
+/* no bottom-sheet grabber on the map card */
+.parking-modal-box::before {
+  display: none;
 }
 
 .parking-map {
