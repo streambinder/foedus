@@ -60,6 +60,79 @@ function initDashboardFeatures() {
     includeDate: false,
   });
 
+  // ---------------------------------------------------------------
+  // parking spots management (coords-only, so its own lean binder
+  // instead of bindLocationCollection which hardcodes label/image markup)
+  // ---------------------------------------------------------------
+  bindParkingCollection(
+    document.getElementById("parking-container"),
+    document.getElementById("add-parking-btn"),
+  );
+
+  function bindParkingCollection(container, addButton) {
+    if (!container || !addButton || container.dataset.bound) return;
+    container.dataset.bound = "true";
+
+    addButton.addEventListener("click", () => {
+      addParkingCard(container);
+      reindexParkingCards(container);
+    });
+
+    container.addEventListener("click", (e) => {
+      if (e.target.classList.contains("place-remove")) {
+        e.target.closest(".parking-card").remove();
+        reindexParkingCards(container);
+      }
+    });
+
+    container.querySelectorAll(".parking-card").forEach((card) => {
+      initPlaceAutocomplete(card);
+    });
+  }
+
+  function addParkingCard(container) {
+    const idx = container.querySelectorAll(".parking-card").length;
+    const card = document.createElement("div");
+    card.className = "place-card parking-card";
+    card.dataset.index = idx;
+    card.innerHTML =
+      '<div class="place-card-header">' +
+      '<div class="place-card-meta">' +
+      '<span class="place-number">' +
+      (idx + 1) +
+      "</span>" +
+      "</div>" +
+      '<div class="place-card-actions">' +
+      '<button type="button" class="place-remove outline secondary" aria-label="Remove">&times;</button>' +
+      "</div>" +
+      "</div>" +
+      '<div style="position:relative">' +
+      "<label>Address</label>" +
+      '<input type="text" class="place-location-input" autocomplete="off" placeholder="Search for an address..."/>' +
+      '<div class="autocomplete-dropdown place-dropdown"></div>' +
+      '<input type="hidden" name="parking_lat_' +
+      idx +
+      '" class="place-lat-hidden" value="0"/>' +
+      '<input type="hidden" name="parking_lng_' +
+      idx +
+      '" class="place-lng-hidden" value="0"/>' +
+      "</div>";
+    container.appendChild(card);
+    initPlaceAutocomplete(card);
+  }
+
+  function reindexParkingCards(container) {
+    container.querySelectorAll(".parking-card").forEach((card, idx) => {
+      card.dataset.index = idx;
+      const num = card.querySelector(".place-number");
+      if (num) num.textContent = idx + 1;
+      const lat = card.querySelector(".place-lat-hidden");
+      if (lat) lat.name = `parking_lat_${idx}`;
+      const lng = card.querySelector(".place-lng-hidden");
+      if (lng) lng.name = `parking_lng_${idx}`;
+    });
+  }
+
   function bindLocationCollection(config) {
     const container = config.container;
     const addButton = config.addButton;
@@ -363,7 +436,8 @@ function initDashboardFeatures() {
     const addressHidden = card.querySelector(".place-address-hidden");
     const latHidden = card.querySelector(".place-lat-hidden");
     const lngHidden = card.querySelector(".place-lng-hidden");
-    if (!input || !dropdown || !nameHidden || !addressHidden) return;
+    // name/address are optional: parking cards store coords only
+    if (!input || !dropdown || !latHidden || !lngHidden) return;
 
     let debounceTimer = null;
     let activeIndex = -1;
@@ -419,8 +493,8 @@ function initDashboardFeatures() {
       if (!item) return;
       const name = extractName(item);
       const address = extractAddress(item, name);
-      nameHidden.value = name;
-      addressHidden.value = address;
+      if (nameHidden) nameHidden.value = name;
+      if (addressHidden) addressHidden.value = address;
       latHidden.value = item.lat || "0";
       lngHidden.value = item.lon || "0";
       input.value = name + (address ? `, ${address}` : "");
@@ -445,8 +519,8 @@ function initDashboardFeatures() {
     }
 
     input.addEventListener("input", () => {
-      nameHidden.value = "";
-      addressHidden.value = "";
+      if (nameHidden) nameHidden.value = "";
+      if (addressHidden) addressHidden.value = "";
       latHidden.value = "0";
       lngHidden.value = "0";
       renderCoordsBadge(card, "", "");

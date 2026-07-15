@@ -54,6 +54,13 @@ func locationTimelineJSON(places []models.Place, lang string) string {
 	return string(b)
 }
 
+// parkingJSON marshals coords-only parking spots for the parking map. ceremony
+// coords are passed separately as data attributes on the modal, not here.
+func parkingJSON(spots []models.Coord) string {
+	b, _ := json.Marshal(spots)
+	return string(b)
+}
+
 func prevSectionBeforeRegistry(places []models.Place, honeymoonLocations []models.Place, playlist string) string {
 	if len(honeymoonLocations) > 0 {
 		return "#honeymoon"
@@ -178,7 +185,7 @@ func homepageHeroPreloads(heroBackground models.HomepageHeroBackground) []ImageP
 }
 
 templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBackground, registryItems []models.RegistryItem, claimedAmounts map[int]int, bankConfigured bool, chatEnabled bool, soundtrackEnabled bool, inviteUpdateURL string, rsvpSubmitted bool, t i18n.T, lang string, ogMeta OGMeta) {
-	@Layout(settings.Spouse1Name+" & "+settings.Spouse2Name, lang, t, ogMeta, len(settings.Places) > 0 || len(settings.HoneymoonLocations) > 0, homepageHeroPreloads(heroBackground)) {
+	@Layout(settings.Spouse1Name+" & "+settings.Spouse2Name, lang, t, ogMeta, len(settings.Places) > 0 || len(settings.HoneymoonLocations) > 0 || len(settings.ParkingSpots) > 0, homepageHeroPreloads(heroBackground)) {
 		<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
 			<symbol id="chev-d" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></symbol>
 			<symbol id="chev-u" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></symbol>
@@ -230,7 +237,7 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 					if settings.CeremonyAddress != "" || settings.CeremonyLocation != "" {
 						<div class="venue venue-ceremony">
 							<h2>{ t("home.ceremony") }</h2>
-							<a href={ templ.SafeURL(mapsURL(settings.CeremonyAddress, settings.CeremonyLocation)) } target="_blank" class="venue-link">
+							<div class="venue-link venue-link-static">
 								if settings.CeremonyMediaID > 0 {
 									<div class="venue-image-wrapper">
 										<img class="venue-image" src={ publicImageURL(settings.CeremonyMediaID) } alt={ t("home.ceremony") } width="800" height="500" loading="lazy" decoding="async"/>
@@ -248,9 +255,17 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 											if settings.CeremonyAddress != "" {
 												<strong>{ settings.CeremonyAddress }</strong>
 											}
-											<div class="venue-address-line">
-												<span class="venue-address-icon" aria-hidden="true"></span>
-												<span>{ t("home.directions") }</span>
+											<div class="venue-action-row">
+												<a href={ templ.SafeURL(mapsURL(settings.CeremonyAddress, settings.CeremonyLocation)) } target="_blank" class="venue-address-line venue-address-link">
+													<span class="venue-address-icon" aria-hidden="true"></span>
+													<span>{ t("home.directions") }</span>
+												</a>
+												if len(settings.ParkingSpots) > 0 {
+													<button type="button" class="venue-address-line venue-parking-btn" data-open-parking aria-label={ t("home.parking") }>
+														<span class="venue-parking-icon" aria-hidden="true"></span>
+														<span>{ t("home.parking") }</span>
+													</button>
+												}
 											</div>
 										</div>
 									</div>
@@ -258,18 +273,26 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 									if settings.CeremonyAddress != "" {
 										<p><strong>{ settings.CeremonyAddress }</strong></p>
 									}
-									<div class="venue-address-line">
-										<span class="venue-address-icon" aria-hidden="true"></span>
-										<span>{ t("home.directions") }</span>
+									<div class="venue-action-row">
+										<a href={ templ.SafeURL(mapsURL(settings.CeremonyAddress, settings.CeremonyLocation)) } target="_blank" class="venue-address-line venue-address-link">
+											<span class="venue-address-icon" aria-hidden="true"></span>
+											<span>{ t("home.directions") }</span>
+										</a>
+										if len(settings.ParkingSpots) > 0 {
+											<button type="button" class="venue-address-line venue-parking-btn" data-open-parking aria-label={ t("home.parking") }>
+												<span class="venue-parking-icon" aria-hidden="true"></span>
+												<span>{ t("home.parking") }</span>
+											</button>
+										}
 									</div>
 								}
-							</a>
+							</div>
 						</div>
 					}
 					if settings.ReceptionAddress != "" || settings.ReceptionLocation != "" {
 						<div class="venue venue-reception">
 							<h2>{ t("home.reception") }</h2>
-							<a href={ templ.SafeURL(mapsURL(settings.ReceptionAddress, settings.ReceptionLocation)) } target="_blank" class="venue-link">
+							<div class="venue-link venue-link-static">
 								if settings.ReceptionMediaID > 0 {
 									<div class="venue-image-wrapper">
 										<img class="venue-image" src={ publicImageURL(settings.ReceptionMediaID) } alt={ t("home.reception") } width="800" height="500" loading="lazy" decoding="async"/>
@@ -287,25 +310,40 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 											if settings.ReceptionAddress != "" {
 												<strong>{ settings.ReceptionAddress }</strong>
 											}
-											<div class="venue-address-line">
+											<a href={ templ.SafeURL(mapsURL(settings.ReceptionAddress, settings.ReceptionLocation)) } target="_blank" class="venue-address-line venue-address-link">
 												<span class="venue-address-icon" aria-hidden="true"></span>
 												<span>{ t("home.directions") }</span>
-											</div>
+											</a>
 										</div>
 									</div>
 								} else {
 									if settings.ReceptionAddress != "" {
 										<p><strong>{ settings.ReceptionAddress }</strong></p>
 									}
-									<div class="venue-address-line">
+									<a href={ templ.SafeURL(mapsURL(settings.ReceptionAddress, settings.ReceptionLocation)) } target="_blank" class="venue-address-line venue-address-link">
 										<span class="venue-address-icon" aria-hidden="true"></span>
 										<span>{ t("home.directions") }</span>
-									</div>
+									</a>
 								}
-							</a>
+							</div>
 						</div>
 					}
 				</div>
+				if len(settings.ParkingSpots) > 0 {
+					<dialog
+						id="parking-modal"
+						class="modal-overlay"
+						data-ceremony-lat={ fmt.Sprintf("%f", settings.CeremonyLat) }
+						data-ceremony-lng={ fmt.Sprintf("%f", settings.CeremonyLng) }
+					>
+						<div class="modal-box parking-modal-box">
+							<button type="button" id="parking-modal-close" class="places-modal-close" aria-label={ t("btn.close") }>&times;</button>
+							<div class="parking-map"></div>
+							<div class="parking-pins-layer"></div>
+						</div>
+					</dialog>
+					<div class="parking-data" style="display:none">{ parkingJSON(settings.ParkingSpots) }</div>
+				}
 				if len(settings.AccommodationSuggestions) > 0 {
 					<div class="calendar-cta calendar-cta-venues">
 						if len(settings.AccommodationSuggestions) > 0 {
@@ -1115,6 +1153,9 @@ templ Home(settings models.WeddingSettings, heroBackground models.HomepageHeroBa
 		</script>
 		if len(settings.Places) > 0 || len(settings.HoneymoonLocations) > 0 {
 			<script src={ templ.SafeURL(assetURL("/static/places.js")) } defer fetchpriority="low"></script>
+		}
+		if len(settings.ParkingSpots) > 0 {
+			<script src={ templ.SafeURL(assetURL("/static/parking.js")) } defer fetchpriority="low"></script>
 		}
 		if soundtrackEnabled {
 				<script src={ templ.SafeURL(assetURL("/static/soundtrack.js")) } defer fetchpriority="low"></script>

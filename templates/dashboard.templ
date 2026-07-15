@@ -295,6 +295,8 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, pagedGif
 						<input type="hidden" name="ceremony_address" id="ceremony-address-hidden" value={ settings.CeremonyAddress }/>
 						<input type="hidden" name="ceremony_location" id="ceremony-location-hidden" value={ settings.CeremonyLocation }/>
 						<input type="hidden" name="ceremony_city" id="ceremony-city-hidden" value={ settings.CeremonyCity }/>
+						<input type="hidden" name="ceremony_lat" id="ceremony-lat-hidden" value={ fmt.Sprintf("%f", settings.CeremonyLat) }/>
+						<input type="hidden" name="ceremony_lng" id="ceremony-lng-hidden" value={ fmt.Sprintf("%f", settings.CeremonyLng) }/>
 					</div>
 					<input type="datetime-local" name="ceremony_datetime" value={ settings.CeremonyDatetime }/>
 				</div>
@@ -316,6 +318,8 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, pagedGif
 						<input type="hidden" name="reception_address" id="reception-address-hidden" value={ settings.ReceptionAddress }/>
 						<input type="hidden" name="reception_location" id="reception-location-hidden" value={ settings.ReceptionLocation }/>
 						<input type="hidden" name="reception_city" id="reception-city-hidden" value={ settings.ReceptionCity }/>
+						<input type="hidden" name="reception_lat" id="reception-lat-hidden" value={ fmt.Sprintf("%f", settings.ReceptionLat) }/>
+						<input type="hidden" name="reception_lng" id="reception-lng-hidden" value={ fmt.Sprintf("%f", settings.ReceptionLng) }/>
 					</div>
 					<input type="datetime-local" name="reception_datetime" value={ settings.ReceptionDatetime }/>
 				</div>
@@ -754,6 +758,48 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, pagedGif
 									}
 								</div>
 								<button type="button" id="add-honeymoon-btn" class="add-entry-btn">+ { t("btn.add_honeymoon_location") }</button>
+							</div>
+						</div>
+					</div>
+					<div class="accordion-item settings-section">
+						<h2 class="accordion-header" id="settings-parking-heading">
+							<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#settings-parking-panel" aria-expanded="false" aria-controls="settings-parking-panel">
+								<span class="settings-section-title">{ t("dashboard.parking") }</span>
+								<span class="settings-section-description">{ t("dashboard.parking_description") }</span>
+							</button>
+						</h2>
+						<div id="settings-parking-panel" class="accordion-collapse collapse" data-dashboard-key="settings-parking" aria-labelledby="settings-parking-heading">
+							<div class="accordion-body settings-section-body">
+								<div id="parking-container">
+									if len(settings.ParkingSpots) > 0 {
+										for idx, spot := range settings.ParkingSpots {
+											<div class="place-card parking-card" data-index={ strconv.Itoa(idx) }>
+												<div class="place-card-header">
+													<div class="place-card-meta">
+														<span class="place-number">{ strconv.Itoa(idx + 1) }</span>
+														if spot.Lat != 0 || spot.Lng != 0 {
+															<div class="place-coords">
+																<span class="place-coords-check">&#10003;</span>
+																<code>{ fmt.Sprintf("%.4f, %.4f", spot.Lat, spot.Lng) }</code>
+															</div>
+														}
+													</div>
+													<div class="place-card-actions">
+														<button type="button" class="place-remove outline secondary" aria-label={ t("btn.delete") }>&times;</button>
+													</div>
+												</div>
+												<div style="position:relative">
+													<label>{ t("label.parking_address") }</label>
+													<input type="text" class="place-location-input" autocomplete="off" placeholder={ t("placeholder.parking_address") }/>
+													<div class="autocomplete-dropdown place-dropdown"></div>
+													<input type="hidden" name={ fmt.Sprintf("parking_lat_%d", idx) } class="place-lat-hidden" value={ fmt.Sprintf("%f", spot.Lat) }/>
+													<input type="hidden" name={ fmt.Sprintf("parking_lng_%d", idx) } class="place-lng-hidden" value={ fmt.Sprintf("%f", spot.Lng) }/>
+												</div>
+											</div>
+										}
+									}
+								</div>
+								<button type="button" id="add-parking-btn" class="add-entry-btn">+ { t("btn.add_parking") }</button>
 							</div>
 						</div>
 					</div>

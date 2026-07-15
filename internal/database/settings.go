@@ -11,10 +11,10 @@ import (
 
 var settingsKeys = []string{
 	"spouse1_name", "spouse2_name", "ceremony_datetime",
-	"ceremony_address", "ceremony_location", "ceremony_city", "ceremony_media_id",
-	"reception_address", "reception_location", "reception_city", "reception_datetime", "reception_media_id",
+	"ceremony_address", "ceremony_location", "ceremony_city", "ceremony_media_id", "ceremony_lat", "ceremony_lng",
+	"reception_address", "reception_location", "reception_city", "reception_datetime", "reception_media_id", "reception_lat", "reception_lng",
 	"bank_account_iban", "bank_account_holder",
-	"spotify_playlists", "places", "honeymoon_locations", "accommodation_suggestions", "impersonations", "homepage_labels",
+	"spotify_playlists", "places", "honeymoon_locations", "parking_spots", "accommodation_suggestions", "impersonations", "homepage_labels",
 	"homepage_hero_backgrounds",
 	"share_preview_media_id",
 }
@@ -41,6 +41,11 @@ func parseMediaID(raw string) int {
 		return 0
 	}
 	return id
+}
+
+func parseCoord(raw string) float64 {
+	f, _ := strconv.ParseFloat(strings.TrimSpace(raw), 64)
+	return f
 }
 
 func GetAllSettings() (models.WeddingSettings, error) {
@@ -87,6 +92,11 @@ func GetAllSettings() (models.WeddingSettings, error) {
 		json.Unmarshal([]byte(raw), &honeymoonLocations)
 	}
 
+	var parkingSpots []models.Coord
+	if raw := m["parking_spots"]; raw != "" {
+		json.Unmarshal([]byte(raw), &parkingSpots)
+	}
+
 	var accommodationSuggestions []models.AccommodationSuggestion
 	if raw := m["accommodation_suggestions"]; raw != "" {
 		json.Unmarshal([]byte(raw), &accommodationSuggestions)
@@ -115,16 +125,21 @@ func GetAllSettings() (models.WeddingSettings, error) {
 		CeremonyCity:             m["ceremony_city"],
 		CeremonyMediaID:          parseMediaID(m["ceremony_media_id"]),
 		CeremonyDatetime:         m["ceremony_datetime"],
+		CeremonyLat:              parseCoord(m["ceremony_lat"]),
+		CeremonyLng:              parseCoord(m["ceremony_lng"]),
 		ReceptionAddress:         m["reception_address"],
 		ReceptionLocation:        m["reception_location"],
 		ReceptionCity:            m["reception_city"],
 		ReceptionDatetime:        m["reception_datetime"],
 		ReceptionMediaID:         parseMediaID(m["reception_media_id"]),
+		ReceptionLat:             parseCoord(m["reception_lat"]),
+		ReceptionLng:             parseCoord(m["reception_lng"]),
 		BankAccountIBAN:          m["bank_account_iban"],
 		BankAccountHolder:        m["bank_account_holder"],
 		SpotifyPlaylist:          playlist,
 		Places:                   places,
 		HoneymoonLocations:       honeymoonLocations,
+		ParkingSpots:             parkingSpots,
 		AccommodationSuggestions: accommodationSuggestions,
 		Impersonations:           impersonations,
 		HomepageLabels:           homepageLabels,

@@ -5,6 +5,12 @@
     const nameHidden = document.getElementById(config.nameHiddenId);
     const addressHidden = document.getElementById(config.addressHiddenId);
     const cityHidden = document.getElementById(config.cityHiddenId);
+    const latHidden = config.latHiddenId
+      ? document.getElementById(config.latHiddenId)
+      : null;
+    const lngHidden = config.lngHiddenId
+      ? document.getElementById(config.lngHiddenId)
+      : null;
     if (!input || !dropdown || !nameHidden || !addressHidden) return;
 
     let debounceTimer = null;
@@ -75,6 +81,10 @@
       nameHidden.value = name;
       addressHidden.value = address;
       if (cityHidden) cityHidden.value = extractCity(item);
+      // nominatim returns lat/lon as strings; capture them for venues that
+      // pin on the parking map (ceremony/reception)
+      if (latHidden) latHidden.value = item.lat || "0";
+      if (lngHidden) lngHidden.value = item.lon || "0";
       input.value = name + (address ? `, ${address}` : "");
       hide();
     }
@@ -123,6 +133,8 @@
       nameHidden.value = "";
       addressHidden.value = "";
       if (cityHidden) cityHidden.value = "";
+      if (latHidden) latHidden.value = "0";
+      if (lngHidden) lngHidden.value = "0";
       clearTimeout(debounceTimer);
       const q = input.value.trim();
       if (q.length < 3) {
@@ -167,6 +179,8 @@
     nameHiddenId: "ceremony-address-hidden",
     addressHiddenId: "ceremony-location-hidden",
     cityHiddenId: "ceremony-city-hidden",
+    latHiddenId: "ceremony-lat-hidden",
+    lngHiddenId: "ceremony-lng-hidden",
   });
   initAutocomplete({
     inputId: "reception-input",
@@ -174,5 +188,7 @@
     nameHiddenId: "reception-address-hidden",
     addressHiddenId: "reception-location-hidden",
     cityHiddenId: "reception-city-hidden",
+    latHiddenId: "reception-lat-hidden",
+    lngHiddenId: "reception-lng-hidden",
   });
 })();

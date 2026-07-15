@@ -17,6 +17,13 @@ type Place struct {
 	Lng     float64 `json:"lng"`
 }
 
+// Coord is a bare lat/lng point — used for ceremony parking spots, which need
+// no label/photo, only a location to pin on the map and route to.
+type Coord struct {
+	Lat float64 `json:"lat"`
+	Lng float64 `json:"lng"`
+}
+
 type Impersonation struct {
 	Codename string `json:"codename"`
 	Profile  string `json:"profile"`
@@ -40,10 +47,14 @@ type WeddingSettings struct {
 	CeremonyLocation         string
 	CeremonyCity             string
 	CeremonyDatetime         string
+	CeremonyLat              float64
+	CeremonyLng              float64
 	ReceptionAddress         string
 	ReceptionLocation        string
 	ReceptionCity            string
 	ReceptionDatetime        string
+	ReceptionLat             float64
+	ReceptionLng             float64
 	CeremonyMediaID          int
 	ReceptionMediaID         int
 	BankAccountIBAN          string
@@ -51,6 +62,7 @@ type WeddingSettings struct {
 	SpotifyPlaylist          string
 	Places                   []Place
 	HoneymoonLocations       []Place
+	ParkingSpots             []Coord
 	AccommodationSuggestions []AccommodationSuggestion
 	Impersonations           []Impersonation
 	HomepageLabels           map[string]map[string]string

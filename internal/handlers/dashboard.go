@@ -354,7 +354,7 @@ func SaveSettings(c *fiber.Ctx) error {
 	existingMediaIDs := collectExistingMediaIDs(settings)
 
 	// counts captured for the success log once the transaction commits.
-	var placeCount, honeymoonCount, accommodationCount, impersonationCount, labelLangCount, backgroundLen int
+	var placeCount, honeymoonCount, parkingCount, accommodationCount, impersonationCount, labelLangCount, backgroundLen int
 	var playlistConfigured bool
 
 	// everything below runs in one transaction: a rejected save (bad image, contract
@@ -373,8 +373,8 @@ func SaveSettings(c *fiber.Ctx) error {
 
 		for _, key := range []string{
 			"spouse1_name", "spouse2_name", "ceremony_datetime",
-			"ceremony_address", "ceremony_location", "ceremony_city",
-			"reception_address", "reception_location", "reception_city", "reception_datetime",
+			"ceremony_address", "ceremony_location", "ceremony_city", "ceremony_lat", "ceremony_lng",
+			"reception_address", "reception_location", "reception_city", "reception_datetime", "reception_lat", "reception_lng",
 			"bank_account_iban", "bank_account_holder",
 		} {
 			if err := set(key, c.FormValue(key)); err != nil {
@@ -486,6 +486,29 @@ func SaveSettings(c *fiber.Ctx) error {
 		honeymoonCount = len(honeymoonLocations)
 		honeymoonLocationsJSON, _ := json.Marshal(honeymoonLocations)
 		if err := set("honeymoon_locations", string(honeymoonLocationsJSON)); err != nil {
+			return err
+		}
+
+		// parking spots: coords-only entries. loop terminates on the first index
+		// with no lat/lng fields at all; rows that resolve to 0,0 (un-geocoded)
+		// are skipped rather than persisted as a phantom pin in the ocean.
+		var parkingSpots []models.Coord
+		for i := 0; ; i++ {
+			latRaw := c.FormValue(fmt.Sprintf("parking_lat_%d", i))
+			lngRaw := c.FormValue(fmt.Sprintf("parking_lng_%d", i))
+			if latRaw == "" && lngRaw == "" {
+				break
+			}
+			lat, _ := strconv.ParseFloat(latRaw, 64)
+			lng, _ := strconv.ParseFloat(lngRaw, 64)
+			if lat == 0 && lng == 0 {
+				continue
+			}
+			parkingSpots = append(parkingSpots, models.Coord{Lat: lat, Lng: lng})
+		}
+		parkingCount = len(parkingSpots)
+		parkingSpotsJSON, _ := json.Marshal(parkingSpots)
+		if err := set("parking_spots", string(parkingSpotsJSON)); err != nil {
 			return err
 		}
 
@@ -626,6 +649,7 @@ func SaveSettings(c *fiber.Ctx) error {
 		"settings updated",
 		"places", placeCount,
 		"honeymoon_locations", honeymoonCount,
+		"parking_spots", parkingCount,
 		"accommodation_suggestions", accommodationCount,
 		"impersonations", impersonationCount,
 		"homepage_label_langs", labelLangCount,

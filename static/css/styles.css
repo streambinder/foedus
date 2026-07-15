@@ -5554,3 +5554,143 @@ td [role="switch"] {
     pointer-events: none;
   }
 }
+
+/* ---------------------------------------------------------------
+   parking spots map (ceremony parking modal)
+   --------------------------------------------------------------- */
+
+/* directions + parking chips share one centered row over the image bottom.
+   the parking button reuses .venue-address-line for the identical chip look,
+   so this only fixes the row layout and the button reset. */
+.venue-action-row {
+  display: inline-flex;
+  align-items: stretch;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+/* ceremony card is no longer a whole-card link (parking button can't nest in
+   an <a>); the directions chip is its own link and only the chips are clickable */
+.venue-link-static {
+  cursor: default;
+}
+
+.venue-link-static:hover {
+  opacity: 1;
+}
+
+.venue-address-link {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+/* shared, movement-free hover so both chips read as interactive as a pair */
+.venue-address-link,
+.venue-parking-btn {
+  transition: background 0.2s ease;
+}
+
+.venue-address-link:hover,
+.venue-parking-btn:hover {
+  background: rgb(24 24 24 / 58%);
+}
+
+/* the parking chip is a <button>; strip UA metrics so it matches the <a> chip
+   pixel-for-pixel (font shorthand carries line-height) and lines up in the row */
+.venue-parking-btn {
+  margin: 0;
+  border: none;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+}
+
+.venue-parking-icon {
+  display: inline-block;
+  width: 0.85rem;
+  height: 0.85rem;
+  flex-shrink: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 17V7h4a3 3 0 0 1 0 6H9'/%3E%3C/svg%3E");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  opacity: 0.92;
+}
+
+/* full-bleed map: the map + pins fill the whole modal box, edge to edge.
+   the box is the positioning context; padding is zeroed and the rounded top
+   corners are preserved via overflow:hidden. */
+.parking-modal-box {
+  position: relative;
+  max-width: 720px;
+  width: 92vw;
+  height: 80vh;
+  height: min(80dvh, 40rem);
+  max-height: none;
+  padding: 0;
+  overflow: hidden;
+}
+
+.parking-map {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.parking-pins-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* pins are absolutely positioned dom elements the map moves each render,
+   centered on their coordinate via the translate */
+.parking-pin {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  margin: 0;
+  padding: 0;
+  border: 2px solid var(--white);
+  border-radius: 999px;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0.35rem 0.9rem rgb(0 0 0 / 28%);
+  pointer-events: auto;
+}
+
+.parking-pin .venue-overlay-icon {
+  width: 1.1rem;
+  height: 1.1rem;
+  opacity: 1;
+}
+
+/* parking spots: clickable, sage chip with a white "P" glyph */
+.parking-pin-spot {
+  background: var(--sage-dark);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.parking-pin-spot:hover {
+  transform: translate(-50%, -50%) scale(1.1);
+}
+
+.parking-pin-spot .venue-overlay-icon {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 17V7h4a3 3 0 0 1 0 6H9'/%3E%3C/svg%3E");
+}
+
+/* ceremony: non-interactive reference marker, darker chip + church glyph */
+.parking-pin-ceremony {
+  background: var(--charcoal-dark);
+}
+
+.parking-pin-ceremony .venue-overlay-icon {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m18 7 4 2v11a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9l4-2'/%3E%3Cpath d='M14 22v-4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v4'/%3E%3Cpath d='M18 22V5l-6-3-6 3v17'/%3E%3Cpath d='M12 7v5'/%3E%3Cpath d='M10 9h4'/%3E%3C/svg%3E");
+}
