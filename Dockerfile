@@ -1,4 +1,4 @@
-FROM golang:1.26.4-alpine AS builder
+FROM golang:1.26.5-alpine AS builder
 
 RUN go install github.com/a-h/templ/cmd/templ@v0.3.1020
 
