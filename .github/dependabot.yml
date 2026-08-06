@@ -7,10 +7,12 @@ updates:
       interval: "weekly"
     cooldown:
       default-days: 7
-    allow:
-      - dependency-type: "direct"
-      - dependency-type: "indirect"
     open-pull-requests-limit: 25
+    groups:
+      gomod:
+        update-types:
+          - "minor"
+          - "patch"
 
   - package-ecosystem: "npm"
     directory: "/"
@@ -18,6 +20,11 @@ updates:
       interval: "weekly"
     cooldown:
       default-days: 7
+    groups:
+      npm:
+        update-types:
+          - "minor"
+          - "patch"
 
   - package-ecosystem: "github-actions"
     directory: "/"
@@ -25,6 +32,11 @@ updates:
       interval: "weekly"
     cooldown:
       default-days: 7
+    groups:
+      github-actions:
+        update-types:
+          - "minor"
+          - "patch"
 
   - package-ecosystem: "docker"
     directory: "/"
@@ -32,3 +44,8 @@ updates:
       interval: "weekly"
     cooldown:
       default-days: 7
+    groups:
+      docker:
+        update-types:
+          - "minor"
+          - "patch"
