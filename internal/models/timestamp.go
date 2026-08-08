@@ -19,17 +19,15 @@ type Timestamp struct {
 	time.Time
 }
 
-// Scan accepts int64 (epoch seconds, the STRICT schema) and time.Time (legacy
-// DATETIME columns, still text in a DB that predates the rebuild) so one binary
-// reads both schemas — the code can ship before prod is converted.
+// Scan accepts int64 epoch seconds, which is all a STRICT INTEGER column can
+// hold. Anything else means the column is not what this type expects, so it is
+// an error rather than a best-effort conversion.
 func (t *Timestamp) Scan(src any) error {
 	switch v := src.(type) {
 	case nil:
 		t.Time = time.Time{}
 	case int64:
 		t.Time = time.Unix(v, 0).UTC()
-	case time.Time:
-		t.Time = v.UTC()
 	default:
 		return fmt.Errorf("models: cannot scan %T into Timestamp", src)
 	}
