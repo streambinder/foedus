@@ -1,6 +1,7 @@
 package i18n
 
 import (
+	"slices"
 	"strings"
 	"time"
 )
@@ -23,7 +24,9 @@ var italianMonths = map[time.Month]string{
 	time.December:  "dicembre",
 }
 
-var supported = map[string]bool{"en": true, "it": true}
+// Languages is the ordered set of supported languages: the render order of the
+// dashboard's per-language label panels and the allow-list for DetectLang.
+var Languages = []string{"en", "it"}
 
 var translations = map[string]map[string]string{
 	"en": {
@@ -709,7 +712,7 @@ func DetectLang(acceptLang string) string {
 		tag := strings.TrimSpace(strings.SplitN(part, ";", 2)[0])
 		if len(tag) >= 2 {
 			code := strings.ToLower(tag[:2])
-			if supported[code] {
+			if slices.Contains(Languages, code) {
 				return code
 			}
 		}

@@ -22,38 +22,60 @@ func mediaExists(id int) bool {
 	return err == nil
 }
 
-func pickHomepageHeroBackground(backgrounds []models.HomepageHeroBackground) models.HomepageHeroBackground {
-	if len(backgrounds) == 0 {
-		return models.HomepageHeroBackground{}
-	}
-
-	valid := make([]models.HomepageHeroBackground, 0, len(backgrounds))
-	for _, bg := range backgrounds {
+func pickHeroBackground(backgrounds []models.HeroBackground) models.HeroBackground {
+	valid := make([]models.HeroBackground, 0, len(backgrounds))
+	for _, background := range backgrounds {
 		// only keep ids whose media bytes still exist — a dangling pointer (e.g.
-		// media deleted out from under the setting) would otherwise render a broken
-		// <img>. drop the dead side and fall back to the live one; drop the pair if
-		// neither survives.
-		desktopOK := mediaExists(bg.DesktopMediaID)
-		mobileOK := mediaExists(bg.MobileMediaID)
+		// media deleted out from under the row) would otherwise render a broken
+		// <img>. drop the dead side and fall back to the live one; drop the pair
+		// if neither survives.
+		desktopOK := mediaExists(background.DesktopMediaID)
+		mobileOK := mediaExists(background.MobileMediaID)
 		if !desktopOK && !mobileOK {
 			continue
 		}
 		if !desktopOK {
-			bg.DesktopMediaID = bg.MobileMediaID
+			background.DesktopMediaID = background.MobileMediaID
 		}
 		if !mobileOK {
-			bg.MobileMediaID = bg.DesktopMediaID
+			background.MobileMediaID = background.DesktopMediaID
 		}
-		valid = append(valid, bg)
+		valid = append(valid, background)
 	}
 	if len(valid) == 0 {
-		return models.HomepageHeroBackground{}
+		return models.HeroBackground{}
 	}
 	return valid[rand.IntN(len(valid))]
 }
 
+// loadHomeContent pulls the homepage's collections. First error wins — the page
+// is all-or-nothing, so there is nothing the caller could do with the detail of
+// which relation failed beyond what the driver already logs.
+func loadHomeContent() (templates.HomeContent, error) {
+	var content templates.HomeContent
+	var err error
+	if content.Places, err = database.GetPlaces(models.PlaceKindStory); err != nil {
+		return content, err
+	}
+	if content.Honeymoon, err = database.GetPlaces(models.PlaceKindHoneymoon); err != nil {
+		return content, err
+	}
+	if content.ParkingSpots, err = database.GetParkingSpots(); err != nil {
+		return content, err
+	}
+	if content.Accommodations, err = database.GetAccommodations(); err != nil {
+		return content, err
+	}
+	backgrounds, err := database.GetHeroBackgrounds()
+	if err != nil {
+		return content, err
+	}
+	content.HeroBackground = pickHeroBackground(backgrounds)
+	return content, nil
+}
+
 func Home(c *fiber.Ctx) error {
-	settings, err := database.GetAllSettings()
+	settings, err := database.GetSettings()
 	if err != nil {
 		return c.Status(500).SendString("failed to load settings")
 	}
@@ -68,9 +90,23 @@ func Home(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(500).SendString("failed to load claimed amounts")
 	}
+	content, err := loadHomeContent()
+	if err != nil {
+		return c.Status(500).SendString("failed to load homepage content")
+	}
 	lang := getLang(c)
+	labelOverrides, err := database.GetHomepageLabels(lang)
+	if err != nil {
+		return c.Status(500).SendString("failed to load labels")
+	}
+	// the chat bubble only needs to know a persona exists; loading the profiles
+	// here would drag kilobytes of prompt text into every homepage render.
+	impersonationCount, err := database.CountImpersonations()
+	if err != nil {
+		return c.Status(500).SendString("failed to count impersonations")
+	}
 	bankConfigured := settings.BankAccountIBAN != "" && settings.BankAccountHolder != ""
-	chatEnabled := ChatEnabled() && len(settings.Impersonations) > 0
+	chatEnabled := ChatEnabled() && impersonationCount > 0
 	soundtrackEnabled := SoundtrackEnabled()
 	baseURL := c.Protocol() + "://" + c.Hostname()
 	var ogDescParts []string
@@ -83,11 +119,10 @@ func Home(c *fiber.Ctx) error {
 	ogMeta := BuildOGMeta(
 		baseURL,
 		baseURL+"/",
-		settings.Spouse1Name+" & "+settings.Spouse2Name,
+		settings.GroomName+" & "+settings.BrideName,
 		strings.Join(ogDescParts, " · "),
 		settings,
 	)
-	heroBackground := pickHomepageHeroBackground(settings.HomepageHeroBackgrounds)
 	inviteUpdateURL := ""
 	rsvpSubmitted := false
 	if inviteCode := strings.TrimSpace(c.Query("invite")); inviteCode != "" {
@@ -98,5 +133,5 @@ func Home(c *fiber.Ctx) error {
 			return c.Status(500).SendString("failed to load invitation")
 		}
 	}
-	return Render(c, templates.Home(settings, heroBackground, registryItems, claimedAmounts, bankConfigured, chatEnabled, soundtrackEnabled, inviteUpdateURL, rsvpSubmitted, i18n.NewTWithOverrides(lang, settings.HomepageLabels[lang]), lang, ogMeta))
+	return Render(c, templates.Home(settings, content, registryItems, claimedAmounts, bankConfigured, chatEnabled, soundtrackEnabled, inviteUpdateURL, rsvpSubmitted, i18n.NewTWithOverrides(lang, labelOverrides), lang, ogMeta))
 }

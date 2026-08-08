@@ -248,8 +248,8 @@ templ Donut(title string, primaryValue, primaryTotal int, slices []DonutSlice) {
 	</div>
 }
 
-templ Dashboard(settings models.WeddingSettings, guests []models.Guest, pagedGifts []models.Gift, giftsPage int, giftsTotalPages int, giftsCount int, giftsTotal int, pagedRegistry []models.RegistryItem, registryPage int, registryTotalPages int, registryItems []models.RegistryItem, invitations []models.Invitation, pagedInvitations []models.Invitation, invitePage int, inviteTotalPages int, inviteSearch string, polls []models.Poll, pagedSoundtrack []models.SoundtrackEvent, soundtrackPage int, soundtrackTotalPages int, confirmedReception int, refusedReception int, pendingRSVP int, invitedGuests int, nonVisualizedInvited int, total int, confirmedAdults int, confirmedChildren int, confirmedInfants int, confirmedVendors int, page int, totalPages int, search string, csrfToken string, flash string, t i18n.T, lang string) {
-	@DashboardLayout(pageTitle(t("title.dashboard"), settings.Spouse1Name, settings.Spouse2Name), lang) {
+templ Dashboard(settings models.Settings, content SettingsContent, guests []models.Guest, pagedGifts []models.Gift, giftsPage int, giftsTotalPages int, giftsCount int, giftsTotal int, pagedRegistry []models.RegistryItem, registryPage int, registryTotalPages int, registryItems []models.RegistryItem, invitations []models.Invitation, pagedInvitations []models.Invitation, invitePage int, inviteTotalPages int, inviteSearch string, polls []models.Poll, pagedSoundtrack []models.SoundtrackEvent, soundtrackPage int, soundtrackTotalPages int, confirmedReception int, refusedReception int, pendingRSVP int, invitedGuests int, nonVisualizedInvited int, total int, confirmedAdults int, confirmedChildren int, confirmedInfants int, confirmedVendors int, page int, totalPages int, search string, csrfToken string, flash string, t i18n.T, lang string) {
+	@DashboardLayout(pageTitle(t("title.dashboard"), settings.GroomName, settings.BrideName), lang) {
 		<div id="dashboard-flash">
 			if flash != "" {
 				<div class="flash-success">{ flash }</div>
@@ -284,8 +284,8 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, pagedGif
 				<input type="hidden" name="_csrf" value={ csrfToken }/>
 				<label>{ t("label.spouses") }</label>
 				<div class="grid">
-					<input type="text" name="spouse1_name" value={ settings.Spouse1Name } placeholder={ t("placeholder.name") }/>
-					<input type="text" name="spouse2_name" value={ settings.Spouse2Name } placeholder={ t("placeholder.name") }/>
+					<input type="text" name="groom_name" value={ settings.GroomName } placeholder={ t("placeholder.name") }/>
+					<input type="text" name="bride_name" value={ settings.BrideName } placeholder={ t("placeholder.name") }/>
 				</div>
 				<label>{ t("label.ceremony") }</label>
 				<div class="grid">
@@ -295,8 +295,8 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, pagedGif
 						<input type="hidden" name="ceremony_address" id="ceremony-address-hidden" value={ settings.CeremonyAddress }/>
 						<input type="hidden" name="ceremony_location" id="ceremony-location-hidden" value={ settings.CeremonyLocation }/>
 						<input type="hidden" name="ceremony_city" id="ceremony-city-hidden" value={ settings.CeremonyCity }/>
-						<input type="hidden" name="ceremony_lat" id="ceremony-lat-hidden" value={ fmt.Sprintf("%f", settings.CeremonyLat) }/>
-						<input type="hidden" name="ceremony_lng" id="ceremony-lng-hidden" value={ fmt.Sprintf("%f", settings.CeremonyLng) }/>
+						<input type="hidden" name="ceremony_lat" id="ceremony-lat-hidden" value={ coordValue(settings.CeremonyLat) }/>
+						<input type="hidden" name="ceremony_lng" id="ceremony-lng-hidden" value={ coordValue(settings.CeremonyLng) }/>
 					</div>
 					<input type="datetime-local" name="ceremony_datetime" value={ settings.CeremonyDatetime }/>
 				</div>
@@ -318,8 +318,8 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, pagedGif
 						<input type="hidden" name="reception_address" id="reception-address-hidden" value={ settings.ReceptionAddress }/>
 						<input type="hidden" name="reception_location" id="reception-location-hidden" value={ settings.ReceptionLocation }/>
 						<input type="hidden" name="reception_city" id="reception-city-hidden" value={ settings.ReceptionCity }/>
-						<input type="hidden" name="reception_lat" id="reception-lat-hidden" value={ fmt.Sprintf("%f", settings.ReceptionLat) }/>
-						<input type="hidden" name="reception_lng" id="reception-lng-hidden" value={ fmt.Sprintf("%f", settings.ReceptionLng) }/>
+						<input type="hidden" name="reception_lat" id="reception-lat-hidden" value={ coordValue(settings.ReceptionLat) }/>
+						<input type="hidden" name="reception_lng" id="reception-lng-hidden" value={ coordValue(settings.ReceptionLng) }/>
 					</div>
 					<input type="datetime-local" name="reception_datetime" value={ settings.ReceptionDatetime }/>
 				</div>
@@ -364,10 +364,10 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, pagedGif
 						<div id="settings-homepage-backgrounds-panel" class="accordion-collapse collapse" data-dashboard-key="settings-homepage-backgrounds" aria-labelledby="settings-homepage-backgrounds-heading">
 							<div class="accordion-body settings-section-body">
 								<p class="muted">Use one horizontal image for desktop and one vertical image for mobile for the same photo or moment. If only one side is uploaded, it falls back to the available image.</p>
-								<input type="hidden" name="homepage_hero_background_count" id="homepage-hero-background-count" value={ strconv.Itoa(len(settings.HomepageHeroBackgrounds)) }/>
+								<input type="hidden" name="homepage_hero_background_count" id="homepage-hero-background-count" value={ strconv.Itoa(len(content.HeroBackgrounds)) }/>
 								<div id="homepage-hero-backgrounds-container">
-									if len(settings.HomepageHeroBackgrounds) > 0 {
-										for idx, bg := range settings.HomepageHeroBackgrounds {
+									if len(content.HeroBackgrounds) > 0 {
+										for idx, bg := range content.HeroBackgrounds {
 											<div class="hero-background-card">
 												<div class="hero-background-card-header">
 													<span class="hero-background-number">{ strconv.Itoa(idx + 1) }</span>
@@ -587,8 +587,8 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, pagedGif
 						<div id="settings-places-panel" class="accordion-collapse collapse" data-dashboard-key="settings-places" aria-labelledby="settings-places-heading">
 							<div class="accordion-body settings-section-body">
 								<div id="places-container">
-									if len(settings.Places) > 0 {
-										for idx, place := range settings.Places {
+									if len(content.Places) > 0 {
+										for idx, place := range content.Places {
 											<div class="place-card" data-index={ strconv.Itoa(idx) }>
 												<div class="place-card-header">
 													<div class="place-card-meta">
@@ -623,8 +623,8 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, pagedGif
 														<div class="autocomplete-dropdown place-dropdown"></div>
 														<input type="hidden" name={ fmt.Sprintf("place_name_%d", idx) } class="place-name-hidden" value={ place.Name }/>
 														<input type="hidden" name={ fmt.Sprintf("place_address_%d", idx) } class="place-address-hidden" value={ place.Address }/>
-														<input type="hidden" name={ fmt.Sprintf("place_lat_%d", idx) } class="place-lat-hidden" value={ fmt.Sprintf("%f", place.Lat) }/>
-														<input type="hidden" name={ fmt.Sprintf("place_lng_%d", idx) } class="place-lng-hidden" value={ fmt.Sprintf("%f", place.Lng) }/>
+														<input type="hidden" name={ fmt.Sprintf("place_lat_%d", idx) } class="place-lat-hidden" value={ coordValue(place.Lat) }/>
+														<input type="hidden" name={ fmt.Sprintf("place_lng_%d", idx) } class="place-lng-hidden" value={ coordValue(place.Lng) }/>
 													</div>
 													<div>
 														<label>{ t("label.place_image") }</label>
@@ -682,8 +682,8 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, pagedGif
 						<div id="settings-honeymoon-panel" class="accordion-collapse collapse" data-dashboard-key="settings-honeymoon" aria-labelledby="settings-honeymoon-heading">
 							<div class="accordion-body settings-section-body">
 								<div id="honeymoon-container">
-									if len(settings.HoneymoonLocations) > 0 {
-										for idx, place := range settings.HoneymoonLocations {
+									if len(content.Honeymoon) > 0 {
+										for idx, place := range content.Honeymoon {
 											<div class="place-card honeymoon-card" data-index={ strconv.Itoa(idx) }>
 												<div class="place-card-header">
 													<div class="place-card-meta">
@@ -712,8 +712,8 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, pagedGif
 														<div class="autocomplete-dropdown place-dropdown"></div>
 														<input type="hidden" name={ fmt.Sprintf("honeymoon_name_%d", idx) } class="place-name-hidden" value={ place.Name }/>
 														<input type="hidden" name={ fmt.Sprintf("honeymoon_address_%d", idx) } class="place-address-hidden" value={ place.Address }/>
-														<input type="hidden" name={ fmt.Sprintf("honeymoon_lat_%d", idx) } class="place-lat-hidden" value={ fmt.Sprintf("%f", place.Lat) }/>
-														<input type="hidden" name={ fmt.Sprintf("honeymoon_lng_%d", idx) } class="place-lng-hidden" value={ fmt.Sprintf("%f", place.Lng) }/>
+														<input type="hidden" name={ fmt.Sprintf("honeymoon_lat_%d", idx) } class="place-lat-hidden" value={ coordValue(place.Lat) }/>
+														<input type="hidden" name={ fmt.Sprintf("honeymoon_lng_%d", idx) } class="place-lng-hidden" value={ coordValue(place.Lng) }/>
 													</div>
 													<div>
 														<label>{ t("label.place_image") }</label>
@@ -771,8 +771,8 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, pagedGif
 						<div id="settings-parking-panel" class="accordion-collapse collapse" data-dashboard-key="settings-parking" aria-labelledby="settings-parking-heading">
 							<div class="accordion-body settings-section-body">
 								<div id="parking-container">
-									if len(settings.ParkingSpots) > 0 {
-										for idx, spot := range settings.ParkingSpots {
+									if len(content.ParkingSpots) > 0 {
+										for idx, spot := range content.ParkingSpots {
 											<div class="place-card parking-card" data-index={ strconv.Itoa(idx) }>
 												<div class="place-card-header">
 													<div class="place-card-meta">
@@ -792,8 +792,8 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, pagedGif
 													<label>{ t("label.parking_address") }</label>
 													<input type="text" class="place-location-input" autocomplete="off" placeholder={ t("placeholder.parking_address") }/>
 													<div class="autocomplete-dropdown place-dropdown"></div>
-													<input type="hidden" name={ fmt.Sprintf("parking_lat_%d", idx) } class="place-lat-hidden" value={ fmt.Sprintf("%f", spot.Lat) }/>
-													<input type="hidden" name={ fmt.Sprintf("parking_lng_%d", idx) } class="place-lng-hidden" value={ fmt.Sprintf("%f", spot.Lng) }/>
+													<input type="hidden" name={ fmt.Sprintf("parking_lat_%d", idx) } class="place-lat-hidden" value={ coordValue(spot.Lat) }/>
+													<input type="hidden" name={ fmt.Sprintf("parking_lng_%d", idx) } class="place-lng-hidden" value={ coordValue(spot.Lng) }/>
 												</div>
 											</div>
 										}
@@ -813,8 +813,8 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, pagedGif
 						<div id="settings-accommodations-panel" class="accordion-collapse collapse" data-dashboard-key="settings-accommodations" aria-labelledby="settings-accommodations-heading">
 							<div class="accordion-body settings-section-body">
 								<div id="accommodations-container">
-									if len(settings.AccommodationSuggestions) > 0 {
-										for idx, suggestion := range settings.AccommodationSuggestions {
+									if len(content.Accommodations) > 0 {
+										for idx, suggestion := range content.Accommodations {
 											<div class="accommodation-card">
 												<div class="accommodation-card-header">
 													<span class="accommodation-number">{ strconv.Itoa(idx + 1) }</span>
@@ -852,8 +852,8 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, pagedGif
 						<div id="settings-impersonations-panel" class="accordion-collapse collapse" data-dashboard-key="settings-impersonations" aria-labelledby="settings-impersonations-heading">
 							<div class="accordion-body settings-section-body">
 								<div id="impersonations-container">
-									if len(settings.Impersonations) > 0 {
-										for idx, imp := range settings.Impersonations {
+									if len(content.Impersonations) > 0 {
+										for idx, imp := range content.Impersonations {
 											<div class="impersonation-card">
 												<div class="impersonation-card-header">
 													<span class="impersonation-number">{ strconv.Itoa(idx + 1) }</span>
@@ -889,12 +889,12 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, pagedGif
 											<div id={ "settings-homepage-labels-" + lang + "-panel" } class="accordion-collapse collapse" data-dashboard-key={ "settings-homepage-labels-" + lang } aria-labelledby={ "settings-homepage-labels-" + lang + "-heading" }>
 												<div class="accordion-body settings-subsection-body">
 													<div class="homepage-label-groups">
-														@homepageLabelGroup(lang, "home", []string{"home.getting_married", "home.ceremony", "home.reception", "home.soundtrack", "home.soundtrack_description", "home.places", "home.places_description", "home.honeymoon", "home.honeymoon_description", "home.accommodations", "home.accommodations_description", "home.registry", "home.registry_description", "home.generic_gift", "home.generic_gift_description", "home.remaining", "home.update_invitation"}, settings.HomepageLabels, i18n.Defaults(lang))
-														@homepageLabelGroup(lang, "invitation", []string{"invitation.title", "invitation.rsvp", "invitation.rsvp_description", "invitation.confirm", "invitation.already_answered", "invitation.change_answer", "invitation.go_home", "invitation.submitted_message"}, settings.HomepageLabels, i18n.Defaults(lang))
-														@homepageLabelGroup(lang, "gift / badge", []string{"gift.thank_you", "gift.thanks_message", "badge.sold"}, settings.HomepageLabels, i18n.Defaults(lang))
-														@homepageLabelGroup(lang, "buttons", []string{"btn.buy", "btn.copy", "btn.copied", "btn.cancel", "btn.confirm", "btn.close"}, settings.HomepageLabels, i18n.Defaults(lang))
-														@homepageLabelGroup(lang, "modal", []string{"modal.transfer_intro", "modal.iban", "modal.owner", "modal.reason", "modal.transfer_confirm_text"}, settings.HomepageLabels, i18n.Defaults(lang))
-														@homepageLabelGroup(lang, "placeholders / chat / misc", []string{"placeholder.custom_amount", "placeholder.donor", "chat.title", "chat.placeholder", "chat.send", "chat.error", "chat.rate_limited", "rsvp.yes", "rsvp.no", "th.amount", "th.ceremony", "th.reception", "link.dashboard"}, settings.HomepageLabels, i18n.Defaults(lang))
+														@homepageLabelGroup(lang, "home", []string{"home.getting_married", "home.ceremony", "home.reception", "home.soundtrack", "home.soundtrack_description", "home.places", "home.places_description", "home.honeymoon", "home.honeymoon_description", "home.accommodations", "home.accommodations_description", "home.registry", "home.registry_description", "home.generic_gift", "home.generic_gift_description", "home.remaining", "home.update_invitation"}, content.HomepageLabels, i18n.Defaults(lang))
+														@homepageLabelGroup(lang, "invitation", []string{"invitation.title", "invitation.rsvp", "invitation.rsvp_description", "invitation.confirm", "invitation.already_answered", "invitation.change_answer", "invitation.go_home", "invitation.submitted_message"}, content.HomepageLabels, i18n.Defaults(lang))
+														@homepageLabelGroup(lang, "gift / badge", []string{"gift.thank_you", "gift.thanks_message", "badge.sold"}, content.HomepageLabels, i18n.Defaults(lang))
+														@homepageLabelGroup(lang, "buttons", []string{"btn.buy", "btn.copy", "btn.copied", "btn.cancel", "btn.confirm", "btn.close"}, content.HomepageLabels, i18n.Defaults(lang))
+														@homepageLabelGroup(lang, "modal", []string{"modal.transfer_intro", "modal.iban", "modal.owner", "modal.reason", "modal.transfer_confirm_text"}, content.HomepageLabels, i18n.Defaults(lang))
+														@homepageLabelGroup(lang, "placeholders / chat / misc", []string{"placeholder.custom_amount", "placeholder.donor", "chat.title", "chat.placeholder", "chat.send", "chat.error", "chat.rate_limited", "rsvp.yes", "rsvp.no", "th.amount", "th.ceremony", "th.reception", "link.dashboard"}, content.HomepageLabels, i18n.Defaults(lang))
 													</div>
 												</div>
 											</div>
@@ -1458,8 +1458,8 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, pagedGif
 	}
 }
 
-templ EditGuest(guest models.Guest, settings models.WeddingSettings, csrfToken string, t i18n.T, lang string) {
-	@DashboardLayout(pageTitle(t("title.edit_guest"), settings.Spouse1Name, settings.Spouse2Name), lang) {
+templ EditGuest(guest models.Guest, settings models.Settings, csrfToken string, t i18n.T, lang string) {
+	@DashboardLayout(pageTitle(t("title.edit_guest"), settings.GroomName, settings.BrideName), lang) {
 		<a href="/dashboard">&larr; { t("btn.back") }</a>
 		<h1>{ t("title.edit_guest") }</h1>
 		<article>
@@ -1484,8 +1484,8 @@ templ EditGuest(guest models.Guest, settings models.WeddingSettings, csrfToken s
 	}
 }
 
-templ EditRegistryItem(item models.RegistryItem, settings models.WeddingSettings, csrfToken string, t i18n.T, lang string) {
-	@DashboardLayout(pageTitle(t("title.edit_item"), settings.Spouse1Name, settings.Spouse2Name), lang) {
+templ EditRegistryItem(item models.RegistryItem, settings models.Settings, csrfToken string, t i18n.T, lang string) {
+	@DashboardLayout(pageTitle(t("title.edit_item"), settings.GroomName, settings.BrideName), lang) {
 		<a href="/dashboard">&larr; { t("btn.back") }</a>
 		<h1>{ t("title.edit_item") }</h1>
 		<article>
@@ -1525,8 +1525,8 @@ templ EditRegistryItem(item models.RegistryItem, settings models.WeddingSettings
 	}
 }
 
-templ EditGift(gift models.Gift, registryItems []models.RegistryItem, settings models.WeddingSettings, csrfToken string, t i18n.T, lang string) {
-	@DashboardLayout(pageTitle(t("title.edit_gift"), settings.Spouse1Name, settings.Spouse2Name), lang) {
+templ EditGift(gift models.Gift, registryItems []models.RegistryItem, settings models.Settings, csrfToken string, t i18n.T, lang string) {
+	@DashboardLayout(pageTitle(t("title.edit_gift"), settings.GroomName, settings.BrideName), lang) {
 		<a href="/dashboard">&larr; { t("btn.back") }</a>
 		<h1>{ t("title.edit_gift") }</h1>
 		<article>
@@ -1569,8 +1569,8 @@ templ EditGift(gift models.Gift, registryItems []models.RegistryItem, settings m
 	}
 }
 
-templ EditPoll(poll models.Poll, settings models.WeddingSettings, csrfToken string, t i18n.T, lang string) {
-	@DashboardLayout(pageTitle(t("title.edit_poll"), settings.Spouse1Name, settings.Spouse2Name), lang) {
+templ EditPoll(poll models.Poll, settings models.Settings, csrfToken string, t i18n.T, lang string) {
+	@DashboardLayout(pageTitle(t("title.edit_poll"), settings.GroomName, settings.BrideName), lang) {
 		<a href="/dashboard">&larr; { t("btn.back") }</a>
 		<h1>{ t("title.edit_poll") }</h1>
 		<article>
@@ -1584,8 +1584,8 @@ templ EditPoll(poll models.Poll, settings models.WeddingSettings, csrfToken stri
 	}
 }
 
-templ EditInvitation(inv models.Invitation, settings models.WeddingSettings, csrfToken string, t i18n.T, lang string) {
-	@DashboardLayout(pageTitle(t("title.edit_invitation"), settings.Spouse1Name, settings.Spouse2Name), lang) {
+templ EditInvitation(inv models.Invitation, settings models.Settings, csrfToken string, t i18n.T, lang string) {
+	@DashboardLayout(pageTitle(t("title.edit_invitation"), settings.GroomName, settings.BrideName), lang) {
 		<a href="/dashboard">&larr; { t("btn.back") }</a>
 		<h1>{ t("title.edit_invitation") }</h1>
 		<article>

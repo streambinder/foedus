@@ -17,6 +17,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/streambinder/foedus/internal/database"
+	"github.com/streambinder/foedus/internal/models"
 )
 
 const (
@@ -139,22 +140,37 @@ func ChatStream(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).SendString("history too long")
 	}
 
-	settings, err := database.GetAllSettings()
+	settings, err := database.GetSettings()
 	if err != nil {
 		logger.Error("chat request failed to load settings", "error", err.Error())
 		return c.SendStatus(fiber.StatusInternalServerError)
 	}
-	if len(settings.Impersonations) == 0 {
+	impersonations, err := database.GetImpersonations()
+	if err != nil {
+		logger.Error("chat request failed to load impersonations", "error", err.Error())
+		return c.SendStatus(fiber.StatusInternalServerError)
+	}
+	if len(impersonations) == 0 {
 		logger.Warn("chat request rejected", "reason", "no impersonations configured")
 		return c.SendStatus(fiber.StatusNotFound)
 	}
+	places, err := database.GetPlaces(models.PlaceKindStory)
+	if err != nil {
+		logger.Error("chat request failed to load places", "error", err.Error())
+		return c.SendStatus(fiber.StatusInternalServerError)
+	}
+	accommodations, err := database.GetAccommodations()
+	if err != nil {
+		logger.Error("chat request failed to load accommodations", "error", err.Error())
+		return c.SendStatus(fiber.StatusInternalServerError)
+	}
 
-	persona := settings.Impersonations[rand.IntN(len(settings.Impersonations))]
+	persona := impersonations[rand.IntN(len(impersonations))]
 	personaName := capitalizedPersonaName(persona.Codename)
 	logger.Info(
 		"chat request accepted",
 		"persona", persona.Codename,
-		"persona_pool", len(settings.Impersonations),
+		"persona_pool", len(impersonations),
 		"message_len", len(req.Message),
 		"history_len", len(req.History),
 	)
@@ -165,16 +181,16 @@ func ChatStream(c *fiber.Ctx) error {
 		playlistList = settings.SpotifyPlaylist
 	}
 	var placeParts []string
-	for _, p := range settings.Places {
-		placeParts = append(placeParts, p.Label+": "+p.Name)
+	for _, place := range places {
+		placeParts = append(placeParts, place.Label+": "+place.Name)
 	}
 	placeList := "none"
 	if len(placeParts) > 0 {
 		placeList = strings.Join(placeParts, ", ")
 	}
 	var accommodationParts []string
-	for _, suggestion := range settings.AccommodationSuggestions {
-		accommodationParts = append(accommodationParts, suggestion.Name)
+	for _, accommodation := range accommodations {
+		accommodationParts = append(accommodationParts, accommodation.Name)
 	}
 	accommodationList := "none"
 	if len(accommodationParts) > 0 {
@@ -219,7 +235,7 @@ func ChatStream(c *fiber.Ctx) error {
 			"Do not code-switch. Do not mix languages. Do not use prior messages to decide the reply language. The visible reply must be entirely in the inbound message language except for the allowed exceptions above. End the reply with the exact signature \"— %s\".\n"+
 			"Keep replies warm, personal, and concise.",
 		personaName, persona.Profile, personaName,
-		settings.Spouse1Name, settings.Spouse2Name,
+		settings.GroomName, settings.BrideName,
 		settings.CeremonyDatetime, settings.CeremonyLocation, settings.CeremonyAddress,
 		settings.ReceptionDatetime, settings.ReceptionLocation, settings.ReceptionAddress,
 		settings.BankAccountIBAN, settings.BankAccountHolder,

@@ -16,7 +16,7 @@ const (
 	defaultOGImageHeight = "630"
 )
 
-func BuildOGMeta(baseURL, pageURL, title, description string, settings models.WeddingSettings) templates.OGMeta {
+func BuildOGMeta(baseURL, pageURL, title, description string, settings models.Settings) templates.OGMeta {
 	imageType := defaultOGImageType
 	imageWidth := defaultOGImageWidth
 	imageHeight := defaultOGImageHeight
@@ -39,7 +39,7 @@ func BuildOGMeta(baseURL, pageURL, title, description string, settings models.We
 	}
 }
 
-func ogCeremonyLocation(settings models.WeddingSettings) string {
+func ogCeremonyLocation(settings models.Settings) string {
 	var parts []string
 	if settings.CeremonyAddress != "" {
 		parts = append(parts, settings.CeremonyAddress)
@@ -56,7 +56,7 @@ func ogCeremonyLocation(settings models.WeddingSettings) string {
 func OGImage(c *fiber.Ctx) error {
 	c.Set("Cache-Control", "public, max-age=3600")
 
-	settings, err := database.GetAllSettings()
+	settings, err := database.GetSettings()
 	if err == nil && settings.SharePreviewMediaID > 0 {
 		if media, mediaErr := database.GetMedia(settings.SharePreviewMediaID); mediaErr == nil {
 			c.Set(fiber.HeaderContentType, media.Mime)

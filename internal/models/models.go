@@ -1,75 +1,92 @@
 package models
 
-type Setting struct {
-	Key   string
-	Value string
+// place kinds — same entity, two roles on the homepage: story places render on
+// the timeline, honeymoon ones in their own section.
+const (
+	PlaceKindStory     = "story"
+	PlaceKindHoneymoon = "honeymoon"
+)
+
+// Settings is the wedding's scalar configuration — one row, one struct. Every
+// collection that used to live here as a JSON blob is now its own relation.
+type Settings struct {
+	GroomName           string
+	BrideName           string
+	CeremonyAddress     string
+	CeremonyLocation    string
+	CeremonyCity        string
+	CeremonyDatetime    string
+	CeremonyLat         float64
+	CeremonyLng         float64
+	CeremonyMediaID     int
+	ReceptionAddress    string
+	ReceptionLocation   string
+	ReceptionCity       string
+	ReceptionDatetime   string
+	ReceptionLat        float64
+	ReceptionLng        float64
+	ReceptionMediaID    int
+	BankAccountIBAN     string
+	BankAccountHolder   string
+	SpotifyPlaylist     string
+	SharePreviewMediaID int
+}
+
+func (s Settings) IsConfigured() bool {
+	return s.GroomName != "" && s.BrideName != ""
 }
 
 type Place struct {
-	Label   string  `json:"label"`
-	Date    string  `json:"date"`
-	MediaID int     `json:"media_id"`
-	Name    string  `json:"name"`
-	Address string  `json:"address"`
-	Lat     float64 `json:"lat"`
-	Lng     float64 `json:"lng"`
+	ID        int
+	Kind      string // story | honeymoon
+	Label     string
+	Date      string
+	Name      string
+	Address   string
+	Lat       float64
+	Lng       float64
+	MediaID   int
+	SortOrder int
+	CreatedAt Timestamp
 }
 
-// Coord is a bare lat/lng point — used for ceremony parking spots, which need
-// no label/photo, only a location to pin on the map and route to.
-type Coord struct {
-	Lat float64 `json:"lat"`
-	Lng float64 `json:"lng"`
+// ParkingSpot is a bare lat/lng pin for the ceremony parking map — no label or
+// photo, only somewhere to route to.
+type ParkingSpot struct {
+	ID        int
+	Lat       float64
+	Lng       float64
+	SortOrder int
+	CreatedAt Timestamp
 }
 
+type Accommodation struct {
+	ID          int
+	Name        string
+	Description string
+	URL         string
+	SortOrder   int
+	CreatedAt   Timestamp
+}
+
+// Impersonation is a chat persona: a codename plus the profile text injected
+// into the LLM system prompt.
 type Impersonation struct {
-	Codename string `json:"codename"`
-	Profile  string `json:"profile"`
+	ID        int
+	Codename  string
+	Profile   string
+	SortOrder int
+	CreatedAt Timestamp
 }
 
-type AccommodationSuggestion struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	URL         string `json:"url"`
-}
-
-type HomepageHeroBackground struct {
-	DesktopMediaID int `json:"desktop_media_id"`
-	MobileMediaID  int `json:"mobile_media_id"`
-}
-
-type WeddingSettings struct {
-	Spouse1Name              string
-	Spouse2Name              string
-	CeremonyAddress          string
-	CeremonyLocation         string
-	CeremonyCity             string
-	CeremonyDatetime         string
-	CeremonyLat              float64
-	CeremonyLng              float64
-	ReceptionAddress         string
-	ReceptionLocation        string
-	ReceptionCity            string
-	ReceptionDatetime        string
-	ReceptionLat             float64
-	ReceptionLng             float64
-	CeremonyMediaID          int
-	ReceptionMediaID         int
-	BankAccountIBAN          string
-	BankAccountHolder        string
-	SpotifyPlaylist          string
-	Places                   []Place
-	HoneymoonLocations       []Place
-	ParkingSpots             []Coord
-	AccommodationSuggestions []AccommodationSuggestion
-	Impersonations           []Impersonation
-	HomepageLabels           map[string]map[string]string
-	HomepageHeroBackgrounds  []HomepageHeroBackground
-	SharePreviewMediaID      int
-}
-
-func (s WeddingSettings) IsConfigured() bool {
-	return s.Spouse1Name != "" && s.Spouse2Name != ""
+// HeroBackground pairs a horizontal and a vertical image for the landing
+// section; one pair is picked at random per homepage load.
+type HeroBackground struct {
+	ID             int
+	DesktopMediaID int
+	MobileMediaID  int
+	SortOrder      int
+	CreatedAt      Timestamp
 }
 
 type Guest struct {

@@ -126,7 +126,7 @@ func SoundtrackAdd(c *fiber.Ctx) error {
 	req.URL = strings.TrimSpace(req.URL)
 	req.InviteID = strings.TrimSpace(req.InviteID)
 
-	settings, err := database.GetAllSettings()
+	settings, err := database.GetSettings()
 	if err != nil {
 		logger.Error("soundtrack add failed to load settings", "error", err.Error())
 		return c.SendStatus(fiber.StatusInternalServerError)

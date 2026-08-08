@@ -17,7 +17,7 @@ type claimRequest struct {
 func ClaimGift(c *fiber.Ctx) error {
 	logger := handlerLogger(c)
 
-	settings, err := database.GetAllSettings()
+	settings, err := database.GetSettings()
 	if err != nil {
 		logger.Error("gift claim failed to load settings", "error", err.Error())
 		return c.Status(500).JSON(fiber.Map{"error": "internal error"})

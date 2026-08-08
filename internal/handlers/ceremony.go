@@ -10,7 +10,7 @@ import (
 )
 
 func Ceremony(c *fiber.Ctx) error {
-	settings, err := database.GetAllSettings()
+	settings, err := database.GetSettings()
 	if err != nil {
 		return c.Status(500).SendString("failed to load settings")
 	}
@@ -29,7 +29,7 @@ func Ceremony(c *fiber.Ctx) error {
 	ogMeta := BuildOGMeta(
 		baseURL,
 		baseURL+"/ceremony",
-		settings.Spouse1Name+" & "+settings.Spouse2Name,
+		settings.GroomName+" & "+settings.BrideName,
 		strings.Join(ogDescParts, " · "),
 		settings,
 	)

@@ -2,6 +2,7 @@ package database
 
 import (
 	"database/sql"
+	"fmt"
 	"log/slog"
 	"strings"
 	"time"
@@ -17,6 +18,61 @@ type Querier interface {
 	Exec(query string, args ...any) (sql.Result, error)
 	Query(query string, args ...any) (*sql.Rows, error)
 	QueryRow(query string, args ...any) *sql.Row
+}
+
+// queryAll runs a query and maps every row through scan, collapsing the
+// identical query/defer/loop/err dance every collection getter would repeat.
+func queryAll[T any](query string, scan func(*sql.Rows) (T, error), args ...any) ([]T, error) {
+	rows, err := DB.Query(query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var items []T
+	for rows.Next() {
+		item, err := scan(rows)
+		if err != nil {
+			return nil, err
+		}
+		items = append(items, item)
+	}
+	return items, rows.Err()
+}
+
+// insertAll writes a whole collection in slice order, handing each row's index
+// to values so it can double as sort_order. The dashboard form always submits
+// these lists complete, so callers wipe the table (or their slice of it) first
+// and re-insert rather than diffing by id — order is the form's, not the DB's.
+func insertAll[T any](q Querier, table string, columns []string, items []T, values func(T, int) []any) error {
+	statement := fmt.Sprintf(
+		"INSERT INTO %s (%s) VALUES (%s)",
+		table,
+		strings.Join(columns, ", "),
+		strings.TrimSuffix(strings.Repeat("?, ", len(columns)), ", "),
+	)
+	for index, item := range items {
+		if _, err := q.Exec(statement, values(item, index)...); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// nullableID maps an absent media id to SQL NULL — 0 would violate the FK,
+// which is exactly the breakage the JSON blobs used to hide.
+func nullableID(id int) any {
+	if id <= 0 {
+		return nil
+	}
+	return id
+}
+
+func idOrZero(id sql.NullInt64) int {
+	if !id.Valid {
+		return 0
+	}
+	return int(id.Int64)
 }
 
 // WithTx runs fn inside a single transaction, committing on success and rolling
@@ -64,7 +120,7 @@ func Init(dsn string) {
 	slog.Info("database connection opened", "dsn", dsn, "max_open_conns", 8)
 
 	migrate()
-	SeedSettings()
+	seedSettings()
 	slog.Info("database initialized", "dsn", dsn, "duration_ms", time.Since(start).Milliseconds())
 }
 
@@ -87,10 +143,6 @@ func dsnWithPragmas(dsn string) string {
 func migrate() {
 	start := time.Now()
 	statements := []string{
-		`CREATE TABLE IF NOT EXISTS settings (
-			key   TEXT PRIMARY KEY,
-			value TEXT NOT NULL DEFAULT ''
-		) STRICT`,
 		`CREATE TABLE IF NOT EXISTS guests (
 			id                  INTEGER PRIMARY KEY AUTOINCREMENT,
 			first_name          TEXT NOT NULL,
@@ -116,6 +168,34 @@ func migrate() {
 			mime       TEXT NOT NULL,
 			bytes      BLOB NOT NULL,
 			created_at INTEGER NOT NULL DEFAULT (unixepoch())
+		) STRICT`,
+		// settings holds exactly one row (CHECK id = 1) of scalar config. Anything
+		// that can occur more than once is a relation of its own: the old key/value
+		// table had grown JSON arrays of places, personas and image ids, which put
+		// every media reference in them outside FK enforcement. Declared after
+		// media so its three references resolve.
+		`CREATE TABLE IF NOT EXISTS settings (
+			id                     INTEGER PRIMARY KEY CHECK (id = 1),
+			groom_name             TEXT NOT NULL DEFAULT '',
+			bride_name             TEXT NOT NULL DEFAULT '',
+			ceremony_datetime      TEXT NOT NULL DEFAULT '',
+			ceremony_address       TEXT NOT NULL DEFAULT '',
+			ceremony_location      TEXT NOT NULL DEFAULT '',
+			ceremony_city          TEXT NOT NULL DEFAULT '',
+			ceremony_lat           REAL NOT NULL DEFAULT 0,
+			ceremony_lng           REAL NOT NULL DEFAULT 0,
+			ceremony_media_id      INTEGER REFERENCES media(id),
+			reception_datetime     TEXT NOT NULL DEFAULT '',
+			reception_address      TEXT NOT NULL DEFAULT '',
+			reception_location     TEXT NOT NULL DEFAULT '',
+			reception_city         TEXT NOT NULL DEFAULT '',
+			reception_lat          REAL NOT NULL DEFAULT 0,
+			reception_lng          REAL NOT NULL DEFAULT 0,
+			reception_media_id     INTEGER REFERENCES media(id),
+			bank_account_iban      TEXT NOT NULL DEFAULT '',
+			bank_account_holder    TEXT NOT NULL DEFAULT '',
+			spotify_playlist       TEXT NOT NULL DEFAULT '',
+			share_preview_media_id INTEGER REFERENCES media(id)
 		) STRICT`,
 		`CREATE TABLE IF NOT EXISTS registry_items (
 			id         INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -153,6 +233,59 @@ func migrate() {
 			url        TEXT NOT NULL DEFAULT '',
 			invite_id  TEXT NOT NULL DEFAULT '',
 			created_at INTEGER NOT NULL DEFAULT (unixepoch())
+		) STRICT`,
+		// story places and honeymoon destinations are the same entity in two
+		// roles, so one table with a kind discriminator; sort_order is scoped
+		// per kind and mirrors the dashboard form order.
+		`CREATE TABLE IF NOT EXISTS places (
+			id         INTEGER PRIMARY KEY AUTOINCREMENT,
+			kind       TEXT NOT NULL CHECK (kind IN ('story','honeymoon')),
+			label      TEXT NOT NULL DEFAULT '',
+			name       TEXT NOT NULL DEFAULT '',
+			address    TEXT NOT NULL DEFAULT '',
+			date       TEXT NOT NULL DEFAULT '',
+			lat        REAL NOT NULL DEFAULT 0,
+			lng        REAL NOT NULL DEFAULT 0,
+			media_id   INTEGER REFERENCES media(id),
+			sort_order INTEGER NOT NULL DEFAULT 0,
+			created_at INTEGER NOT NULL DEFAULT (unixepoch())
+		) STRICT`,
+		`CREATE TABLE IF NOT EXISTS parking_spots (
+			id         INTEGER PRIMARY KEY AUTOINCREMENT,
+			lat        REAL NOT NULL DEFAULT 0,
+			lng        REAL NOT NULL DEFAULT 0,
+			sort_order INTEGER NOT NULL DEFAULT 0,
+			created_at INTEGER NOT NULL DEFAULT (unixepoch())
+		) STRICT`,
+		`CREATE TABLE IF NOT EXISTS accommodations (
+			id          INTEGER PRIMARY KEY AUTOINCREMENT,
+			name        TEXT NOT NULL DEFAULT '',
+			description TEXT NOT NULL DEFAULT '',
+			url         TEXT NOT NULL DEFAULT '',
+			sort_order  INTEGER NOT NULL DEFAULT 0,
+			created_at  INTEGER NOT NULL DEFAULT (unixepoch())
+		) STRICT`,
+		`CREATE TABLE IF NOT EXISTS impersonations (
+			id         INTEGER PRIMARY KEY AUTOINCREMENT,
+			codename   TEXT NOT NULL DEFAULT '',
+			profile    TEXT NOT NULL DEFAULT '',
+			sort_order INTEGER NOT NULL DEFAULT 0,
+			created_at INTEGER NOT NULL DEFAULT (unixepoch())
+		) STRICT`,
+		`CREATE TABLE IF NOT EXISTS hero_backgrounds (
+			id                INTEGER PRIMARY KEY AUTOINCREMENT,
+			desktop_media_id  INTEGER REFERENCES media(id),
+			mobile_media_id   INTEGER REFERENCES media(id),
+			sort_order        INTEGER NOT NULL DEFAULT 0,
+			created_at        INTEGER NOT NULL DEFAULT (unixepoch())
+		) STRICT`,
+		// only overridden labels are stored; a missing (lang, key) falls through
+		// to the compiled-in i18n default.
+		`CREATE TABLE IF NOT EXISTS homepage_labels (
+			lang  TEXT NOT NULL,
+			key   TEXT NOT NULL,
+			value TEXT NOT NULL DEFAULT '',
+			PRIMARY KEY (lang, key)
 		) STRICT`,
 	}
 	for index, s := range statements {

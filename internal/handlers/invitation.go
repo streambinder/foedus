@@ -26,7 +26,7 @@ func ViewInvitation(c *fiber.Ctx) error {
 		return c.Status(500).SendString("failed to load invitation")
 	}
 
-	settings, err := database.GetAllSettings()
+	settings, err := database.GetSettings()
 	if err != nil {
 		logger.Error("invitation view failed to load settings", "invitation_code", observability.Redact(code), "error", err.Error())
 		return c.Status(500).SendString("failed to load settings")
@@ -49,7 +49,12 @@ func ViewInvitation(c *fiber.Ctx) error {
 	}
 
 	lang := getLang(c)
-	t := i18n.NewTWithOverrides(lang, settings.HomepageLabels[lang])
+	labelOverrides, err := database.GetHomepageLabels(lang)
+	if err != nil {
+		logger.Error("invitation view failed to load labels", "invitation_code", observability.Redact(code), "error", err.Error())
+		return c.Status(500).SendString("failed to load labels")
+	}
+	t := i18n.NewTWithOverrides(lang, labelOverrides)
 	baseURL := c.Protocol() + "://" + c.Hostname()
 	var ogDescParts []string
 	if settings.CeremonyDatetime != "" {
@@ -58,7 +63,7 @@ func ViewInvitation(c *fiber.Ctx) error {
 	if ogLocation := ogCeremonyLocation(settings); ogLocation != "" {
 		ogDescParts = append(ogDescParts, ogLocation)
 	}
-	title := invitationTitle(t, inv, settings.Spouse1Name, settings.Spouse2Name)
+	title := invitationTitle(t, inv, settings.GroomName, settings.BrideName)
 	ogMeta := BuildOGMeta(
 		baseURL,
 		baseURL+"/"+code,
@@ -150,7 +155,7 @@ func UpdateInvitationRSVP(c *fiber.Ctx) error {
 	return c.Redirect(redirectURL)
 }
 
-func invitationTitle(t i18n.T, inv models.Invitation, spouse1, spouse2 string) string {
+func invitationTitle(t i18n.T, inv models.Invitation, groom, bride string) string {
 	label := strings.TrimSpace(inv.Label)
 	if label == "" {
 		label = database.DefaultInvitationLabel(inv.Guests)
@@ -159,8 +164,8 @@ func invitationTitle(t i18n.T, inv models.Invitation, spouse1, spouse2 string) s
 	if label != "" {
 		title += " " + label
 	}
-	if spouse1 != "" && spouse2 != "" {
-		title += " · " + spouse1 + " & " + spouse2
+	if groom != "" && bride != "" {
+		title += " · " + groom + " & " + bride
 	}
 	return title
 }

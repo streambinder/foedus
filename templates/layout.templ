@@ -27,6 +27,14 @@ func isPreloadableImageURL(raw string) bool {
 	return strings.HasPrefix(raw, "/") || strings.HasPrefix(raw, "https://") || strings.HasPrefix(raw, "http://")
 }
 
+// coordValue renders a lat/lng for a form field or data attribute. %f would
+// pad-or-truncate to 6 decimals, so a dashboard save that changed nothing still
+// rewrote 43.1054714 as 43.105471; 'f' with precision -1 emits the shortest
+// string that parses back to the same float64.
+func coordValue(coord float64) string {
+	return strconv.FormatFloat(coord, 'f', -1, 64)
+}
+
 func publicImageURL(mediaID int) string {
 	if mediaID <= 0 {
 		return ""
@@ -34,9 +42,9 @@ func publicImageURL(mediaID int) string {
 	return "/media/" + strconv.Itoa(mediaID)
 }
 
-func pageTitle(title, spouse1, spouse2 string) string {
-	if spouse1 != "" && spouse2 != "" {
-		return title + " · " + spouse1 + " & " + spouse2
+func pageTitle(title, groom, bride string) string {
+	if groom != "" && bride != "" {
+		return title + " · " + groom + " & " + bride
 	}
 	return title
 }

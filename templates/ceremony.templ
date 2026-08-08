@@ -5,8 +5,8 @@ import (
 	"github.com/streambinder/foedus/internal/models"
 )
 
-templ Ceremony(settings models.WeddingSettings, t i18n.T, lang string, ogMeta OGMeta) {
-	@Layout(pageTitle(t("ceremony.title"), settings.Spouse1Name, settings.Spouse2Name), lang, t, ogMeta, false, nil) {
+templ Ceremony(settings models.Settings, t i18n.T, lang string, ogMeta OGMeta) {
+	@Layout(pageTitle(t("ceremony.title"), settings.GroomName, settings.BrideName), lang, t, ogMeta, false, nil) {
 		<section class="vp-section vp-hero vp-venues ceremony-standalone">
 			<span class="vp-flora vp-flora-bl" aria-hidden="true"></span>
 			<span class="vp-flora vp-flora-tr" aria-hidden="true"></span>
@@ -14,7 +14,7 @@ templ Ceremony(settings models.WeddingSettings, t i18n.T, lang string, ogMeta OG
 				<div class="section-heading">
 					<p class="hero-kicker">{ t("home.getting_married") }</p>
 					<h1>
-						{ settings.Spouse1Name } <span class="amp">&amp;</span> { settings.Spouse2Name }
+						{ settings.GroomName } <span class="amp">&amp;</span> { settings.BrideName }
 					</h1>
 					if settings.CeremonyDatetime != "" {
 						<p class="muted hero-datetime">

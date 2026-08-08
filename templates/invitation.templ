@@ -44,7 +44,7 @@ func invitationImagePreloads(alreadyViewed bool) []ImagePreload {
 	return []ImagePreload{{Href: "/static/wax-seal.webp"}}
 }
 
-templ Invitation(inv models.Invitation, settings models.WeddingSettings, polls []models.Poll, alreadyViewed bool, noRedirect bool, t i18n.T, lang string, ogMeta OGMeta, title string) {
+templ Invitation(inv models.Invitation, settings models.Settings, polls []models.Poll, alreadyViewed bool, noRedirect bool, t i18n.T, lang string, ogMeta OGMeta, title string) {
 	@Layout(title, lang, t, ogMeta, false, invitationImagePreloads(alreadyViewed)) {
 		<div id="envelope-overlay" class={ templ.KV("is-complete", alreadyViewed) }>
 			<div id="envelope-open-button" role="button" tabindex="0" aria-label={ t("invitation.title") }></div>
@@ -56,7 +56,7 @@ templ Invitation(inv models.Invitation, settings models.WeddingSettings, polls [
 					<header class="hero">
 						<p><small>{ t("home.getting_married") }</small></p>
 						<h1>
-							{ settings.Spouse1Name } <span class="amp">&amp;</span> { settings.Spouse2Name }
+							{ settings.GroomName } <span class="amp">&amp;</span> { settings.BrideName }
 						</h1>
 						if settings.CeremonyDatetime != "" {
 							<p class="muted hero-datetime">

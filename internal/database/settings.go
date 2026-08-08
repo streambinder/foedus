@@ -1,154 +1,65 @@
 package database
 
 import (
-	"encoding/json"
+	"database/sql"
 	"log/slog"
-	"strconv"
-	"strings"
 
 	"github.com/streambinder/foedus/internal/models"
 )
 
-var settingsKeys = []string{
-	"spouse1_name", "spouse2_name", "ceremony_datetime",
-	"ceremony_address", "ceremony_location", "ceremony_city", "ceremony_media_id", "ceremony_lat", "ceremony_lng",
-	"reception_address", "reception_location", "reception_city", "reception_datetime", "reception_media_id", "reception_lat", "reception_lng",
-	"bank_account_iban", "bank_account_holder",
-	"spotify_playlists", "places", "honeymoon_locations", "parking_spots", "accommodation_suggestions", "impersonations", "homepage_labels",
-	"homepage_hero_backgrounds",
-	"share_preview_media_id",
-}
+const settingsColumns = `groom_name, bride_name,
+	ceremony_datetime, ceremony_address, ceremony_location, ceremony_city, ceremony_lat, ceremony_lng, ceremony_media_id,
+	reception_datetime, reception_address, reception_location, reception_city, reception_lat, reception_lng, reception_media_id,
+	bank_account_iban, bank_account_holder, spotify_playlist, share_preview_media_id`
 
-// SeedSettings inserts default empty rows for any missing setting keys.
-func SeedSettings() {
-	inserted := 0
-	for _, key := range settingsKeys {
-		result, err := DB.Exec(`INSERT OR IGNORE INTO settings (key, value) VALUES (?, '')`, key)
-		if err != nil {
-			slog.Error("failed to seed setting", "key", key, "error", err.Error())
-			continue
-		}
-		if rows, err := result.RowsAffected(); err == nil && rows > 0 {
-			inserted++
-		}
+// seedSettings materialises the single settings row. Every read assumes it
+// exists, so this runs on every boot rather than only on a fresh database.
+func seedSettings() {
+	if _, err := DB.Exec(`INSERT OR IGNORE INTO settings (id) VALUES (1)`); err != nil {
+		slog.Error("failed to seed settings row", "error", err.Error())
+		return
 	}
-	slog.Info("settings seeded", "keys", len(settingsKeys), "inserted", inserted)
+	slog.Info("settings row ensured")
 }
 
-func parseMediaID(raw string) int {
-	id, _ := strconv.Atoi(strings.TrimSpace(raw))
-	if id < 0 {
-		return 0
-	}
-	return id
-}
-
-func parseCoord(raw string) float64 {
-	f, _ := strconv.ParseFloat(strings.TrimSpace(raw), 64)
-	return f
-}
-
-func GetAllSettings() (models.WeddingSettings, error) {
-	rows, err := DB.Query(`SELECT key, value FROM settings`)
+func GetSettings() (models.Settings, error) {
+	var settings models.Settings
+	var ceremonyMediaID, receptionMediaID, sharePreviewMediaID sql.NullInt64
+	err := DB.QueryRow(`SELECT `+settingsColumns+` FROM settings WHERE id = 1`).Scan(
+		&settings.GroomName, &settings.BrideName,
+		&settings.CeremonyDatetime, &settings.CeremonyAddress, &settings.CeremonyLocation,
+		&settings.CeremonyCity, &settings.CeremonyLat, &settings.CeremonyLng, &ceremonyMediaID,
+		&settings.ReceptionDatetime, &settings.ReceptionAddress, &settings.ReceptionLocation,
+		&settings.ReceptionCity, &settings.ReceptionLat, &settings.ReceptionLng, &receptionMediaID,
+		&settings.BankAccountIBAN, &settings.BankAccountHolder,
+		&settings.SpotifyPlaylist, &sharePreviewMediaID,
+	)
 	if err != nil {
-		return models.WeddingSettings{}, err
+		return models.Settings{}, err
 	}
-	defer rows.Close()
-
-	m := make(map[string]string)
-	for rows.Next() {
-		var k, v string
-		if err := rows.Scan(&k, &v); err != nil {
-			return models.WeddingSettings{}, err
-		}
-		m[k] = v
-	}
-
-	var playlist string
-	if raw := m["spotify_playlists"]; raw != "" {
-		raw = strings.TrimSpace(raw)
-		if strings.HasPrefix(raw, "[") {
-			var playlists []string
-			json.Unmarshal([]byte(raw), &playlists)
-			for _, candidate := range playlists {
-				candidate = strings.TrimSpace(candidate)
-				if candidate != "" {
-					playlist = candidate
-					break
-				}
-			}
-		} else {
-			playlist = raw
-		}
-	}
-
-	var places []models.Place
-	if raw := m["places"]; raw != "" {
-		json.Unmarshal([]byte(raw), &places)
-	}
-
-	var honeymoonLocations []models.Place
-	if raw := m["honeymoon_locations"]; raw != "" {
-		json.Unmarshal([]byte(raw), &honeymoonLocations)
-	}
-
-	var parkingSpots []models.Coord
-	if raw := m["parking_spots"]; raw != "" {
-		json.Unmarshal([]byte(raw), &parkingSpots)
-	}
-
-	var accommodationSuggestions []models.AccommodationSuggestion
-	if raw := m["accommodation_suggestions"]; raw != "" {
-		json.Unmarshal([]byte(raw), &accommodationSuggestions)
-	}
-
-	var impersonations []models.Impersonation
-	if raw := m["impersonations"]; raw != "" {
-		json.Unmarshal([]byte(raw), &impersonations)
-	}
-
-	var homepageLabels map[string]map[string]string
-	if raw := m["homepage_labels"]; raw != "" {
-		json.Unmarshal([]byte(raw), &homepageLabels)
-	}
-
-	var homepageHeroBackgrounds []models.HomepageHeroBackground
-	if raw := m["homepage_hero_backgrounds"]; raw != "" {
-		json.Unmarshal([]byte(raw), &homepageHeroBackgrounds)
-	}
-
-	return models.WeddingSettings{
-		Spouse1Name:              m["spouse1_name"],
-		Spouse2Name:              m["spouse2_name"],
-		CeremonyAddress:          m["ceremony_address"],
-		CeremonyLocation:         m["ceremony_location"],
-		CeremonyCity:             m["ceremony_city"],
-		CeremonyMediaID:          parseMediaID(m["ceremony_media_id"]),
-		CeremonyDatetime:         m["ceremony_datetime"],
-		CeremonyLat:              parseCoord(m["ceremony_lat"]),
-		CeremonyLng:              parseCoord(m["ceremony_lng"]),
-		ReceptionAddress:         m["reception_address"],
-		ReceptionLocation:        m["reception_location"],
-		ReceptionCity:            m["reception_city"],
-		ReceptionDatetime:        m["reception_datetime"],
-		ReceptionMediaID:         parseMediaID(m["reception_media_id"]),
-		ReceptionLat:             parseCoord(m["reception_lat"]),
-		ReceptionLng:             parseCoord(m["reception_lng"]),
-		BankAccountIBAN:          m["bank_account_iban"],
-		BankAccountHolder:        m["bank_account_holder"],
-		SpotifyPlaylist:          playlist,
-		Places:                   places,
-		HoneymoonLocations:       honeymoonLocations,
-		ParkingSpots:             parkingSpots,
-		AccommodationSuggestions: accommodationSuggestions,
-		Impersonations:           impersonations,
-		HomepageLabels:           homepageLabels,
-		HomepageHeroBackgrounds:  homepageHeroBackgrounds,
-		SharePreviewMediaID:      parseMediaID(m["share_preview_media_id"]),
-	}, nil
+	settings.CeremonyMediaID = idOrZero(ceremonyMediaID)
+	settings.ReceptionMediaID = idOrZero(receptionMediaID)
+	settings.SharePreviewMediaID = idOrZero(sharePreviewMediaID)
+	return settings, nil
 }
 
-func UpdateSetting(q Querier, key, value string) error {
-	_, err := q.Exec(`UPDATE settings SET value = ? WHERE key = ?`, value, key)
+func UpdateSettings(q Querier, settings models.Settings) error {
+	_, err := q.Exec(
+		`UPDATE settings SET
+			groom_name = ?, bride_name = ?,
+			ceremony_datetime = ?, ceremony_address = ?, ceremony_location = ?, ceremony_city = ?,
+			ceremony_lat = ?, ceremony_lng = ?, ceremony_media_id = ?,
+			reception_datetime = ?, reception_address = ?, reception_location = ?, reception_city = ?,
+			reception_lat = ?, reception_lng = ?, reception_media_id = ?,
+			bank_account_iban = ?, bank_account_holder = ?, spotify_playlist = ?, share_preview_media_id = ?
+		WHERE id = 1`,
+		settings.GroomName, settings.BrideName,
+		settings.CeremonyDatetime, settings.CeremonyAddress, settings.CeremonyLocation, settings.CeremonyCity,
+		settings.CeremonyLat, settings.CeremonyLng, nullableID(settings.CeremonyMediaID),
+		settings.ReceptionDatetime, settings.ReceptionAddress, settings.ReceptionLocation, settings.ReceptionCity,
+		settings.ReceptionLat, settings.ReceptionLng, nullableID(settings.ReceptionMediaID),
+		settings.BankAccountIBAN, settings.BankAccountHolder,
+		settings.SpotifyPlaylist, nullableID(settings.SharePreviewMediaID),
+	)
 	return err
 }
