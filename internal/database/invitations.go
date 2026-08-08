@@ -173,7 +173,7 @@ func DeleteInvitation(id int) error {
 }
 
 func MarkInvitationViewed(id int) error {
-	_, err := DB.Exec(`UPDATE invitations SET viewed_at = CURRENT_TIMESTAMP WHERE id = ? AND viewed_at IS NULL`, id)
+	_, err := DB.Exec(`UPDATE invitations SET viewed_at = unixepoch() WHERE id = ? AND viewed_at IS NULL`, id)
 	return err
 }
 
@@ -184,7 +184,7 @@ func ResetInvitationViewed(id int) error {
 
 func SetGuestRSVP(id int, ceremony, reception *bool) error {
 	_, err := DB.Exec(
-		`UPDATE guests SET confirmed_ceremony = ?, confirmed_reception = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+		`UPDATE guests SET confirmed_ceremony = ?, confirmed_reception = ?, updated_at = unixepoch() WHERE id = ?`,
 		boolToNullableInt(ceremony), boolToNullableInt(reception), id,
 	)
 	return err

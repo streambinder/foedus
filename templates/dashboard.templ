@@ -1073,7 +1073,7 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, pagedGif
 									</td>
 									<td data-label={ t("th.viewed") }>
 										if inv.ViewedAt != nil {
-											{ i18n.FormatDate(*inv.ViewedAt, lang) }
+											{ i18n.FormatDate(inv.ViewedAt.Time, lang) }
 											<form method="POST" action={ templ.SafeURL("/dashboard/invitations/" + strconv.Itoa(inv.ID) + "/viewed/reset") } class="inline-reset-form">
 												<input type="hidden" name="_csrf" value={ csrfToken }/>
 												<button type="submit" class="reset-viewed-btn outline secondary" aria-label={ t("btn.reset_viewed") } title={ t("btn.reset_viewed") }>&times;</button>
@@ -1082,7 +1082,7 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, pagedGif
 											—
 										}
 									</td>
-									<td data-label={ t("th.created") }>{ i18n.FormatDate(inv.CreatedAt, lang) }</td>
+									<td data-label={ t("th.created") }>{ i18n.FormatDate(inv.CreatedAt.Time, lang) }</td>
 									<td data-label={ t("th.actions") }>
 										<div class="actions">
 											<a href={ templ.SafeURL("/dashboard/invitations/" + strconv.Itoa(inv.ID) + "/edit") }>{ t("btn.edit") }</a>
@@ -1311,7 +1311,7 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, pagedGif
 															{ t("status.pending_confirmation") }
 														}
 													</td>
-													<td data-label={ t("th.date") }>{ i18n.FormatDate(g.CreatedAt, lang) }</td>
+													<td data-label={ t("th.date") }>{ i18n.FormatDate(g.CreatedAt.Time, lang) }</td>
 													<td data-label={ t("th.actions") }>
 														<div class="actions">
 															<a href={ templ.SafeURL("/dashboard/gifts/" + strconv.Itoa(g.ID) + "/edit") }>{ t("btn.edit") }</a>
@@ -1391,7 +1391,7 @@ templ Dashboard(settings models.WeddingSettings, guests []models.Guest, pagedGif
 											}
 										</td>
 									}
-									<td data-label={ t("th.date") }>{ i18n.FormatDate(event.CreatedAt, lang) }</td>
+									<td data-label={ t("th.date") }>{ i18n.FormatDate(event.CreatedAt.Time, lang) }</td>
 									<td data-label={ t("th.actions") }>
 										<form method="POST" action={ templ.SafeURL("/dashboard/soundtrack/" + strconv.Itoa(event.ID) + "/delete") } data-confirm={ t("confirm.delete_track") } onsubmit="return confirm(this.dataset.confirm)">
 											<input type="hidden" name="_csrf" value={ csrfToken }/>

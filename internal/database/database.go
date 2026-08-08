@@ -77,13 +77,20 @@ func dsnWithPragmas(dsn string) string {
 	return dsn + sep + sqlitePragmas
 }
 
+// Every table is STRICT: sqlite's default affinity silently coerces (a TEXT
+// value lands in an INTEGER column as text), STRICT rejects the mismatch at
+// write time. It permits only INT/INTEGER/REAL/TEXT/BLOB/ANY, so timestamps are
+// INTEGER unix seconds rather than the old DATETIME — which was never a real
+// type anyway, just NUMERIC affinity. models.Timestamp does the conversion
+// Go-side. Note DEFAULT (unixepoch()) in place of CURRENT_TIMESTAMP: the latter
+// writes a text literal.
 func migrate() {
 	start := time.Now()
 	statements := []string{
 		`CREATE TABLE IF NOT EXISTS settings (
 			key   TEXT PRIMARY KEY,
 			value TEXT NOT NULL DEFAULT ''
-		)`,
+		) STRICT`,
 		`CREATE TABLE IF NOT EXISTS guests (
 			id                  INTEGER PRIMARY KEY AUTOINCREMENT,
 			first_name          TEXT NOT NULL,
@@ -93,44 +100,44 @@ func migrate() {
 			confirmed_reception INTEGER,
 			invitation_id       INTEGER REFERENCES invitations(id),
 			invitation_guest_order INTEGER,
-			created_at          DATETIME DEFAULT CURRENT_TIMESTAMP,
-			updated_at          DATETIME DEFAULT CURRENT_TIMESTAMP
-		)`,
+			created_at          INTEGER NOT NULL DEFAULT (unixepoch()),
+			updated_at          INTEGER NOT NULL DEFAULT (unixepoch())
+		) STRICT`,
 		`CREATE TABLE IF NOT EXISTS gifts (
 			id               INTEGER PRIMARY KEY AUTOINCREMENT,
 			amount           INTEGER NOT NULL,
 			donor            TEXT NOT NULL DEFAULT '',
 			registry_item_id INTEGER REFERENCES registry_items(id),
 			confirmed        INTEGER NOT NULL DEFAULT 0,
-			created_at       DATETIME DEFAULT CURRENT_TIMESTAMP
-		)`,
+			created_at       INTEGER NOT NULL DEFAULT (unixepoch())
+		) STRICT`,
 		`CREATE TABLE IF NOT EXISTS media (
 			id         INTEGER PRIMARY KEY AUTOINCREMENT,
 			mime       TEXT NOT NULL,
 			bytes      BLOB NOT NULL,
-			created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-		)`,
+			created_at INTEGER NOT NULL DEFAULT (unixepoch())
+		) STRICT`,
 		`CREATE TABLE IF NOT EXISTS registry_items (
 			id         INTEGER PRIMARY KEY AUTOINCREMENT,
 			name       TEXT NOT NULL,
 			price      INTEGER NOT NULL,
 			media_id   INTEGER REFERENCES media(id),
 			sort_order INTEGER NOT NULL DEFAULT 0,
-			created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-		)`,
+			created_at INTEGER NOT NULL DEFAULT (unixepoch())
+		) STRICT`,
 		`CREATE TABLE IF NOT EXISTS invitations (
 			id         INTEGER PRIMARY KEY AUTOINCREMENT,
 			code       TEXT NOT NULL UNIQUE,
 			label      TEXT NOT NULL DEFAULT '',
-			viewed_at  DATETIME,
-			created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-		)`,
+			viewed_at  INTEGER,
+			created_at INTEGER NOT NULL DEFAULT (unixepoch())
+		) STRICT`,
 		`CREATE TABLE IF NOT EXISTS polls (
 			id          INTEGER PRIMARY KEY AUTOINCREMENT,
 			question    TEXT NOT NULL,
 			description TEXT NOT NULL DEFAULT '',
-			created_at  DATETIME DEFAULT CURRENT_TIMESTAMP
-		)`,
+			created_at  INTEGER NOT NULL DEFAULT (unixepoch())
+		) STRICT`,
 		`CREATE TABLE IF NOT EXISTS poll_answers (
 			id       INTEGER PRIMARY KEY AUTOINCREMENT,
 			poll_id  INTEGER NOT NULL REFERENCES polls(id),
@@ -138,15 +145,15 @@ func migrate() {
 			answer   INTEGER NOT NULL DEFAULT 0,
 			notes    TEXT NOT NULL DEFAULT '',
 			UNIQUE(poll_id, guest_id)
-		)`,
+		) STRICT`,
 		`CREATE TABLE IF NOT EXISTS soundtrack_events (
 			id         INTEGER PRIMARY KEY AUTOINCREMENT,
 			title      TEXT NOT NULL DEFAULT '',
 			artist     TEXT NOT NULL DEFAULT '',
 			url        TEXT NOT NULL DEFAULT '',
 			invite_id  TEXT NOT NULL DEFAULT '',
-			created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-		)`,
+			created_at INTEGER NOT NULL DEFAULT (unixepoch())
+		) STRICT`,
 	}
 	for index, s := range statements {
 		stmtStart := time.Now()

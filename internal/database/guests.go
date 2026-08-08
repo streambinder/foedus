@@ -43,7 +43,7 @@ func GetGuest(id int) (models.Guest, error) {
 
 func UpdateGuest(id int, firstName, lastName, guestType string) error {
 	_, err := DB.Exec(
-		`UPDATE guests SET first_name = ?, last_name = ?, type = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+		`UPDATE guests SET first_name = ?, last_name = ?, type = ?, updated_at = unixepoch() WHERE id = ?`,
 		firstName, lastName, guestType, id,
 	)
 	return err
@@ -79,7 +79,7 @@ func CycleConfirmed(id int, field string) error {
 		return fmt.Errorf("invalid field: %s", field)
 	}
 	_, err := DB.Exec(
-		fmt.Sprintf(`UPDATE guests SET %s = CASE WHEN %s IS NULL THEN 1 WHEN %s = 1 THEN 0 ELSE NULL END, updated_at = CURRENT_TIMESTAMP WHERE id = ?`, col, col, col),
+		fmt.Sprintf(`UPDATE guests SET %s = CASE WHEN %s IS NULL THEN 1 WHEN %s = 1 THEN 0 ELSE NULL END, updated_at = unixepoch() WHERE id = ?`, col, col, col),
 		id,
 	)
 	return err

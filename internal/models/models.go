@@ -1,7 +1,5 @@
 package models
 
-import "time"
-
 type Setting struct {
 	Key   string
 	Value string
@@ -84,8 +82,8 @@ type Guest struct {
 	InvitationID       *int
 	InvitationOrder    *int
 	PollAnswers        []PollAnswer
-	CreatedAt          time.Time
-	UpdatedAt          time.Time
+	CreatedAt          Timestamp
+	UpdatedAt          Timestamp
 }
 
 type Poll struct {
@@ -94,7 +92,7 @@ type Poll struct {
 	Description string
 	TotalCount  int         // computed at query time
 	YesVoters   []PollVoter // guests who answered yes
-	CreatedAt   time.Time
+	CreatedAt   Timestamp
 }
 
 type PollVoter struct {
@@ -112,8 +110,8 @@ type Invitation struct {
 	ID        int
 	Code      string
 	Label     string
-	ViewedAt  *time.Time
-	CreatedAt time.Time
+	ViewedAt  *Timestamp
+	CreatedAt Timestamp
 	Guests    []Guest
 }
 
@@ -123,7 +121,7 @@ type Gift struct {
 	Donor          string // who sent the gift
 	RegistryItemID *int   // fk to registry_items, nil for generic gifts
 	Confirmed      bool
-	CreatedAt      time.Time
+	CreatedAt      Timestamp
 }
 
 type RegistryItem struct {
@@ -132,7 +130,7 @@ type RegistryItem struct {
 	Price     int // whole currency units (e.g. euros), no cents
 	MediaID   int
 	SortOrder int
-	CreatedAt time.Time
+	CreatedAt Timestamp
 }
 
 type SoundtrackEvent struct {
@@ -141,5 +139,5 @@ type SoundtrackEvent struct {
 	Artist    string
 	URL       string
 	InviteID  string
-	CreatedAt time.Time
+	CreatedAt Timestamp
 }
