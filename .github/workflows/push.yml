@@ -77,7 +77,7 @@ jobs:
   docker:
     needs: [super-linter, changes]
     runs-on: ubuntu-24.04-arm
-    if: success() && github.event_name == 'push' && github.ref == 'refs/heads/master' && needs.changes.outputs.docker == 'true'
+    if: success() && needs.changes.outputs.docker == 'true'
     permissions:
       contents: read
       packages: write
