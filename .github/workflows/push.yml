@@ -99,7 +99,7 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository }}:latest
             ghcr.io/${{ github.repository }}:${{ github.sha }}
-          push: ${{ github.event_name != 'pull_request' }}
+          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
   notify:
     needs: [super-linter]
     if: success() && github.event_name == 'push' && github.ref == 'refs/heads/master'
