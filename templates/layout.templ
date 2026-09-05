@@ -1,6 +1,7 @@
 package templates
 
 import (
+	"os"
 	"strconv"
 	"strings"
 
@@ -35,6 +36,12 @@ func coordValue(coord float64) string {
 	return strconv.FormatFloat(coord, 'f', -1, 64)
 }
 
+// cartoAPIKey returns the publishable CARTO basemaps API key from the
+// CARTO_API_KEY environment variable, or "" when unset (tiles stay keyless).
+func cartoAPIKey() string {
+	return strings.TrimSpace(os.Getenv("CARTO_API_KEY"))
+}
+
 func publicImageURL(mediaID int) string {
 	if mediaID <= 0 {
 		return ""
@@ -66,6 +73,9 @@ templ Layout(title string, lang string, t i18n.T, ogMeta OGMeta, includeLeaflet 
 			<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-visual"/>
 			<title>{ title }</title>
 			<meta name="theme-color" content="#2A3439"/>
+			if cartoAPIKey() != "" {
+				<meta name="carto-api-key" content={ cartoAPIKey() }/>
+			}
 			<style>html,body{margin:0;background:#FCF8F3;color:#36454F;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}</style>
 			if ogMeta.Title != "" {
 				if ogMeta.Description != "" {

@@ -26,6 +26,14 @@
   const LEAFLET_JS_URL = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
   let leafletAssetsPromise = null;
 
+  function cartoTileURL(style) {
+    const key = document
+      .querySelector("meta[name='carto-api-key']")
+      ?.getAttribute("content");
+    const url = `https://{s}.basemaps.cartocdn.com/${style}/{z}/{x}/{y}{r}.png`;
+    return key ? `${url}?key=${encodeURIComponent(key)}` : url;
+  }
+
   let map = null;
   let entries = [];
 
@@ -66,25 +74,19 @@
         attributionControl: true,
       });
 
-      L.tileLayer(
-        "https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png",
-        {
-          attribution:
-            '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
-          subdomains: "abcd",
-          maxZoom: 19,
-        },
-      ).addTo(map);
+      L.tileLayer(cartoTileURL("light_nolabels"), {
+        attribution:
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
+        subdomains: "abcd",
+        maxZoom: 19,
+      }).addTo(map);
 
-      L.tileLayer(
-        "https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png",
-        {
-          attribution: "",
-          subdomains: "abcd",
-          maxZoom: 19,
-          pane: "overlayPane",
-        },
-      ).addTo(map);
+      L.tileLayer(cartoTileURL("light_only_labels"), {
+        attribution: "",
+        subdomains: "abcd",
+        maxZoom: 19,
+        pane: "overlayPane",
+      }).addTo(map);
 
       entries = buildEntries();
       map.on("move zoom resize", render);
