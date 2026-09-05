@@ -56,6 +56,7 @@ Fœdus reads its configuration from environment variables:
 | `SPOTIFY_CLIENT_ID`     | no       | —                                        | Enables the collaborative soundtrack                                                                                                                                   |
 | `SPOTIFY_CLIENT_SECRET` | no       | —                                        | Same as above                                                                                                                                                          |
 | `SPOTIFY_REFRESH_TOKEN` | no       | —                                        | Same as above                                                                                                                                                          |
+| `CARTO_API_KEY`         | no       | —                                        | Publishable CARTO basemaps API key, appended to map tile requests; without it tiles load keyless                                                                       |
 
 \* The app accepts either the unsuffixed `ADMIN_USER` / `ADMIN_PASSWORD` pair or any number of suffixed `ADMIN_USER1..9` / `ADMIN_PASSWORD1..9` pairs — at least one valid pair must be set, otherwise the process panics at startup rather than expose the dashboard with default credentials.
 
