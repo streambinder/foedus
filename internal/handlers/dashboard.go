@@ -493,7 +493,6 @@ func SaveSettings(c *fiber.Ctx) error {
 			BankAccountIBAN:   strings.TrimSpace(c.FormValue("bank_account_iban")),
 			BankAccountHolder: strings.TrimSpace(c.FormValue("bank_account_holder")),
 			SpotifyPlaylist:   strings.TrimSpace(c.FormValue("spotify_playlist")),
-			PlaylistReadOnly:  c.FormValue("playlist_readonly") == "on",
 		}
 
 		// the three single-image fields resolve inside the tx: each may insert new

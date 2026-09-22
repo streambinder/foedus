@@ -195,7 +195,6 @@ func migrate() {
 			bank_account_iban      TEXT NOT NULL DEFAULT '',
 			bank_account_holder    TEXT NOT NULL DEFAULT '',
 			spotify_playlist       TEXT NOT NULL DEFAULT '',
-			playlist_readonly      INTEGER NOT NULL DEFAULT 0,
 			share_preview_media_id INTEGER REFERENCES media(id)
 		) STRICT`,
 		`CREATE TABLE IF NOT EXISTS registry_items (

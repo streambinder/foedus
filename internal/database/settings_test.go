@@ -51,56 +51,6 @@ func TestSettingsRowIsSeededAndTyped(t *testing.T) {
 	}
 }
 
-// The playlist_readonly column was added after the settings table existed:
-// databases created before it must gain the column on boot, idempotently.
-func TestSettingsPlaylistReadOnlyRoundTrip(t *testing.T) {
-	newTestDB(t)
-
-	if err := UpdateSettings(DB, models.Settings{GroomName: "A", BrideName: "B", PlaylistReadOnly: true}); err != nil {
-		t.Fatal(err)
-	}
-	got, err := GetSettings()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !got.PlaylistReadOnly {
-		t.Error("playlist_readonly true not round-tripped")
-	}
-
-	if err := UpdateSettings(DB, models.Settings{GroomName: "A", BrideName: "B"}); err != nil {
-		t.Fatal(err)
-	}
-	got, err = GetSettings()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if got.PlaylistReadOnly {
-		t.Error("playlist_readonly false not round-tripped")
-	}
-}
-
-func TestSettingsPlaylistReadOnlyColumnMigrated(t *testing.T) {
-	newTestDB(t)
-
-	// simulate a database created before the column existed
-	if _, err := DB.Exec(`ALTER TABLE settings DROP COLUMN playlist_readonly`); err != nil {
-		t.Fatal(err)
-	}
-	seedSettings()
-	seedSettings() // second run must be a no-op
-
-	if err := UpdateSettings(DB, models.Settings{GroomName: "A", BrideName: "B", PlaylistReadOnly: true}); err != nil {
-		t.Fatalf("settings write failed after column migration: %v", err)
-	}
-	got, err := GetSettings()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !got.PlaylistReadOnly {
-		t.Error("playlist_readonly not readable after column migration")
-	}
-}
-
 // An absent media id must reach the column as NULL: 0 has no matching media row
 // and would trip the FK.
 func TestSettingsAbsentMediaIDIsNull(t *testing.T) {

@@ -29,7 +29,6 @@ type Settings struct {
 	BankAccountIBAN     string
 	BankAccountHolder   string
 	SpotifyPlaylist     string
-	PlaylistReadOnly    bool
 	SharePreviewMediaID int
 }
 

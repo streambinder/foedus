@@ -574,14 +574,6 @@ templ Dashboard(settings models.Settings, content SettingsContent, guests []mode
 									<label for="spotify-playlist">{ t("label.playlist_url") }</label>
 									<input id="spotify-playlist" type="text" name="spotify_playlist" value={ settings.SpotifyPlaylist } placeholder={ t("placeholder.playlist_url") }/>
 								</div>
-								<div class="playlist-readonly-field">
-									<label for="playlist-readonly">{ t("label.playlist_readonly") }</label>
-									if settings.PlaylistReadOnly {
-										<input id="playlist-readonly" type="checkbox" name="playlist_readonly" checked/>
-									} else {
-										<input id="playlist-readonly" type="checkbox" name="playlist_readonly"/>
-									}
-								</div>
 							</div>
 						</div>
 					</div>
