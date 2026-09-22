@@ -145,6 +145,10 @@ func ChatStream(c *fiber.Ctx) error {
 		logger.Error("chat request failed to load settings", "error", err.Error())
 		return c.SendStatus(fiber.StatusInternalServerError)
 	}
+	if settings.EventPassed() {
+		logger.Warn("chat request rejected", "reason", "event passed")
+		return c.Status(fiber.StatusForbidden).SendString("event passed")
+	}
 	impersonations, err := database.GetImpersonations()
 	if err != nil {
 		logger.Error("chat request failed to load impersonations", "error", err.Error())

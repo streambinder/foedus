@@ -81,6 +81,16 @@ func SoundtrackSearch(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{"error": "rate limited"})
 	}
 
+	settings, err := database.GetSettings()
+	if err != nil {
+		logger.Error("soundtrack search failed to load settings", "error", err.Error())
+		return c.SendStatus(fiber.StatusInternalServerError)
+	}
+	if settings.EventPassed() {
+		logger.Warn("soundtrack search rejected", "reason", "event passed")
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "event passed"})
+	}
+
 	query := c.Query("q")
 	if query == "" || len(query) > soundtrackMaxQueryLen {
 		logger.Warn("soundtrack search invalid query", "query_len", len(query))
@@ -130,6 +140,10 @@ func SoundtrackAdd(c *fiber.Ctx) error {
 	if err != nil {
 		logger.Error("soundtrack add failed to load settings", "error", err.Error())
 		return c.SendStatus(fiber.StatusInternalServerError)
+	}
+	if settings.EventPassed() {
+		logger.Warn("soundtrack add rejected", "reason", "event passed")
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "event passed"})
 	}
 
 	playlistID := spotifyPlaylistID(settings.SpotifyPlaylist)

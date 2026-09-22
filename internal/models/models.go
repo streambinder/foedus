@@ -1,5 +1,7 @@
 package models
 
+import "time"
+
 // place kinds — same entity, two roles on the homepage: story places render on
 // the timeline, honeymoon ones in their own section.
 const (
@@ -34,6 +36,24 @@ type Settings struct {
 
 func (s Settings) IsConfigured() bool {
 	return s.GroomName != "" && s.BrideName != ""
+}
+
+// EventPassed reports whether the wedding date is more than one month in the
+// past. Past that point the public site turns read-only: no playlist
+// contributions, no gifts, no chat, no RSVP changes.
+func (s Settings) EventPassed() bool {
+	return eventPassedAt(s.CeremonyDatetime, time.Now())
+}
+
+func eventPassedAt(datetimeStr string, now time.Time) bool {
+	t, err := time.Parse("2006-01-02T15:04", datetimeStr)
+	if err != nil {
+		t, err = time.Parse("2006-01-02", datetimeStr)
+		if err != nil {
+			return false
+		}
+	}
+	return now.After(t.AddDate(0, 1, 0))
 }
 
 type Place struct {
