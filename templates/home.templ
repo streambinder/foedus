@@ -374,10 +374,12 @@ templ Home(settings models.Settings, content HomeContent, registryItems []models
 				<div class="soundtrack-header">
 					<div class="section-heading soundtrack-heading">
 						<h2 class="section-title">{ t("home.soundtrack") }</h2>
-						if t("home.soundtrack_description") != "" {
+						if settings.PlaylistReadOnly {
+							<p class="section-subtitle">{ t("home.soundtrack_readonly_description") }</p>
+						} else if t("home.soundtrack_description") != "" {
 							<p class="section-subtitle">{ t("home.soundtrack_description") }</p>
 						}
-						if soundtrackEnabled {
+						if soundtrackEnabled && !settings.PlaylistReadOnly {
 							if inviteUpdateURL != "" {
 								<div
 									class="soundtrack-search"
