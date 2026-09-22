@@ -22,6 +22,10 @@ func ClaimGift(c *fiber.Ctx) error {
 		logger.Error("gift claim failed to load settings", "error", err.Error())
 		return c.Status(500).JSON(fiber.Map{"error": "internal error"})
 	}
+	if settings.EventPassed() {
+		logger.Warn("gift claim rejected", "reason", "event passed")
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "event passed"})
+	}
 	if !settings.IsConfigured() {
 		logger.Warn("gift claim rejected", "reason", "site not configured")
 		return c.Status(503).JSON(fiber.Map{"error": "not configured"})

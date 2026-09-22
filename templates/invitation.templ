@@ -147,7 +147,14 @@ templ Invitation(inv models.Invitation, settings models.Settings, polls []models
 					}
 					<article class="rsvp-card">
 						<h2>{ t("invitation.rsvp") }</h2>
-						if InvitationAnswered(inv) {
+						if settings.EventPassed() {
+							<div id="rsvp-locked">
+								<p class="rsvp-subtitle rsvp-answered-notice">{ t("invitation.event_passed") }</p>
+								<div class="rsvp-locked-actions">
+									<a href={ templ.SafeURL("/?invite=" + inv.Code) } class="secondary outline rsvp-action-btn"><span class="rsvp-btn-icon rsvp-btn-icon-home" aria-hidden="true"></span>{ t("invitation.go_home") }</a>
+								</div>
+							</div>
+						} else if InvitationAnswered(inv) {
 							<div id="rsvp-locked">
 								<p class="rsvp-subtitle rsvp-answered-notice">{ t("invitation.already_answered") }</p>
 								<div class="rsvp-locked-actions">
@@ -158,6 +165,7 @@ templ Invitation(inv models.Invitation, settings models.Settings, polls []models
 						} else {
 							<p class="rsvp-subtitle">{ t("invitation.rsvp_description") }</p>
 						}
+						if !settings.EventPassed() {
 						<form method="POST" action={ templ.SafeURL("/" + inv.Code + "/rsvp") } id="rsvp-form" class={ templ.KV("rsvp-form-locked", InvitationAnswered(inv)) } inert?={ InvitationAnswered(inv) }>
 							for i, g := range inv.Guests {
 								<div class="rsvp-guest">
@@ -275,6 +283,7 @@ templ Invitation(inv models.Invitation, settings models.Settings, polls []models
 							}
 							<button type="submit" id="rsvp-submit-btn">{ t("invitation.confirm") }</button>
 						</form>
+						}
 					</article>
 					<div class="invitation-replay">
 						<button type="button" id="replay-invitation-animation" class="secondary outline">{ t("invitation.close_envelope") }</button>

@@ -43,7 +43,7 @@ func ViewInvitation(c *fiber.Ctx) error {
 	}
 
 	noRedirect := c.Query("no_redirect") == "1"
-	if templates.InvitationAnswered(inv) && !noRedirect {
+	if templates.InvitationAnswered(inv) && !noRedirect && !settings.EventPassed() {
 		logger.Info("invitation view redirected to homepage", "invitation_code", observability.Redact(code), "guest_count", len(inv.Guests))
 		return c.Redirect("/?invite=" + inv.Code)
 	}
@@ -108,6 +108,16 @@ func UpdateInvitationRSVP(c *fiber.Ctx) error {
 	if err != nil {
 		logger.Error("invitation rsvp failed to load invitation", "invitation_code", observability.Redact(code), "error", err.Error())
 		return c.Status(500).SendString("failed to load invitation")
+	}
+
+	settings, err := database.GetSettings()
+	if err != nil {
+		logger.Error("invitation rsvp failed to load settings", "invitation_code", observability.Redact(code), "error", err.Error())
+		return c.Status(500).SendString("failed to load settings")
+	}
+	if settings.EventPassed() {
+		logger.Warn("invitation rsvp rejected", "reason", "event passed", "invitation_code", observability.Redact(code))
+		return c.Status(403).SendString("event has passed")
 	}
 
 	polls, err := database.GetAllPolls()
