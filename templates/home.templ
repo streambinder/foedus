@@ -1123,6 +1123,9 @@ templ Home(settings models.Settings, content HomeContent, registryItems []models
 							donor: document.getElementById("modal-donor").value,
 						};
 						if (currentItemId !== null) body.registry_item_id = currentItemId;
+						var claimInviteCode =
+							new URLSearchParams(window.location.search).get("invite") || "";
+						if (claimInviteCode) body.invite_code = claimInviteCode;
 						fetch("/gift/claim", {
 							method: "POST",
 							headers: {
