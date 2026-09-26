@@ -1,0 +1,1627 @@
+package templates
+
+import (
+	"fmt"
+	"github.com/streambinder/foedus/internal/i18n"
+	"github.com/streambinder/foedus/internal/models"
+	"net/url"
+	"strconv"
+	"strings"
+)
+
+// helper to build the combined "name, address" display value for autocomplete fields
+func locationDisplay(name, address string) string {
+	if name != "" && address != "" {
+		return name + ", " + address
+	}
+	if name != "" {
+		return name
+	}
+	return address
+}
+
+// google maps search url for a venue
+func mapsURL(name, address string) string {
+	return "https://www.google.com/maps/search/?api=1&query=" + url.QueryEscape(locationDisplay(name, address))
+}
+
+// helper to build pagination URL preserving search query
+func paginationURL(page int, search string) string {
+	if search == "" {
+		return "/dashboard?page=" + strconv.Itoa(page)
+	}
+	return "/dashboard?page=" + strconv.Itoa(page) + "&q=" + search
+}
+
+// tablePaginationURL builds a /dashboard URL setting just one page param,
+// e.g. "rpage" for registry. Other params (q, iq, page, ipage, gpage, etc.)
+// would be lost unless preserved — but since these tables live in collapsed
+// accordions and clicking navigates server-side, only the target param matters
+// for the next render. JS fragment scroll keeps the user where they were.
+func tablePaginationURL(param string, page int) string {
+	return "/dashboard?" + param + "=" + strconv.Itoa(page)
+}
+
+// helper to build invitation pagination URL preserving guest page/search
+func invitePaginationURL(invitePage, guestPage int, search, inviteSearch string) string {
+	parts := []string{"ipage=" + strconv.Itoa(invitePage)}
+	if guestPage > 1 {
+		parts = append(parts, "page="+strconv.Itoa(guestPage))
+	}
+	if search != "" {
+		parts = append(parts, "q="+url.QueryEscape(search))
+	}
+	if inviteSearch != "" {
+		parts = append(parts, "iq="+url.QueryEscape(inviteSearch))
+	}
+	return "/dashboard?" + strings.Join(parts, "&")
+}
+
+func formatGiftAmount(amount int) string {
+	return fmt.Sprintf("%d €", amount)
+}
+
+func formatPrice(price int) string {
+	return fmt.Sprintf("%d €", price)
+}
+
+// find registry item name by id
+func registryItemName(items []models.RegistryItem, id *int) string {
+	if id == nil {
+		return ""
+	}
+	for _, item := range items {
+		if item.ID == *id {
+			return item.Name
+		}
+	}
+	return ""
+}
+
+// find invitation code for a guest by their invitation_id
+func guestInvitationCode(invitations []models.Invitation, invitationID *int) string {
+	if invitationID == nil {
+		return ""
+	}
+	for _, inv := range invitations {
+		if inv.ID == *invitationID {
+			return inv.Code
+		}
+	}
+	return ""
+}
+
+// join guest names in an invitation
+func invitationGuestNames(inv models.Invitation) string {
+	var names []string
+	for _, g := range inv.Guests {
+		names = append(names, g.FirstName+" "+g.LastName)
+	}
+	return strings.Join(names, ", ")
+}
+
+// dashboard column display: prefer custom label, fall back to default composition
+func invitationDisplayLabel(inv models.Invitation) string {
+	if label := strings.TrimSpace(inv.Label); label != "" {
+		return label
+	}
+	return defaultInvitationLabel(inv.Guests)
+}
+
+func defaultInvitationLabel(guests []models.Guest) string {
+	switch len(guests) {
+	case 0:
+		return ""
+	case 1:
+		return guests[0].FirstName
+	case 2:
+		return guests[0].FirstName + " & " + guests[1].FirstName
+	default:
+		return fmt.Sprintf("%s + %d", guests[0].FirstName, len(guests)-1)
+	}
+}
+
+func soundtrackHasInviteIDs(events []models.SoundtrackEvent) bool {
+	for _, event := range events {
+		if strings.TrimSpace(event.InviteID) != "" {
+			return true
+		}
+	}
+	return false
+}
+
+func soundtrackInviteGuestFirstNames(invitations []models.Invitation, inviteID string) string {
+	inviteID = strings.TrimSpace(inviteID)
+	if inviteID == "" {
+		return ""
+	}
+	for _, inv := range invitations {
+		if inv.Code != inviteID {
+			continue
+		}
+		var names []string
+		for _, guest := range inv.Guests {
+			firstName := strings.TrimSpace(guest.FirstName)
+			if firstName != "" {
+				names = append(names, firstName)
+			}
+		}
+		return strings.Join(names, ", ")
+	}
+	return ""
+}
+
+func invitationActioned(inv models.Invitation) bool {
+	for _, g := range inv.Guests {
+		if g.ConfirmedCeremony != nil || g.ConfirmedReception != nil {
+			return true
+		}
+	}
+	return false
+}
+
+func registryItemSelected(selectedID *int, itemID int) bool {
+	return selectedID != nil && *selectedID == itemID
+}
+
+func mediaIDValue(id int) string {
+	if id <= 0 {
+		return ""
+	}
+	return strconv.Itoa(id)
+}
+
+// donut chart inputs: each slice is (count, css-class, legend-label)
+type DonutSlice struct {
+	Value     int
+	ClassName string
+	Label     string
+	Category  string // optional: when set, the legend value becomes a clickable button that opens the counter-names modal
+}
+
+// fixed donut geometry shared by all charts. pathLength=100 lets us treat
+// stroke-dasharray as percent regardless of actual circumference.
+const donutRadius = 16
+
+// donutDashArray returns the SVG stroke-dasharray for a slice of `value/total`
+// of the circle, expressed in the normalized 0..100 space.
+func donutDashArray(value, total int) string {
+	if total <= 0 || value <= 0 {
+		return "0 100"
+	}
+	pct := float64(value) * 100 / float64(total)
+	return fmt.Sprintf("%.4f %.4f", pct, 100-pct)
+}
+
+// donutDashOffset returns the offset that places this slice after the
+// preceding ones. SVG circles draw clockwise from the 3 o'clock position;
+// we rotate the <svg> -90deg in CSS so 0 starts at 12 o'clock.
+func donutDashOffset(precedingTotal, total int) string {
+	if total <= 0 {
+		return "0"
+	}
+	// negative offset shifts the dash forward
+	return fmt.Sprintf("%.4f", -float64(precedingTotal)*100/float64(total))
+}
+
+templ Donut(title string, primaryValue, primaryTotal int, slices []DonutSlice) {
+	<div class="counter-card donut-card">
+		<span class="counter-label">{ title }</span>
+		<div class="donut-wrap">
+			<svg class="donut-svg" viewBox="0 0 36 36" role="img" aria-label={ title }>
+				<circle class="donut-track" cx="18" cy="18" r={ strconv.Itoa(donutRadius) } pathLength="100"></circle>
+				{{ runningTotal := 0 }}
+				for _, slice := range slices {
+					if slice.Value > 0 {
+						<circle
+							class={ "donut-slice", slice.ClassName }
+							cx="18"
+							cy="18"
+							r={ strconv.Itoa(donutRadius) }
+							pathLength="100"
+							stroke-dasharray={ donutDashArray(slice.Value, primaryTotal) }
+							stroke-dashoffset={ donutDashOffset(runningTotal, primaryTotal) }
+						>
+							<title>{ fmt.Sprintf("%s: %d", slice.Label, slice.Value) }</title>
+						</circle>
+						{{ runningTotal += slice.Value }}
+					}
+				}
+			</svg>
+			<div class="donut-center">
+				<span class="counter-value">{ strconv.Itoa(primaryValue) }<small>/{ strconv.Itoa(primaryTotal) }</small></span>
+			</div>
+		</div>
+		<ul class="donut-legend">
+			for _, slice := range slices {
+				<li>
+					<span class={ "donut-swatch", slice.ClassName }></span>
+					<span class="donut-legend-label">{ slice.Label }</span>
+					if slice.Category != "" && slice.Value > 0 {
+						<a href="#" class="donut-legend-value counter-names-trigger" role="button" data-counter-category={ slice.Category } data-counter-label={ slice.Label }>{ strconv.Itoa(slice.Value) }</a>
+					} else {
+						<span class="donut-legend-value">{ strconv.Itoa(slice.Value) }</span>
+					}
+				</li>
+			}
+		</ul>
+	</div>
+}
+
+templ Dashboard(settings models.Settings, content SettingsContent, guests []models.Guest, pagedGifts []models.Gift, giftsPage int, giftsTotalPages int, giftsCount int, giftsTotal int, pagedRegistry []models.RegistryItem, registryPage int, registryTotalPages int, registryItems []models.RegistryItem, invitations []models.Invitation, pagedInvitations []models.Invitation, invitePage int, inviteTotalPages int, inviteSearch string, polls []models.Poll, pagedSoundtrack []models.SoundtrackEvent, soundtrackPage int, soundtrackTotalPages int, confirmedReception int, refusedReception int, pendingRSVP int, invitedGuests int, nonVisualizedInvited int, total int, confirmedAdults int, confirmedChildren int, confirmedInfants int, confirmedVendors int, page int, totalPages int, search string, csrfToken string, flash string, t i18n.T, lang string) {
+	@DashboardLayout(pageTitle(t("title.dashboard"), settings.GroomName, settings.BrideName), lang) {
+		<div id="dashboard-flash">
+			if flash != "" {
+				<div class="flash-success">{ flash }</div>
+			}
+		</div>
+		<!-- counters -->
+		<div id="dashboard-counters" class="counters-row">
+			@Donut(t("counter.rsvp"), confirmedReception, confirmedReception+refusedReception+pendingRSVP, []DonutSlice{
+				{Value: confirmedReception, ClassName: "donut-confirmed", Label: t("counter.confirmed"), Category: "confirmed_reception"},
+				{Value: refusedReception, ClassName: "donut-refused", Label: t("counter.refused"), Category: "refused_reception"},
+				{Value: pendingRSVP, ClassName: "donut-pending", Label: t("counter.pending_rsvp"), Category: "pending_rsvp"},
+			})
+			@Donut(t("counter.confirmed_by_type"), confirmedAdults+confirmedChildren+confirmedVendors, confirmedAdults+confirmedChildren+confirmedInfants+confirmedVendors, []DonutSlice{
+				{Value: confirmedAdults, ClassName: "donut-type-adult", Label: t("guest_type.adult"), Category: "confirmed_reception_adult"},
+				{Value: confirmedChildren, ClassName: "donut-type-child", Label: t("guest_type.child"), Category: "confirmed_reception_child"},
+				{Value: confirmedInfants, ClassName: "donut-type-infant", Label: t("guest_type.infant"), Category: "confirmed_reception_infant"},
+				{Value: confirmedVendors, ClassName: "donut-type-vendor", Label: t("guest_type.vendor"), Category: "confirmed_reception_vendor"},
+			})
+			@Donut(t("counter.visualization"), invitedGuests-nonVisualizedInvited, invitedGuests, []DonutSlice{
+				{Value: invitedGuests - nonVisualizedInvited, ClassName: "donut-viewed", Label: t("counter.viewed"), Category: "viewed"},
+				{Value: nonVisualizedInvited, ClassName: "donut-nonvisualized", Label: t("counter.nonvisualized"), Category: "nonvisualized"},
+			})
+			@Donut(t("counter.reach"), invitedGuests, total, []DonutSlice{
+				{Value: invitedGuests, ClassName: "donut-invited", Label: t("counter.invited"), Category: "invited"},
+				{Value: total - invitedGuests, ClassName: "donut-uninvited", Label: t("counter.uninvited"), Category: "uninvited"},
+			})
+		</div>
+		<!-- details -->
+		<article id="dashboard-settings">
+			<h2>{ t("dashboard.details") }</h2>
+			<form class="dashboard-settings-form" method="POST" action="/dashboard/settings">
+				<input type="hidden" name="_csrf" value={ csrfToken }/>
+				<label>{ t("label.spouses") }</label>
+				<div class="grid">
+					<input type="text" name="groom_name" value={ settings.GroomName } placeholder={ t("placeholder.name") }/>
+					<input type="text" name="bride_name" value={ settings.BrideName } placeholder={ t("placeholder.name") }/>
+				</div>
+				<label>{ t("label.ceremony") }</label>
+				<div class="grid">
+					<div style="position:relative">
+						<input type="text" id="ceremony-input" value={ locationDisplay(settings.CeremonyAddress, settings.CeremonyLocation) } autocomplete="off" placeholder={ t("placeholder.ceremony_address") }/>
+						<div id="ceremony-dropdown" class="autocomplete-dropdown"></div>
+						<input type="hidden" name="ceremony_address" id="ceremony-address-hidden" value={ settings.CeremonyAddress }/>
+						<input type="hidden" name="ceremony_location" id="ceremony-location-hidden" value={ settings.CeremonyLocation }/>
+						<input type="hidden" name="ceremony_city" id="ceremony-city-hidden" value={ settings.CeremonyCity }/>
+						<input type="hidden" name="ceremony_lat" id="ceremony-lat-hidden" value={ coordValue(settings.CeremonyLat) }/>
+						<input type="hidden" name="ceremony_lng" id="ceremony-lng-hidden" value={ coordValue(settings.CeremonyLng) }/>
+					</div>
+					<input type="datetime-local" name="ceremony_datetime" value={ settings.CeremonyDatetime }/>
+				</div>
+				<div class="venue-image-row">
+					<input type="file" id="ceremony-file" accept="image/*" class="venue-file-input"/>
+					<input type="hidden" name="ceremony_image" id="ceremony-image-data"/>
+					<input type="hidden" name="ceremony_media_id" id="ceremony-media-id" value={ mediaIDValue(settings.CeremonyMediaID) }/>
+					if settings.CeremonyMediaID > 0 {
+						<img class="venue-image-preview" id="ceremony-preview" src={ publicImageURL(settings.CeremonyMediaID) } loading="lazy" decoding="async" alt="ceremony"/>
+					} else {
+						<img class="venue-image-preview" id="ceremony-preview" style="display:none" alt="ceremony"/>
+					}
+				</div>
+				<label>{ t("label.reception") }</label>
+				<div class="grid">
+					<div style="position:relative">
+						<input type="text" id="reception-input" value={ locationDisplay(settings.ReceptionAddress, settings.ReceptionLocation) } autocomplete="off" placeholder={ t("placeholder.reception_address") }/>
+						<div id="reception-dropdown" class="autocomplete-dropdown"></div>
+						<input type="hidden" name="reception_address" id="reception-address-hidden" value={ settings.ReceptionAddress }/>
+						<input type="hidden" name="reception_location" id="reception-location-hidden" value={ settings.ReceptionLocation }/>
+						<input type="hidden" name="reception_city" id="reception-city-hidden" value={ settings.ReceptionCity }/>
+						<input type="hidden" name="reception_lat" id="reception-lat-hidden" value={ coordValue(settings.ReceptionLat) }/>
+						<input type="hidden" name="reception_lng" id="reception-lng-hidden" value={ coordValue(settings.ReceptionLng) }/>
+					</div>
+					<input type="datetime-local" name="reception_datetime" value={ settings.ReceptionDatetime }/>
+				</div>
+				<div class="venue-image-row">
+					<input type="file" id="reception-file" accept="image/*" class="venue-file-input"/>
+					<input type="hidden" name="reception_image" id="reception-image-data"/>
+					<input type="hidden" name="reception_media_id" id="reception-media-id" value={ mediaIDValue(settings.ReceptionMediaID) }/>
+					if settings.ReceptionMediaID > 0 {
+						<img class="venue-image-preview" id="reception-preview" src={ publicImageURL(settings.ReceptionMediaID) } loading="lazy" decoding="async" alt="reception"/>
+					} else {
+						<img class="venue-image-preview" id="reception-preview" style="display:none" alt="reception"/>
+					}
+				</div>
+				<label>{ t("label.bank") }</label>
+				<div class="grid">
+					<input type="text" name="bank_account_iban" value={ settings.BankAccountIBAN } placeholder={ t("placeholder.bank_account_iban") }/>
+					<input type="text" name="bank_account_holder" value={ settings.BankAccountHolder } placeholder={ t("placeholder.bank_account_holder") }/>
+				</div>
+				<!-- share preview image (og:image) -->
+				<label>Share Preview Image</label>
+				<p class="muted" style="margin-top:-0.5rem;margin-bottom:0.75rem">Image shown when sharing the website link on WhatsApp and social media. Defaults to the built-in share preview graphic.</p>
+				<div class="venue-image-row">
+					<input type="file" id="share-preview-file" accept="image/*" class="venue-file-input"/>
+					<input type="hidden" name="share_preview_image" id="share-preview-image-data"/>
+					<input type="hidden" name="share_preview_media_id" id="share-preview-media-id" value={ mediaIDValue(settings.SharePreviewMediaID) }/>
+					if settings.SharePreviewMediaID > 0 {
+						<img class="venue-image-preview" id="share-preview-preview" src={ publicImageURL(settings.SharePreviewMediaID) } loading="lazy" decoding="async" alt="share preview"/>
+						<button type="button" id="share-preview-remove" class="outline secondary" style="margin-top:0.5rem">Remove</button>
+					} else {
+						<img class="venue-image-preview" id="share-preview-preview" style="display:none" alt="share preview"/>
+						<button type="button" id="share-preview-remove" class="outline secondary" style="margin-top:0.5rem;display:none">Remove</button>
+					}
+				</div>
+				<div class="accordion dashboard-accordion hero-gallery-accordion">
+					<div class="accordion-item settings-section">
+						<h2 class="accordion-header" id="settings-homepage-backgrounds-heading">
+							<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#settings-homepage-backgrounds-panel" aria-expanded="false" aria-controls="settings-homepage-backgrounds-panel">
+								<span class="settings-section-title">Homepage Landing Backgrounds</span>
+								<span class="settings-section-description">Upload image pairs for the landing section. One set is picked at random on each homepage load.</span>
+							</button>
+						</h2>
+						<div id="settings-homepage-backgrounds-panel" class="accordion-collapse collapse" data-dashboard-key="settings-homepage-backgrounds" aria-labelledby="settings-homepage-backgrounds-heading">
+							<div class="accordion-body settings-section-body">
+								<p class="muted">Use one horizontal image for desktop and one vertical image for mobile for the same photo or moment. If only one side is uploaded, it falls back to the available image.</p>
+								<input type="hidden" name="homepage_hero_background_count" id="homepage-hero-background-count" value={ strconv.Itoa(len(content.HeroBackgrounds)) }/>
+								<div id="homepage-hero-backgrounds-container">
+									if len(content.HeroBackgrounds) > 0 {
+										for idx, bg := range content.HeroBackgrounds {
+											<div class="hero-background-card">
+												<div class="hero-background-card-header">
+													<span class="hero-background-number">{ strconv.Itoa(idx + 1) }</span>
+													<button type="button" class="hero-background-remove outline secondary" aria-label={ t("btn.delete") } onclick="return window.removeHomepageHeroBackground ? window.removeHomepageHeroBackground(this) : false">&times;</button>
+												</div>
+												<div class="grid hero-background-grid">
+													<div>
+														<label>Desktop / horizontal</label>
+														<div class="managed-image-field">
+															<input
+																type="file"
+																accept="image/*"
+																class="managed-image-file"
+																data-target-input={ "homepage-hero-background-desktop-data-" + strconv.Itoa(idx) }
+																data-preview-target={ "homepage-hero-background-desktop-preview-" + strconv.Itoa(idx) }
+																data-media-id-input={ "homepage-hero-background-desktop-media-id-" + strconv.Itoa(idx) }
+																data-format="image/jpeg"
+																data-quality="0.78"
+																data-max-width="1600"
+																data-max-height="900"
+																data-max-bytes="262144"
+															/>
+															<input type="hidden" name={ fmt.Sprintf("homepage_hero_background_desktop_%d", idx) } id={ "homepage-hero-background-desktop-data-" + strconv.Itoa(idx) } class="hero-background-image-hidden"/>
+															<input type="hidden" name={ fmt.Sprintf("homepage_hero_background_desktop_media_id_%d", idx) } id={ "homepage-hero-background-desktop-media-id-" + strconv.Itoa(idx) } class="hero-background-media-id-hidden" value={ mediaIDValue(bg.DesktopMediaID) }/>
+															if bg.DesktopMediaID > 0 {
+																<img class="hero-background-preview dashboard-lazy-image" id={ "homepage-hero-background-desktop-preview-" + strconv.Itoa(idx) } data-src={ publicImageURL(bg.DesktopMediaID) } loading="lazy" decoding="async" alt="desktop background preview"/>
+															} else {
+																<img class="hero-background-preview" id={ "homepage-hero-background-desktop-preview-" + strconv.Itoa(idx) } style="display:none" alt="desktop background preview"/>
+															}
+														</div>
+													</div>
+													<div>
+														<label>Mobile / vertical</label>
+														<div class="managed-image-field">
+															<input
+																type="file"
+																accept="image/*"
+																class="managed-image-file"
+																data-target-input={ "homepage-hero-background-mobile-data-" + strconv.Itoa(idx) }
+																data-preview-target={ "homepage-hero-background-mobile-preview-" + strconv.Itoa(idx) }
+																data-media-id-input={ "homepage-hero-background-mobile-media-id-" + strconv.Itoa(idx) }
+																data-format="image/jpeg"
+																data-quality="0.78"
+																data-max-width="1080"
+																data-max-height="1440"
+																data-max-bytes="196608"
+															/>
+															<input type="hidden" name={ fmt.Sprintf("homepage_hero_background_mobile_%d", idx) } id={ "homepage-hero-background-mobile-data-" + strconv.Itoa(idx) } class="hero-background-image-hidden"/>
+															<input type="hidden" name={ fmt.Sprintf("homepage_hero_background_mobile_media_id_%d", idx) } id={ "homepage-hero-background-mobile-media-id-" + strconv.Itoa(idx) } class="hero-background-media-id-hidden" value={ mediaIDValue(bg.MobileMediaID) }/>
+															if bg.MobileMediaID > 0 {
+																<img class="hero-background-preview hero-background-preview-portrait dashboard-lazy-image" id={ "homepage-hero-background-mobile-preview-" + strconv.Itoa(idx) } data-src={ publicImageURL(bg.MobileMediaID) } loading="lazy" decoding="async" alt="mobile background preview"/>
+															} else {
+																<img class="hero-background-preview hero-background-preview-portrait" id={ "homepage-hero-background-mobile-preview-" + strconv.Itoa(idx) } style="display:none" alt="mobile background preview"/>
+															}
+														</div>
+													</div>
+												</div>
+											</div>
+										}
+										}
+									</div>
+								<button type="button" id="add-homepage-hero-background-btn" class="add-entry-btn" onclick="return window.addHomepageHeroBackground ? window.addHomepageHeroBackground() : false">+ Add background set</button>
+								<template id="homepage-hero-background-card-template">
+									<div class="hero-background-card">
+										<div class="hero-background-card-header">
+											<span class="hero-background-number">1</span>
+											<button type="button" class="hero-background-remove outline secondary" aria-label={ t("btn.delete") } onclick="return window.removeHomepageHeroBackground ? window.removeHomepageHeroBackground(this) : false">&times;</button>
+										</div>
+										<div class="grid hero-background-grid">
+											<div>
+												<label>Desktop / horizontal</label>
+												<div class="managed-image-field">
+													<input
+														type="file"
+														accept="image/*"
+														class="managed-image-file"
+														data-target-input="homepage-hero-background-desktop-data-__INDEX__"
+														data-preview-target="homepage-hero-background-desktop-preview-__INDEX__"
+														data-media-id-input="homepage-hero-background-desktop-media-id-__INDEX__"
+														data-format="image/jpeg"
+														data-quality="0.78"
+														data-max-width="1600"
+														data-max-height="900"
+														data-max-bytes="262144"
+													/>
+													<input type="hidden" name="homepage_hero_background_desktop___INDEX__" id="homepage-hero-background-desktop-data-__INDEX__" class="hero-background-image-hidden"/>
+													<input type="hidden" name="homepage_hero_background_desktop_media_id___INDEX__" id="homepage-hero-background-desktop-media-id-__INDEX__" class="hero-background-media-id-hidden"/>
+													<img class="hero-background-preview" id="homepage-hero-background-desktop-preview-__INDEX__" style="display:none" alt="desktop background preview"/>
+												</div>
+											</div>
+											<div>
+												<label>Mobile / vertical</label>
+												<div class="managed-image-field">
+													<input
+														type="file"
+														accept="image/*"
+														class="managed-image-file"
+														data-target-input="homepage-hero-background-mobile-data-__INDEX__"
+														data-preview-target="homepage-hero-background-mobile-preview-__INDEX__"
+														data-media-id-input="homepage-hero-background-mobile-media-id-__INDEX__"
+														data-format="image/jpeg"
+														data-quality="0.78"
+														data-max-width="1080"
+														data-max-height="1440"
+														data-max-bytes="196608"
+													/>
+													<input type="hidden" name="homepage_hero_background_mobile___INDEX__" id="homepage-hero-background-mobile-data-__INDEX__" class="hero-background-image-hidden"/>
+													<input type="hidden" name="homepage_hero_background_mobile_media_id___INDEX__" id="homepage-hero-background-mobile-media-id-__INDEX__" class="hero-background-media-id-hidden"/>
+													<img class="hero-background-preview hero-background-preview-portrait" id="homepage-hero-background-mobile-preview-__INDEX__" style="display:none" alt="mobile background preview"/>
+												</div>
+											</div>
+										</div>
+									</div>
+								</template>
+								<script>
+									(function () {
+										function getHeroBackgroundsContainer() {
+											return document.getElementById("homepage-hero-backgrounds-container");
+										}
+
+										function reindexHeroBackgrounds() {
+											var container = getHeroBackgroundsContainer();
+											var countInput = document.getElementById("homepage-hero-background-count");
+											if (!container || !countInput) return;
+											var cards = container.querySelectorAll(".hero-background-card");
+											cards.forEach(function (card, idx) {
+												var number = card.querySelector(".hero-background-number");
+												if (number) number.textContent = idx + 1;
+
+												var desktopFile = card.querySelector('.managed-image-file[data-target-input^="homepage-hero-background-desktop-data-"]');
+												var desktopHidden = card.querySelector('.hero-background-image-hidden[id^="homepage-hero-background-desktop-data-"]');
+												var desktopMediaId = card.querySelector('.hero-background-media-id-hidden[id^="homepage-hero-background-desktop-media-id-"]');
+												var desktopPreview = card.querySelector('.hero-background-preview[id^="homepage-hero-background-desktop-preview-"]');
+												if (desktopFile && desktopHidden && desktopMediaId && desktopPreview) {
+													desktopFile.dataset.targetInput = "homepage-hero-background-desktop-data-" + idx;
+													desktopFile.dataset.previewTarget = "homepage-hero-background-desktop-preview-" + idx;
+													desktopFile.dataset.mediaIdInput = "homepage-hero-background-desktop-media-id-" + idx;
+													desktopHidden.name = "homepage_hero_background_desktop_" + idx;
+													desktopHidden.id = "homepage-hero-background-desktop-data-" + idx;
+													desktopMediaId.name = "homepage_hero_background_desktop_media_id_" + idx;
+													desktopMediaId.id = "homepage-hero-background-desktop-media-id-" + idx;
+													desktopPreview.id = "homepage-hero-background-desktop-preview-" + idx;
+												}
+
+												var mobileFile = card.querySelector('.managed-image-file[data-target-input^="homepage-hero-background-mobile-data-"]');
+												var mobileHidden = card.querySelector('.hero-background-image-hidden[id^="homepage-hero-background-mobile-data-"]');
+												var mobileMediaId = card.querySelector('.hero-background-media-id-hidden[id^="homepage-hero-background-mobile-media-id-"]');
+												var mobilePreview = card.querySelector('.hero-background-preview[id^="homepage-hero-background-mobile-preview-"]');
+												if (mobileFile && mobileHidden && mobileMediaId && mobilePreview) {
+													mobileFile.dataset.targetInput = "homepage-hero-background-mobile-data-" + idx;
+													mobileFile.dataset.previewTarget = "homepage-hero-background-mobile-preview-" + idx;
+													mobileFile.dataset.mediaIdInput = "homepage-hero-background-mobile-media-id-" + idx;
+													mobileHidden.name = "homepage_hero_background_mobile_" + idx;
+													mobileHidden.id = "homepage-hero-background-mobile-data-" + idx;
+													mobileMediaId.name = "homepage_hero_background_mobile_media_id_" + idx;
+													mobileMediaId.id = "homepage-hero-background-mobile-media-id-" + idx;
+													mobilePreview.id = "homepage-hero-background-mobile-preview-" + idx;
+												}
+											});
+											countInput.value = cards.length;
+										}
+
+										window.addHomepageHeroBackground = function () {
+											var container = getHeroBackgroundsContainer();
+											var template = document.getElementById("homepage-hero-background-card-template");
+											if (!container || !template) return false;
+											var idx = container.querySelectorAll(".hero-background-card").length;
+											var html = template.innerHTML.replaceAll("__INDEX__", String(idx));
+											container.insertAdjacentHTML("beforeend", html);
+											var card = container.lastElementChild;
+											reindexHeroBackgrounds();
+											if (card && window.initDashboardImageResizers) {
+												window.initDashboardImageResizers(card);
+											}
+											return false;
+										};
+
+										window.removeHomepageHeroBackground = function (button) {
+											var card = button && button.closest ? button.closest(".hero-background-card") : null;
+											if (!card) return false;
+											card.remove();
+											reindexHeroBackgrounds();
+											return false;
+										};
+
+										reindexHeroBackgrounds();
+									})();
+								</script>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="accordion dashboard-accordion" id="dashboard-settings-accordion">
+					<div class="accordion-item settings-section">
+						<h2 class="accordion-header" id="settings-playlists-heading">
+							<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#settings-playlists-panel" aria-expanded="false" aria-controls="settings-playlists-panel">
+								<span class="settings-section-title">{ t("dashboard.playlists") }</span>
+								<span class="settings-section-description">{ t("dashboard.playlists_description") }</span>
+							</button>
+						</h2>
+						<div id="settings-playlists-panel" class="accordion-collapse collapse" data-dashboard-key="settings-playlists" aria-labelledby="settings-playlists-heading">
+							<div class="accordion-body settings-section-body">
+								<div class="spotify-playlist-field">
+									<label for="spotify-playlist">{ t("label.playlist_url") }</label>
+									<input id="spotify-playlist" type="text" name="spotify_playlist" value={ settings.SpotifyPlaylist } placeholder={ t("placeholder.playlist_url") }/>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="accordion-item settings-section">
+						<h2 class="accordion-header" id="settings-places-heading">
+							<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#settings-places-panel" aria-expanded="false" aria-controls="settings-places-panel">
+								<span class="settings-section-title">{ t("dashboard.places") }</span>
+								<span class="settings-section-description">{ t("dashboard.places_description") }</span>
+							</button>
+						</h2>
+						<div id="settings-places-panel" class="accordion-collapse collapse" data-dashboard-key="settings-places" aria-labelledby="settings-places-heading">
+							<div class="accordion-body settings-section-body">
+								<div id="places-container">
+									if len(content.Places) > 0 {
+										for idx, place := range content.Places {
+											<div class="place-card" data-index={ strconv.Itoa(idx) }>
+												<div class="place-card-header">
+													<div class="place-card-meta">
+														<span class="place-number">{ strconv.Itoa(idx + 1) }</span>
+														if place.Lat != 0 || place.Lng != 0 {
+															<div class="place-coords">
+																<span class="place-coords-check">&#10003;</span>
+																<code>{ fmt.Sprintf("%.4f, %.4f", place.Lat, place.Lng) }</code>
+															</div>
+														}
+													</div>
+													<div class="place-card-actions">
+														<button type="button" class="place-move-up" aria-label="Move up">&uarr;</button>
+														<button type="button" class="place-move-down" aria-label="Move down">&darr;</button>
+														<button type="button" class="place-remove outline secondary" aria-label={ t("btn.delete") }>&times;</button>
+													</div>
+												</div>
+												<div class="grid">
+													<div>
+														<label>{ t("label.place_label") }</label>
+														<input type="text" name={ fmt.Sprintf("place_label_%d", idx) } value={ place.Label } placeholder={ t("placeholder.place_label") }/>
+													</div>
+													<div>
+														<label>{ t("label.place_date") }</label>
+														<input type="date" name={ fmt.Sprintf("place_date_%d", idx) } value={ place.Date }/>
+													</div>
+												</div>
+												<div class="grid">
+													<div style="position:relative">
+														<label>{ t("label.place_address") }</label>
+														<input type="text" class="place-location-input" value={ locationDisplay(place.Name, place.Address) } autocomplete="off" placeholder={ t("placeholder.place_address") }/>
+														<div class="autocomplete-dropdown place-dropdown"></div>
+														<input type="hidden" name={ fmt.Sprintf("place_name_%d", idx) } class="place-name-hidden" value={ place.Name }/>
+														<input type="hidden" name={ fmt.Sprintf("place_address_%d", idx) } class="place-address-hidden" value={ place.Address }/>
+														<input type="hidden" name={ fmt.Sprintf("place_lat_%d", idx) } class="place-lat-hidden" value={ coordValue(place.Lat) }/>
+														<input type="hidden" name={ fmt.Sprintf("place_lng_%d", idx) } class="place-lng-hidden" value={ coordValue(place.Lng) }/>
+													</div>
+													<div>
+														<label>{ t("label.place_image") }</label>
+														<div class="managed-image-field">
+															<input
+																type="file"
+																accept="image/*"
+																class="managed-image-file"
+																data-target-input={ fmt.Sprintf("place-image-data-%d", idx) }
+																data-preview-target={ fmt.Sprintf("place-image-preview-%d", idx) }
+																data-media-id-input={ fmt.Sprintf("place-image-media-id-%d", idx) }
+																data-format="image/jpeg"
+																data-quality="0.88"
+																data-max-width="1200"
+																data-max-height="1200"
+																data-max-bytes="524288"
+															/>
+															<input type="hidden" name={ fmt.Sprintf("place_image_%d", idx) } id={ fmt.Sprintf("place-image-data-%d", idx) } class="place-image-hidden"/>
+															<input type="hidden" name={ fmt.Sprintf("place_media_id_%d", idx) } id={ fmt.Sprintf("place-media-id-%d", idx) } class="place-media-id-hidden" value={ mediaIDValue(place.MediaID) }/>
+															if place.MediaID > 0 {
+																<img
+																	class="venue-image-preview place-image-preview dashboard-lazy-image"
+																	id={ fmt.Sprintf("place-image-preview-%d", idx) }
+																	data-src={ publicImageURL(place.MediaID) }
+																	loading="lazy"
+																	decoding="async"
+																	alt={ place.Label }
+																/>
+															} else {
+																<img
+																	class="venue-image-preview place-image-preview"
+																	id={ fmt.Sprintf("place-image-preview-%d", idx) }
+																	style="display:none"
+																	alt={ place.Label }
+																/>
+															}
+														</div>
+													</div>
+												</div>
+											</div>
+										}
+									}
+								</div>
+								<button type="button" id="add-place-btn" class="add-entry-btn">+ { t("btn.add_place") }</button>
+							</div>
+						</div>
+					</div>
+					<div class="accordion-item settings-section">
+						<h2 class="accordion-header" id="settings-honeymoon-heading">
+							<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#settings-honeymoon-panel" aria-expanded="false" aria-controls="settings-honeymoon-panel">
+								<span class="settings-section-title">{ t("dashboard.honeymoon") }</span>
+								<span class="settings-section-description">{ t("dashboard.honeymoon_description") }</span>
+							</button>
+						</h2>
+						<div id="settings-honeymoon-panel" class="accordion-collapse collapse" data-dashboard-key="settings-honeymoon" aria-labelledby="settings-honeymoon-heading">
+							<div class="accordion-body settings-section-body">
+								<div id="honeymoon-container">
+									if len(content.Honeymoon) > 0 {
+										for idx, place := range content.Honeymoon {
+											<div class="place-card honeymoon-card" data-index={ strconv.Itoa(idx) }>
+												<div class="place-card-header">
+													<div class="place-card-meta">
+														<span class="place-number">{ strconv.Itoa(idx + 1) }</span>
+														if place.Lat != 0 || place.Lng != 0 {
+															<div class="place-coords">
+																<span class="place-coords-check">&#10003;</span>
+																<code>{ fmt.Sprintf("%.4f, %.4f", place.Lat, place.Lng) }</code>
+															</div>
+														}
+													</div>
+													<div class="place-card-actions">
+														<button type="button" class="place-move-up" aria-label="Move up">&uarr;</button>
+														<button type="button" class="place-move-down" aria-label="Move down">&darr;</button>
+														<button type="button" class="place-remove outline secondary" aria-label={ t("btn.delete") }>&times;</button>
+													</div>
+												</div>
+												<div>
+													<label>{ t("label.place_label") }</label>
+													<input type="text" name={ fmt.Sprintf("honeymoon_label_%d", idx) } value={ place.Label } placeholder={ t("placeholder.place_label") }/>
+												</div>
+												<div class="grid">
+													<div style="position:relative">
+														<label>{ t("label.place_address") }</label>
+														<input type="text" class="place-location-input" value={ locationDisplay(place.Name, place.Address) } autocomplete="off" placeholder={ t("placeholder.place_address") }/>
+														<div class="autocomplete-dropdown place-dropdown"></div>
+														<input type="hidden" name={ fmt.Sprintf("honeymoon_name_%d", idx) } class="place-name-hidden" value={ place.Name }/>
+														<input type="hidden" name={ fmt.Sprintf("honeymoon_address_%d", idx) } class="place-address-hidden" value={ place.Address }/>
+														<input type="hidden" name={ fmt.Sprintf("honeymoon_lat_%d", idx) } class="place-lat-hidden" value={ coordValue(place.Lat) }/>
+														<input type="hidden" name={ fmt.Sprintf("honeymoon_lng_%d", idx) } class="place-lng-hidden" value={ coordValue(place.Lng) }/>
+													</div>
+													<div>
+														<label>{ t("label.place_image") }</label>
+														<div class="managed-image-field">
+															<input
+																type="file"
+																accept="image/*"
+																class="managed-image-file"
+																data-target-input={ fmt.Sprintf("honeymoon-image-data-%d", idx) }
+																data-preview-target={ fmt.Sprintf("honeymoon-image-preview-%d", idx) }
+																data-media-id-input={ fmt.Sprintf("honeymoon-image-media-id-%d", idx) }
+																data-format="image/png"
+																data-quality="0.82"
+																data-max-width="900"
+																data-max-height="900"
+																data-max-bytes="614400"
+															/>
+															<input type="hidden" name={ fmt.Sprintf("honeymoon_image_%d", idx) } id={ fmt.Sprintf("honeymoon-image-data-%d", idx) } class="place-image-hidden"/>
+															<input type="hidden" name={ fmt.Sprintf("honeymoon_media_id_%d", idx) } id={ fmt.Sprintf("honeymoon-media-id-%d", idx) } class="place-media-id-hidden" value={ mediaIDValue(place.MediaID) }/>
+															if place.MediaID > 0 {
+																<img
+																	class="venue-image-preview place-image-preview dashboard-lazy-image"
+																	id={ fmt.Sprintf("honeymoon-image-preview-%d", idx) }
+																	data-src={ publicImageURL(place.MediaID) }
+																	loading="lazy"
+																	decoding="async"
+																	alt={ place.Label }
+																/>
+															} else {
+																<img
+																	class="venue-image-preview place-image-preview"
+																	id={ fmt.Sprintf("honeymoon-image-preview-%d", idx) }
+																	style="display:none"
+																	alt={ place.Label }
+																/>
+															}
+														</div>
+													</div>
+												</div>
+											</div>
+										}
+									}
+								</div>
+								<button type="button" id="add-honeymoon-btn" class="add-entry-btn">+ { t("btn.add_honeymoon_location") }</button>
+							</div>
+						</div>
+					</div>
+					<div class="accordion-item settings-section">
+						<h2 class="accordion-header" id="settings-parking-heading">
+							<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#settings-parking-panel" aria-expanded="false" aria-controls="settings-parking-panel">
+								<span class="settings-section-title">{ t("dashboard.parking") }</span>
+								<span class="settings-section-description">{ t("dashboard.parking_description") }</span>
+							</button>
+						</h2>
+						<div id="settings-parking-panel" class="accordion-collapse collapse" data-dashboard-key="settings-parking" aria-labelledby="settings-parking-heading">
+							<div class="accordion-body settings-section-body">
+								<div id="parking-container">
+									if len(content.ParkingSpots) > 0 {
+										for idx, spot := range content.ParkingSpots {
+											<div class="place-card parking-card" data-index={ strconv.Itoa(idx) }>
+												<div class="place-card-header">
+													<div class="place-card-meta">
+														<span class="place-number">{ strconv.Itoa(idx + 1) }</span>
+														if spot.Lat != 0 || spot.Lng != 0 {
+															<div class="place-coords">
+																<span class="place-coords-check">&#10003;</span>
+																<code>{ fmt.Sprintf("%.4f, %.4f", spot.Lat, spot.Lng) }</code>
+															</div>
+														}
+													</div>
+													<div class="place-card-actions">
+														<button type="button" class="place-remove outline secondary" aria-label={ t("btn.delete") }>&times;</button>
+													</div>
+												</div>
+												<div style="position:relative">
+													<label>{ t("label.parking_address") }</label>
+													<input type="text" class="place-location-input" autocomplete="off" placeholder={ t("placeholder.parking_address") }/>
+													<div class="autocomplete-dropdown place-dropdown"></div>
+													<input type="hidden" name={ fmt.Sprintf("parking_lat_%d", idx) } class="place-lat-hidden" value={ coordValue(spot.Lat) }/>
+													<input type="hidden" name={ fmt.Sprintf("parking_lng_%d", idx) } class="place-lng-hidden" value={ coordValue(spot.Lng) }/>
+												</div>
+											</div>
+										}
+									}
+								</div>
+								<button type="button" id="add-parking-btn" class="add-entry-btn">+ { t("btn.add_parking") }</button>
+							</div>
+						</div>
+					</div>
+					<div class="accordion-item settings-section">
+						<h2 class="accordion-header" id="settings-accommodations-heading">
+							<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#settings-accommodations-panel" aria-expanded="false" aria-controls="settings-accommodations-panel">
+								<span class="settings-section-title">{ t("dashboard.accommodations") }</span>
+								<span class="settings-section-description">{ t("dashboard.accommodations_description") }</span>
+							</button>
+						</h2>
+						<div id="settings-accommodations-panel" class="accordion-collapse collapse" data-dashboard-key="settings-accommodations" aria-labelledby="settings-accommodations-heading">
+							<div class="accordion-body settings-section-body">
+								<div id="accommodations-container">
+									if len(content.Accommodations) > 0 {
+										for idx, suggestion := range content.Accommodations {
+											<div class="accommodation-card">
+												<div class="accommodation-card-header">
+													<span class="accommodation-number">{ strconv.Itoa(idx + 1) }</span>
+													<button type="button" class="accommodation-remove outline secondary" aria-label={ t("btn.delete") }>&times;</button>
+												</div>
+												<div class="grid">
+													<div>
+														<label>{ t("label.accommodation_name") }</label>
+														<input type="text" name={ fmt.Sprintf("accommodation_name_%d", idx) } value={ suggestion.Name } placeholder={ t("placeholder.accommodation_name") }/>
+													</div>
+													<div>
+														<label>{ t("label.accommodation_url") }</label>
+														<input type="url" name={ fmt.Sprintf("accommodation_url_%d", idx) } value={ suggestion.URL } placeholder={ t("placeholder.accommodation_url") }/>
+													</div>
+												</div>
+												<div>
+													<label>{ t("label.accommodation_description") }</label>
+													<textarea name={ fmt.Sprintf("accommodation_description_%d", idx) } rows="3" placeholder={ t("placeholder.accommodation_description") }>{ suggestion.Description }</textarea>
+												</div>
+											</div>
+										}
+									}
+								</div>
+								<button type="button" id="add-accommodation-btn" class="add-entry-btn">+ { t("btn.add_accommodation") }</button>
+							</div>
+						</div>
+					</div>
+					<div class="accordion-item settings-section">
+						<h2 class="accordion-header" id="settings-impersonations-heading">
+							<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#settings-impersonations-panel" aria-expanded="false" aria-controls="settings-impersonations-panel">
+								<span class="settings-section-title">{ t("dashboard.impersonations") }</span>
+								<span class="settings-section-description">{ t("dashboard.impersonations_description") }</span>
+							</button>
+						</h2>
+						<div id="settings-impersonations-panel" class="accordion-collapse collapse" data-dashboard-key="settings-impersonations" aria-labelledby="settings-impersonations-heading">
+							<div class="accordion-body settings-section-body">
+								<div id="impersonations-container">
+									if len(content.Impersonations) > 0 {
+										for idx, imp := range content.Impersonations {
+											<div class="impersonation-card">
+												<div class="impersonation-card-header">
+													<span class="impersonation-number">{ strconv.Itoa(idx + 1) }</span>
+													<button type="button" class="impersonation-remove outline secondary" aria-label={ t("btn.delete") }>&times;</button>
+												</div>
+												<input type="text" name={ fmt.Sprintf("impersonation_codename_%d", idx) } value={ imp.Codename } placeholder={ t("placeholder.impersonation_codename") }/>
+												<textarea name={ fmt.Sprintf("impersonation_profile_%d", idx) } rows="3" placeholder={ t("placeholder.impersonation_profile") }>{ imp.Profile }</textarea>
+											</div>
+										}
+									}
+								</div>
+								<button type="button" id="add-impersonation-btn" class="add-entry-btn">+ { t("btn.add_impersonation") }</button>
+							</div>
+						</div>
+					</div>
+					<div class="accordion-item settings-section">
+						<h2 class="accordion-header" id="settings-homepage-labels-heading">
+							<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#settings-homepage-labels-panel" aria-expanded="false" aria-controls="settings-homepage-labels-panel">
+								<span class="settings-section-title">Homepage Labels</span>
+								<span class="settings-section-description">Override guest-facing text on the homepage and invitation pages.</span>
+							</button>
+						</h2>
+						<div id="settings-homepage-labels-panel" class="accordion-collapse collapse" data-dashboard-key="settings-homepage-labels" aria-labelledby="settings-homepage-labels-heading">
+							<div class="accordion-body settings-section-body settings-section-body-labels">
+								for _, lang := range []string{"en", "it"} {
+									<div class="accordion dashboard-subaccordion">
+										<div class="accordion-item settings-subsection">
+											<h3 class="accordion-header" id={ "settings-homepage-labels-" + lang + "-heading" }>
+												<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target={ "#" + "settings-homepage-labels-" + lang + "-panel" } aria-expanded="false" aria-controls={ "settings-homepage-labels-" + lang + "-panel" }>
+													{ lang }
+												</button>
+											</h3>
+											<div id={ "settings-homepage-labels-" + lang + "-panel" } class="accordion-collapse collapse" data-dashboard-key={ "settings-homepage-labels-" + lang } aria-labelledby={ "settings-homepage-labels-" + lang + "-heading" }>
+												<div class="accordion-body settings-subsection-body">
+													<div class="homepage-label-groups">
+														@homepageLabelGroup(lang, "home", []string{"home.getting_married", "home.ceremony", "home.reception", "home.soundtrack", "home.soundtrack_description", "home.places", "home.places_description", "home.honeymoon", "home.honeymoon_description", "home.accommodations", "home.accommodations_description", "home.registry", "home.registry_description", "home.generic_gift", "home.generic_gift_description", "home.remaining", "home.update_invitation"}, content.HomepageLabels, i18n.Defaults(lang))
+														@homepageLabelGroup(lang, "invitation", []string{"invitation.title", "invitation.rsvp", "invitation.rsvp_description", "invitation.confirm", "invitation.already_answered", "invitation.change_answer", "invitation.go_home", "invitation.submitted_message"}, content.HomepageLabels, i18n.Defaults(lang))
+														@homepageLabelGroup(lang, "gift / badge", []string{"gift.thank_you", "gift.thanks_message", "badge.sold"}, content.HomepageLabels, i18n.Defaults(lang))
+														@homepageLabelGroup(lang, "buttons", []string{"btn.buy", "btn.copy", "btn.copied", "btn.cancel", "btn.confirm", "btn.close"}, content.HomepageLabels, i18n.Defaults(lang))
+														@homepageLabelGroup(lang, "modal", []string{"modal.transfer_intro", "modal.iban", "modal.owner", "modal.reason", "modal.transfer_confirm_text"}, content.HomepageLabels, i18n.Defaults(lang))
+														@homepageLabelGroup(lang, "placeholders / chat / misc", []string{"placeholder.custom_amount", "placeholder.donor", "chat.title", "chat.placeholder", "chat.send", "chat.error", "chat.rate_limited", "rsvp.yes", "rsvp.no", "th.amount", "th.ceremony", "th.reception", "link.dashboard"}, content.HomepageLabels, i18n.Defaults(lang))
+													</div>
+												</div>
+											</div>
+										</div>
+									</div>
+								}
+							</div>
+						</div>
+					</div>
+				</div>
+				<button type="submit" class="save-btn">{ t("btn.save_settings") }</button>
+			</form>
+		</article>
+		<!-- guests -->
+		<article id="dashboard-guests">
+			<h2>{ t("dashboard.guests") }</h2>
+			<div class="guest-forms-row">
+				<form class="add-guest-form" method="POST" action="/dashboard/guests">
+					<input type="hidden" name="_csrf" value={ csrfToken }/>
+					<input type="text" name="first_name" placeholder={ t("placeholder.first_name") }/>
+					<input type="text" name="last_name" placeholder={ t("placeholder.last_name") }/>
+					<div class="add-guest-form-actions">
+						<select name="type" aria-label={ t("label.type") }>
+							<option value="adult">{ t("guest_type.adult") }</option>
+							<option value="child">{ t("guest_type.child") }</option>
+							<option value="infant">{ t("guest_type.infant") }</option>
+							<option value="vendor">{ t("guest_type.vendor") }</option>
+						</select>
+						<button type="submit">{ t("btn.add") }</button>
+					</div>
+				</form>
+				<form class="import-csv-form" method="POST" action="/dashboard/guests/import" enctype="multipart/form-data">
+					<input type="hidden" name="_csrf" value={ csrfToken }/>
+					<input type="file" name="csv_file" accept=".csv"/>
+					<pre class="csv-format-hint">Marco Rossi,adult</pre>
+					<button type="submit">{ t("btn.import_csv") }</button>
+				</form>
+			</div>
+			<div class="guest-search-row">
+				<input type="search" id="guest-search" name="q" value={ search } placeholder={ t("placeholder.search") } autocomplete="off"/>
+				if len(guests) > 0 {
+					<form id="invitation-form" method="POST" action="/dashboard/invitations">
+						<input type="hidden" name="_csrf" value={ csrfToken }/>
+						<input type="hidden" name="guest_ids" id="guest-ids-input"/>
+						<div class="invitation-bar">
+							<input type="text" name="label" id="invitation-label-input" placeholder={ t("placeholder.invitation_label") } autocomplete="off"/>
+							<button type="submit" id="create-invitation-btn" disabled>{ t("btn.create_invitation") }</button>
+						</div>
+					</form>
+				}
+			</div>
+			if len(guests) > 0 {
+				<div class="overflow-auto">
+					<table>
+						<thead>
+							<tr>
+								<th class="checkbox-col"></th>
+								<th>{ t("th.first_name") }</th>
+								<th>{ t("th.last_name") }</th>
+								<th>{ t("th.type") }</th>
+								<th>{ t("th.ceremony") }</th>
+								<th>{ t("th.reception") }</th>
+								<th>{ t("th.actions") }</th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, g := range guests {
+								<tr>
+									<td class="checkbox-col">
+										if g.InvitationID == nil {
+											<input type="checkbox" class="guest-checkbox" value={ strconv.Itoa(g.ID) } data-first-name={ g.FirstName }/>
+										}
+									</td>
+									<td data-label={ t("th.first_name") }>
+										{ g.FirstName }
+										if guestInvitationCode(invitations, g.InvitationID) != "" {
+											<span class="invitation-badge">{ guestInvitationCode(invitations, g.InvitationID) }</span>
+										}
+									</td>
+									<td data-label={ t("th.last_name") }>{ g.LastName }</td>
+									<td data-label={ t("th.type") }>
+										<span class={ "guest-type-badge", "guest-type-" + g.Type }>{ t("guest_type." + g.Type) }</span>
+									</td>
+									<td data-label={ t("th.ceremony") }>
+										<form method="POST" action={ templ.SafeURL("/dashboard/guests/" + strconv.Itoa(g.ID) + "/confirm/ceremony") }>
+											<input type="hidden" name="_csrf" value={ csrfToken }/>
+											if g.ConfirmedCeremony == nil {
+												<input type="checkbox" role="switch" class="toggle-null" onchange="window.dashboardSubmitForm ? window.dashboardSubmitForm(this.form) : this.form.requestSubmit()"/>
+											} else if *g.ConfirmedCeremony {
+												<input type="checkbox" role="switch" checked onchange="window.dashboardSubmitForm ? window.dashboardSubmitForm(this.form) : this.form.requestSubmit()"/>
+											} else {
+												<input type="checkbox" role="switch" onchange="window.dashboardSubmitForm ? window.dashboardSubmitForm(this.form) : this.form.requestSubmit()"/>
+											}
+										</form>
+									</td>
+									<td data-label={ t("th.reception") }>
+										<form method="POST" action={ templ.SafeURL("/dashboard/guests/" + strconv.Itoa(g.ID) + "/confirm/reception") }>
+											<input type="hidden" name="_csrf" value={ csrfToken }/>
+											if g.ConfirmedReception == nil {
+												<input type="checkbox" role="switch" class="toggle-null" onchange="window.dashboardSubmitForm ? window.dashboardSubmitForm(this.form) : this.form.requestSubmit()"/>
+											} else if *g.ConfirmedReception {
+												<input type="checkbox" role="switch" checked onchange="window.dashboardSubmitForm ? window.dashboardSubmitForm(this.form) : this.form.requestSubmit()"/>
+											} else {
+												<input type="checkbox" role="switch" onchange="window.dashboardSubmitForm ? window.dashboardSubmitForm(this.form) : this.form.requestSubmit()"/>
+											}
+										</form>
+									</td>
+									<td data-label={ t("th.actions") }>
+										<div class="actions">
+											<a href={ templ.SafeURL("/dashboard/guests/" + strconv.Itoa(g.ID) + "/edit") }>{ t("btn.edit") }</a>
+											<form method="POST" action={ templ.SafeURL("/dashboard/guests/" + strconv.Itoa(g.ID) + "/delete") } data-confirm={ t("confirm.delete_guest") } onsubmit="return confirm(this.dataset.confirm)">
+												<input type="hidden" name="_csrf" value={ csrfToken }/>
+												<button type="submit" class="outline secondary">{ t("btn.delete") }</button>
+											</form>
+										</div>
+									</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+				if totalPages > 1 {
+					<nav class="pagination">
+						if page > 1 {
+							<a href={ templ.SafeURL(paginationURL(page-1, search)) }>{ t("btn.prev") }</a>
+						} else {
+							<span class="disabled">{ t("btn.prev") }</span>
+						}
+						<span class="page-info">{ strconv.Itoa(page) } / { strconv.Itoa(totalPages) }</span>
+						if page < totalPages {
+							<a href={ templ.SafeURL(paginationURL(page+1, search)) }>{ t("btn.next") }</a>
+						} else {
+							<span class="disabled">{ t("btn.next") }</span>
+						}
+					</nav>
+				}
+			}
+		</article>
+		<!-- invitations -->
+		<article id="dashboard-invitations">
+			<h2>{ t("dashboard.invitations") }</h2>
+			if len(invitations) > 0 {
+				<form class="guest-search-row" method="GET" action="/dashboard" role="search">
+					<input type="search" id="invitation-search" name="iq" value={ inviteSearch } placeholder={ t("placeholder.invitation_search") } autocomplete="off"/>
+					if search != "" {
+						<input type="hidden" name="q" value={ search }/>
+					}
+				</form>
+				<div class="overflow-auto">
+					<table>
+						<thead>
+							<tr>
+								<th>{ t("th.code") }</th>
+								<th>{ t("th.label") }</th>
+								<th>{ t("th.guests") }</th>
+								<th>{ t("th.actioned") }</th>
+								<th>{ t("th.viewed") }</th>
+								<th>{ t("th.created") }</th>
+								<th>{ t("th.actions") }</th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, inv := range pagedInvitations {
+								<tr data-invitation-guests={ invitationGuestNames(inv) }>
+									<td data-label={ t("th.code") }>
+										<code class="invitation-code">{ inv.Code }</code>
+									</td>
+									<td data-label={ t("th.label") }>{ invitationDisplayLabel(inv) }</td>
+									<td class="invitation-guests-cell" data-label={ t("th.guests") }>{ invitationGuestNames(inv) }</td>
+									<td data-label={ t("th.actioned") }>
+										if invitationActioned(inv) {
+											{ t("status.confirmed") }
+										} else {
+											{ t("status.pending_confirmation") }
+										}
+									</td>
+									<td data-label={ t("th.viewed") }>
+										if inv.ViewedAt != nil {
+											{ i18n.FormatDate(inv.ViewedAt.Time, lang) }
+											<form method="POST" action={ templ.SafeURL("/dashboard/invitations/" + strconv.Itoa(inv.ID) + "/viewed/reset") } class="inline-reset-form">
+												<input type="hidden" name="_csrf" value={ csrfToken }/>
+												<button type="submit" class="reset-viewed-btn outline secondary" aria-label={ t("btn.reset_viewed") } title={ t("btn.reset_viewed") }>&times;</button>
+											</form>
+										} else {
+											—
+										}
+									</td>
+									<td data-label={ t("th.created") }>{ i18n.FormatDate(inv.CreatedAt.Time, lang) }</td>
+									<td data-label={ t("th.actions") }>
+										<div class="actions">
+											<a href={ templ.SafeURL("/dashboard/invitations/" + strconv.Itoa(inv.ID) + "/edit") }>{ t("btn.edit") }</a>
+											<button type="button" class="copy-btn" data-code={ inv.Code } onclick="copyInvitationURL(this.dataset.code, this)">{ t("btn.copy") }</button>
+											<form method="POST" action={ templ.SafeURL("/dashboard/invitations/" + strconv.Itoa(inv.ID) + "/delete") } data-confirm={ t("confirm.delete_invitation") } onsubmit="return confirm(this.dataset.confirm)">
+												<input type="hidden" name="_csrf" value={ csrfToken }/>
+												<button type="submit" class="outline secondary">{ t("btn.delete") }</button>
+											</form>
+										</div>
+									</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+				if inviteTotalPages > 1 {
+					<nav class="pagination">
+						if invitePage > 1 {
+							<a href={ templ.SafeURL(invitePaginationURL(invitePage-1, page, search, inviteSearch)) }>{ t("btn.prev") }</a>
+						} else {
+							<span class="disabled">{ t("btn.prev") }</span>
+						}
+						<span class="page-info">{ strconv.Itoa(invitePage) } / { strconv.Itoa(inviteTotalPages) }</span>
+						if invitePage < inviteTotalPages {
+							<a href={ templ.SafeURL(invitePaginationURL(invitePage+1, page, search, inviteSearch)) }>{ t("btn.next") }</a>
+						} else {
+							<span class="disabled">{ t("btn.next") }</span>
+						}
+					</nav>
+				}
+			}
+			<div class="accordion dashboard-accordion dashboard-subsection-accordion">
+				<div class="accordion-item dashboard-subsection">
+					<h2 class="accordion-header" id="invitations-polls-heading">
+						<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#invitations-polls-panel" aria-expanded="false" aria-controls="invitations-polls-panel">
+							<span class="dashboard-subsection-title">{ t("dashboard.polls") }</span>
+						</button>
+					</h2>
+					<div id="invitations-polls-panel" class="accordion-collapse collapse" data-dashboard-key="invitations-polls" aria-labelledby="invitations-polls-heading">
+						<div class="accordion-body dashboard-subsection-body">
+							<form class="add-poll-form" method="POST" action="/dashboard/polls">
+								<input type="hidden" name="_csrf" value={ csrfToken }/>
+								<input type="text" name="question" placeholder={ t("placeholder.question") } required/>
+								<input type="text" name="description" placeholder={ t("placeholder.description") }/>
+								<button type="submit">{ t("btn.add") }</button>
+							</form>
+							if len(polls) > 0 {
+								<div class="overflow-auto">
+									<table>
+										<thead>
+											<tr>
+												<th>{ t("th.question") }</th>
+												<th>{ t("th.description") }</th>
+												<th>{ t("th.yes") }</th>
+												<th>{ t("th.actions") }</th>
+											</tr>
+										</thead>
+										<tbody>
+											for _, p := range polls {
+												<tr>
+													<td data-label={ t("th.question") }>{ p.Question }</td>
+													<td data-label={ t("th.description") }>{ p.Description }</td>
+													<td data-label={ t("th.yes") }>
+														if len(p.YesVoters) > 0 {
+															<a href="#" class="poll-yes-link" data-poll-id={ strconv.Itoa(p.ID) }>{ strconv.Itoa(len(p.YesVoters)) }<small>/{ strconv.Itoa(p.TotalCount) }</small></a>
+														} else {
+															{ strconv.Itoa(len(p.YesVoters)) }<small>/{ strconv.Itoa(p.TotalCount) }</small>
+														}
+													</td>
+													<td data-label={ t("th.actions") }>
+														<div class="actions">
+															<a href={ templ.SafeURL("/dashboard/polls/" + strconv.Itoa(p.ID) + "/edit") }>{ t("btn.edit") }</a>
+															<form method="POST" action={ templ.SafeURL("/dashboard/polls/" + strconv.Itoa(p.ID) + "/delete") } data-confirm={ t("confirm.delete_poll") } onsubmit="return confirm(this.dataset.confirm)">
+																<input type="hidden" name="_csrf" value={ csrfToken }/>
+																<button type="submit" class="outline secondary">{ t("btn.delete") }</button>
+															</form>
+														</div>
+													</td>
+												</tr>
+											}
+										</tbody>
+									</table>
+								</div>
+								for _, p := range polls {
+									if len(p.YesVoters) > 0 {
+										<div id={ "poll-modal-" + strconv.Itoa(p.ID) } class="modal-overlay" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+											<div class="modal-box">
+												<h3>{ p.Question }</h3>
+												<ul>
+													for _, voter := range p.YesVoters {
+														<li>
+															if voter.Notes != "" {
+																<details>
+																	<summary>{ voter.Name }</summary>
+																	<p>{ voter.Notes }</p>
+																</details>
+															} else {
+																{ voter.Name }
+															}
+														</li>
+													}
+												</ul>
+												<div class="modal-actions">
+													<button type="button" class="outline secondary" onclick="this.closest('.modal-overlay').style.display='none'">{ t("btn.close") }</button>
+												</div>
+											</div>
+										</div>
+									}
+								}
+							}
+						</div>
+					</div>
+				</div>
+			</div>
+		</article>
+		<!-- registry -->
+		<article id="dashboard-registry">
+			<h2>{ t("dashboard.registry") }</h2>
+			<form class="registry-add-form" method="POST" action="/dashboard/registry" enctype="multipart/form-data">
+				<input type="hidden" name="_csrf" value={ csrfToken }/>
+				<input type="hidden" name="image" id="registry-image-data"/>
+				<div class="grid">
+					<input type="file" id="registry-file" accept="image/*"/>
+					<input type="text" name="name" placeholder={ t("placeholder.item_name") } required/>
+					<input type="number" name="price" min="0" step="1" placeholder={ t("placeholder.item_price") } required/>
+					<button type="submit">{ t("btn.add_item") }</button>
+				</div>
+			</form>
+			if len(registryItems) > 0 {
+				<div class="overflow-auto">
+					<table>
+						<thead>
+							<tr>
+								<th>{ t("th.item_order") }</th>
+								<th>{ t("th.item_image") }</th>
+								<th>{ t("th.item_name") }</th>
+								<th>{ t("th.item_price") }</th>
+								<th>{ t("th.actions") }</th>
+							</tr>
+						</thead>
+						<tbody>
+							for i, item := range pagedRegistry {
+								{{ absIdx := (registryPage-1)*10 + i }}
+								<tr>
+									<td data-label={ t("th.item_order") }>
+										<div class="actions registry-order-actions">
+											<form method="POST" action={ templ.SafeURL("/dashboard/registry/" + strconv.Itoa(item.ID) + "/move/up") }>
+												<input type="hidden" name="_csrf" value={ csrfToken }/>
+												<button type="submit" class="outline secondary" aria-label={ t("btn.move_up") } disabled?={ absIdx == 0 }>&uarr;</button>
+											</form>
+											<form method="POST" action={ templ.SafeURL("/dashboard/registry/" + strconv.Itoa(item.ID) + "/move/down") }>
+												<input type="hidden" name="_csrf" value={ csrfToken }/>
+												<button type="submit" class="outline secondary" aria-label={ t("btn.move_down") } disabled?={ absIdx == len(registryItems)-1 }>&darr;</button>
+											</form>
+										</div>
+									</td>
+									<td data-label={ t("th.item_image") }>
+										if item.MediaID > 0 {
+											<img class="registry-thumb" src={ publicImageURL(item.MediaID) } loading="lazy" decoding="async" alt={ item.Name }/>
+										}
+									</td>
+									<td data-label={ t("th.item_name") }>{ item.Name }</td>
+									<td data-label={ t("th.item_price") }>{ formatPrice(item.Price) }</td>
+									<td data-label={ t("th.actions") }>
+										<div class="actions">
+											<a href={ templ.SafeURL("/dashboard/registry/" + strconv.Itoa(item.ID) + "/edit") }>{ t("btn.edit") }</a>
+											<form method="POST" action={ templ.SafeURL("/dashboard/registry/" + strconv.Itoa(item.ID) + "/delete") } data-confirm={ t("confirm.delete_item") } onsubmit="return confirm(this.dataset.confirm)">
+												<input type="hidden" name="_csrf" value={ csrfToken }/>
+												<button type="submit" class="outline secondary">{ t("btn.delete") }</button>
+											</form>
+										</div>
+									</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+				if registryTotalPages > 1 {
+					<nav class="pagination">
+						if registryPage > 1 {
+							<a href={ templ.SafeURL(tablePaginationURL("rpage", registryPage-1)) }>{ t("btn.prev") }</a>
+						} else {
+							<span class="disabled">{ t("btn.prev") }</span>
+						}
+						<span class="page-info">{ strconv.Itoa(registryPage) } / { strconv.Itoa(registryTotalPages) }</span>
+						if registryPage < registryTotalPages {
+							<a href={ templ.SafeURL(tablePaginationURL("rpage", registryPage+1)) }>{ t("btn.next") }</a>
+						} else {
+							<span class="disabled">{ t("btn.next") }</span>
+						}
+					</nav>
+				}
+			}
+			if len(pagedGifts) > 0 {
+				<div class="accordion dashboard-accordion dashboard-subsection-accordion">
+					<div class="accordion-item dashboard-subsection">
+						<h2 class="accordion-header" id="registry-gifts-heading">
+							<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#registry-gifts-panel" aria-expanded="false" aria-controls="registry-gifts-panel">
+								<span class="dashboard-subsection-title">{ strconv.Itoa(giftsCount) + " " + strings.ToLower(t("dashboard.gifts")) + " · " + formatGiftAmount(giftsTotal) }</span>
+							</button>
+						</h2>
+						<div id="registry-gifts-panel" class="accordion-collapse collapse" data-dashboard-key="registry-gifts" aria-labelledby="registry-gifts-heading">
+							<div class="accordion-body dashboard-subsection-body">
+								<div class="overflow-auto">
+									<table>
+										<thead>
+											<tr>
+												<th>{ t("th.donor") }</th>
+												<th class="amount-cell">{ t("th.amount") }</th>
+												<th>{ t("th.registry_item") }</th>
+												<th>{ t("th.confirmed") }</th>
+												<th>{ t("th.date") }</th>
+												<th>{ t("th.actions") }</th>
+											</tr>
+										</thead>
+										<tbody>
+											for _, g := range pagedGifts {
+												<tr>
+													<td data-label={ t("th.donor") }>{ g.Donor }</td>
+													<td class="amount-cell" data-label={ t("th.amount") }>{ formatGiftAmount(g.Amount) }</td>
+													<td data-label={ t("th.registry_item") }>{ registryItemName(registryItems, g.RegistryItemID) }</td>
+													<td data-label={ t("th.confirmed") }>
+														if g.Confirmed {
+															{ t("status.confirmed") }
+														} else {
+															{ t("status.pending_confirmation") }
+														}
+													</td>
+													<td data-label={ t("th.date") }>{ i18n.FormatDate(g.CreatedAt.Time, lang) }</td>
+													<td data-label={ t("th.actions") }>
+														<div class="actions">
+															<a href={ templ.SafeURL("/dashboard/gifts/" + strconv.Itoa(g.ID) + "/edit") }>{ t("btn.edit") }</a>
+															<form method="POST" action={ templ.SafeURL("/dashboard/gifts/" + strconv.Itoa(g.ID) + "/delete") } data-confirm={ t("confirm.delete_gift") } onsubmit="return confirm(this.dataset.confirm)">
+																<input type="hidden" name="_csrf" value={ csrfToken }/>
+																<button type="submit" class="outline secondary">{ t("btn.delete") }</button>
+															</form>
+														</div>
+													</td>
+												</tr>
+											}
+										</tbody>
+									</table>
+								</div>
+								if giftsTotalPages > 1 {
+									<nav class="pagination">
+										if giftsPage > 1 {
+											<a href={ templ.SafeURL(tablePaginationURL("gpage", giftsPage-1)) }>{ t("btn.prev") }</a>
+										} else {
+											<span class="disabled">{ t("btn.prev") }</span>
+										}
+										<span class="page-info">{ strconv.Itoa(giftsPage) } / { strconv.Itoa(giftsTotalPages) }</span>
+										if giftsPage < giftsTotalPages {
+											<a href={ templ.SafeURL(tablePaginationURL("gpage", giftsPage+1)) }>{ t("btn.next") }</a>
+										} else {
+											<span class="disabled">{ t("btn.next") }</span>
+										}
+									</nav>
+								}
+							</div>
+						</div>
+					</div>
+				</div>
+			}
+		</article>
+		<article id="dashboard-soundtrack-events">
+			<h2>{ t("dashboard.track_additions") }</h2>
+			if len(pagedSoundtrack) > 0 {
+				<div class="overflow-auto">
+					<table>
+						<thead>
+							<tr>
+								<th>{ t("th.track_title") }</th>
+								<th>{ t("th.track_artist") }</th>
+								<th>{ t("th.track_url") }</th>
+								if soundtrackHasInviteIDs(pagedSoundtrack) {
+									<th>{ t("th.invite_id") }</th>
+									<th>{ t("th.invite_guests") }</th>
+								}
+								<th>{ t("th.date") }</th>
+								<th>{ t("th.actions") }</th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, event := range pagedSoundtrack {
+								<tr>
+									<td data-label={ t("th.track_title") }>{ event.Title }</td>
+									<td data-label={ t("th.track_artist") }>{ event.Artist }</td>
+									<td data-label={ t("th.track_url") }>
+										if strings.TrimSpace(event.URL) != "" {
+											<a href={ templ.SafeURL(event.URL) } target="_blank" rel="noreferrer">{ event.URL }</a>
+										}
+									</td>
+									if soundtrackHasInviteIDs(pagedSoundtrack) {
+										<td data-label={ t("th.invite_id") }>
+											if strings.TrimSpace(event.InviteID) != "" {
+												<code>{ event.InviteID }</code>
+											} else {
+												—
+											}
+										</td>
+										<td data-label={ t("th.invite_guests") }>
+											if soundtrackInviteGuestFirstNames(invitations, event.InviteID) != "" {
+												{ soundtrackInviteGuestFirstNames(invitations, event.InviteID) }
+											} else {
+												—
+											}
+										</td>
+									}
+									<td data-label={ t("th.date") }>{ i18n.FormatDate(event.CreatedAt.Time, lang) }</td>
+									<td data-label={ t("th.actions") }>
+										<form method="POST" action={ templ.SafeURL("/dashboard/soundtrack/" + strconv.Itoa(event.ID) + "/delete") } data-confirm={ t("confirm.delete_track") } onsubmit="return confirm(this.dataset.confirm)">
+											<input type="hidden" name="_csrf" value={ csrfToken }/>
+											<button type="submit" class="outline secondary">{ t("btn.delete") }</button>
+										</form>
+									</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+				if soundtrackTotalPages > 1 {
+					<nav class="pagination">
+						if soundtrackPage > 1 {
+							<a href={ templ.SafeURL(tablePaginationURL("spage", soundtrackPage-1)) }>{ t("btn.prev") }</a>
+						} else {
+							<span class="disabled">{ t("btn.prev") }</span>
+						}
+						<span class="page-info">{ strconv.Itoa(soundtrackPage) } / { strconv.Itoa(soundtrackTotalPages) }</span>
+						if soundtrackPage < soundtrackTotalPages {
+							<a href={ templ.SafeURL(tablePaginationURL("spage", soundtrackPage+1)) }>{ t("btn.next") }</a>
+						} else {
+							<span class="disabled">{ t("btn.next") }</span>
+						}
+					</nav>
+				}
+			}
+		</article>
+		<div id="dashboard-modal-root"></div>
+		<script>
+			// poll yes-voters modal
+			document.addEventListener("click", function (e) {
+				var link = e.target.closest(".poll-yes-link");
+				if (!link) return;
+				e.preventDefault();
+				document.getElementById(
+					"poll-modal-" + link.dataset.pollId,
+				).style.display = "";
+			});
+		</script>
+		<script>
+			// copy invitation URL to clipboard; btn optional (visual feedback when invoked from a button)
+			function copyInvitationURL(code, btn) {
+				const url =
+					window.location.protocol + "//" + window.location.host + "/" + code;
+				navigator.clipboard.writeText(url).then(function () {
+					if (!btn) return;
+					const orig = btn.textContent;
+					btn.textContent = "\u2713";
+					setTimeout(function () {
+						btn.textContent = orig;
+					}, 1500);
+				});
+			}
+			window.copyInvitationURL = copyInvitationURL;
+		</script>
+		<script src={ templ.SafeURL(assetURL("/static/autocomplete.js")) }></script>
+		<script src={ templ.SafeURL(assetURL("/static/dashboard-features.js")) }></script>
+		<script src={ templ.SafeURL(assetURL("/static/dashboard-spa.js")) }></script>
+		<hr class="footer-separator"/>
+		<footer>
+			<a href="/">{ t("link.home") }</a>
+		</footer>
+	}
+}
+
+templ EditGuest(guest models.Guest, settings models.Settings, csrfToken string, t i18n.T, lang string) {
+	@DashboardLayout(pageTitle(t("title.edit_guest"), settings.GroomName, settings.BrideName), lang) {
+		<a href="/dashboard">&larr; { t("btn.back") }</a>
+		<h1>{ t("title.edit_guest") }</h1>
+		<article>
+			<form method="POST" action={ templ.SafeURL("/dashboard/guests/" + strconv.Itoa(guest.ID)) }>
+				<input type="hidden" name="_csrf" value={ csrfToken }/>
+				<div class="grid">
+					@settingInput("first_name", t("label.first_name"), guest.FirstName)
+					@settingInput("last_name", t("label.last_name"), guest.LastName)
+					<label>
+						{ t("label.type") }
+						<select name="type">
+							<option value="adult" selected?={ guest.Type == "adult" }>{ t("guest_type.adult") }</option>
+							<option value="child" selected?={ guest.Type == "child" }>{ t("guest_type.child") }</option>
+							<option value="infant" selected?={ guest.Type == "infant" }>{ t("guest_type.infant") }</option>
+							<option value="vendor" selected?={ guest.Type == "vendor" }>{ t("guest_type.vendor") }</option>
+						</select>
+					</label>
+				</div>
+				<button type="submit">{ t("btn.update_guest") }</button>
+			</form>
+		</article>
+	}
+}
+
+templ EditRegistryItem(item models.RegistryItem, settings models.Settings, csrfToken string, t i18n.T, lang string) {
+	@DashboardLayout(pageTitle(t("title.edit_item"), settings.GroomName, settings.BrideName), lang) {
+		<a href="/dashboard">&larr; { t("btn.back") }</a>
+		<h1>{ t("title.edit_item") }</h1>
+		<article>
+			<form method="POST" action={ templ.SafeURL("/dashboard/registry/" + strconv.Itoa(item.ID)) }>
+				<input type="hidden" name="_csrf" value={ csrfToken }/>
+				<div class="grid">
+					<label>
+						{ t("th.item_name") }
+						<input type="text" name="name" value={ item.Name } required/>
+					</label>
+					<label>
+						{ t("th.item_price") }
+						<input type="number" name="price" min="0" step="1" value={ strconv.Itoa(item.Price) } required/>
+					</label>
+				</div>
+				<label>
+					{ t("th.item_image") }
+					<div class="managed-image-field">
+						<input
+							type="file"
+							accept="image/*"
+							class="managed-image-file"
+							data-target-input={ "registry-image-data-" + strconv.Itoa(item.ID) }
+							data-preview-target={ "registry-image-preview-" + strconv.Itoa(item.ID) }
+						/>
+						<input type="hidden" name="image" id={ "registry-image-data-" + strconv.Itoa(item.ID) }/>
+						if item.MediaID > 0 {
+							<img class="registry-thumb" id={ "registry-image-preview-" + strconv.Itoa(item.ID) } src={ publicImageURL(item.MediaID) } loading="lazy" decoding="async" alt={ item.Name }/>
+						} else {
+							<img class="registry-thumb" id={ "registry-image-preview-" + strconv.Itoa(item.ID) } style="display:none" alt={ item.Name }/>
+						}
+					</div>
+				</label>
+				<button type="submit">{ t("btn.update_item") }</button>
+			</form>
+		</article>
+	}
+}
+
+templ EditGift(gift models.Gift, registryItems []models.RegistryItem, settings models.Settings, csrfToken string, t i18n.T, lang string) {
+	@DashboardLayout(pageTitle(t("title.edit_gift"), settings.GroomName, settings.BrideName), lang) {
+		<a href="/dashboard">&larr; { t("btn.back") }</a>
+		<h1>{ t("title.edit_gift") }</h1>
+		<article>
+			<form method="POST" action={ templ.SafeURL("/dashboard/gifts/" + strconv.Itoa(gift.ID)) }>
+				<input type="hidden" name="_csrf" value={ csrfToken }/>
+				<div class="grid">
+					<label>
+						{ t("label.amount") }
+						<input type="number" name="amount" min="1" step="1" value={ strconv.Itoa(gift.Amount) } required/>
+					</label>
+					<label>
+						{ t("label.donor") }
+						<input type="text" name="donor" value={ gift.Donor }/>
+					</label>
+					<label>
+						{ t("label.registry_item") }
+						<select name="registry_item_id">
+							<option value="">{ t("option.no_registry_item") }</option>
+							for _, item := range registryItems {
+								if registryItemSelected(gift.RegistryItemID, item.ID) {
+									<option value={ strconv.Itoa(item.ID) } selected>{ item.Name }</option>
+								} else {
+									<option value={ strconv.Itoa(item.ID) }>{ item.Name }</option>
+								}
+							}
+						</select>
+					</label>
+					<label>
+						{ t("label.confirmed") }
+						if gift.Confirmed {
+							<input type="checkbox" name="confirmed" checked/>
+						} else {
+							<input type="checkbox" name="confirmed"/>
+						}
+					</label>
+				</div>
+				<button type="submit">{ t("btn.update_gift") }</button>
+			</form>
+		</article>
+	}
+}
+
+templ EditPoll(poll models.Poll, settings models.Settings, csrfToken string, t i18n.T, lang string) {
+	@DashboardLayout(pageTitle(t("title.edit_poll"), settings.GroomName, settings.BrideName), lang) {
+		<a href="/dashboard">&larr; { t("btn.back") }</a>
+		<h1>{ t("title.edit_poll") }</h1>
+		<article>
+			<form method="POST" action={ templ.SafeURL("/dashboard/polls/" + strconv.Itoa(poll.ID)) }>
+				<input type="hidden" name="_csrf" value={ csrfToken }/>
+				@settingInput("question", t("th.question"), poll.Question)
+				@settingInput("description", t("th.description"), poll.Description)
+				<button type="submit">{ t("btn.update_poll") }</button>
+			</form>
+		</article>
+	}
+}
+
+templ EditInvitation(inv models.Invitation, settings models.Settings, csrfToken string, t i18n.T, lang string) {
+	@DashboardLayout(pageTitle(t("title.edit_invitation"), settings.GroomName, settings.BrideName), lang) {
+		<a href="/dashboard">&larr; { t("btn.back") }</a>
+		<h1>{ t("title.edit_invitation") }</h1>
+		<article>
+			<p><code class="invitation-code">{ inv.Code }</code> &middot; { invitationGuestNames(inv) }</p>
+			<form method="POST" action={ templ.SafeURL("/dashboard/invitations/" + strconv.Itoa(inv.ID)) }>
+				<input type="hidden" name="_csrf" value={ csrfToken }/>
+				<label>
+					{ t("label.invitation_label") }
+					<input type="text" name="label" value={ inv.Label } placeholder={ defaultInvitationLabel(inv.Guests) } autocomplete="off"/>
+				</label>
+				<small>{ t("hint.invitation_label") }</small>
+				<button type="submit">{ t("btn.update_invitation") }</button>
+			</form>
+		</article>
+	}
+}
+
+templ settingInput(name, label, value string) {
+	<label>
+		{ label }
+		<input type="text" name={ name } value={ value }/>
+	</label>
+}
+
+// homepageLabelGroup renders a labelled group of overridable i18n inputs for one language.
+templ homepageLabelGroup(lang, groupLabel string, keys []string, overrides map[string]map[string]string, defaults map[string]string) {
+	<p style="font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted-color,#888);margin-bottom:0.5rem">{ groupLabel }</p>
+	for _, key := range keys {
+		<label style="font-size:.85rem">
+			{ key }
+			<input
+				type="text"
+				name={ "homepage_label_" + lang + "_" + key }
+				placeholder={ defaults[key] }
+				value={ overrides[lang][key] }
+			/>
+		</label>
+	}
+}

@@ -1,0 +1,1228 @@
+package templates
+
+import (
+	"encoding/json"
+	"fmt"
+	"regexp"
+	"strconv"
+
+	"github.com/streambinder/foedus/internal/i18n"
+	"github.com/streambinder/foedus/internal/models"
+)
+
+func remainingAmount(item models.RegistryItem, claimed map[int]int) int {
+	if item.Price <= 0 {
+		return -1
+	}
+	remaining := item.Price - claimed[item.ID]
+	if remaining <= 0 {
+		return 0
+	}
+	return remaining
+}
+
+// extract spotify playlist ID from various URL formats
+var spotifyPlaylistRe = regexp.MustCompile(`playlist/([a-zA-Z0-9]+)`)
+
+func spotifyEmbedURL(rawURL string) string {
+	m := spotifyPlaylistRe.FindStringSubmatch(rawURL)
+	if len(m) < 2 {
+		return ""
+	}
+	return "https://open.spotify.com/embed/playlist/" + m[1] + "?utm_source=generator&theme=0"
+}
+
+func hasSpotifyPlaylist(rawURL string) bool {
+	return spotifyEmbedURL(rawURL) != ""
+}
+
+func locationTimelineJSON(places []models.Place, lang string) string {
+	payload := make([]map[string]any, 0, len(places))
+	for _, place := range places {
+		payload = append(payload, map[string]any{
+			"label":          place.Label,
+			"date":           place.Date,
+			"formatted_date": i18n.FormatDatetime(place.Date, lang),
+			"image":          publicImageURL(place.MediaID),
+			"name":           place.Name,
+			"address":        place.Address,
+			"lat":            place.Lat,
+			"lng":            place.Lng,
+		})
+	}
+	b, _ := json.Marshal(payload)
+	return string(b)
+}
+
+// parkingJSON marshals coords-only parking spots for the parking map. ceremony
+// coords are passed separately as data attributes on the modal, not here. The
+// payload is built explicitly rather than marshalling the model: parking.js
+// wants {lat,lng} and nothing else, and the row's id/sort_order are none of the
+// client's business.
+func parkingJSON(spots []models.ParkingSpot) string {
+	payload := make([]map[string]float64, 0, len(spots))
+	for _, spot := range spots {
+		payload = append(payload, map[string]float64{"lat": spot.Lat, "lng": spot.Lng})
+	}
+	b, _ := json.Marshal(payload)
+	return string(b)
+}
+
+func prevSectionBeforeRegistry(places []models.Place, honeymoonLocations []models.Place, playlist string) string {
+	if len(honeymoonLocations) > 0 {
+		return "#honeymoon"
+	}
+	if len(places) > 0 {
+		return "#places"
+	}
+	if hasSpotifyPlaylist(playlist) {
+		return "#soundtrack"
+	}
+	return "#venues"
+}
+
+func nextSectionAfterVenues(playlist string, places []models.Place, honeymoonLocations []models.Place, bankConfigured bool) string {
+	if hasSpotifyPlaylist(playlist) {
+		return "#soundtrack"
+	}
+	if len(places) > 0 {
+		return "#places"
+	}
+	if len(honeymoonLocations) > 0 {
+		return "#honeymoon"
+	}
+	if bankConfigured {
+		return "#registry"
+	}
+	return ""
+}
+
+func nextSectionAfterSoundtrack(places []models.Place, honeymoonLocations []models.Place, bankConfigured bool) string {
+	if len(places) > 0 {
+		return "#places"
+	}
+	if len(honeymoonLocations) > 0 {
+		return "#honeymoon"
+	}
+	if bankConfigured {
+		return "#registry"
+	}
+	return ""
+}
+
+func nextSectionAfterPlaces(honeymoonLocations []models.Place, bankConfigured bool) string {
+	if len(honeymoonLocations) > 0 {
+		return "#honeymoon"
+	}
+	if bankConfigured {
+		return "#registry"
+	}
+	return ""
+}
+
+func prevSectionBeforeHoneymoon(places []models.Place, playlist string) string {
+	if len(places) > 0 {
+		return "#places"
+	}
+	if hasSpotifyPlaylist(playlist) {
+		return "#soundtrack"
+	}
+	return "#venues"
+}
+
+func nextSectionAfterHoneymoon(bankConfigured bool) string {
+	if bankConfigured {
+		return "#registry"
+	}
+	return ""
+}
+
+// progress percentage (0-100) for a partially-claimed item
+func claimedPercent(item models.RegistryItem, claimed map[int]int) int {
+	total := item.Price
+	if total <= 0 {
+		return 0
+	}
+	if remainingAmount(item, claimed) == 0 {
+		return 100
+	}
+	pct := claimed[item.ID] * 100 / total
+	if pct > 100 {
+		return 100
+	}
+	return pct
+}
+
+func heroFallbackImage(heroBackground models.HeroBackground) string {
+	if heroBackground.MobileMediaID > 0 {
+		return publicImageURL(heroBackground.MobileMediaID)
+	}
+	return publicImageURL(heroBackground.DesktopMediaID)
+}
+
+func homepageHeroPreloads(heroBackground models.HeroBackground) []ImagePreload {
+	desktopID := heroBackground.DesktopMediaID
+	mobileID := heroBackground.MobileMediaID
+	if desktopID == 0 {
+		desktopID = mobileID
+	}
+	if mobileID == 0 {
+		mobileID = desktopID
+	}
+	if desktopID == 0 && mobileID == 0 {
+		return nil
+	}
+	desktopURL := publicImageURL(desktopID)
+	mobileURL := publicImageURL(mobileID)
+	if desktopURL == mobileURL {
+		if isPreloadableImageURL(desktopURL) {
+			return []ImagePreload{{Href: desktopURL}}
+		}
+		return nil
+	}
+
+	preloads := make([]ImagePreload, 0, 2)
+	if isPreloadableImageURL(mobileURL) {
+		preloads = append(preloads, ImagePreload{Href: mobileURL, Media: "(max-width: 767px)"})
+	}
+	if isPreloadableImageURL(desktopURL) {
+		preloads = append(preloads, ImagePreload{Href: desktopURL, Media: "(min-width: 768px)"})
+	}
+	return preloads
+}
+
+templ Home(settings models.Settings, content HomeContent, registryItems []models.RegistryItem, claimedAmounts map[int]int, bankConfigured bool, chatEnabled bool, soundtrackEnabled bool, inviteUpdateURL string, rsvpSubmitted bool, t i18n.T, lang string, ogMeta OGMeta) {
+	@Layout(settings.GroomName+" & "+settings.BrideName, lang, t, ogMeta, len(content.Places) > 0 || len(content.Honeymoon) > 0 || len(content.ParkingSpots) > 0, homepageHeroPreloads(content.HeroBackground)) {
+		<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+			<symbol id="chev-d" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></symbol>
+			<symbol id="chev-u" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></symbol>
+		</svg>
+		<!-- section 1: title -->
+		<section id="landing" class={ templ.Classes("vp-section", "vp-hero", templ.KV("vp-hero-with-background", content.HeroBackground.DesktopMediaID > 0 || content.HeroBackground.MobileMediaID > 0)) }>
+			if content.HeroBackground.DesktopMediaID > 0 || content.HeroBackground.MobileMediaID > 0 {
+				<picture class="vp-hero-background-layer" aria-hidden="true">
+					if content.HeroBackground.DesktopMediaID > 0 {
+						<source media="(min-width: 768px)" srcset={ publicImageURL(content.HeroBackground.DesktopMediaID) }/>
+					}
+					<img src={ heroFallbackImage(content.HeroBackground) } alt={ settings.GroomName + " & " + settings.BrideName } width="1600" height="1000" loading="eager" fetchpriority="high" decoding="async"/>
+				</picture>
+				<div class="vp-hero-background-wash" aria-hidden="true"></div>
+			}
+			<div class="vp-section-inner">
+				<p class="hero-kicker">{ t("home.getting_married") }</p>
+				<h1>
+					{ settings.GroomName } <span class="amp">&amp;</span> { settings.BrideName }
+				</h1>
+				if settings.CeremonyDatetime != "" {
+					<p class="muted hero-datetime">
+						<span class="hero-datetime-date">{ i18n.FormatDatetimeDateLine(settings.CeremonyDatetime, lang) }</span>
+						if i18n.FormatDatetimeTimeLine(settings.CeremonyDatetime, lang) != "" {
+							<span class="hero-datetime-time">{ i18n.FormatDatetimeTimeLine(settings.CeremonyDatetime, lang) }</span>
+						}
+					</p>
+				}
+			</div>
+			<a href="#venues" class="vp-arrow vp-arrow-down" aria-label={ t("home.ceremony") }>
+				<svg width="20" height="20" aria-hidden="true"><use href="#chev-d"/></svg>
+			</a>
+		</section>
+		<!-- section 2: ceremony & celebration -->
+		<section id="venues" class="vp-section vp-venues">
+			<span class="vp-flora vp-flora-bl" aria-hidden="true"></span>
+			<span class="vp-flora vp-flora-tr" aria-hidden="true"></span>
+			<a href="#landing" class="vp-arrow vp-arrow-up" aria-label={ t("home.getting_married") }>
+				<svg width="20" height="20" aria-hidden="true"><use href="#chev-u"/></svg>
+			</a>
+			<div class="vp-section-inner">
+				<div class="section-heading">
+					<h2 class="section-title">{ t("home.venues") }</h2>
+					if t("home.venues_description") != "" {
+						<p class="section-subtitle">{ t("home.venues_description") }</p>
+					}
+				</div>
+				<div class="venues-pair">
+					if settings.CeremonyAddress != "" || settings.CeremonyLocation != "" {
+						<div class="venue venue-ceremony">
+							<h2>{ t("home.ceremony") }</h2>
+							<div class="venue-link venue-link-static">
+								if settings.CeremonyMediaID > 0 {
+									<div class="venue-image-wrapper">
+										<img class="venue-image" src={ publicImageURL(settings.CeremonyMediaID) } alt={ t("home.ceremony") } width="800" height="500" loading="lazy" decoding="async"/>
+										<div class="venue-overlay venue-overlay-top">
+											<div class="venue-overlay-badge">
+												<span class="venue-overlay-icon" aria-hidden="true"></span>
+												<strong>{ t("home.ceremony") }</strong>
+												if i18n.FormatDatetimeTimeLine(settings.CeremonyDatetime, lang) != "" {
+													<span class="venue-overlay-separator" aria-hidden="true">·</span>
+													<span class="venue-overlay-time">{ i18n.FormatDatetimeTimeLine(settings.CeremonyDatetime, lang) }</span>
+												}
+											</div>
+										</div>
+										<div class="venue-overlay venue-overlay-bottom">
+											if settings.CeremonyAddress != "" {
+												<strong>{ settings.CeremonyAddress }</strong>
+											}
+											<div class="venue-action-row">
+												<a href={ templ.SafeURL(mapsURL(settings.CeremonyAddress, settings.CeremonyLocation)) } target="_blank" class="venue-address-line venue-address-link">
+													<span class="venue-address-icon" aria-hidden="true"></span>
+													<span>{ t("home.directions") }</span>
+												</a>
+												if len(content.ParkingSpots) > 0 {
+													<button type="button" class="venue-address-line venue-parking-btn" data-open-parking aria-label={ t("home.parking") }>
+														<span class="venue-parking-icon" aria-hidden="true"></span>
+														<span>{ t("home.parking") }</span>
+													</button>
+												}
+											</div>
+										</div>
+									</div>
+								} else {
+									if settings.CeremonyAddress != "" {
+										<p><strong>{ settings.CeremonyAddress }</strong></p>
+									}
+									<div class="venue-action-row">
+										<a href={ templ.SafeURL(mapsURL(settings.CeremonyAddress, settings.CeremonyLocation)) } target="_blank" class="venue-address-line venue-address-link">
+											<span class="venue-address-icon" aria-hidden="true"></span>
+											<span>{ t("home.directions") }</span>
+										</a>
+										if len(content.ParkingSpots) > 0 {
+											<button type="button" class="venue-address-line venue-parking-btn" data-open-parking aria-label={ t("home.parking") }>
+												<span class="venue-parking-icon" aria-hidden="true"></span>
+												<span>{ t("home.parking") }</span>
+											</button>
+										}
+									</div>
+								}
+							</div>
+						</div>
+					}
+					if settings.ReceptionAddress != "" || settings.ReceptionLocation != "" {
+						<div class="venue venue-reception">
+							<h2>{ t("home.reception") }</h2>
+							<div class="venue-link venue-link-static">
+								if settings.ReceptionMediaID > 0 {
+									<div class="venue-image-wrapper">
+										<img class="venue-image" src={ publicImageURL(settings.ReceptionMediaID) } alt={ t("home.reception") } width="800" height="500" loading="lazy" decoding="async"/>
+										<div class="venue-overlay venue-overlay-top">
+											<div class="venue-overlay-badge">
+												<span class="venue-overlay-icon" aria-hidden="true"></span>
+												<strong>{ t("home.reception") }</strong>
+												if i18n.FormatDatetimeTimeLine(settings.ReceptionDatetime, lang) != "" {
+													<span class="venue-overlay-separator" aria-hidden="true">·</span>
+													<span class="venue-overlay-time">{ i18n.FormatDatetimeTimeLine(settings.ReceptionDatetime, lang) }</span>
+												}
+											</div>
+										</div>
+										<div class="venue-overlay venue-overlay-bottom">
+											if settings.ReceptionAddress != "" {
+												<strong>{ settings.ReceptionAddress }</strong>
+											}
+											<a href={ templ.SafeURL(mapsURL(settings.ReceptionAddress, settings.ReceptionLocation)) } target="_blank" class="venue-address-line venue-address-link">
+												<span class="venue-address-icon" aria-hidden="true"></span>
+												<span>{ t("home.directions") }</span>
+											</a>
+										</div>
+									</div>
+								} else {
+									if settings.ReceptionAddress != "" {
+										<p><strong>{ settings.ReceptionAddress }</strong></p>
+									}
+									<a href={ templ.SafeURL(mapsURL(settings.ReceptionAddress, settings.ReceptionLocation)) } target="_blank" class="venue-address-line venue-address-link">
+										<span class="venue-address-icon" aria-hidden="true"></span>
+										<span>{ t("home.directions") }</span>
+									</a>
+								}
+							</div>
+						</div>
+					}
+				</div>
+				if len(content.ParkingSpots) > 0 {
+					<dialog
+						id="parking-modal"
+						class="modal-overlay"
+						data-ceremony-lat={ coordValue(settings.CeremonyLat) }
+						data-ceremony-lng={ coordValue(settings.CeremonyLng) }
+					>
+						<div class="modal-box parking-modal-box">
+							<button type="button" id="parking-modal-close" class="places-modal-close" aria-label={ t("btn.close") }>&times;</button>
+							<div class="parking-map"></div>
+							<div class="parking-pins-layer"></div>
+						</div>
+					</dialog>
+					<div class="parking-data" style="display:none">{ parkingJSON(content.ParkingSpots) }</div>
+				}
+				if len(content.Accommodations) > 0 {
+					<div class="calendar-cta calendar-cta-venues">
+						if len(content.Accommodations) > 0 {
+							<button type="button" class="calendar-btn calendar-btn-secondary" data-open-accommodations>{ t("home.accommodations") }</button>
+						}
+					</div>
+				}
+			</div>
+			if nextSectionAfterVenues(settings.SpotifyPlaylist, content.Places, content.Honeymoon, bankConfigured) != "" {
+				<a href={ templ.SafeURL(nextSectionAfterVenues(settings.SpotifyPlaylist, content.Places, content.Honeymoon, bankConfigured)) } class="vp-arrow vp-arrow-down" aria-label={ t("home.registry") }>
+					<svg width="20" height="20" aria-hidden="true"><use href="#chev-d"/></svg>
+				</a>
+			}
+		</section>
+		<!-- section: soundtrack (spotify collaborative playlist) -->
+		if hasSpotifyPlaylist(settings.SpotifyPlaylist) {
+			<section id="soundtrack" class="vp-section vp-soundtrack">
+				<a href="#venues" class="vp-arrow vp-arrow-up" aria-label={ t("home.ceremony") }>
+					<svg width="20" height="20" aria-hidden="true"><use href="#chev-u"/></svg>
+				</a>
+				<div class="soundtrack-header">
+					<div class="section-heading soundtrack-heading">
+						<h2 class="section-title">{ t("home.soundtrack") }</h2>
+						if settings.EventPassed() {
+							<p class="section-subtitle">{ t("home.soundtrack_event_passed_description") }</p>
+						} else if t("home.soundtrack_description") != "" {
+							<p class="section-subtitle">{ t("home.soundtrack_description") }</p>
+						}
+						if soundtrackEnabled && !settings.EventPassed() {
+							if inviteUpdateURL != "" {
+								<div
+									class="soundtrack-search"
+									data-msg-added={ t("soundtrack.added") }
+									data-msg-error={ t("soundtrack.error") }
+									data-msg-rate={ t("soundtrack.rate_limited") }
+								>
+									<input
+										type="text"
+										class="soundtrack-search-input"
+										placeholder={ t("soundtrack.search_placeholder") }
+										maxlength="100"
+										autocomplete="off"
+										aria-label={ t("home.soundtrack") }
+									/>
+									<div class="soundtrack-results"></div>
+								</div>
+							} else {
+								<div class="soundtrack-search soundtrack-search-locked">
+									<input
+										type="text"
+										class="soundtrack-search-input"
+										placeholder={ t("soundtrack.invite_required") }
+										disabled
+										aria-disabled="true"
+									/>
+								</div>
+							}
+						}
+					</div>
+				</div>
+				<iframe
+					class="soundtrack-embed"
+					title={ t("home.soundtrack") }
+					src={ spotifyEmbedURL(settings.SpotifyPlaylist) }
+					width="100%"
+					frameBorder="0"
+					allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+					loading="lazy"
+				></iframe>
+				if nextSectionAfterSoundtrack(content.Places, content.Honeymoon, bankConfigured) != "" {
+					<a href={ templ.SafeURL(nextSectionAfterSoundtrack(content.Places, content.Honeymoon, bankConfigured)) } class="vp-arrow vp-arrow-down" aria-label="Next section">
+						<svg width="20" height="20" aria-hidden="true"><use href="#chev-d"/></svg>
+					</a>
+				}
+			</section>
+		}
+		if len(content.Places) > 0 || len(content.Honeymoon) > 0 {
+				<svg class="places-filter-defs" aria-hidden="true" focusable="false" width="0" height="0" style="position:absolute">
+					<filter id="places-pin-photo-filter">
+						<feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" stitchTiles="stitch" result="noise"></feTurbulence>
+						<feColorMatrix in="noise" type="saturate" values="0" result="grain"></feColorMatrix>
+						<feComponentTransfer in="grain" result="soft-grain">
+							<feFuncA type="table" tableValues="0 0.08"></feFuncA>
+						</feComponentTransfer>
+						<feBlend in="SourceGraphic" in2="soft-grain" mode="soft-light"></feBlend>
+					</filter>
+				</svg>
+			}
+			<!-- section: places -->
+			if len(content.Places) > 0 {
+				<section id="places" class="vp-section vp-places" data-story-map-section="places">
+					if hasSpotifyPlaylist(settings.SpotifyPlaylist) {
+						<a href="#soundtrack" class="vp-arrow vp-arrow-up" aria-label="Previous section">
+							<svg width="20" height="20" aria-hidden="true"><use href="#chev-u"/></svg>
+						</a>
+					} else {
+						<a href="#venues" class="vp-arrow vp-arrow-up" aria-label="Previous section">
+							<svg width="20" height="20" aria-hidden="true"><use href="#chev-u"/></svg>
+						</a>
+					}
+					<div class="timeline-story-map-shell" aria-hidden="true">
+						<div class="places-map-background timeline-map-background">
+							<div class="timeline-map places-map"></div>
+						</div>
+						<div class="timeline-pins-layer places-pins-layer"></div>
+					</div>
+					<div class="vp-section-inner places-stage">
+						<div class="places-map-copy section-heading">
+							<h2 class="section-title">{ t("home.places") }</h2>
+							if t("home.places_description") != "" {
+								<p class="section-subtitle">{ t("home.places_description") }</p>
+							}
+						</div>
+					</div>
+					<div class="timeline-data" style="display:none">{ locationTimelineJSON(content.Places, lang) }</div>
+					<dialog id="places-modal" class="modal-overlay">
+						<div class="modal-box places-modal-box">
+							<button type="button" id="places-modal-close" class="places-modal-close" aria-label={ t("btn.close") }>&times;</button>
+							<div class="places-modal-media">
+								<img id="places-modal-image" src="" alt={ t("home.places") } width="800" height="600" loading="lazy" fetchpriority="low" decoding="async"/>
+							</div>
+							<div class="places-modal-caption">
+								<h3 id="places-modal-label"></h3>
+								<p id="places-modal-date"></p>
+							</div>
+						</div>
+					</dialog>
+					if nextSectionAfterPlaces(content.Honeymoon, bankConfigured) != "" {
+						<a href={ templ.SafeURL(nextSectionAfterPlaces(content.Honeymoon, bankConfigured)) } class="vp-arrow vp-arrow-down" aria-label="Next section">
+							<svg width="20" height="20" aria-hidden="true"><use href="#chev-d"/></svg>
+						</a>
+					}
+				</section>
+			}
+			if len(content.Honeymoon) > 0 {
+				<section id="honeymoon" class="vp-section vp-honeymoon" data-story-map-section="honeymoon">
+					<a href={ templ.SafeURL(prevSectionBeforeHoneymoon(content.Places, settings.SpotifyPlaylist)) } class="vp-arrow vp-arrow-up" aria-label="Previous section">
+						<svg width="20" height="20" aria-hidden="true"><use href="#chev-u"/></svg>
+					</a>
+					<div class="timeline-story-map-shell" aria-hidden="true">
+						<div class="places-map-background timeline-map-background">
+							<div class="timeline-map places-map"></div>
+						</div>
+						<div class="timeline-pins-layer places-pins-layer"></div>
+					</div>
+					<div class="vp-section-inner places-stage">
+						<div class="places-map-copy section-heading">
+							<h2 class="section-title">{ t("home.honeymoon") }</h2>
+							if t("home.honeymoon_description") != "" {
+								<p class="section-subtitle">{ t("home.honeymoon_description") }</p>
+							}
+						</div>
+					</div>
+					<div class="timeline-data" style="display:none">{ locationTimelineJSON(content.Honeymoon, lang) }</div>
+					if nextSectionAfterHoneymoon(bankConfigured) != "" {
+						<a href={ templ.SafeURL(nextSectionAfterHoneymoon(bankConfigured)) } class="vp-arrow vp-arrow-down" aria-label="Next section">
+							<svg width="20" height="20" aria-hidden="true"><use href="#chev-d"/></svg>
+						</a>
+					}
+				</section>
+			}
+		<!-- section: registry / gifts -->
+		if bankConfigured {
+			<section id="registry" class="vp-section vp-registry">
+				<span class="vp-flora vp-flora-bl" aria-hidden="true"></span>
+				<span class="vp-flora vp-flora-tr" aria-hidden="true"></span>
+				<a href={ templ.SafeURL(prevSectionBeforeRegistry(content.Places, content.Honeymoon, settings.SpotifyPlaylist)) } class="vp-arrow vp-arrow-up" aria-label={ t("home.ceremony") }>
+					<svg width="20" height="20" aria-hidden="true"><use href="#chev-u"/></svg>
+				</a>
+				<div class="vp-section-inner">
+					<div class="registry-v2">
+						<div class="section-heading">
+							<h2 class="section-title">{ t("home.registry") }</h2>
+							if t("home.registry_description") != "" {
+								<p class="section-subtitle">{ t("home.registry_description") }</p>
+							}
+						</div>
+						<div class="registry-v2-carousel">
+							for _, item := range registryItems {
+								<div class={ "gift-tile", templ.KV("gift-tile-is-gifted", remainingAmount(item, claimedAmounts) == 0) }>
+									if item.MediaID > 0 {
+										<div class="gift-tile-image">
+											<img src={ publicImageURL(item.MediaID) } alt={ item.Name } width="400" height="300" loading="lazy" decoding="async"/>
+											if item.Price > 0 {
+												<span class="gift-tile-price">{ formatPrice(item.Price) }</span>
+											}
+											if remainingAmount(item, claimedAmounts) == 0 {
+												<span class="gift-tile-gifted-ribbon">{ t("badge.sold") }</span>
+											}
+										</div>
+									}
+									<div class="gift-tile-body">
+										<h3>{ item.Name }</h3>
+										if item.Price > 0 && (claimedAmounts[item.ID] > 0 || remainingAmount(item, claimedAmounts) == 0) {
+											<div class="gift-tile-progress">
+												<div class="gift-tile-progress-track">
+													<div class="gift-tile-progress-fill" style={ fmt.Sprintf("width:%d%%", claimedPercent(item, claimedAmounts)) }></div>
+												</div>
+												<span class="gift-tile-progress-label">
+													if remainingAmount(item, claimedAmounts) == 0 {
+														{ t("badge.sold") }
+													} else {
+														{ formatPrice(remainingAmount(item, claimedAmounts)) } { t("home.remaining") }
+													}
+												</span>
+											</div>
+										}
+										if item.Price > 0 && remainingAmount(item, claimedAmounts) > 0 {
+											<button
+												type="button"
+												class="gift-tile-btn"
+												data-item-id={ strconv.Itoa(item.ID) }
+												data-item-name={ item.Name }
+												data-item-remaining={ strconv.Itoa(remainingAmount(item, claimedAmounts)) }
+												disabled?={ settings.EventPassed() }
+											>{ t("btn.buy") }</button>
+										}
+										if item.Price == 0 {
+											<button
+												type="button"
+												class="gift-tile-btn free-item-buy-btn"
+												data-item-id={ strconv.Itoa(item.ID) }
+												data-item-name={ item.Name }
+												disabled?={ settings.EventPassed() }
+											>{ t("btn.buy") }</button>
+										}
+									</div>
+								</div>
+							}
+							<!-- free gift tile -->
+							<div class="gift-tile">
+								<div class="gift-tile-image">
+									<div class="free-gift-image-placeholder">
+										<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"></rect><path d="M12 8v13"></path><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"></path><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"></path></svg>
+									</div>
+								</div>
+								<div class="gift-tile-body">
+									<h3>{ t("home.generic_gift") }</h3>
+									<button type="button" class="gift-tile-btn generic-buy-btn" disabled?={ settings.EventPassed() }>{ t("btn.buy") }</button>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</section>
+		}
+		if len(content.Accommodations) > 0 {
+			<dialog id="accommodations-modal" class="modal-overlay">
+				<div class="modal-box accommodation-modal-box">
+					<h3>{ t("home.accommodations") }</h3>
+					<p class="modal-intro">{ t("home.accommodations_description") }</p>
+					<div class="accommodation-grid">
+						for _, suggestion := range content.Accommodations {
+							<article class="accommodation-tile">
+								if suggestion.URL != "" {
+									<h3>
+										<a href={ templ.SafeURL(suggestion.URL) } target="_blank" rel="noreferrer">
+											<span>{ suggestion.Name }</span>
+											<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L11 4"></path><path d="M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L13 19"></path></svg>
+										</a>
+									</h3>
+								} else {
+									<h3>{ suggestion.Name }</h3>
+								}
+								if suggestion.Description != "" {
+									<p>{ suggestion.Description }</p>
+								}
+							</article>
+						}
+					</div>
+					<div class="modal-actions">
+						<button type="button" id="accommodations-close" class="outline secondary">{ t("btn.close") }</button>
+					</div>
+				</div>
+			</dialog>
+		}
+		<!-- transfer modal -->
+		if bankConfigured {
+			<div
+				id="transfer-cfg"
+				style="display:none"
+				data-groom={ settings.GroomName }
+				data-bride={ settings.BrideName }
+				data-copy-label={ t("btn.copy") }
+				data-copied-label={ t("btn.copied") }
+			></div>
+			<dialog id="transfer-modal" class="modal-overlay">
+				<div class="modal-box">
+					<p class="modal-intro">{ t("modal.transfer_intro") }<br/>{ t("modal.transfer_confirm_text") }</p>
+					<div class="modal-field">
+						<label>{ t("modal.iban") }</label>
+						<div class="copyable">
+							<code id="modal-iban">{ settings.BankAccountIBAN }</code>
+							<button type="button" class="copy-btn" data-target="modal-iban">{ t("btn.copy") }</button>
+						</div>
+					</div>
+					<div class="modal-field">
+						<label>{ t("modal.owner") }</label>
+						<div class="copyable">
+							<span id="modal-owner">{ settings.BankAccountHolder }</span>
+							<button type="button" class="copy-btn" data-target="modal-owner">{ t("btn.copy") }</button>
+						</div>
+					</div>
+					<div class="modal-field">
+						<label>{ t("modal.reason") }</label>
+						<div class="copyable">
+							<span id="modal-reason"></span>
+							<button type="button" class="copy-btn" data-target="modal-reason">{ t("btn.copy") }</button>
+						</div>
+					</div>
+					<div class="modal-field">
+						<label>{ t("th.amount") }</label>
+						<strong id="modal-amount"></strong>
+					</div>
+					<div class="modal-field">
+						<label>{ t("placeholder.donor") }</label>
+						<input type="text" id="modal-donor" placeholder={ t("placeholder.donor") } maxlength="200" aria-label={ t("placeholder.donor") }/>
+					</div>
+					<div class="modal-actions">
+						<button type="button" id="modal-cancel" class="outline secondary">{ t("btn.cancel") }</button>
+						<button type="button" id="modal-confirm">{ t("btn.confirm") }</button>
+					</div>
+				</div>
+			</dialog>
+			<!-- percentage selector modal -->
+			<dialog id="pct-modal" class="modal-overlay">
+				<div class="modal-box">
+					<h3 id="pct-item-name"></h3>
+					<p id="pct-item-price"></p>
+					<div class="pct-buttons">
+						<button type="button" class="pct-btn" data-pct="25">25%</button>
+						<button type="button" class="pct-btn" data-pct="50">50%</button>
+						<button type="button" class="pct-btn" data-pct="75">75%</button>
+						<button type="button" class="pct-btn" data-pct="100">100%</button>
+					</div>
+					<div class="pct-custom-row">
+						<input type="number" id="pct-custom" min="1" step="1" placeholder={ t("placeholder.custom_amount") } aria-label={ t("placeholder.custom_amount") }/>
+						<span>€</span>
+					</div>
+					<div class="modal-actions">
+						<button type="button" id="pct-cancel" class="outline secondary">{ t("btn.cancel") }</button>
+						<button type="button" id="pct-next" disabled>{ t("btn.confirm") }</button>
+					</div>
+				</div>
+			</dialog>
+			<!-- thank you modal -->
+			<dialog id="thanks-modal" class="modal-overlay">
+				<div class="modal-box thanks-box">
+					<h3>{ t("gift.thank_you") }</h3>
+					<p>{ t("gift.thanks_message") }</p>
+					<div class="modal-actions">
+						<button type="button" id="thanks-close">{ t("btn.close") }</button>
+					</div>
+				</div>
+			</dialog>
+		}
+		<script>
+			(function () {
+				var sections = document.querySelectorAll(".vp-section");
+				var reducedMotionQuery = window.matchMedia
+					? window.matchMedia("(prefers-reduced-motion: reduce)")
+					: null;
+				function prefersReducedMotion() {
+					return !!(reducedMotionQuery && reducedMotionQuery.matches);
+				}
+
+				// snap container is body (see CSS: html:has(.vp-section) body)
+				function getScroller() {
+					return document.body;
+				}
+
+				// programmatic smooth scroll. native behavior:smooth fights mandatory snap
+				// (snap interrupts mid-animation). manual rAF tween + temporary snap-none
+				// lets animation finish, then snap re-engages on release.
+				var animating = false;
+				function animateScrollTo(targetY, duration) {
+					var scroller = getScroller();
+					var startY = scroller.scrollTop;
+					var delta = targetY - startY;
+					if (Math.abs(delta) < 1) return;
+
+					if (prefersReducedMotion() || animating) {
+						scroller.scrollTop = targetY;
+						return;
+					}
+
+					animating = true;
+					document.body.style.scrollSnapType = "none";
+					var start = performance.now();
+					function easeInOutCubic(t) {
+						return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+					}
+					function step(now) {
+						var elapsed = now - start;
+						var t = Math.min(1, elapsed / duration);
+						scroller.scrollTop = startY + delta * easeInOutCubic(t);
+						if (t < 1) {
+							requestAnimationFrame(step);
+						} else {
+							document.body.style.scrollSnapType = "";
+							animating = false;
+						}
+					}
+					requestAnimationFrame(step);
+				}
+
+				function applyLandingState(isLanding) {
+					var chatBubble = document.getElementById("chat-bubble");
+					if (chatBubble) {
+						chatBubble.classList.toggle("chat-bubble-hidden-on-landing", isLanding);
+					}
+					syncFloatingButtons();
+				}
+
+				function setActiveSection(id) {
+					if (!id) return;
+					applyLandingState(id === "landing");
+					if (
+						window.history &&
+						window.history.replaceState &&
+						window.location.hash !== "#" + id
+					) {
+						window.history.replaceState(
+							null,
+							"",
+							window.location.pathname + window.location.search + "#" + id,
+						);
+					}
+				}
+
+				function syncFloatingButtons() {
+					var inviteBubble = document.getElementById("invite-update-bubble");
+					var chatBubble = document.getElementById("chat-bubble");
+					var creatorBubble = document.getElementById("creator-bubble");
+					var chatVisible =
+						!!chatBubble &&
+						!chatBubble.classList.contains("chat-bubble-hidden-on-landing") &&
+						!chatBubble.classList.contains("chat-bubble-covered") &&
+						chatBubble.style.display !== "none";
+
+					if (inviteBubble) {
+						inviteBubble.classList.toggle(
+							"invite-update-bubble-shifted",
+							chatVisible,
+						);
+					}
+
+					if (creatorBubble) {
+						creatorBubble.classList.toggle("creator-bubble-shift-chat", chatVisible);
+						creatorBubble.classList.toggle(
+							"creator-bubble-shift-invite",
+							!!inviteBubble && inviteBubble.style.display !== "none",
+						);
+					}
+				}
+
+				if (window.location.hash) {
+					setActiveSection(window.location.hash.slice(1));
+				} else if (sections.length) {
+					setActiveSection(sections[0].id);
+				}
+
+				// arrow click: smooth-scroll to target
+				document
+					.querySelectorAll('.vp-arrow[href^="#"]')
+					.forEach(function (link) {
+						link.addEventListener("click", function (event) {
+							var href = link.getAttribute("href") || "";
+							var id = href.charAt(0) === "#" ? href.slice(1) : "";
+							var target = id ? document.getElementById(id) : null;
+							if (!target) return;
+
+							event.preventDefault();
+							var rect = target.getBoundingClientRect();
+							var targetY = getScroller().scrollTop + rect.top;
+							animateScrollTo(targetY, 600);
+							setActiveSection(id);
+						});
+					});
+
+				window.addEventListener("hashchange", function () {
+					if (window.location.hash)
+						setActiveSection(window.location.hash.slice(1));
+				});
+
+				window.addEventListener("load", function () {
+					syncFloatingButtons();
+					var chatBubble = document.getElementById("chat-bubble");
+					if (chatBubble && window.MutationObserver) {
+						var observer = new MutationObserver(syncFloatingButtons);
+						observer.observe(chatBubble, {
+							attributes: true,
+							attributeFilter: ["class", "style"],
+						});
+					}
+					setupCreatorBubble();
+				}, { once: true });
+
+				// only watch landing for chat-bubble visibility — no full active-section tracking
+				var landing = document.getElementById("landing");
+				if (landing && "IntersectionObserver" in window) {
+					var landingObserver = new IntersectionObserver(
+						function (entries) {
+							entries.forEach(function (entry) {
+								applyLandingState(entry.isIntersecting && entry.intersectionRatio > 0.5);
+							});
+						},
+						{ threshold: [0, 0.5, 1] },
+					);
+					landingObserver.observe(landing);
+				}
+
+				var bottomSection = sections.length ? sections[sections.length - 1] : null;
+				function applyBottomState(creatorBubble, isBottom) {
+					if (!creatorBubble) return;
+					creatorBubble.classList.toggle("creator-bubble-visible", isBottom);
+					syncFloatingButtons();
+				}
+				function setupCreatorBubble() {
+					var creatorBubble = document.getElementById("creator-bubble");
+					if (!creatorBubble || !bottomSection) return;
+					if ("IntersectionObserver" in window) {
+						var bottomObserver = new IntersectionObserver(
+							function (entries) {
+								entries.forEach(function (entry) {
+									applyBottomState(creatorBubble, entry.isIntersecting && entry.intersectionRatio > 0.55);
+								});
+							},
+							{ threshold: [0, 0.55, 1] },
+						);
+						bottomObserver.observe(bottomSection);
+					} else {
+						var scrollerForBottom = getScroller();
+						function syncBottomFromScroll() {
+							applyBottomState(
+								creatorBubble,
+								scrollerForBottom.scrollTop + window.innerHeight >=
+									scrollerForBottom.scrollHeight - 2,
+							);
+						}
+						scrollerForBottom.addEventListener("scroll", syncBottomFromScroll, { passive: true });
+						syncBottomFromScroll();
+					}
+				}
+
+				function openModal(m) {
+					if (!m) return;
+					if (typeof m.showModal === "function" && !m.open) m.showModal();
+					else m.style.display = "";
+				}
+
+				function closeModal(m) {
+					if (!m) return;
+					if (typeof m.close === "function" && m.open) m.close();
+					else m.style.display = "none";
+				}
+
+				var accommodationsModal = document.getElementById(
+					"accommodations-modal",
+				);
+				if (accommodationsModal) {
+					document
+						.querySelectorAll("[data-open-accommodations]")
+						.forEach(function (btn) {
+							btn.addEventListener("click", function () {
+								openModal(accommodationsModal);
+							});
+						});
+
+					var accommodationsClose = document.getElementById(
+						"accommodations-close",
+					);
+					if (accommodationsClose) {
+						accommodationsClose.addEventListener("click", function () {
+							closeModal(accommodationsModal);
+						});
+					}
+
+					accommodationsModal.addEventListener("click", function (e) {
+						if (e.target === accommodationsModal)
+							closeModal(accommodationsModal);
+					});
+				}
+
+				var cfg = document.getElementById("transfer-cfg");
+				if (!cfg) return;
+				var groom = cfg.dataset.groom;
+				var bride = cfg.dataset.bride;
+				var copyLabel = cfg.dataset.copyLabel;
+				var copiedLabel = cfg.dataset.copiedLabel;
+
+				// state for current claim
+				var currentItemId = null;
+				var currentAmount = 0;
+
+				var transferModal = document.getElementById("transfer-modal");
+				var pctModal = document.getElementById("pct-modal");
+				if (!transferModal) return;
+
+				// copy buttons
+				document.querySelectorAll(".copy-btn").forEach(function (btn) {
+					btn.addEventListener("click", function () {
+						var target = document.getElementById(btn.dataset.target);
+						navigator.clipboard.writeText(target.textContent.trim());
+						btn.textContent = copiedLabel;
+						setTimeout(function () {
+							btn.textContent = copyLabel;
+						}, 1500);
+					});
+				});
+
+				// registry item buy buttons -> open percentage modal
+				document
+					.querySelectorAll(".gift-tile-btn[data-item-id]")
+					.forEach(function (btn) {
+						btn.addEventListener("click", function () {
+							currentItemId = parseInt(btn.dataset.itemId);
+							var remaining = parseInt(btn.dataset.itemRemaining);
+							document.getElementById("pct-item-name").textContent =
+								btn.dataset.itemName;
+							document.getElementById("pct-item-price").textContent =
+								remaining + " €";
+
+							// configure pct buttons: cut percentage amounts to the integer part only
+							document.querySelectorAll(".pct-btn").forEach(function (pb) {
+								var pct = parseInt(pb.dataset.pct);
+								var amt = Math.floor((remaining * pct) / 100);
+								if (amt < 1 || amt > remaining) {
+									pb.style.display = "none";
+									pb.classList.remove("selected");
+									delete pb.dataset.amount;
+									return;
+								}
+								pb.dataset.amount = String(amt);
+								pb.style.display = "";
+							});
+
+							document.getElementById("pct-custom").value = "";
+							document.getElementById("pct-custom").max = String(remaining);
+							document.getElementById("pct-custom").step = "1";
+							document.getElementById("pct-next").disabled = true;
+							currentAmount = 0;
+							openModal(pctModal);
+						});
+					});
+
+				// pct button clicks
+				var pctCustom = document.getElementById("pct-custom");
+				document.querySelectorAll(".pct-btn").forEach(function (btn) {
+					btn.addEventListener("click", function () {
+						document.querySelectorAll(".pct-btn").forEach(function (b) {
+							b.classList.remove("selected");
+						});
+						btn.classList.add("selected");
+						currentAmount = parseInt(btn.dataset.amount);
+						pctCustom.value = "";
+						pctCustom.blur();
+						document.getElementById("pct-next").disabled = false;
+					});
+				});
+
+				// pct custom input — focus deselects presets
+				pctCustom.addEventListener("focus", function () {
+					document.querySelectorAll(".pct-btn").forEach(function (b) {
+						b.classList.remove("selected");
+					});
+					currentAmount = 0;
+					document.getElementById("pct-next").disabled = true;
+				});
+				pctCustom.addEventListener("input", function () {
+					document.querySelectorAll(".pct-btn").forEach(function (b) {
+						b.classList.remove("selected");
+					});
+					var max = this.max ? parseInt(this.max) : 0;
+					var val = Number(this.value);
+					if (
+						Number.isInteger(val) &&
+						val > 0 &&
+						(max === 0 || val <= max)
+					) {
+						currentAmount = val;
+						document.getElementById("pct-next").disabled = false;
+					} else {
+						currentAmount = 0;
+						document.getElementById("pct-next").disabled = true;
+					}
+				});
+
+				// pct cancel
+				document
+					.getElementById("pct-cancel")
+					.addEventListener("click", function () {
+						closeModal(pctModal);
+					});
+
+				// pct next -> open transfer modal
+				document
+					.getElementById("pct-next")
+					.addEventListener("click", function () {
+						if (currentAmount <= 0) return;
+						closeModal(pctModal);
+						openTransferModal();
+					});
+
+				// generic gift tile — opens pct modal for free-form amount entry
+				var genericBuyBtn = document.querySelector(".generic-buy-btn");
+				if (genericBuyBtn) {
+					genericBuyBtn.addEventListener("click", function () {
+						currentItemId = null;
+						currentAmount = 0;
+						document.getElementById("pct-item-name").textContent = genericBuyBtn
+							.closest(".gift-tile")
+							.querySelector("h3").textContent;
+						document.getElementById("pct-item-price").textContent = "";
+						document.querySelectorAll(".pct-btn").forEach(function (pb) {
+							pb.style.display = "none";
+						});
+						document.getElementById("pct-custom").value = "";
+						document.getElementById("pct-custom").step = "1";
+						document.getElementById("pct-custom").removeAttribute("max");
+						document.getElementById("pct-next").disabled = true;
+						openModal(pctModal);
+					});
+				}
+
+				// price=0 registry items — free-form amount with item ID
+				document
+					.querySelectorAll(".free-item-buy-btn")
+					.forEach(function (btn) {
+						btn.addEventListener("click", function () {
+							currentItemId = parseInt(btn.dataset.itemId);
+							currentAmount = 0;
+							document.getElementById("pct-item-name").textContent =
+								btn.dataset.itemName;
+							document.getElementById("pct-item-price").textContent = "";
+							document.querySelectorAll(".pct-btn").forEach(function (pb) {
+								pb.style.display = "none";
+							});
+							document.getElementById("pct-custom").value = "";
+							document.getElementById("pct-custom").step = "1";
+							document.getElementById("pct-custom").removeAttribute("max");
+							document.getElementById("pct-next").disabled = true;
+							openModal(pctModal);
+						});
+					});
+
+				function openTransferModal() {
+					var reason = "Regalo di nozze";
+					if (groom && bride) reason += " " + groom + " e " + bride;
+					document.getElementById("modal-reason").textContent = reason;
+					document.getElementById("modal-amount").textContent =
+						currentAmount + " €";
+					document.getElementById("modal-donor").value = "";
+					openModal(transferModal);
+				}
+
+				// transfer modal cancel
+				document
+					.getElementById("modal-cancel")
+					.addEventListener("click", function () {
+						closeModal(transferModal);
+					});
+
+				// transfer modal confirm -> POST claim
+				document
+					.getElementById("modal-confirm")
+					.addEventListener("click", function () {
+						var body = {
+							amount: currentAmount,
+							donor: document.getElementById("modal-donor").value,
+						};
+						if (currentItemId !== null) body.registry_item_id = currentItemId;
+						var claimInviteCode =
+							new URLSearchParams(window.location.search).get("invite") || "";
+						if (claimInviteCode) body.invite_code = claimInviteCode;
+						fetch("/gift/claim", {
+							method: "POST",
+							headers: {
+								"Content-Type": "application/json",
+								"X-Csrf-Token": (document.cookie.match(/(?:^|; )csrf_public=([^;]*)/) || ['',''])[1],
+							},
+							body: JSON.stringify(body),
+						}).then(function (res) {
+							if (res.ok) {
+								closeModal(transferModal);
+								openModal(document.getElementById("thanks-modal"));
+							} else {
+								res.json().then(function (data) {
+									alert(data.error || "Error");
+								});
+							}
+						});
+					});
+
+				// thanks modal close -> reload
+				document
+					.getElementById("thanks-close")
+					.addEventListener("click", function () {
+						window.location.reload();
+					});
+				document
+					.getElementById("thanks-modal")
+					.addEventListener("click", function (e) {
+						if (e.target === this) window.location.reload();
+					});
+
+				// close modals on overlay click
+				[transferModal, pctModal].forEach(function (m) {
+					m.addEventListener("click", function (e) {
+						if (e.target === m) closeModal(m);
+					});
+				});
+			})();
+		</script>
+		if len(content.Places) > 0 || len(content.Honeymoon) > 0 {
+			<script src={ templ.SafeURL(assetURL("/static/places.js")) } defer fetchpriority="low"></script>
+		}
+		if len(content.ParkingSpots) > 0 {
+			<script src={ templ.SafeURL(assetURL("/static/parking.js")) } defer fetchpriority="low"></script>
+		}
+		if soundtrackEnabled {
+				<script src={ templ.SafeURL(assetURL("/static/soundtrack.js")) } defer fetchpriority="low"></script>
+			}
+		if inviteUpdateURL != "" {
+			<a id="invite-update-bubble" href={ templ.SafeURL(inviteUpdateURL) }>{ t("home.update_invitation") }</a>
+		}
+		<a id="creator-bubble" href="https://davidepucci.it" aria-label={ t("invitation.brought_to_you_by") }>{ t("invitation.brought_to_you_by") }</a>
+		if rsvpSubmitted {
+			<div id="rsvp-submitted-toast" role="status" aria-live="polite">
+				<span>{ t("invitation.submitted_message") }</span>
+			</div>
+			<script>
+				(function () {
+					var toast = document.getElementById("rsvp-submitted-toast");
+					if (!toast) return;
+					var url = new URL(window.location.href);
+					url.searchParams.delete("submitted");
+					window.history.replaceState(null, "", url.pathname + (url.search ? url.search : "") + url.hash);
+					window.requestAnimationFrame(function () {
+						window.requestAnimationFrame(function () {
+							toast.classList.add("rsvp-submitted-toast-in");
+						});
+					});
+					window.setTimeout(function () {
+						toast.classList.remove("rsvp-submitted-toast-in");
+						toast.classList.add("rsvp-submitted-toast-out");
+						window.setTimeout(function () { toast.remove(); }, 400);
+					}, 3000);
+				})();
+			</script>
+		}
+			if chatEnabled && !settings.EventPassed() {
+			<button id="chat-bubble" type="button" title={ t("chat.title") } aria-label={ t("chat.title") }>
+				<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+			</button>
+			<div
+				id="chat-panel"
+				style="display:none"
+				data-msg-error={ t("chat.error") }
+				data-msg-rate={ t("chat.rate_limited") }
+			>
+				<div class="chat-header">
+					<span>{ t("chat.title") }</span>
+					<button id="chat-close" type="button" aria-label={ t("btn.close") }>&times;</button>
+				</div>
+				<div id="chat-messages"></div>
+				<form id="chat-form">
+					<input id="chat-input" type="text" maxlength="500" placeholder={ t("chat.placeholder") } autocomplete="off" aria-label={ t("chat.title") }/>
+					<button type="submit">{ t("chat.send") }</button>
+				</form>
+			</div>
+			<script src={ templ.SafeURL(assetURL("/static/chat.js")) } defer fetchpriority="low"></script>
+		}
+	}
+}

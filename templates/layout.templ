@@ -1,0 +1,179 @@
+package templates
+
+import (
+	"os"
+	"strconv"
+	"strings"
+
+	"github.com/streambinder/foedus/internal/i18n"
+)
+
+type OGMeta struct {
+	Title       string
+	Description string
+	URL         string
+	ImageURL    string
+	ImageType   string
+	ImageWidth  string
+	ImageHeight string
+}
+
+type ImagePreload struct {
+	Href  string
+	Media string
+}
+
+func isPreloadableImageURL(raw string) bool {
+	raw = strings.TrimSpace(raw)
+	return strings.HasPrefix(raw, "/") || strings.HasPrefix(raw, "https://") || strings.HasPrefix(raw, "http://")
+}
+
+// coordValue renders a lat/lng for a form field or data attribute. %f would
+// pad-or-truncate to 6 decimals, so a dashboard save that changed nothing still
+// rewrote 43.1054714 as 43.105471; 'f' with precision -1 emits the shortest
+// string that parses back to the same float64.
+func coordValue(coord float64) string {
+	return strconv.FormatFloat(coord, 'f', -1, 64)
+}
+
+// cartoAPIKey returns the publishable CARTO basemaps API key from the
+// CARTO_API_KEY environment variable, or "" when unset (tiles stay keyless).
+func cartoAPIKey() string {
+	return strings.TrimSpace(os.Getenv("CARTO_API_KEY"))
+}
+
+func publicImageURL(mediaID int) string {
+	if mediaID <= 0 {
+		return ""
+	}
+	return "/media/" + strconv.Itoa(mediaID)
+}
+
+func pageTitle(title, groom, bride string) string {
+	if groom != "" && bride != "" {
+		return title + " · " + groom + " & " + bride
+	}
+	return title
+}
+
+templ SetupGuard(lang string, t i18n.T) {
+	@Layout(t("title.setup"), lang, t, OGMeta{}, false, nil) {
+		<div class="setup-guard">
+			<h1>{ t("setup.not_ready") }</h1>
+			<p><a href="/dashboard">{ t("setup.go_to_dashboard") }</a></p>
+		</div>
+	}
+}
+
+templ Layout(title string, lang string, t i18n.T, ogMeta OGMeta, includeLeaflet bool, imagePreloads []ImagePreload) {
+	<!DOCTYPE html>
+	<html lang={ lang } data-theme="light">
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-visual"/>
+			<title>{ title }</title>
+			<meta name="theme-color" content="#2A3439"/>
+			if cartoAPIKey() != "" {
+				<meta name="carto-api-key" content={ cartoAPIKey() }/>
+			}
+			<style>html,body{margin:0;background:#FCF8F3;color:#36454F;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}</style>
+			if ogMeta.Title != "" {
+				if ogMeta.Description != "" {
+					<meta name="description" content={ ogMeta.Description }/>
+				}
+				<meta property="og:title" content={ ogMeta.Title }/>
+				<meta property="og:description" content={ ogMeta.Description }/>
+				<meta property="og:image" content={ ogMeta.ImageURL }/>
+				<meta property="og:image:secure_url" content={ ogMeta.ImageURL }/>
+				if ogMeta.ImageType != "" {
+					<meta property="og:image:type" content={ ogMeta.ImageType }/>
+				}
+				if ogMeta.ImageWidth != "" {
+					<meta property="og:image:width" content={ ogMeta.ImageWidth }/>
+				}
+				if ogMeta.ImageHeight != "" {
+					<meta property="og:image:height" content={ ogMeta.ImageHeight }/>
+				}
+				<meta property="og:type" content="website"/>
+				<meta property="og:url" content={ ogMeta.URL }/>
+				<meta name="twitter:card" content="summary_large_image"/>
+				<meta name="twitter:title" content={ ogMeta.Title }/>
+				<meta name="twitter:description" content={ ogMeta.Description }/>
+				<meta name="twitter:image" content={ ogMeta.ImageURL }/>
+			}
+			<link rel="icon" type="image/svg+xml" href={ templ.SafeURL(assetURL("/static/favicon.svg")) }/>
+			<link rel="icon" type="image/png" sizes="512x512" href={ templ.SafeURL(assetURL("/static/favicon.png")) }/>
+			<link rel="apple-touch-icon" sizes="512x512" href={ templ.SafeURL(assetURL("/static/favicon.png")) }/>
+			<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin/>
+			<link rel="preconnect" href="https://fonts.googleapis.com"/>
+			<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+			if includeLeaflet {
+				<link rel="preconnect" href="https://unpkg.com" crossorigin/>
+				<link rel="dns-prefetch" href="//unpkg.com"/>
+				<link rel="dns-prefetch" href="//basemaps.cartocdn.com"/>
+			}
+			for _, preload := range imagePreloads {
+				if preload.Href != "" {
+					if preload.Media != "" {
+						<link rel="preload" as="image" href={ templ.SafeURL(assetURL(preload.Href)) } media={ preload.Media } fetchpriority="high"/>
+					} else {
+						<link rel="preload" as="image" href={ templ.SafeURL(assetURL(preload.Href)) } fetchpriority="high"/>
+					}
+				}
+			}
+			<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" fetchpriority="high"/>
+			<link rel="stylesheet" href={ templ.SafeURL(assetURL("/static/css/styles.css")) } fetchpriority="high"/>
+			<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600&family=Courier+Prime:wght@400;700&display=swap" fetchpriority="high"/>
+			<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600&family=Courier+Prime:wght@400;700&display=swap" media="print" onload="this.media='all'"/>
+			<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600&family=Courier+Prime:wght@400;700&display=swap"/></noscript>
+		</head>
+		<body>
+			<main class="container" role="main">
+				{ children... }
+			</main>
+		</body>
+	</html>
+}
+
+templ DashboardLayout(title string, lang string) {
+	<!DOCTYPE html>
+	<html lang={ lang } data-bs-theme="light">
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+			<title>{ title }</title>
+			<meta name="theme-color" content="#2A3439"/>
+			<link rel="icon" type="image/svg+xml" href={ templ.SafeURL(assetURL("/static/favicon.svg")) }/>
+			<link rel="icon" type="image/png" sizes="512x512" href={ templ.SafeURL(assetURL("/static/favicon.png")) }/>
+			<link rel="apple-touch-icon" sizes="512x512" href={ templ.SafeURL(assetURL("/static/favicon.png")) }/>
+			<link
+				rel="stylesheet"
+				href="https://cdn.jsdelivr.net/npm/@tabler/core@1.4.0/dist/css/tabler.min.css"
+			/>
+			<link rel="stylesheet" href={ templ.SafeURL(assetURL("/static/css/dashboard.css")) }/>
+		</head>
+		<body class="dashboard-page">
+			<div class="page">
+				<div class="page-wrapper">
+					<div class="page-header d-print-none">
+						<div class="container-xl">
+							<div class="row g-2 align-items-center">
+								<div class="col">
+									<h2 class="page-title">{ title }</h2>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="page-body">
+						<div class="container-xl">
+							<div class="dashboard-stack">
+								{ children... }
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.4.0/dist/js/tabler.min.js"></script>
+		</body>
+	</html>
+}

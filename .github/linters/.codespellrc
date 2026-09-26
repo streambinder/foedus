@@ -1,0 +1,3 @@
+[codespell]
+ignore-words-list = nome,vai,impossibile,foto,ot,ans
+skip = *.css,*.svg,*.json,go.sum
