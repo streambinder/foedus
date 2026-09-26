@@ -151,6 +151,39 @@ func soundtrackInviteGuestFirstNames(invitations []models.Invitation, inviteID s
 	return ""
 }
 
+// giftsHaveInvitationIDs reports whether any of the given gifts is linked to
+// an invitation, so the dashboard can skip the Guests column when unused.
+func giftsHaveInvitationIDs(gifts []models.Gift) bool {
+	for _, g := range gifts {
+		if g.InvitationID != nil {
+			return true
+		}
+	}
+	return false
+}
+
+// giftInvitationGuestFirstNames joins the first names of the guests on the
+// invitation a gift was claimed through, or "" when the gift has none.
+func giftInvitationGuestFirstNames(invitations []models.Invitation, invitationID *int) string {
+	if invitationID == nil {
+		return ""
+	}
+	for _, inv := range invitations {
+		if inv.ID != *invitationID {
+			continue
+		}
+		var names []string
+		for _, guest := range inv.Guests {
+			firstName := strings.TrimSpace(guest.FirstName)
+			if firstName != "" {
+				names = append(names, firstName)
+			}
+		}
+		return strings.Join(names, ", ")
+	}
+	return ""
+}
+
 func invitationActioned(inv models.Invitation) bool {
 	for _, g := range inv.Guests {
 		if g.ConfirmedCeremony != nil || g.ConfirmedReception != nil {
@@ -1293,6 +1326,9 @@ templ Dashboard(settings models.Settings, content SettingsContent, guests []mode
 												<th>{ t("th.donor") }</th>
 												<th class="amount-cell">{ t("th.amount") }</th>
 												<th>{ t("th.registry_item") }</th>
+												if giftsHaveInvitationIDs(pagedGifts) {
+													<th>{ t("th.invite_guests") }</th>
+												}
 												<th>{ t("th.confirmed") }</th>
 												<th>{ t("th.date") }</th>
 												<th>{ t("th.actions") }</th>
@@ -1304,6 +1340,15 @@ templ Dashboard(settings models.Settings, content SettingsContent, guests []mode
 													<td data-label={ t("th.donor") }>{ g.Donor }</td>
 													<td class="amount-cell" data-label={ t("th.amount") }>{ formatGiftAmount(g.Amount) }</td>
 													<td data-label={ t("th.registry_item") }>{ registryItemName(registryItems, g.RegistryItemID) }</td>
+													if giftsHaveInvitationIDs(pagedGifts) {
+														<td data-label={ t("th.invite_guests") }>
+															if giftInvitationGuestFirstNames(invitations, g.InvitationID) != "" {
+																{ giftInvitationGuestFirstNames(invitations, g.InvitationID) }
+															} else {
+																—
+															}
+														</td>
+													}
 													<td data-label={ t("th.confirmed") }>
 														if g.Confirmed {
 															{ t("status.confirmed") }
