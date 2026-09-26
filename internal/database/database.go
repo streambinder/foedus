@@ -161,6 +161,7 @@ func migrate() {
 			amount           INTEGER NOT NULL,
 			donor            TEXT NOT NULL DEFAULT '',
 			registry_item_id INTEGER REFERENCES registry_items(id),
+			invitation_id    INTEGER REFERENCES invitations(id),
 			confirmed        INTEGER NOT NULL DEFAULT 0,
 			created_at       INTEGER NOT NULL DEFAULT (unixepoch())
 		) STRICT`,
