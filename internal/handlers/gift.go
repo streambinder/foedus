@@ -12,6 +12,7 @@ type claimRequest struct {
 	RegistryItemID *int   `json:"registry_item_id"`
 	Amount         int    `json:"amount"` // whole currency units (e.g. euros)
 	Donor          string `json:"donor"`
+	InviteCode     string `json:"invite_code"` // invitation the claimer arrived through, if any
 }
 
 func ClaimGift(c *fiber.Ctx) error {
@@ -63,7 +64,8 @@ func ClaimGift(c *fiber.Ctx) error {
 		}
 	}
 
-	if err := database.CreateGift(req.Amount, strings.TrimSpace(req.Donor), req.RegistryItemID); err != nil {
+	invitationID := resolveInvitationID(c, req)
+	if err := database.CreateGift(req.Amount, strings.TrimSpace(req.Donor), req.RegistryItemID, invitationID); err != nil {
 		logger.Error("gift claim save failed", "amount", req.Amount, "donor", observability.Redact(req.Donor), "error", err.Error())
 		return c.Status(500).JSON(fiber.Map{"error": "failed to save gift"})
 	}
@@ -72,6 +74,24 @@ func ClaimGift(c *fiber.Ctx) error {
 		"amount", req.Amount,
 		"donor", observability.Redact(req.Donor),
 		"registry_item_id", req.RegistryItemID,
+		"invitation_id", invitationID,
 	)
 	return c.JSON(fiber.Map{"ok": true})
+}
+
+// resolveInvitationID resolves the invite code the claimer arrived through to
+// its invitation row, so the gift is tied to the invitation with a FK.
+// Returns nil when no code was supplied or it doesn't match an invitation —
+// the claim is recorded anyway, just without the link.
+func resolveInvitationID(c *fiber.Ctx, req claimRequest) *int {
+	code := strings.TrimSpace(req.InviteCode)
+	if code == "" {
+		return nil
+	}
+	inv, err := database.GetInvitationByCode(code)
+	if err != nil {
+		handlerLogger(c).Warn("gift claim unknown invite code", "invitation_code", observability.Redact(code))
+		return nil
+	}
+	return &inv.ID
 }

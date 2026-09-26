@@ -2,16 +2,16 @@ package database
 
 import "github.com/streambinder/foedus/internal/models"
 
-func CreateGift(amount int, donor string, registryItemID *int) error {
+func CreateGift(amount int, donor string, registryItemID, invitationID *int) error {
 	_, err := DB.Exec(
-		`INSERT INTO gifts (amount, donor, registry_item_id, confirmed) VALUES (?, ?, ?, 0)`,
-		amount, donor, registryItemID,
+		`INSERT INTO gifts (amount, donor, registry_item_id, invitation_id, confirmed) VALUES (?, ?, ?, ?, 0)`,
+		amount, donor, registryItemID, invitationID,
 	)
 	return err
 }
 
 func GetAllGifts() ([]models.Gift, error) {
-	rows, err := DB.Query(`SELECT id, amount, donor, registry_item_id, confirmed, created_at FROM gifts ORDER BY confirmed ASC, created_at DESC`)
+	rows, err := DB.Query(`SELECT id, amount, donor, registry_item_id, invitation_id, confirmed, created_at FROM gifts ORDER BY confirmed ASC, created_at DESC`)
 	if err != nil {
 		return nil, err
 	}
@@ -20,7 +20,7 @@ func GetAllGifts() ([]models.Gift, error) {
 	var gifts []models.Gift
 	for rows.Next() {
 		var g models.Gift
-		if err := rows.Scan(&g.ID, &g.Amount, &g.Donor, &g.RegistryItemID, &g.Confirmed, &g.CreatedAt); err != nil {
+		if err := rows.Scan(&g.ID, &g.Amount, &g.Donor, &g.RegistryItemID, &g.InvitationID, &g.Confirmed, &g.CreatedAt); err != nil {
 			return nil, err
 		}
 		gifts = append(gifts, g)
@@ -31,9 +31,9 @@ func GetAllGifts() ([]models.Gift, error) {
 func GetGift(id int) (models.Gift, error) {
 	var g models.Gift
 	err := DB.QueryRow(
-		`SELECT id, amount, donor, registry_item_id, confirmed, created_at FROM gifts WHERE id = ?`,
+		`SELECT id, amount, donor, registry_item_id, invitation_id, confirmed, created_at FROM gifts WHERE id = ?`,
 		id,
-	).Scan(&g.ID, &g.Amount, &g.Donor, &g.RegistryItemID, &g.Confirmed, &g.CreatedAt)
+	).Scan(&g.ID, &g.Amount, &g.Donor, &g.RegistryItemID, &g.InvitationID, &g.Confirmed, &g.CreatedAt)
 	return g, err
 }
 

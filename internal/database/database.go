@@ -160,6 +160,7 @@ func migrate() {
 			amount           INTEGER NOT NULL,
 			donor            TEXT NOT NULL DEFAULT '',
 			registry_item_id INTEGER REFERENCES registry_items(id),
+			invitation_id    INTEGER REFERENCES invitations(id),
 			confirmed        INTEGER NOT NULL DEFAULT 0,
 			created_at       INTEGER NOT NULL DEFAULT (unixepoch())
 		) STRICT`,
@@ -298,4 +299,32 @@ func migrate() {
 	}
 
 	slog.Info("database migrations complete", "statements", len(statements), "duration_ms", time.Since(start).Milliseconds())
+
+	// CREATE TABLE IF NOT EXISTS is a no-op on databases that predate a
+	// column, so additive column changes get their own idempotent step.
+	ensureGiftInvitationID()
+}
+
+// ensureGiftInvitationID adds gifts.invitation_id to databases created before
+// the column existed. SQLite has no ADD COLUMN IF NOT EXISTS, so presence is
+// checked through pragma_table_info first.
+func ensureGiftInvitationID() {
+	rows, err := DB.Query(`SELECT name FROM pragma_table_info('gifts') WHERE name = 'invitation_id'`)
+	if err != nil {
+		slog.Error("failed to inspect gifts schema", "error", err.Error())
+		panic(err)
+	}
+	defer rows.Close()
+	if rows.Next() {
+		return
+	}
+	if err := rows.Err(); err != nil {
+		slog.Error("failed to inspect gifts schema", "error", err.Error())
+		panic(err)
+	}
+	if _, err := DB.Exec(`ALTER TABLE gifts ADD COLUMN invitation_id INTEGER REFERENCES invitations(id)`); err != nil {
+		slog.Error("failed to add gifts.invitation_id", "error", err.Error())
+		panic(err)
+	}
+	slog.Info("database column added", "table", "gifts", "column", "invitation_id")
 }

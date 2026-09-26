@@ -157,6 +157,7 @@ type Gift struct {
 	Amount         int    // whole currency units (e.g. euros), no cents
 	Donor          string // who sent the gift
 	RegistryItemID *int   // fk to registry_items, nil for generic gifts
+	InvitationID   *int   // fk to invitations, nil when the claim wasn't tied to an invitation
 	Confirmed      bool
 	CreatedAt      Timestamp
 }
