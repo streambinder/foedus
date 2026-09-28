@@ -13,7 +13,7 @@ RUN ASSET_VERSION="$(date -u +%Y%m%d%H%M%S)" && \
     -ldflags "-X github.com/streambinder/foedus/internal/buildinfo.AssetVersion=${ASSET_VERSION}" \
     -o foedus .
 
-FROM alpine:3.24.1
+FROM alpine:3.24.2
 RUN apk add --no-cache ca-certificates=20260909-r0
 WORKDIR /app
 COPY --from=builder /app/foedus .
