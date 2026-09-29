@@ -568,7 +568,7 @@
       null,
       null,
       null,
-      false,
+      null,
       null,
       null,
       false,
@@ -579,7 +579,7 @@
       "ceremony-preview",
       "image/webp",
       0.9,
-      false,
+      null,
       "ceremony-image-token",
       1600,
       true,
@@ -590,7 +590,7 @@
       "reception-preview",
       "image/webp",
       0.9,
-      false,
+      null,
       "reception-image-token",
       1600,
       true,
@@ -601,12 +601,73 @@
       "share-preview-preview",
       null,
       null,
-      true,
+      "share-preview-remove",
       "share-preview-image-token",
       null,
       true,
     );
+    bindImageResize(
+      "stamp-file",
+      "stamp-image-data",
+      "stamp-preview",
+      null,
+      null,
+      "stamp-remove",
+      null,
+      null,
+      true,
+    );
+    bindImageResize(
+      "flora-bl-file",
+      "flora-bl-image-data",
+      "flora-bl-preview",
+      null,
+      null,
+      "flora-bl-remove",
+      null,
+      null,
+      true,
+    );
+    bindImageResize(
+      "flora-tr-file",
+      "flora-tr-image-data",
+      "flora-tr-preview",
+      null,
+      null,
+      "flora-tr-remove",
+      null,
+      null,
+      true,
+    );
     bindManagedImageResizers();
+    initAppearanceColorFields();
+  }
+
+  // Native colour pickers in the Appearance section: keep the hex readout next
+  // to each picker in sync while the user drags, and let the reset button
+  // restore the default colour for that field.
+  function initAppearanceColorFields() {
+    document
+      .querySelectorAll('input[type="color"][data-hex-target]')
+      .forEach((input) => {
+        if (input.dataset.colorBound === "true") return;
+        input.dataset.colorBound = "true";
+        input.addEventListener("input", () => {
+          const target = document.getElementById(input.dataset.hexTarget);
+          if (target) target.textContent = input.value;
+        });
+      });
+    document.querySelectorAll("button[data-color-reset]").forEach((button) => {
+      if (button.dataset.resetBound === "true") return;
+      button.dataset.resetBound = "true";
+      button.addEventListener("click", () => {
+        const input = document.getElementById(button.dataset.colorReset);
+        if (!input || !button.dataset.defaultColor) return;
+        input.value = button.dataset.defaultColor;
+        const target = document.getElementById(input.dataset.hexTarget);
+        if (target) target.textContent = input.value;
+      });
+    });
   }
 
   function bindImageResize(
@@ -615,7 +676,7 @@
     previewId,
     format,
     quality,
-    withRemove,
+    removeBtnId,
     tokenId,
     maxDim,
     passthrough,
@@ -624,9 +685,26 @@
     const dataInput = document.getElementById(dataId);
     const tokenInput = tokenId ? document.getElementById(tokenId) : null;
     const previewImg = previewId ? document.getElementById(previewId) : null;
+    const removeBtn = removeBtnId ? document.getElementById(removeBtnId) : null;
     if (!fileInput || !dataInput || fileInput.dataset.resizeBound === "true")
       return;
     fileInput.dataset.resizeBound = "true";
+
+    const clearForRemove = () => {
+      dataInput.value = "";
+      // dropping the media id too is what actually restores the default: the
+      // server deletes the stored media row when both fields arrive empty.
+      const mediaIdInput = document.getElementById(
+        fileId.replace(/-file$/, "-media-id"),
+      );
+      if (mediaIdInput) mediaIdInput.value = "";
+      if (tokenInput) tokenInput.value = "";
+      if (previewImg) {
+        clearPreviewImage(previewImg);
+      }
+      if (removeBtn) removeBtn.style.display = "none";
+      fileInput.value = "";
+    };
 
     fileInput.addEventListener("change", () => {
       const file = fileInput.files?.[0];
@@ -647,10 +725,7 @@
           if (previewImg) {
             setPreviewImage(previewImg, reader.result);
           }
-          if (withRemove) {
-            const removeBtn = document.getElementById("share-preview-remove");
-            if (removeBtn) removeBtn.style.display = "";
-          }
+          if (removeBtn) removeBtn.style.display = "";
         };
         reader.readAsDataURL(file);
         return;
@@ -675,28 +750,14 @@
         if (previewImg) {
           setPreviewImage(previewImg, dataInput.value);
         }
-        if (withRemove) {
-          const removeBtn = document.getElementById("share-preview-remove");
-          if (removeBtn) removeBtn.style.display = "";
-        }
+        if (removeBtn) removeBtn.style.display = "";
       };
       img.src = URL.createObjectURL(file);
     });
 
-    if (withRemove) {
-      const removeBtn = document.getElementById("share-preview-remove");
-      if (removeBtn && removeBtn.dataset.bound !== "true") {
-        removeBtn.dataset.bound = "true";
-        removeBtn.addEventListener("click", () => {
-          dataInput.value = "";
-          if (tokenInput) tokenInput.value = "";
-          if (previewImg) {
-            clearPreviewImage(previewImg);
-          }
-          removeBtn.style.display = "none";
-          fileInput.value = "";
-        });
-      }
+    if (removeBtn && removeBtn.dataset.bound !== "true") {
+      removeBtn.dataset.bound = "true";
+      removeBtn.addEventListener("click", clearForRemove);
     }
   }
 

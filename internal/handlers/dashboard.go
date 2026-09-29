@@ -364,6 +364,9 @@ func collectExistingMediaIDs(settings models.Settings, content templates.Setting
 	add(settings.CeremonyMediaID)
 	add(settings.ReceptionMediaID)
 	add(settings.SharePreviewMediaID)
+	add(settings.StampMediaID)
+	add(settings.FloraBlMediaID)
+	add(settings.FloraTrMediaID)
 	for _, place := range slices.Concat(content.Places, content.Honeymoon) {
 		add(place.MediaID)
 	}
@@ -495,7 +498,31 @@ func SaveSettings(c *fiber.Ctx) error {
 			SpotifyPlaylist:   strings.TrimSpace(c.FormValue("spotify_playlist")),
 		}
 
-		// the three single-image fields resolve inside the tx: each may insert new
+		// appearance colours: the native picker always posts a value, but an
+		// empty field keeps the saved colour and anything else must be a strict
+		// #rrggbb, lowercased for a canonical stored form.
+		for _, colour := range []struct {
+			field    string
+			existing string
+			target   *string
+		}{
+			{"envelope_color", settings.EnvelopeColor, &updated.EnvelopeColor},
+			{"page_bg_color", settings.PageBgColor, &updated.PageBgColor},
+			{"home_bg_color", settings.HomeBgColor, &updated.HomeBgColor},
+		} {
+			raw := strings.ToLower(strings.TrimSpace(c.FormValue(colour.field)))
+			switch {
+			case raw == "":
+				*colour.target = colour.existing
+			case !models.IsHexColor(raw):
+				logger.Warn("settings save rejected", "field", colour.field, "value", raw)
+				return fiber.NewError(400, "invalid colour")
+			default:
+				*colour.target = raw
+			}
+		}
+
+		// the five single-image fields resolve inside the tx: each may insert new
 		// bytes or drop the row it replaces.
 		for _, image := range []struct {
 			field    string
@@ -505,6 +532,9 @@ func SaveSettings(c *fiber.Ctx) error {
 			{"ceremony", settings.CeremonyMediaID, &updated.CeremonyMediaID},
 			{"reception", settings.ReceptionMediaID, &updated.ReceptionMediaID},
 			{"share_preview", settings.SharePreviewMediaID, &updated.SharePreviewMediaID},
+			{"stamp", settings.StampMediaID, &updated.StampMediaID},
+			{"flora_bl", settings.FloraBlMediaID, &updated.FloraBlMediaID},
+			{"flora_tr", settings.FloraTrMediaID, &updated.FloraTrMediaID},
 		} {
 			mediaID, err := resolveImageMediaID(tx, c.FormValue(image.field+"_image"), c.FormValue(image.field+"_media_id"), image.existing, true)
 			if err != nil {

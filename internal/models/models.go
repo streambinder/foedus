@@ -1,6 +1,26 @@
 package models
 
-import "time"
+import (
+	"regexp"
+	"time"
+)
+
+// Default appearance colours: the sage envelope, white invitation page and
+// ivory homepage the site shipped with before the dashboard pickers existed.
+const (
+	DefaultEnvelopeColor = "#6f7665"
+	DefaultPageBgColor   = "#ffffff"
+	DefaultHomeBgColor   = "#fcf8f3"
+)
+
+var hexColorPattern = regexp.MustCompile(`^#[0-9a-fA-F]{6}$`)
+
+// IsHexColor reports whether s is a strict #rrggbb colour. Both the dashboard
+// handler and the invitation template gate on this, so a hand-edited settings
+// row can never inject into a style attribute.
+func IsHexColor(s string) bool {
+	return hexColorPattern.MatchString(s)
+}
 
 // place kinds — same entity, two roles on the homepage: story places render on
 // the timeline, honeymoon ones in their own section.
@@ -32,6 +52,15 @@ type Settings struct {
 	BankAccountHolder   string
 	SpotifyPlaylist     string
 	SharePreviewMediaID int
+	// Appearance section: envelope and page colours, the wax stamp override
+	// and overrides for the two decorative flora corners (media IDs of 0
+	// mean the built-in defaults).
+	EnvelopeColor  string
+	PageBgColor    string
+	HomeBgColor    string
+	StampMediaID   int
+	FloraBlMediaID int
+	FloraTrMediaID int
 }
 
 func (s Settings) IsConfigured() bool {

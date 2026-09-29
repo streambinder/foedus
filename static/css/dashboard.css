@@ -1283,3 +1283,32 @@ code {
     align-items: center;
   }
 }
+
+/* Appearance section: native colour pickers with a hex readout. */
+.appearance-color-field {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.25rem;
+}
+
+.appearance-color-field label {
+  margin-bottom: 0;
+  min-width: 12rem;
+}
+
+.appearance-color-field input[type="color"] {
+  width: 3rem;
+  height: 2.25rem;
+  padding: 0.15rem;
+  border: 1px solid var(--dashboard-border, #d8d4cc);
+  border-radius: 0.375rem;
+  background: none;
+  cursor: pointer;
+}
+
+.appearance-color-field .color-hex {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85rem;
+  color: var(--dashboard-muted, #6b675f);
+}

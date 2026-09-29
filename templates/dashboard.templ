@@ -171,6 +171,16 @@ func mediaIDValue(id int) string {
 	return strconv.Itoa(id)
 }
 
+// appearanceColorOrDefault keeps the native colour inputs on a valid value:
+// a hand-edited settings row falls back to the default instead of rendering
+// the input black.
+func appearanceColorOrDefault(value, fallback string) string {
+	if models.IsHexColor(value) {
+		return value
+	}
+	return fallback
+}
+
 // donut chart inputs: each slice is (count, css-class, legend-label)
 type DonutSlice struct {
 	Value     int
@@ -347,10 +357,10 @@ templ Dashboard(settings models.Settings, content SettingsContent, guests []mode
 					<input type="hidden" name="share_preview_media_id" id="share-preview-media-id" value={ mediaIDValue(settings.SharePreviewMediaID) }/>
 					if settings.SharePreviewMediaID > 0 {
 						<img class="venue-image-preview" id="share-preview-preview" src={ publicImageURL(settings.SharePreviewMediaID) } loading="lazy" decoding="async" alt="share preview"/>
-						<button type="button" id="share-preview-remove" class="outline secondary" style="margin-top:0.5rem">Remove</button>
+						<button type="button" id="share-preview-remove" class="outline secondary" style="margin-top:0.5rem">{ t("btn.remove") }</button>
 					} else {
 						<img class="venue-image-preview" id="share-preview-preview" style="display:none" alt="share preview"/>
-						<button type="button" id="share-preview-remove" class="outline secondary" style="margin-top:0.5rem;display:none">Remove</button>
+						<button type="button" id="share-preview-remove" class="outline secondary" style="margin-top:0.5rem;display:none">{ t("btn.remove") }</button>
 					}
 				</div>
 				<div class="accordion dashboard-accordion hero-gallery-accordion">
@@ -561,6 +571,81 @@ templ Dashboard(settings models.Settings, content SettingsContent, guests []mode
 					</div>
 				</div>
 				<div class="accordion dashboard-accordion" id="dashboard-settings-accordion">
+					<div class="accordion-item settings-section">
+						<h2 class="accordion-header" id="settings-appearance-heading">
+							<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#settings-appearance-panel" aria-expanded="false" aria-controls="settings-appearance-panel">
+								<span class="settings-section-title">{ t("dashboard.appearance") }</span>
+								<span class="settings-section-description">{ t("dashboard.appearance_description") }</span>
+							</button>
+						</h2>
+						<div id="settings-appearance-panel" class="accordion-collapse collapse" data-dashboard-key="settings-appearance" aria-labelledby="settings-appearance-heading">
+							<div class="accordion-body settings-section-body">
+								<div class="appearance-color-field">
+									<label for="envelope-color">{ t("label.envelope_color") }</label>
+									<input type="color" id="envelope-color" name="envelope_color" value={ appearanceColorOrDefault(settings.EnvelopeColor, models.DefaultEnvelopeColor) } data-hex-target="envelope-color-hex"/>
+									<span class="color-hex" id="envelope-color-hex">{ appearanceColorOrDefault(settings.EnvelopeColor, models.DefaultEnvelopeColor) }</span>
+									<button type="button" class="appearance-color-reset outline secondary" data-color-reset="envelope-color" data-default-color={ models.DefaultEnvelopeColor }>{ t("btn.reset_default") }</button>
+								</div>
+								<p class="muted">{ t("appearance.envelope_color_description") }</p>
+								<label>{ t("label.stamp") }</label>
+								<p class="muted" style="margin-top:-0.5rem;margin-bottom:0.75rem">{ t("appearance.stamp_description") }</p>
+								<div class="venue-image-row">
+									<input type="file" id="stamp-file" accept="image/*" class="venue-file-input"/>
+									<input type="hidden" name="stamp_image" id="stamp-image-data"/>
+									<input type="hidden" name="stamp_media_id" id="stamp-media-id" value={ mediaIDValue(settings.StampMediaID) }/>
+									if settings.StampMediaID > 0 {
+										<img class="venue-image-preview" id="stamp-preview" src={ publicImageURL(settings.StampMediaID) } loading="lazy" decoding="async" alt="envelope stamp"/>
+										<button type="button" id="stamp-remove" class="outline secondary" style="margin-top:0.5rem">{ t("btn.remove") }</button>
+									} else {
+										<img class="venue-image-preview" id="stamp-preview" style="display:none" alt="envelope stamp"/>
+										<button type="button" id="stamp-remove" class="outline secondary" style="margin-top:0.5rem;display:none">{ t("btn.remove") }</button>
+									}
+								</div>
+								<div class="appearance-color-field">
+									<label for="page-bg-color">{ t("label.page_bg_color") }</label>
+									<input type="color" id="page-bg-color" name="page_bg_color" value={ appearanceColorOrDefault(settings.PageBgColor, models.DefaultPageBgColor) } data-hex-target="page-bg-color-hex"/>
+									<span class="color-hex" id="page-bg-color-hex">{ appearanceColorOrDefault(settings.PageBgColor, models.DefaultPageBgColor) }</span>
+									<button type="button" class="appearance-color-reset outline secondary" data-color-reset="page-bg-color" data-default-color={ models.DefaultPageBgColor }>{ t("btn.reset_default") }</button>
+								</div>
+								<p class="muted">{ t("appearance.page_bg_color_description") }</p>
+								<div class="appearance-color-field">
+									<label for="home-bg-color">{ t("label.home_bg_color") }</label>
+									<input type="color" id="home-bg-color" name="home_bg_color" value={ appearanceColorOrDefault(settings.HomeBgColor, models.DefaultHomeBgColor) } data-hex-target="home-bg-color-hex"/>
+									<span class="color-hex" id="home-bg-color-hex">{ appearanceColorOrDefault(settings.HomeBgColor, models.DefaultHomeBgColor) }</span>
+									<button type="button" class="appearance-color-reset outline secondary" data-color-reset="home-bg-color" data-default-color={ models.DefaultHomeBgColor }>{ t("btn.reset_default") }</button>
+								</div>
+								<p class="muted">{ t("appearance.home_bg_color_description") }</p>
+								<label>{ t("label.flora_bl") }</label>
+								<p class="muted" style="margin-top:-0.5rem;margin-bottom:0.75rem">{ t("appearance.flora_description") }</p>
+								<div class="venue-image-row">
+									<input type="file" id="flora-bl-file" accept="image/*" class="venue-file-input"/>
+									<input type="hidden" name="flora_bl_image" id="flora-bl-image-data"/>
+									<input type="hidden" name="flora_bl_media_id" id="flora-bl-media-id" value={ mediaIDValue(settings.FloraBlMediaID) }/>
+									if settings.FloraBlMediaID > 0 {
+										<img class="venue-image-preview" id="flora-bl-preview" src={ publicImageURL(settings.FloraBlMediaID) } loading="lazy" decoding="async" alt="flora bottom-left"/>
+										<button type="button" id="flora-bl-remove" class="outline secondary" style="margin-top:0.5rem">{ t("btn.remove") }</button>
+									} else {
+										<img class="venue-image-preview" id="flora-bl-preview" style="display:none" alt="flora bottom-left"/>
+										<button type="button" id="flora-bl-remove" class="outline secondary" style="margin-top:0.5rem;display:none">{ t("btn.remove") }</button>
+									}
+								</div>
+								<label>{ t("label.flora_tr") }</label>
+								<p class="muted" style="margin-top:-0.5rem;margin-bottom:0.75rem">{ t("appearance.flora_description") }</p>
+								<div class="venue-image-row">
+									<input type="file" id="flora-tr-file" accept="image/*" class="venue-file-input"/>
+									<input type="hidden" name="flora_tr_image" id="flora-tr-image-data"/>
+									<input type="hidden" name="flora_tr_media_id" id="flora-tr-media-id" value={ mediaIDValue(settings.FloraTrMediaID) }/>
+									if settings.FloraTrMediaID > 0 {
+										<img class="venue-image-preview" id="flora-tr-preview" src={ publicImageURL(settings.FloraTrMediaID) } loading="lazy" decoding="async" alt="flora top-right"/>
+										<button type="button" id="flora-tr-remove" class="outline secondary" style="margin-top:0.5rem">{ t("btn.remove") }</button>
+									} else {
+										<img class="venue-image-preview" id="flora-tr-preview" style="display:none" alt="flora top-right"/>
+										<button type="button" id="flora-tr-remove" class="outline secondary" style="margin-top:0.5rem;display:none">{ t("btn.remove") }</button>
+									}
+								</div>
+							</div>
+						</div>
+					</div>
 					<div class="accordion-item settings-section">
 						<h2 class="accordion-header" id="settings-playlists-heading">
 							<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#settings-playlists-panel" aria-expanded="false" aria-controls="settings-playlists-panel">

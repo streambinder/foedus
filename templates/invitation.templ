@@ -37,16 +37,32 @@ func InvitationAnswered(inv models.Invitation) bool {
 	return true
 }
 
-func invitationImagePreloads(alreadyViewed bool) []ImagePreload {
-	if alreadyViewed {
+func invitationImagePreloads(settings models.Settings, alreadyViewed bool) []ImagePreload {
+	if alreadyViewed || settings.StampMediaID > 0 {
 		return nil
 	}
 	return []ImagePreload{{Href: "/static/wax-seal.webp"}}
 }
 
+// appearanceVars renders the per-wedding appearance settings as inline CSS
+// custom properties. Colours are re-validated here (defence in depth: the
+// dashboard already rejects anything that isn't #rrggbb), so a hand-edited
+// settings row can never break out of the style attribute.
+func appearanceVars(settings models.Settings) string {
+	envelope := models.DefaultEnvelopeColor
+	if models.IsHexColor(settings.EnvelopeColor) {
+		envelope = settings.EnvelopeColor
+	}
+	pageBg := models.DefaultPageBgColor
+	if models.IsHexColor(settings.PageBgColor) {
+		pageBg = settings.PageBgColor
+	}
+	return "--envelope-base:" + envelope + ";--invitation-page-bg:" + pageBg + ";"
+}
+
 templ Invitation(inv models.Invitation, settings models.Settings, polls []models.Poll, alreadyViewed bool, noRedirect bool, t i18n.T, lang string, ogMeta OGMeta, title string) {
-	@Layout(title, lang, t, ogMeta, false, invitationImagePreloads(alreadyViewed)) {
-		<div id="envelope-overlay" class={ templ.KV("is-complete", alreadyViewed) }>
+	@Layout(title, lang, t, ogMeta, false, invitationImagePreloads(settings, alreadyViewed), "") {
+		<div id="envelope-overlay" class={ templ.KV("is-complete", alreadyViewed) } style={ appearanceVars(settings) }>
 			<div id="envelope-open-button" role="button" tabindex="0" aria-label={ t("invitation.title") }></div>
 			<div class="envelope">
 				<div class="envelope-shadow"></div>
@@ -295,10 +311,14 @@ templ Invitation(inv models.Invitation, settings models.Settings, polls []models
 				<div class="envelope-flap envelope-flap-bottom"></div>
 				<div class="envelope-flap envelope-flap-left"></div>
 				<div class="envelope-wax" aria-hidden="true">
-					<picture>
-						<source type="image/webp" srcset={ assetURL("/static/wax-seal.webp") }/>
-						<img class="envelope-wax-img" src={ templ.SafeURL(assetURL("/static/wax-seal.png")) } alt="" width="768" height="768" loading="eager" fetchpriority="high" decoding="async"/>
-					</picture>
+					if settings.StampMediaID > 0 {
+						<img class="envelope-wax-img" src={ "/media/" + strconv.Itoa(settings.StampMediaID) } alt="" width="768" height="768" loading="eager" fetchpriority="high" decoding="async"/>
+					} else {
+						<picture>
+							<source type="image/webp" srcset={ assetURL("/static/wax-seal.webp") }/>
+							<img class="envelope-wax-img" src={ templ.SafeURL(assetURL("/static/wax-seal.png")) } alt="" width="768" height="768" loading="eager" fetchpriority="high" decoding="async"/>
+						</picture>
+					}
 				</div>
 			</div>
 		</div>

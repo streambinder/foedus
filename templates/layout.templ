@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/streambinder/foedus/internal/i18n"
+	"github.com/streambinder/foedus/internal/models"
 )
 
 type OGMeta struct {
@@ -57,7 +58,7 @@ func pageTitle(title, groom, bride string) string {
 }
 
 templ SetupGuard(lang string, t i18n.T) {
-	@Layout(t("title.setup"), lang, t, OGMeta{}, false, nil) {
+	@Layout(t("title.setup"), lang, t, OGMeta{}, false, nil, "") {
 		<div class="setup-guard">
 			<h1>{ t("setup.not_ready") }</h1>
 			<p><a href="/dashboard">{ t("setup.go_to_dashboard") }</a></p>
@@ -65,9 +66,9 @@ templ SetupGuard(lang string, t i18n.T) {
 	}
 }
 
-templ Layout(title string, lang string, t i18n.T, ogMeta OGMeta, includeLeaflet bool, imagePreloads []ImagePreload) {
+templ Layout(title string, lang string, t i18n.T, ogMeta OGMeta, includeLeaflet bool, imagePreloads []ImagePreload, htmlStyle string) {
 	<!DOCTYPE html>
-	<html lang={ lang } data-theme="light">
+	<html lang={ lang } data-theme="light" style={ htmlStyle }>
 		<head>
 			<meta charset="UTF-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-visual"/>
@@ -176,4 +177,21 @@ templ DashboardLayout(title string, lang string) {
 			<script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.4.0/dist/js/tabler.min.js"></script>
 		</body>
 	</html>
+}
+
+// Flora renders one of the two decorative corner graphics ("bl" or "tr").
+// Without an override it keeps the built-in eucalyptus background from CSS;
+// with one it swaps in the uploaded image, keeping the class geometry.
+templ Flora(settings models.Settings, corner string) {
+	{{ mediaID := 0 }}
+	if corner == "bl" {
+		{{ mediaID = settings.FloraBlMediaID }}
+	} else {
+		{{ mediaID = settings.FloraTrMediaID }}
+	}
+	if mediaID > 0 {
+		<span class={ "vp-flora vp-flora-" + corner } aria-hidden="true" style={ "background-image:url(/media/" + strconv.Itoa(mediaID) + ")" }></span>
+	} else {
+		<span class={ "vp-flora vp-flora-" + corner } aria-hidden="true"></span>
+	}
 }

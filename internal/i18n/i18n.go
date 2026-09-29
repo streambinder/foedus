@@ -39,15 +39,30 @@ var translations = map[string]map[string]string{
 		"title.setup":      "Setup Required",
 
 		// dashboard - sections
-		"dashboard.title":           "Wedding Dashboard",
-		"dashboard.details":         "Settings",
-		"dashboard.guests":          "Guests",
-		"dashboard.track_additions": "Track Additions",
+		"dashboard.title":                  "Wedding Dashboard",
+		"dashboard.details":                "Settings",
+		"dashboard.guests":                 "Guests",
+		"dashboard.track_additions":        "Track Additions",
+		"dashboard.appearance":             "Appearance",
+		"dashboard.appearance_description": "Colours of the invitation envelope and page, plus the decorative corner graphics.",
 
 		// dashboard - labels
-		"label.spouses":   "Couple's Names",
-		"label.ceremony":  "Ceremony",
-		"label.reception": "Celebration",
+		"label.spouses":        "Couple's Names",
+		"label.ceremony":       "Ceremony",
+		"label.reception":      "Celebration",
+		"label.envelope_color": "Envelope colour",
+		"label.page_bg_color":  "Invitation page background",
+		"label.home_bg_color":  "Homepage background",
+		"label.stamp":          "Envelope stamp",
+		"label.flora_bl":       "Corner decoration · bottom-left",
+		"label.flora_tr":       "Corner decoration · top-right",
+
+		// appearance section - descriptions
+		"appearance.envelope_color_description": "Base colour of the animated envelope on the invitation page. Shadows and highlights derive from it automatically.",
+		"appearance.page_bg_color_description":  "Background of the invitation page, behind the text and venues.",
+		"appearance.home_bg_color_description":  "Background of the homepage, behind the scrolling sections.",
+		"appearance.stamp_description":          "Replaces the wax seal on the invitation envelope. Remove restores the default.",
+		"appearance.flora_description":          "Replaces the built-in eucalyptus corner graphic on the homepage and ceremony pages. Remove restores the default.",
 
 		// dashboard - counters
 		"counter.rsvp":              "RSVP",
@@ -112,6 +127,8 @@ var translations = map[string]map[string]string{
 		"btn.update_poll":   "Update Poll",
 		"btn.edit":          "Edit",
 		"btn.delete":        "Delete",
+		"btn.remove":        "Remove",
+		"btn.reset_default": "Reset to default",
 		"btn.reset_viewed":  "Reset viewed",
 		"btn.move_up":       "Move Up",
 		"btn.move_down":     "Move Down",
@@ -344,15 +361,30 @@ var translations = map[string]map[string]string{
 		"title.setup":      "Configurazione necessaria",
 
 		// dashboard - sections
-		"dashboard.title":           "Pannello",
-		"dashboard.details":         "Impostazioni",
-		"dashboard.guests":          "Invitati",
-		"dashboard.track_additions": "Brani aggiunti",
+		"dashboard.title":                  "Pannello",
+		"dashboard.details":                "Impostazioni",
+		"dashboard.guests":                 "Invitati",
+		"dashboard.track_additions":        "Brani aggiunti",
+		"dashboard.appearance":             "Aspetto",
+		"dashboard.appearance_description": "Colori della busta e della pagina dell'invito, più le grafiche decorative angolari.",
 
 		// dashboard - labels
-		"label.spouses":   "Nomi degli sposi",
-		"label.ceremony":  "Rito",
-		"label.reception": "Festa",
+		"label.spouses":        "Nomi degli sposi",
+		"label.ceremony":       "Rito",
+		"label.reception":      "Festa",
+		"label.envelope_color": "Colore della busta",
+		"label.page_bg_color":  "Sfondo della pagina dell'invito",
+		"label.home_bg_color":  "Sfondo della homepage",
+		"label.stamp":          "Timbro della busta",
+		"label.flora_bl":       "Decorazione angolare · in basso a sinistra",
+		"label.flora_tr":       "Decorazione angolare · in alto a destra",
+
+		// appearance section - descriptions
+		"appearance.envelope_color_description": "Colore di base della busta animata nella pagina dell'invito. Ombre e riflessi derivano automaticamente.",
+		"appearance.page_bg_color_description":  "Sfondo della pagina dell'invito, dietro testi e luoghi.",
+		"appearance.home_bg_color_description":  "Sfondo della homepage, dietro le sezioni a scorrimento.",
+		"appearance.stamp_description":          "Sostituisce il sigillo di ceralacca sulla busta dell'invito. Rimuovi per tornare al default.",
+		"appearance.flora_description":          "Sostituisce la grafica d'eucalipto predefinita negli angoli di homepage e pagina del rito. Rimuovi per tornare al default.",
 
 		// dashboard - counters
 		"counter.rsvp":              "RSVP",
@@ -417,6 +449,8 @@ var translations = map[string]map[string]string{
 		"btn.update_poll":   "Aggiorna Sondaggio",
 		"btn.edit":          "Modifica",
 		"btn.delete":        "Elimina",
+		"btn.remove":        "Rimuovi",
+		"btn.reset_default": "Ripristina default",
 		"btn.reset_viewed":  "Reset visione",
 		"btn.move_up":       "Sposta Su",
 		"btn.move_down":     "Sposta Giù",
