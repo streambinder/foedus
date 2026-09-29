@@ -4696,6 +4696,15 @@ td [role="switch"] {
     contrast(1.08) brightness(0.88) drop-shadow(0 12px 24px rgb(42 52 57 / 18%));
 }
 
+/* Opaque images (no alpha, e.g. JPG): circle-crop via CSS instead of
+   showing a rigid squared box. Transparent images keep their shape. */
+.places-pin-media-opaque img {
+  width: 88%;
+  height: 88%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
 .places-pin-media-placeholder {
   display: flex;
   align-items: center;
