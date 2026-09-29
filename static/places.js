@@ -422,9 +422,11 @@
 
   function renderHoneymoonPin(place) {
     const title = escapeHtml(place.label || place.name || "Stop");
+    // Transparent images keep their natural shape; opaque ones (e.g. JPG)
+    // are circle-cropped so they never render as a rigid squared box.
     const transparentClass = supportsTransparency(place.image)
       ? " places-pin-media-transparent"
-      : "";
+      : " places-pin-media-opaque";
     return place.image
       ? '<div class="places-pin-media' +
           transparentClass +
