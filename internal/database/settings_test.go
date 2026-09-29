@@ -227,3 +227,54 @@ func TestHomepageLabelsRoundTripPerLanguage(t *testing.T) {
 		t.Errorf("got %v for an unconfigured language, want empty", missing)
 	}
 }
+
+// Appearance columns ride the same typed settings row as everything else:
+// defaults seeded on a fresh row, values round-trip, absent flora overrides
+// read back as NULL/0.
+func TestSettingsAppearanceRoundTrip(t *testing.T) {
+	newTestDB(t)
+
+	got, err := GetSettings()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.EnvelopeColor != models.DefaultEnvelopeColor || got.PageBgColor != models.DefaultPageBgColor ||
+		got.HomeBgColor != models.DefaultHomeBgColor {
+		t.Errorf("seeded colours %q/%q/%q, want defaults %q/%q/%q",
+			got.EnvelopeColor, got.PageBgColor, got.HomeBgColor,
+			models.DefaultEnvelopeColor, models.DefaultPageBgColor, models.DefaultHomeBgColor)
+	}
+	if got.StampMediaID != 0 || got.FloraBlMediaID != 0 || got.FloraTrMediaID != 0 {
+		t.Errorf("seeded image ids %d/%d/%d, want 0/0/0", got.StampMediaID, got.FloraBlMediaID, got.FloraTrMediaID)
+	}
+
+	floraID, err := InsertMedia(DB, "image/webp", []byte("flora"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	stampID, err := InsertMedia(DB, "image/png", []byte("stamp"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := models.Settings{
+		GroomName: "Davide", BrideName: "Agnese",
+		EnvelopeColor: "#123abc", PageBgColor: "#f0e6d8", HomeBgColor: "#e8f0e0",
+		StampMediaID: stampID, FloraBlMediaID: floraID,
+	}
+	if err := UpdateSettings(DB, want); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err = GetSettings()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.EnvelopeColor != "#123abc" || got.PageBgColor != "#f0e6d8" || got.HomeBgColor != "#e8f0e0" {
+		t.Errorf("colours round-tripped as %q/%q/%q, want #123abc/#f0e6d8/#e8f0e0",
+			got.EnvelopeColor, got.PageBgColor, got.HomeBgColor)
+	}
+	if got.StampMediaID != stampID || got.FloraBlMediaID != floraID || got.FloraTrMediaID != 0 {
+		t.Errorf("image ids round-tripped as %d/%d/%d, want %d/%d/0",
+			got.StampMediaID, got.FloraBlMediaID, got.FloraTrMediaID, stampID, floraID)
+	}
+}

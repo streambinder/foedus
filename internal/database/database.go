@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/streambinder/foedus/internal/models"
 	_ "modernc.org/sqlite"
 )
 
@@ -195,7 +196,13 @@ func migrate() {
 			bank_account_iban      TEXT NOT NULL DEFAULT '',
 			bank_account_holder    TEXT NOT NULL DEFAULT '',
 			spotify_playlist       TEXT NOT NULL DEFAULT '',
-			share_preview_media_id INTEGER REFERENCES media(id)
+			share_preview_media_id INTEGER REFERENCES media(id),
+			envelope_color         TEXT NOT NULL DEFAULT '` + models.DefaultEnvelopeColor + `',
+			page_bg_color          TEXT NOT NULL DEFAULT '` + models.DefaultPageBgColor + `',
+			home_bg_color          TEXT NOT NULL DEFAULT '` + models.DefaultHomeBgColor + `',
+			stamp_media_id         INTEGER REFERENCES media(id),
+			flora_bl_media_id      INTEGER REFERENCES media(id),
+			flora_tr_media_id      INTEGER REFERENCES media(id)
 		) STRICT`,
 		`CREATE TABLE IF NOT EXISTS registry_items (
 			id         INTEGER PRIMARY KEY AUTOINCREMENT,

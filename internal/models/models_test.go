@@ -34,3 +34,26 @@ func TestEventPassedAt(t *testing.T) {
 		})
 	}
 }
+
+func TestIsHexColor(t *testing.T) {
+	for _, tc := range []struct {
+		in   string
+		want bool
+	}{
+		{"#6f7665", true},
+		{"#FFFFFF", true},
+		{"#123abc", true},
+		{"", false},
+		{"6f7665", false},
+		{"#fff", false},
+		{"#gggggg", false},
+		{"#1234567", false},
+		{"red", false},
+		{"#6f7665;", false},
+		{"\"#6f7665\"", false},
+	} {
+		if got := IsHexColor(tc.in); got != tc.want {
+			t.Errorf("IsHexColor(%q) = %v, want %v", tc.in, got, tc.want)
+		}
+	}
+}

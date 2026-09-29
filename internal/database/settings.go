@@ -10,7 +10,8 @@ import (
 const settingsColumns = `groom_name, bride_name,
 	ceremony_datetime, ceremony_address, ceremony_location, ceremony_city, ceremony_lat, ceremony_lng, ceremony_media_id,
 	reception_datetime, reception_address, reception_location, reception_city, reception_lat, reception_lng, reception_media_id,
-	bank_account_iban, bank_account_holder, spotify_playlist, share_preview_media_id`
+	bank_account_iban, bank_account_holder, spotify_playlist, share_preview_media_id,
+	envelope_color, page_bg_color, home_bg_color, stamp_media_id, flora_bl_media_id, flora_tr_media_id`
 
 // seedSettings materialises the single settings row. Every read assumes it
 // exists, so this runs on every boot rather than only on a fresh database.
@@ -24,7 +25,7 @@ func seedSettings() {
 
 func GetSettings() (models.Settings, error) {
 	var settings models.Settings
-	var ceremonyMediaID, receptionMediaID, sharePreviewMediaID sql.NullInt64
+	var ceremonyMediaID, receptionMediaID, sharePreviewMediaID, stampMediaID, floraBlMediaID, floraTrMediaID sql.NullInt64
 	err := DB.QueryRow(`SELECT `+settingsColumns+` FROM settings WHERE id = 1`).Scan(
 		&settings.GroomName, &settings.BrideName,
 		&settings.CeremonyDatetime, &settings.CeremonyAddress, &settings.CeremonyLocation,
@@ -33,6 +34,8 @@ func GetSettings() (models.Settings, error) {
 		&settings.ReceptionCity, &settings.ReceptionLat, &settings.ReceptionLng, &receptionMediaID,
 		&settings.BankAccountIBAN, &settings.BankAccountHolder,
 		&settings.SpotifyPlaylist, &sharePreviewMediaID,
+		&settings.EnvelopeColor, &settings.PageBgColor, &settings.HomeBgColor,
+		&stampMediaID, &floraBlMediaID, &floraTrMediaID,
 	)
 	if err != nil {
 		return models.Settings{}, err
@@ -40,6 +43,9 @@ func GetSettings() (models.Settings, error) {
 	settings.CeremonyMediaID = idOrZero(ceremonyMediaID)
 	settings.ReceptionMediaID = idOrZero(receptionMediaID)
 	settings.SharePreviewMediaID = idOrZero(sharePreviewMediaID)
+	settings.StampMediaID = idOrZero(stampMediaID)
+	settings.FloraBlMediaID = idOrZero(floraBlMediaID)
+	settings.FloraTrMediaID = idOrZero(floraTrMediaID)
 	return settings, nil
 }
 
@@ -51,7 +57,9 @@ func UpdateSettings(q Querier, settings models.Settings) error {
 			ceremony_lat = ?, ceremony_lng = ?, ceremony_media_id = ?,
 			reception_datetime = ?, reception_address = ?, reception_location = ?, reception_city = ?,
 			reception_lat = ?, reception_lng = ?, reception_media_id = ?,
-			bank_account_iban = ?, bank_account_holder = ?, spotify_playlist = ?, share_preview_media_id = ?
+			bank_account_iban = ?, bank_account_holder = ?, spotify_playlist = ?, share_preview_media_id = ?,
+			envelope_color = ?, page_bg_color = ?, home_bg_color = ?,
+			stamp_media_id = ?, flora_bl_media_id = ?, flora_tr_media_id = ?
 		WHERE id = 1`,
 		settings.GroomName, settings.BrideName,
 		settings.CeremonyDatetime, settings.CeremonyAddress, settings.CeremonyLocation, settings.CeremonyCity,
@@ -60,6 +68,9 @@ func UpdateSettings(q Querier, settings models.Settings) error {
 		settings.ReceptionLat, settings.ReceptionLng, nullableID(settings.ReceptionMediaID),
 		settings.BankAccountIBAN, settings.BankAccountHolder,
 		settings.SpotifyPlaylist, nullableID(settings.SharePreviewMediaID),
+		settings.EnvelopeColor, settings.PageBgColor, settings.HomeBgColor,
+		nullableID(settings.StampMediaID),
+		nullableID(settings.FloraBlMediaID), nullableID(settings.FloraTrMediaID),
 	)
 	return err
 }
