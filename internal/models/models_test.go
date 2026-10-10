@@ -35,6 +35,37 @@ func TestEventPassedAt(t *testing.T) {
 	}
 }
 
+func TestIsConfigured(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		settings Settings
+		want     bool
+	}{
+		{"both names set", Settings{GroomName: "Davide", BrideName: "Agnese"}, true},
+		{"missing groom", Settings{BrideName: "Agnese"}, false},
+		{"missing bride", Settings{GroomName: "Davide"}, false},
+		{"empty settings", Settings{}, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := tc.settings.IsConfigured(); got != tc.want {
+				t.Errorf("IsConfigured() = %v, want %v", got, tc.want)
+			}
+		})
+	}
+}
+
+func TestEventPassed(t *testing.T) {
+	if (Settings{}).EventPassed() {
+		t.Error("empty ceremony datetime must never report the event as passed")
+	}
+	if !(Settings{CeremonyDatetime: "2000-01-01T10:00"}).EventPassed() {
+		t.Error("a ceremony in the year 2000 must report the event as passed")
+	}
+	if (Settings{CeremonyDatetime: "2999-01-01T10:00"}).EventPassed() {
+		t.Error("a ceremony in the year 2999 must not report the event as passed")
+	}
+}
+
 func TestIsHexColor(t *testing.T) {
 	for _, tc := range []struct {
 		in   string
