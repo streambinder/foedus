@@ -75,8 +75,30 @@ jobs:
           SAVE_SUPER_LINTER_OUTPUT: false
           MULTI_STATUS: false
           LOG_LEVEL: WARN
+  test:
+    needs: [super-linter]
+    if: success()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+        with:
+          go-version-file: go.mod
+      - run: |
+          PATH="$PATH:$(go env GOPATH)/bin"
+          export PATH
+          go install github.com/a-h/templ/cmd/templ@v0.3.1020
+          templ generate
+      - run: |
+          echo Testing...
+          go test -race -p 1 -v -timeout 1800s ./...
+          echo Checking coverage...
+          go test -race -p 1 -timeout 1800s -cover ./... | tee coverage.txt
+          awk '/coverage:/ { pct = ""; for (i = 1; i <= NF; i++) if ($i == "coverage:") { pct = $(i+1); gsub(/%/, "", pct) } if (pct != "" && pct + 0 < 90) { print "coverage below 90%:", $0; bad = 1 } } END { exit bad }' coverage.txt
   docker:
-    needs: [super-linter, changes]
+    needs: [super-linter, changes, test]
     runs-on: ubuntu-24.04-arm
     if: success() && needs.changes.outputs.docker == 'true'
     permissions:
@@ -118,7 +140,7 @@ jobs:
           tags: ${{ steps.tags.outputs.tags }}
           push: true
   notify:
-    needs: [super-linter]
+    needs: [super-linter, test]
     if: success() && github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     environment:
