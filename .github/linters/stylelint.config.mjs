@@ -1,0 +1,13 @@
+export default {
+  extends: ["stylelint-config-standard"],
+  rules: {
+    "no-descending-specificity": null,
+  },
+  overrides: [
+    {
+      extends: ["stylelint-config-recommended-scss"],
+      files: ["*.scss", "**/*.scss"],
+      customSyntax: "postcss-scss",
+    },
+  ],
+};
