@@ -168,3 +168,41 @@ jobs:
           repository: streambinder/streambinder
           event-type: doc-sync
           client-payload: '{"repo": "${{ github.repository }}", "ref": "${{ github.ref }}", "sha": "${{ github.sha }}"}'
+  deploy:
+    name: deploy
+    needs: [docker]
+    if: github.ref == 'refs/heads/master'
+    runs-on: [self-hosted, lobster]
+    environment: production
+    timeout-minutes: 20
+    env:
+      DOCKER_HOST: unix:///run/podman/podman.sock
+    steps:
+      - name: Pull the image and restart the services
+        run: |
+          docker run --rm --privileged --pid=host \
+            docker.io/library/alpine:3.22@sha256:5291449c3df73caf6ed85e649dec1b9e818b39a5d8c871e97afc13e9cd5e8fa8 \
+            nsenter -t 1 -m -u -i -n -p -- sh -euc '
+              podman pull ghcr.io/${{ github.repository }}:latest
+              systemctl restart foedus-davideagnese.service
+              systemctl restart foedus-lorenzomargherita.service
+            '
+      - name: Check both instances answer
+        run: |
+          docker run --rm --privileged --pid=host \
+            docker.io/library/alpine:3.22@sha256:5291449c3df73caf6ed85e649dec1b9e818b39a5d8c871e97afc13e9cd5e8fa8 \
+            nsenter -t 1 -m -u -i -n -p -- sh -euc '
+              for port in 65532 65531; do
+                ok=0
+                for attempt in $(seq 1 30); do
+                  if curl -fsS -o /dev/null http://127.0.0.1:$port/; then
+                    ok=1
+                    break
+                  fi
+                  sleep 2
+                done
+                if [ $ok -ne 1 ]; then
+                  exit 1
+                fi
+              done
+            '
