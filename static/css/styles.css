@@ -4897,6 +4897,23 @@ td [role="switch"] {
   text-align: center;
 }
 
+.places-pin-callouts {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.places-pin-callouts line {
+  stroke: rgb(138 106 77 / 65%);
+  stroke-width: 1.5;
+}
+
+.places-pin-callouts circle {
+  fill: #8a6a4d;
+  stroke: #fff8f0;
+  stroke-width: 1.5;
+}
+
 .timeline-route {
   filter: drop-shadow(0 8px 18px rgb(42 52 57 / 16%));
 }

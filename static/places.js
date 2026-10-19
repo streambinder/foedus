@@ -233,6 +233,10 @@
         }
       });
 
+      if (mode === "honeymoon" && !visibleEntries.length) {
+        const stale = pinsEl.querySelector(":scope > svg.places-pin-callouts");
+        if (stale) stale.innerHTML = "";
+      }
       applyOverlapLayout(visibleEntries, mode);
       collapseEdgeClusters(edgeEntries);
     }
@@ -457,39 +461,16 @@
   }
 
   function applyOverlapLayout(entries, mode) {
+    if (mode === "honeymoon") {
+      applyHoneymoonLayout(entries);
+      return;
+    }
     if (entries.length < 2) return;
 
-    const minScale = mode === "honeymoon" ? 0.1 : 0.72;
+    const minScale = 0.72;
     const overlapTarget = 0.25;
-    const maxOffset = mode === "honeymoon" ? 32 : 14;
+    const maxOffset = 14;
     const layouts = entries.map(() => ({ scale: 1, offsetX: 0, offsetY: 0 }));
-
-    if (mode === "honeymoon") {
-      // Seed each pin with the largest scale that keeps it clear of
-      // its nearest neighbour: a pin may span at most 94% of the
-      // distance to the closest other pin centre. The passes below
-      // then only refine the label rectangles.
-      entries.forEach((entry, i) => {
-        const size = Math.max(
-          entry.element.offsetWidth,
-          entry.element.offsetHeight,
-        );
-        if (!size) return;
-        let cap = 1;
-        entries.forEach((other, j) => {
-          if (i === j) return;
-          const dx =
-            (parseFloat(other.element.style.left) || 0) -
-            (parseFloat(entry.element.style.left) || 0);
-          const dy =
-            (parseFloat(other.element.style.top) || 0) -
-            (parseFloat(entry.element.style.top) || 0);
-          const distance = Math.sqrt(dx * dx + dy * dy);
-          if (distance > 0) cap = Math.min(cap, (distance * 0.94) / size);
-        });
-        layouts[i].scale = Math.max(minScale, Math.min(1, cap));
-      });
-    }
 
     for (let pass = 0; pass < 10; pass++) {
       let changed = false;
@@ -528,7 +509,7 @@
             i,
             j,
           );
-          const nudgeDistance = mode === "honeymoon" ? 8 : 5;
+          const nudgeDistance = 5;
           if (
             nudgeEntries(
               layouts[i],
@@ -550,6 +531,159 @@
       setPinScale(entry, layouts[index].scale);
       setPinOffset(entry, layouts[index].offsetX, layouts[index].offsetY);
     });
+  }
+
+  // Honeymoon pins stay large. Pins that would cover each other are
+  // displaced from their anchor instead of shrunk, and a dot with a
+  // leader line marks the true point; shrinking is only the fallback
+  // when displacement runs out. Displaced pins are also pulled back
+  // inside the viewport, so no pin rests cut off at the map edge.
+  function applyHoneymoonLayout(entries) {
+    if (!entries.length) return;
+
+    const layouts = entries.map(() => ({ scale: 1, offsetX: 0, offsetY: 0 }));
+    const layer = entries[0].element.parentElement;
+    const viewW = layer ? layer.clientWidth : 0;
+    const viewH = layer ? layer.clientHeight : 0;
+    const margin = 10;
+    const maxOffset = 220;
+    const minScale = 0.45;
+    const tolerance = 3;
+
+    const overlapOf = (i, j) => {
+      const a = buildPinRect(entries[i], layouts[i]);
+      const b = buildPinRect(entries[j], layouts[j]);
+      return {
+        x: Math.min(a.right, b.right) - Math.max(a.left, b.left),
+        y: Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top),
+      };
+    };
+    const hasOverlap = () =>
+      entries.some((_, i) =>
+        entries.some((_, j) => {
+          if (j <= i) return false;
+          const ov = overlapOf(i, j);
+          return ov.x > tolerance && ov.y > tolerance;
+        }),
+      );
+
+    const separatePass = () => {
+      let changed = false;
+      for (let i = 0; i < entries.length; i++) {
+        for (let j = i + 1; j < entries.length; j++) {
+          const ov = overlapOf(i, j);
+          if (ov.x <= tolerance || ov.y <= tolerance) continue;
+          const separation = getSeparationVector(
+            entries[i],
+            entries[j],
+            layouts[i],
+            layouts[j],
+            i,
+            j,
+          );
+          if (
+            nudgeEntries(
+              layouts[i],
+              layouts[j],
+              separation,
+              Math.min(ov.x, ov.y) / 2 + 2,
+              maxOffset,
+            )
+          ) {
+            changed = true;
+          }
+        }
+      }
+      entries.forEach((entry, i) => {
+        if (!viewW || !viewH) return;
+        const rect = buildPinRect(entry, layouts[i]);
+        let dx = 0;
+        let dy = 0;
+        if (rect.left < margin) dx = margin - rect.left;
+        else if (rect.right > viewW - margin) dx = viewW - margin - rect.right;
+        if (rect.top < margin) dy = margin - rect.top;
+        else if (rect.bottom > viewH - margin)
+          dy = viewH - margin - rect.bottom;
+        if (!dx && !dy) return;
+        const next = clampOffset(
+          layouts[i].offsetX + dx,
+          layouts[i].offsetY + dy,
+          maxOffset,
+        );
+        if (next.x !== layouts[i].offsetX || next.y !== layouts[i].offsetY) {
+          layouts[i].offsetX = next.x;
+          layouts[i].offsetY = next.y;
+          changed = true;
+        }
+      });
+      return changed;
+    };
+
+    for (let pass = 0; pass < 80; pass++) {
+      if (!separatePass()) break;
+    }
+
+    let guard = 0;
+    while (hasOverlap() && guard++ < 12) {
+      let shrunk = false;
+      entries.forEach((_entry, i) => {
+        entries.forEach((_, j) => {
+          if (j <= i) return;
+          const ov = overlapOf(i, j);
+          if (ov.x <= tolerance || ov.y <= tolerance) return;
+          [i, j].forEach((k) => {
+            const next = Math.max(minScale, layouts[k].scale - 0.05);
+            if (next !== layouts[k].scale) {
+              layouts[k].scale = next;
+              shrunk = true;
+            }
+          });
+        });
+      });
+      if (!shrunk) break;
+      for (let pass = 0; pass < 20; pass++) {
+        if (!separatePass()) break;
+      }
+    }
+
+    entries.forEach((entry, index) => {
+      setPinScale(entry, layouts[index].scale);
+      setPinOffset(entry, layouts[index].offsetX, layouts[index].offsetY);
+    });
+    drawPinCallouts(entries, layouts);
+  }
+
+  // One SVG under the pins carries every callout: a line from the
+  // displaced pin centre to a dot on its true anchor point.
+  function drawPinCallouts(entries, layouts) {
+    const layer = entries[0].element.parentElement;
+    if (!layer) return;
+
+    let svg = layer.querySelector(":scope > svg.places-pin-callouts");
+    if (!svg) {
+      svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.classList.add("places-pin-callouts");
+      layer.prepend(svg);
+    }
+    const width = layer.clientWidth;
+    const height = layer.clientHeight;
+    svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+    svg.setAttribute("width", String(width));
+    svg.setAttribute("height", String(height));
+
+    let markup = "";
+    entries.forEach((entry, i) => {
+      const offsetX = layouts[i].offsetX;
+      const offsetY = layouts[i].offsetY;
+      if (Math.sqrt(offsetX * offsetX + offsetY * offsetY) < 14) return;
+      const anchorX = parseFloat(entry.element.style.left) || 0;
+      const anchorY = parseFloat(entry.element.style.top) || 0;
+      markup +=
+        `<line x1="${anchorX}" y1="${anchorY}" ` +
+        `x2="${anchorX + offsetX}" y2="${anchorY + offsetY}"/>` +
+        `<circle cx="${anchorX}" cy="${anchorY}" r="4.5"/>`;
+    });
+    svg.innerHTML = markup;
   }
 
   function buildPinRect(entry, layout) {
