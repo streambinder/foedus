@@ -1989,16 +1989,17 @@ dialog.modal-overlay:not([open]) .modal-box {
   padding: 0;
 }
 
+/* inline padding centres the first and last tile at rest, matching
+   their scroll-snap position; it never drops below the gutter */
 .registry-v2-carousel {
   display: flex;
   gap: var(--sp-4);
   overflow-x: auto;
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
-  padding: var(--sp-2) 0 var(--sp-4);
+  padding-block: var(--sp-2) var(--sp-4);
+  padding-inline: max(var(--sp-4), calc((100vw - min(80vw, 18rem)) / 2));
   margin: 0 calc(-1 * var(--sp-4));
-  padding-left: var(--sp-4);
-  padding-right: var(--sp-4);
   scrollbar-width: none;
 }
 
@@ -3896,6 +3897,10 @@ td [role="switch"] {
     letter-spacing: 0.24em;
   }
 
+  .registry-v2-carousel {
+    padding-inline: max(var(--sp-4), calc((100vw - min(86vw, 18rem)) / 2));
+  }
+
   .gift-tile {
     flex-basis: 86vw;
   }
@@ -3909,8 +3914,12 @@ td [role="switch"] {
    RESPONSIVE: 480px+ (large phones / small tablets)
    =================================================================== */
 @media (width >= 480px) {
+  /* safe centring falls back to the start when the tiles overflow,
+     so the first tile stays reachable; tile widths are percentages
+     here, so the centring padding of the base rule does not apply */
   .registry-v2-carousel {
-    justify-content: center;
+    justify-content: safe center;
+    padding-inline: var(--sp-4);
   }
 
   .gift-tile {
