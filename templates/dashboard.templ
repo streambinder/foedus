@@ -655,10 +655,10 @@ templ Dashboard(settings models.Settings, content SettingsContent, guests []mode
 									<input type="hidden" name="flora_bl_image" id="flora-bl-image-data"/>
 									<input type="hidden" name="flora_bl_media_id" id="flora-bl-media-id" value={ mediaIDValue(settings.FloraBlMediaID) }/>
 									if settings.FloraBlMediaID > 0 {
-										<img class="venue-image-preview" id="flora-bl-preview" src={ publicImageURL(settings.FloraBlMediaID) } loading="lazy" decoding="async" alt="flora bottom-left"/>
+										<img class="venue-image-preview flora-image-preview flora-image-preview-bl" id="flora-bl-preview" src={ publicImageURL(settings.FloraBlMediaID) } loading="lazy" decoding="async" alt="flora bottom-left"/>
 										<button type="button" id="flora-bl-remove" class="outline secondary" style="margin-top:0.5rem">{ t("btn.remove") }</button>
 									} else {
-										<img class="venue-image-preview" id="flora-bl-preview" style="display:none" alt="flora bottom-left"/>
+										<img class="venue-image-preview flora-image-preview flora-image-preview-bl" id="flora-bl-preview" style="display:none" alt="flora bottom-left"/>
 										<button type="button" id="flora-bl-remove" class="outline secondary" style="margin-top:0.5rem;display:none">{ t("btn.remove") }</button>
 									}
 								</div>
@@ -669,10 +669,10 @@ templ Dashboard(settings models.Settings, content SettingsContent, guests []mode
 									<input type="hidden" name="flora_tr_image" id="flora-tr-image-data"/>
 									<input type="hidden" name="flora_tr_media_id" id="flora-tr-media-id" value={ mediaIDValue(settings.FloraTrMediaID) }/>
 									if settings.FloraTrMediaID > 0 {
-										<img class="venue-image-preview" id="flora-tr-preview" src={ publicImageURL(settings.FloraTrMediaID) } loading="lazy" decoding="async" alt="flora top-right"/>
+										<img class="venue-image-preview flora-image-preview flora-image-preview-tr" id="flora-tr-preview" src={ publicImageURL(settings.FloraTrMediaID) } loading="lazy" decoding="async" alt="flora top-right"/>
 										<button type="button" id="flora-tr-remove" class="outline secondary" style="margin-top:0.5rem">{ t("btn.remove") }</button>
 									} else {
-										<img class="venue-image-preview" id="flora-tr-preview" style="display:none" alt="flora top-right"/>
+										<img class="venue-image-preview flora-image-preview flora-image-preview-tr" id="flora-tr-preview" style="display:none" alt="flora top-right"/>
 										<button type="button" id="flora-tr-remove" class="outline secondary" style="margin-top:0.5rem;display:none">{ t("btn.remove") }</button>
 									}
 								</div>

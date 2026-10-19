@@ -181,7 +181,9 @@ templ DashboardLayout(title string, lang string) {
 
 // Flora renders one of the two decorative corner graphics ("bl" or "tr").
 // Without an override it keeps the built-in eucalyptus background from CSS;
-// with one it swaps in the uploaded image, keeping the class geometry.
+// with one it swaps in the uploaded image with the vp-flora-custom class,
+// whose CSS crops the image to the corner and blends its background into
+// the page instead of applying the built-in graphic geometry.
 templ Flora(settings models.Settings, corner string) {
 	{{ mediaID := 0 }}
 	if corner == "bl" {
@@ -190,7 +192,7 @@ templ Flora(settings models.Settings, corner string) {
 		{{ mediaID = settings.FloraTrMediaID }}
 	}
 	if mediaID > 0 {
-		<span class={ "vp-flora vp-flora-" + corner } aria-hidden="true" style={ "background-image:url(/media/" + strconv.Itoa(mediaID) + ")" }></span>
+		<span class={ "vp-flora vp-flora-" + corner + " vp-flora-custom" } aria-hidden="true" style={ "background-image:url(/media/" + strconv.Itoa(mediaID) + ")" }></span>
 	} else {
 		<span class={ "vp-flora vp-flora-" + corner } aria-hidden="true"></span>
 	}
