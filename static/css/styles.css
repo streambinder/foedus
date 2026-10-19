@@ -4866,13 +4866,16 @@ td [role="switch"] {
   box-shadow: 0 18px 38px rgb(42 52 57 / 18%);
 }
 
+/* the counter-scale keeps the label readable while the pin shrinks,
+   but it is capped so very small pins shrink their labels too
+   instead of letting them spill over neighbouring pins */
 .places-pin-overlay {
   position: absolute;
   left: 50%;
   bottom: 0.8rem;
   display: flex;
   justify-content: center;
-  transform: translateX(-50%) scale(calc(1 / var(--places-pin-scale)));
+  transform: translateX(-50%) scale(calc(min(1 / var(--places-pin-scale), 1.9)));
   transform-origin: center bottom;
   width: calc(100% - 1.5rem);
 }
