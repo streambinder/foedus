@@ -1,14 +1,21 @@
 FROM golang:1.27.1-alpine AS builder
 
-RUN go install github.com/a-h/templ/cmd/templ@v0.3.1020
-
 WORKDIR /app
+
+# The module and build caches live in BuildKit cache mounts, exported
+# with the layer cache, so a cold layer cache no longer means a full
+# module download and recompile.
 COPY go.mod go.sum ./
-RUN go mod download
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    go mod download && \
+    go install github.com/a-h/templ/cmd/templ@v0.3.1020
 
 COPY . .
-RUN templ generate
-RUN ASSET_VERSION="$(date -u +%Y%m%d%H%M%S)" && \
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    templ generate && \
+    ASSET_VERSION="$(date -u +%Y%m%d%H%M%S)" && \
     CGO_ENABLED=0 go build \
     -ldflags "-X github.com/streambinder/foedus/internal/buildinfo.AssetVersion=${ASSET_VERSION}" \
     -o foedus .
