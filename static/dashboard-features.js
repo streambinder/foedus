@@ -427,7 +427,7 @@ function initDashboardFeatures() {
   }
 
   // ---------------------------------------------------------------
-  // place autocomplete (reuses Nominatim, same pattern as autocomplete.js)
+  // place autocomplete (shared FoedusSearchPlaces from autocomplete.js)
   // ---------------------------------------------------------------
   function initPlaceAutocomplete(card) {
     const input = card.querySelector(".place-location-input");
@@ -443,7 +443,10 @@ function initDashboardFeatures() {
     let activeIndex = -1;
     let results = [];
 
+    let searchSeq = 0;
+
     function hide() {
+      searchSeq++;
       dropdown.classList.add("hidden");
       dropdown.innerHTML = "";
       activeIndex = -1;
@@ -455,20 +458,22 @@ function initDashboardFeatures() {
       activeIndex = -1;
       dropdown.innerHTML = "";
       if (items.length === 0) {
-        hide();
+        const div = document.createElement("div");
+        div.className = "autocomplete-no-results";
+        div.textContent = window.FoedusNoResultsLabel(dropdown);
+        dropdown.appendChild(div);
+        dropdown.classList.remove("hidden");
         return;
       }
       items.forEach((item, idx) => {
         const div = document.createElement("div");
-        const name = extractName(item);
-        const address = extractAddress(item, name);
         div.innerHTML =
           '<span style="font-weight:500;color:var(--charcoal-dark)">' +
-          escapeHtml(name) +
+          escapeHtml(item.name) +
           "</span>" +
-          (address
+          (item.address
             ? '<br><span style="font-size:var(--fs-xs);color:var(--sage-dark)">' +
-              escapeHtml(address) +
+              escapeHtml(item.address) +
               "</span>"
             : "");
         div.addEventListener("mousedown", (e) => {
@@ -491,31 +496,20 @@ function initDashboardFeatures() {
     function select(idx) {
       const item = results[idx];
       if (!item) return;
-      const name = extractName(item);
-      const address = extractAddress(item, name);
-      if (nameHidden) nameHidden.value = name;
-      if (addressHidden) addressHidden.value = address;
+      if (nameHidden) nameHidden.value = item.name;
+      if (addressHidden) addressHidden.value = item.address;
       latHidden.value = item.lat || "0";
       lngHidden.value = item.lon || "0";
-      input.value = name + (address ? `, ${address}` : "");
+      input.value = item.name + (item.address ? `, ${item.address}` : "");
       renderCoordsBadge(card, item.lat, item.lon);
       hide();
     }
 
     function search(query) {
-      const lang = document.documentElement.lang || "en";
-      const url =
-        "https://nominatim.openstreetmap.org/search?q=" +
-        encodeURIComponent(query) +
-        "&format=jsonv2&addressdetails=1&namedetails=1&limit=5";
-      fetch(url, { headers: { "Accept-Language": lang } })
-        .then((res) => res.json())
-        .then((data) => {
-          render(data);
-        })
-        .catch(() => {
-          hide();
-        });
+      const seq = ++searchSeq;
+      window.FoedusSearchPlaces(query).then((items) => {
+        if (seq === searchSeq) render(items);
+      });
     }
 
     input.addEventListener("input", () => {
@@ -559,11 +553,6 @@ function initDashboardFeatures() {
   // ---------------------------------------------------------------
   // shared helpers
   // ---------------------------------------------------------------
-  function extractName(item) {
-    if (item.namedetails?.name) return item.namedetails.name;
-    return item.display_name;
-  }
-
   function renderCoordsBadge(card, lat, lng) {
     const meta = card.querySelector(".place-card-meta");
     if (!meta) return;
@@ -582,16 +571,6 @@ function initDashboardFeatures() {
       parseFloat(lng).toFixed(4) +
       "</code>";
     meta.appendChild(coordsDiv);
-  }
-
-  function extractAddress(item, name) {
-    if (!item.display_name) return "";
-    const dn = item.display_name;
-    if (name && dn.indexOf(name) === 0) {
-      const rest = dn.substring(name.length).replace(/^,\s*/, "");
-      return rest;
-    }
-    return dn;
   }
 
   function escapeHtml(str) {
