@@ -522,21 +522,29 @@ func SaveSettings(c *fiber.Ctx) error {
 			}
 		}
 
-		// the five single-image fields resolve inside the tx: each may insert new
-		// bytes or drop the row it replaces.
+		// the six single-image fields resolve inside the tx: each may insert new
+		// bytes or drop the row it replaces. The two flora fields resolve
+		// through their own wrapper, which repairs fake transparency first.
 		for _, image := range []struct {
 			field    string
 			existing int
 			target   *int
+			flora    bool
 		}{
-			{"ceremony", settings.CeremonyMediaID, &updated.CeremonyMediaID},
-			{"reception", settings.ReceptionMediaID, &updated.ReceptionMediaID},
-			{"share_preview", settings.SharePreviewMediaID, &updated.SharePreviewMediaID},
-			{"stamp", settings.StampMediaID, &updated.StampMediaID},
-			{"flora_bl", settings.FloraBlMediaID, &updated.FloraBlMediaID},
-			{"flora_tr", settings.FloraTrMediaID, &updated.FloraTrMediaID},
+			{"ceremony", settings.CeremonyMediaID, &updated.CeremonyMediaID, false},
+			{"reception", settings.ReceptionMediaID, &updated.ReceptionMediaID, false},
+			{"share_preview", settings.SharePreviewMediaID, &updated.SharePreviewMediaID, false},
+			{"stamp", settings.StampMediaID, &updated.StampMediaID, false},
+			{"flora_bl", settings.FloraBlMediaID, &updated.FloraBlMediaID, true},
+			{"flora_tr", settings.FloraTrMediaID, &updated.FloraTrMediaID, true},
 		} {
-			mediaID, err := resolveImageMediaID(tx, c.FormValue(image.field+"_image"), c.FormValue(image.field+"_media_id"), image.existing, true)
+			var mediaID int
+			var err error
+			if image.flora {
+				mediaID, err = resolveFloraImageMediaID(tx, c.FormValue(image.field+"_image"), c.FormValue(image.field+"_media_id"), image.existing)
+			} else {
+				mediaID, err = resolveImageMediaID(tx, c.FormValue(image.field+"_image"), c.FormValue(image.field+"_media_id"), image.existing, true)
+			}
 			if err != nil {
 				logger.Warn("settings save rejected", "field", image.field+"_image", "error", err.Error())
 				return err
