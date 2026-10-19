@@ -3,9 +3,11 @@
   // shared place search, also used by dashboard-features.js.
   // Photon answers fuzzy and address-shaped queries that Nominatim
   // misses; Nominatim covers named places Photon ranks low. Results
-  // merge into { name, address, city, lat, lon } items. When a query
-  // finds little, it retries once without generic venue words, so
-  // "parrocchia san clemente i papa" also tries "san clemente papa".
+  // merge into { name, address, city, lat, lon } items. Queries that
+  // mix a name with a location hint also run the anchored two-stage
+  // search below; other short queries retry once without generic
+  // venue words, so "parrocchia san clemente i papa" also tries
+  // "san clemente papa".
   // ---------------------------------------------------------------
   const GENERIC_TOKENS = new Set([
     "chiesa",
@@ -115,24 +117,158 @@
     );
   }
 
-  function relaxQuery(query) {
-    const tokens = query
+  function tokenize(text) {
+    return text
       .toLowerCase()
       .replace(/[.,;:'"]/g, " ")
       .split(/\s+/)
-      .filter((token) => token && !GENERIC_TOKENS.has(token));
-    const relaxed = tokens.join(" ");
+      .filter((token) => token);
+  }
+
+  function stripGeneric(text) {
+    return tokenize(text)
+      .filter((token) => !GENERIC_TOKENS.has(token))
+      .join(" ");
+  }
+
+  function relaxQuery(query) {
+    const relaxed = stripGeneric(query);
     return relaxed && relaxed !== query.toLowerCase() ? relaxed : "";
+  }
+
+  function distanceKm(a, b) {
+    const lat1 = Number(a.lat);
+    const lon1 = Number(a.lon);
+    const lat2 = Number(b.lat);
+    const lon2 = Number(b.lon);
+    if (!lat1 || !lon1 || !lat2 || !lon2) return Infinity;
+    const rad = Math.PI / 180;
+    const dLat = (lat2 - lat1) * rad;
+    const dLon = (lon2 - lon1) * rad;
+    const h =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos(lat1 * rad) * Math.cos(lat2 * rad) * Math.sin(dLon / 2) ** 2;
+    return 2 * 6371 * Math.asin(Math.sqrt(h));
+  }
+
+  function fetchPhotonAnchor(hint) {
+    const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(hint)}&limit=1`;
+    return fetch(url)
+      .then((res) => res.json())
+      .then((data) => {
+        const first = (data.features || []).map(normalizePhoton)[0];
+        return first?.lat ? first : null;
+      })
+      .catch(() => null);
+  }
+
+  function fetchPhotonBiased(nameQuery, anchor) {
+    const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(nameQuery)}&lat=${anchor.lat}&lon=${anchor.lon}&zoom=16&location_bias_scale=0.1&limit=10`;
+    return fetch(url)
+      .then((res) => res.json())
+      .then((data) => (data.features || []).map(normalizePhoton))
+      .catch(() => []);
+  }
+
+  function fetchNominatimBounded(nameQuery, anchor) {
+    const lang = document.documentElement.lang || "en";
+    const lat = Number(anchor.lat);
+    const lon = Number(anchor.lon);
+    const viewbox = `${(lon - 0.01).toFixed(6)},${(lat + 0.01).toFixed(6)},${(lon + 0.01).toFixed(6)},${(lat - 0.01).toFixed(6)}`;
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(nameQuery)}&format=jsonv2&addressdetails=1&namedetails=1&limit=10&layer=poi&viewbox=${viewbox}&bounded=1`;
+    return fetch(url, { headers: { "Accept-Language": lang } })
+      .then((res) => res.json())
+      .then((data) => data.map(normalizeNominatim))
+      .catch(() => []);
+  }
+
+  // Two-stage decomposition, the pattern production geocoders use for
+  // "name + location hint" queries: split candidates are generated at
+  // token boundaries and the data validates them. The hint suffix is
+  // geocoded to an anchor; the name prefix is then searched around the
+  // anchor with each provider's native bias. A split counts only when
+  // the biased search finds the name near its own anchor.
+  function anchoredSearch(query) {
+    const tokens = query.trim().split(/\s+/);
+    if (tokens.length < 3) return Promise.resolve(null);
+    const hintLens = [3, 2, 1].filter((n) => n < tokens.length);
+    function attempt(idx) {
+      if (idx >= hintLens.length) return Promise.resolve(null);
+      const hintLen = hintLens[idx];
+      const nameQuery = stripGeneric(
+        tokens.slice(0, tokens.length - hintLen).join(" "),
+      );
+      const nameTokens = nameQuery ? nameQuery.split(" ").length : 0;
+      // a lone name word pairs only with a lone hint word, otherwise
+      // the split eats too much of the name ("chiesa largo val ...")
+      if (!nameQuery || (nameTokens < 2 && hintLen > 1)) {
+        return attempt(idx + 1);
+      }
+      const hint = tokens.slice(tokens.length - hintLen).join(" ");
+      return fetchPhotonAnchor(hint).then((anchor) => {
+        if (!anchor) return attempt(idx + 1);
+        return fetchPhotonBiased(nameQuery, anchor).then((biased) => {
+          const near = biased.filter((item) => distanceKm(item, anchor) <= 2);
+          if (!near.length) return attempt(idx + 1);
+          return fetchNominatimBounded(nameQuery, anchor).then((bounded) => ({
+            anchor: anchor,
+            items: mergeResults([
+              bounded,
+              biased.filter((item) => distanceKm(item, anchor) <= 25),
+            ]),
+          }));
+        });
+      });
+    }
+    return attempt(0);
+  }
+
+  function tokenCoverage(tokens, text) {
+    if (!tokens.length) return 0;
+    const words = tokenize(text);
+    let hits = 0;
+    for (const token of tokens) {
+      const hit = words.some(
+        (word) =>
+          word === token ||
+          (token.length >= 3 &&
+            (word.startsWith(token) || token.startsWith(word))),
+      );
+      if (hit) hits++;
+    }
+    return hits / tokens.length;
+  }
+
+  function rankWithAnchor(items, query, anchor) {
+    const tokens = tokenize(stripGeneric(query));
+    const scored = items.map((item, idx) => {
+      let score =
+        2 * tokenCoverage(tokens, item.name) +
+        tokenCoverage(tokens, item.address);
+      const dist = distanceKm(item, anchor);
+      if (dist <= 0.3) score += 1;
+      else if (dist <= 2) score += 0.5;
+      else if (dist <= 20) score += 0.25;
+      return { item: item, idx: idx, score: score };
+    });
+    scored.sort((a, b) => b.score - a.score || a.idx - b.idx);
+    return scored.map((entry) => entry.item).slice(0, 8);
   }
 
   function searchPlaces(query) {
     return fetchProviders(query).then((items) => {
-      if (items.length >= 3) return items;
-      const relaxed = relaxQuery(query);
-      if (!relaxed) return items;
-      return fetchProviders(relaxed).then((more) =>
-        mergeResults([items, more]),
-      );
+      return anchoredSearch(query).then((anchored) => {
+        if (anchored) {
+          const pool = mergeResults([anchored.items, items]);
+          return rankWithAnchor(pool, query, anchored.anchor);
+        }
+        if (items.length >= 3) return items;
+        const relaxed = relaxQuery(query);
+        if (!relaxed) return items;
+        return fetchProviders(relaxed).then((more) =>
+          mergeResults([items, more]),
+        );
+      });
     });
   }
 
