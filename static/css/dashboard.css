@@ -652,6 +652,23 @@ input[type="file"]:focus {
   display: block;
 }
 
+/* flora previews mirror the public corner: the image is cropped to
+   the corner of its slot and its background is blended into the page */
+.flora-image-preview {
+  width: 9rem;
+  height: 9rem;
+  background: var(--ivory);
+  mix-blend-mode: multiply;
+}
+
+.flora-image-preview-bl {
+  object-position: left bottom;
+}
+
+.flora-image-preview-tr {
+  object-position: right top;
+}
+
 .managed-image-field {
   display: flex;
   gap: 0.75rem;

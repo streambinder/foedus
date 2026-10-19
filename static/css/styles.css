@@ -368,6 +368,29 @@ html:has(.vp-section) body {
   }
 }
 
+/* Uploaded corner graphics keep their own orientation. The image is
+   cropped to the corner of its slot and its background is blended
+   into the page, so a plain image or a full frame needs no
+   transparency and is never rotated or pushed off the section. */
+.vp-flora-custom {
+  background-size: cover;
+  mix-blend-mode: multiply;
+}
+
+.vp-flora-bl.vp-flora-custom {
+  bottom: -0.5rem;
+  left: -0.5rem;
+  transform: none;
+  background-position: left bottom;
+}
+
+.vp-flora-tr.vp-flora-custom {
+  top: -0.5rem;
+  right: -0.5rem;
+  transform: none;
+  background-position: right top;
+}
+
 .vp-hero .hero-kicker {
   text-transform: uppercase;
   letter-spacing: 0.35em;

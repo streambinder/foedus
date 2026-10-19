@@ -81,6 +81,9 @@ func TestRenderFlora(t *testing.T) {
 	if !strings.Contains(out, "/media/15") {
 		t.Errorf("flora bl with override = %.200s", out)
 	}
+	if !strings.Contains(out, "vp-flora-custom") {
+		t.Errorf("flora bl with override must use the custom geometry: %.200s", out)
+	}
 	out = render(t, Flora(settings, "tr"))
 	if !strings.Contains(out, "/media/16") {
 		t.Errorf("flora tr with override = %.200s", out)
@@ -88,6 +91,9 @@ func TestRenderFlora(t *testing.T) {
 	out = render(t, Flora(models.Settings{}, "bl"))
 	if strings.Contains(out, "background-image") {
 		t.Errorf("flora without override must not set a background image: %.200s", out)
+	}
+	if strings.Contains(out, "vp-flora-custom") {
+		t.Errorf("flora without override must not use the custom geometry: %.200s", out)
 	}
 	// any corner other than bl uses the top-right media id
 	out = render(t, Flora(settings, "xx"))
