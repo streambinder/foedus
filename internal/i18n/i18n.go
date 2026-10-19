@@ -62,7 +62,7 @@ var translations = map[string]map[string]string{
 		"appearance.page_bg_color_description":  "Background of the invitation page, behind the text and venues.",
 		"appearance.home_bg_color_description":  "Background of the homepage, behind the scrolling sections.",
 		"appearance.stamp_description":          "Replaces the wax seal on the invitation envelope. Remove restores the default.",
-		"appearance.flora_description":          "Replaces the built-in eucalyptus corner graphic on the homepage and ceremony pages. Upload one image for this corner: a full frame works too, because the site crops the image to this corner and blends its background into the page. Remove restores the default.",
+		"appearance.flora_description":          "Replaces the built-in eucalyptus corner graphic on the homepage and ceremony pages. Upload one image for this corner: a full frame works too, because the site crops the image to this corner, blends its background into the page and removes fake transparency grids. Remove restores the default.",
 
 		// dashboard - counters
 		"counter.rsvp":              "RSVP",
@@ -384,7 +384,7 @@ var translations = map[string]map[string]string{
 		"appearance.page_bg_color_description":  "Sfondo della pagina dell'invito, dietro testi e luoghi.",
 		"appearance.home_bg_color_description":  "Sfondo della homepage, dietro le sezioni a scorrimento.",
 		"appearance.stamp_description":          "Sostituisce il sigillo di ceralacca sulla busta dell'invito. Rimuovi per tornare al default.",
-		"appearance.flora_description":          "Sostituisce la grafica d'eucalipto predefinita negli angoli di homepage e pagina del rito. Carica un'immagine per questo angolo: va bene anche una cornice intera, perché il sito ritaglia l'immagine su questo angolo e ne fonde lo sfondo con la pagina. Rimuovi per tornare al default.",
+		"appearance.flora_description":          "Sostituisce la grafica d'eucalipto predefinita negli angoli di homepage e pagina del rito. Carica un'immagine per questo angolo: va bene anche una cornice intera, perché il sito ritaglia l'immagine su questo angolo, ne fonde lo sfondo con la pagina e rimuove le griglie di finta trasparenza. Rimuovi per tornare al default.",
 
 		// dashboard - counters
 		"counter.rsvp":              "RSVP",
