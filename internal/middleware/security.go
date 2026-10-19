@@ -13,7 +13,7 @@ func SecurityHeaders() fiber.Handler {
 		" font-src 'self' https://fonts.gstatic.com;" +
 		" img-src 'self' blob: https://*.basemaps.cartocdn.com https://i.scdn.co data:;" +
 		" frame-src https://open.spotify.com;" +
-		" connect-src 'self' https://*.basemaps.cartocdn.com https://nominatim.openstreetmap.org;" +
+		" connect-src 'self' https://*.basemaps.cartocdn.com https://nominatim.openstreetmap.org https://photon.komoot.io;" +
 		" base-uri 'none';" +
 		" form-action 'self'"
 

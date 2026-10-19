@@ -43,6 +43,7 @@ var translations = map[string]map[string]string{
 		"dashboard.details":                "Settings",
 		"dashboard.guests":                 "Guests",
 		"dashboard.track_additions":        "Track Additions",
+		"dashboard.no_place_found":         "No place found with that name",
 		"dashboard.appearance":             "Appearance",
 		"dashboard.appearance_description": "Colours of the invitation envelope and page, plus the decorative corner graphics.",
 
@@ -365,6 +366,7 @@ var translations = map[string]map[string]string{
 		"dashboard.details":                "Impostazioni",
 		"dashboard.guests":                 "Invitati",
 		"dashboard.track_additions":        "Brani aggiunti",
+		"dashboard.no_place_found":         "Nessun luogo trovato con quel nome",
 		"dashboard.appearance":             "Aspetto",
 		"dashboard.appearance_description": "Colori della busta e della pagina dell'invito, più le grafiche decorative angolari.",
 

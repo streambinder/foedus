@@ -1101,6 +1101,15 @@ input[role="switch"] {
   background: var(--tblr-bg-surface-secondary);
 }
 
+.autocomplete-dropdown > .autocomplete-no-results {
+  color: var(--tblr-muted);
+  cursor: default;
+}
+
+.autocomplete-dropdown > .autocomplete-no-results:hover {
+  background: none;
+}
+
 .hidden {
   display: none !important;
 }
