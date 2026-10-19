@@ -144,18 +144,30 @@
       }
 
       const bounds = L.latLngBounds(entries.map((e) => e.latlng));
-      const pad =
-        mode === "places"
-          ? L.point(80, 80)
-          : L.point(
-              Math.max(36, Math.round(mapEl.clientWidth * 0.08)) * 2,
-              Math.max(32, Math.round(mapEl.clientHeight * 0.08)) +
-                Math.max(120, Math.round(mapEl.clientHeight * 0.18)),
-            );
+
+      if (mode === "honeymoon") {
+        // Fit every stop on screen. The zoom floor used for the places
+        // map must not override this fit: with far-apart stops it pushed
+        // the farthest pin off-screen. The top padding clears the
+        // section heading that overlays the map.
+        map.fitBounds(bounds, {
+          paddingTopLeft: L.point(
+            Math.max(20, Math.round(mapEl.clientWidth * 0.06)),
+            Math.max(84, Math.round(mapEl.clientHeight * 0.12)),
+          ),
+          paddingBottomRight: L.point(
+            Math.max(20, Math.round(mapEl.clientWidth * 0.06)),
+            Math.max(40, Math.round(mapEl.clientHeight * 0.07)),
+          ),
+          maxZoom,
+          animate: !immediate,
+        });
+        return;
+      }
 
       const fitZoom = Math.max(
         minZoom,
-        Math.min(maxZoom, map.getBoundsZoom(bounds, false, pad)),
+        Math.min(maxZoom, map.getBoundsZoom(bounds, false, L.point(80, 80))),
       );
       map.setView(weightedCentroid(entries), fitZoom, { animate: !immediate });
     }
@@ -447,10 +459,37 @@
   function applyOverlapLayout(entries, mode) {
     if (entries.length < 2) return;
 
-    const minScale = mode === "honeymoon" ? 0.58 : 0.72;
+    const minScale = mode === "honeymoon" ? 0.1 : 0.72;
     const overlapTarget = 0.25;
     const maxOffset = mode === "honeymoon" ? 32 : 14;
     const layouts = entries.map(() => ({ scale: 1, offsetX: 0, offsetY: 0 }));
+
+    if (mode === "honeymoon") {
+      // Seed each pin with the largest scale that keeps it clear of
+      // its nearest neighbour: a pin may span at most 94% of the
+      // distance to the closest other pin centre. The passes below
+      // then only refine the label rectangles.
+      entries.forEach((entry, i) => {
+        const size = Math.max(
+          entry.element.offsetWidth,
+          entry.element.offsetHeight,
+        );
+        if (!size) return;
+        let cap = 1;
+        entries.forEach((other, j) => {
+          if (i === j) return;
+          const dx =
+            (parseFloat(other.element.style.left) || 0) -
+            (parseFloat(entry.element.style.left) || 0);
+          const dy =
+            (parseFloat(other.element.style.top) || 0) -
+            (parseFloat(entry.element.style.top) || 0);
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          if (distance > 0) cap = Math.min(cap, (distance * 0.94) / size);
+        });
+        layouts[i].scale = Math.max(minScale, Math.min(1, cap));
+      });
+    }
 
     for (let pass = 0; pass < 10; pass++) {
       let changed = false;
