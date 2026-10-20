@@ -681,3 +681,30 @@ func TestRenderSettingsResults(t *testing.T) {
 		t.Errorf("empty settings results: %.200s", out)
 	}
 }
+
+func TestRenderCountersAndPollsResults(t *testing.T) {
+	translator := i18n.NewT("en")
+
+	out := render(t, CountersResults(3, 1, 2, 5, 2, 9, 2, 1, 0, 1, translator))
+	for _, want := range []string{`id="dashboard-counters"`, "counter-names-trigger", `data-on:counters-refresh`} {
+		if !strings.Contains(out, want) {
+			t.Errorf("counters results missing %q: %.200s", want, out)
+		}
+	}
+
+	polls := []models.Poll{
+		{ID: 1, Question: "Bus navetta?", Description: "Dal centro", TotalCount: 3, YesVoters: []models.PollVoter{{Name: "Ada", Notes: "window seat"}}},
+		{ID: 2, Question: "Menu vegano?"},
+	}
+	out = render(t, PollsResults(polls, "csrf", translator, "en"))
+	for _, want := range []string{`id="polls-results"`, "Bus navetta?", "Menu vegano?", `data-preserve-attr="class"`, `data-on:polls-refresh`} {
+		if !strings.Contains(out, want) {
+			t.Errorf("polls results missing %q: %.200s", want, out)
+		}
+	}
+
+	out = render(t, PollsResults(nil, "csrf", translator, "en"))
+	if !strings.Contains(out, `id="polls-results"`) || strings.Contains(out, "Bus navetta?") {
+		t.Errorf("empty polls results: %.200s", out)
+	}
+}

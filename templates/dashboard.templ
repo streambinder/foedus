@@ -139,7 +139,7 @@ const guestLabelDefaultExpr = "$selected.length === 0 ? '' : $selected.length ==
 const guestToggleExpr = "const id = evt.target.value; if (evt.target.checked) { if (!$selected.includes(id)) { $selected = [...$selected, id] } $names = { ...$names, [id]: evt.target.dataset.firstName } } else { $selected = $selected.filter(s => s !== id) }"
 
 // guestsRefreshExpr refetches the guests fragment with the current signals.
-// dashboard-spa.js dispatches a guests-refresh CustomEvent on the section
+// the dashboard script dispatches a guests-refresh CustomEvent on the section
 // after a form submit changes guest data; the event detail may carry a
 // reset flag (after an invitation is created) or a removeId (a deleted
 // guest still present in the selection).
@@ -166,7 +166,7 @@ func invitationsSignals(search string, page int) string {
 const invitationsSearchExpr = "$ipage = 1; @get('/dashboard/invitations/fragment')"
 
 // invitationsRefreshExpr refetches the invitations fragment with the
-// current signals. dashboard-spa.js dispatches an invitations-refresh
+// current signals. the dashboard script dispatches an invitations-refresh
 // CustomEvent on the section after a form submit changes invitation data.
 const invitationsRefreshExpr = "@get('/dashboard/invitations/fragment')"
 
@@ -181,7 +181,7 @@ func registrySignals(registryPage, giftsPage int) string {
 }
 
 // registryRefreshExpr refetches the registry fragment with the current
-// signals. dashboard-spa.js dispatches a registry-refresh CustomEvent on
+// signals. the dashboard script dispatches a registry-refresh CustomEvent on
 // the section after a form submit changes registry or gift data.
 const registryRefreshExpr = "@get('/dashboard/registry/fragment')"
 
@@ -195,11 +195,11 @@ func soundtrackSignals(page int) string {
 }
 
 // soundtrackRefreshExpr refetches the soundtrack fragment with the current
-// signals. dashboard-spa.js dispatches a soundtrack-refresh CustomEvent on
+// signals. the dashboard script dispatches a soundtrack-refresh CustomEvent on
 // the section after a form submit changes soundtrack data.
 const soundtrackRefreshExpr = "@get('/dashboard/soundtrack/fragment')"
 
-// settingsRefreshExpr refetches the settings fragment. dashboard-spa.js
+// settingsRefreshExpr refetches the settings fragment. the dashboard script
 // dispatches a settings-refresh CustomEvent on the section after the
 // settings form is saved.
 const settingsRefreshExpr = "@get('/dashboard/settings/fragment')"
@@ -217,6 +217,16 @@ func settingsSignals() string {
 // image editors) on the morphed settings form whenever the fragment bumps
 // the revision signal.
 const settingsRebindExpr = "if ($settingsrev) { window.FoedusRebindDashboard && window.FoedusRebindDashboard() }"
+
+// countersRefreshExpr refetches the counters fragment. The dashboard
+// script dispatches a counters-refresh CustomEvent on the counters row
+// after a form submit changes the guest counts.
+const countersRefreshExpr = "@get('/dashboard/counters/fragment')"
+
+// pollsRefreshExpr refetches the polls fragment. The dashboard script
+// dispatches a polls-refresh CustomEvent on the polls block after a form
+// submit changes poll or guest data.
+const pollsRefreshExpr = "@get('/dashboard/polls/fragment')"
 
 // tablePageExpr switches one page signal of a dashboard table and refetches
 // its fragment, keeping the link href as the no-JavaScript path.
@@ -1474,6 +1484,123 @@ templ SettingsResults(settings models.Settings, content SettingsContent, csrfTok
 	</div>
 }
 
+// CountersResults is the morph target of the dashboard counters row:
+// the four RSVP donuts. The counters fragment re-renders it after
+// guest data changes.
+templ CountersResults(confirmedReception, refusedReception, pendingRSVP, invitedGuests, nonVisualizedInvited, total, confirmedAdults, confirmedChildren, confirmedInfants, confirmedVendors int, t i18n.T) {
+	<div id="dashboard-counters" class="counters-row" data-on:counters-refresh={ countersRefreshExpr }>
+		@Donut(t("counter.rsvp"), confirmedReception, confirmedReception+refusedReception+pendingRSVP, []DonutSlice{
+			{Value: confirmedReception, ClassName: "donut-confirmed", Label: t("counter.confirmed"), Category: "confirmed_reception"},
+			{Value: refusedReception, ClassName: "donut-refused", Label: t("counter.refused"), Category: "refused_reception"},
+			{Value: pendingRSVP, ClassName: "donut-pending", Label: t("counter.pending_rsvp"), Category: "pending_rsvp"},
+		})
+		@Donut(t("counter.confirmed_by_type"), confirmedAdults+confirmedChildren+confirmedVendors, confirmedAdults+confirmedChildren+confirmedInfants+confirmedVendors, []DonutSlice{
+			{Value: confirmedAdults, ClassName: "donut-type-adult", Label: t("guest_type.adult"), Category: "confirmed_reception_adult"},
+			{Value: confirmedChildren, ClassName: "donut-type-child", Label: t("guest_type.child"), Category: "confirmed_reception_child"},
+			{Value: confirmedInfants, ClassName: "donut-type-infant", Label: t("guest_type.infant"), Category: "confirmed_reception_infant"},
+			{Value: confirmedVendors, ClassName: "donut-type-vendor", Label: t("guest_type.vendor"), Category: "confirmed_reception_vendor"},
+		})
+		@Donut(t("counter.visualization"), invitedGuests-nonVisualizedInvited, invitedGuests, []DonutSlice{
+			{Value: invitedGuests - nonVisualizedInvited, ClassName: "donut-viewed", Label: t("counter.viewed"), Category: "viewed"},
+			{Value: nonVisualizedInvited, ClassName: "donut-nonvisualized", Label: t("counter.nonvisualized"), Category: "nonvisualized"},
+		})
+		@Donut(t("counter.reach"), invitedGuests, total, []DonutSlice{
+			{Value: invitedGuests, ClassName: "donut-invited", Label: t("counter.invited"), Category: "invited"},
+			{Value: total - invitedGuests, ClassName: "donut-uninvited", Label: t("counter.uninvited"), Category: "uninvited"},
+		})
+	</div>
+}
+
+// PollsResults is the morph target of the polls block inside the
+// invitations section: the add-poll form, the polls table and the
+// voter modals. Its accordion panel carries data-preserve-attr,
+// so a refresh keeps the panel open as the admin left it.
+templ PollsResults(polls []models.Poll, csrfToken string, t i18n.T, lang string) {
+		<div class="accordion dashboard-accordion dashboard-subsection-accordion" id="polls-results" data-on:polls-refresh={ pollsRefreshExpr }>
+			<div class="accordion-item dashboard-subsection">
+				<h2 class="accordion-header" id="invitations-polls-heading">
+					<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-preserve-attr="class aria-expanded" data-bs-target="#invitations-polls-panel" aria-expanded="false" aria-controls="invitations-polls-panel">
+						<span class="dashboard-subsection-title">{ t("dashboard.polls") }</span>
+					</button>
+				</h2>
+				<div id="invitations-polls-panel" class="accordion-collapse collapse" data-preserve-attr="class" data-dashboard-key="invitations-polls" aria-labelledby="invitations-polls-heading">
+					<div class="accordion-body dashboard-subsection-body">
+						<form class="add-poll-form" method="POST" action="/dashboard/polls">
+							<input type="hidden" name="_csrf" value={ csrfToken }/>
+							<input type="text" name="question" placeholder={ t("placeholder.question") } required/>
+							<input type="text" name="description" placeholder={ t("placeholder.description") }/>
+							<button type="submit">{ t("btn.add") }</button>
+						</form>
+						if len(polls) > 0 {
+							<div class="overflow-auto">
+								<table>
+									<thead>
+										<tr>
+											<th>{ t("th.question") }</th>
+											<th>{ t("th.description") }</th>
+											<th>{ t("th.yes") }</th>
+											<th>{ t("th.actions") }</th>
+										</tr>
+									</thead>
+									<tbody>
+										for _, p := range polls {
+											<tr>
+												<td data-label={ t("th.question") }>{ p.Question }</td>
+												<td data-label={ t("th.description") }>{ p.Description }</td>
+												<td data-label={ t("th.yes") }>
+													if len(p.YesVoters) > 0 {
+														<a href="#" class="poll-yes-link" data-poll-id={ strconv.Itoa(p.ID) }>{ strconv.Itoa(len(p.YesVoters)) }<small>/{ strconv.Itoa(p.TotalCount) }</small></a>
+													} else {
+														{ strconv.Itoa(len(p.YesVoters)) }<small>/{ strconv.Itoa(p.TotalCount) }</small>
+													}
+												</td>
+												<td data-label={ t("th.actions") }>
+													<div class="actions">
+														<a href={ templ.SafeURL("/dashboard/polls/" + strconv.Itoa(p.ID) + "/edit") }>{ t("btn.edit") }</a>
+														<form method="POST" action={ templ.SafeURL("/dashboard/polls/" + strconv.Itoa(p.ID) + "/delete") } data-confirm={ t("confirm.delete_poll") } onsubmit="return confirm(this.dataset.confirm)">
+															<input type="hidden" name="_csrf" value={ csrfToken }/>
+															<button type="submit" class="outline secondary">{ t("btn.delete") }</button>
+														</form>
+													</div>
+												</td>
+											</tr>
+										}
+									</tbody>
+								</table>
+							</div>
+							for _, p := range polls {
+								if len(p.YesVoters) > 0 {
+									<div id={ "poll-modal-" + strconv.Itoa(p.ID) } class="modal-overlay" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+										<div class="modal-box">
+											<h3>{ p.Question }</h3>
+											<ul>
+												for _, voter := range p.YesVoters {
+													<li>
+														if voter.Notes != "" {
+															<details>
+																<summary>{ voter.Name }</summary>
+																<p>{ voter.Notes }</p>
+															</details>
+														} else {
+															{ voter.Name }
+														}
+													</li>
+												}
+											</ul>
+											<div class="modal-actions">
+												<button type="button" class="outline secondary" onclick="this.closest('.modal-overlay').style.display='none'">{ t("btn.close") }</button>
+											</div>
+										</div>
+									</div>
+								}
+							}
+						}
+					</div>
+				</div>
+			</div>
+		</div>
+}
+
 templ Dashboard(settings models.Settings, content SettingsContent, guests []models.Guest, pagedGifts []models.Gift, giftsPage int, giftsTotalPages int, giftsCount int, giftsTotal int, pagedRegistry []models.RegistryItem, registryPage int, registryTotalPages int, registryItems []models.RegistryItem, invitations []models.Invitation, pagedInvitations []models.Invitation, invitePage int, inviteTotalPages int, inviteSearch string, polls []models.Poll, pagedSoundtrack []models.SoundtrackEvent, soundtrackPage int, soundtrackTotalPages int, confirmedReception int, refusedReception int, pendingRSVP int, invitedGuests int, nonVisualizedInvited int, total int, confirmedAdults int, confirmedChildren int, confirmedInfants int, confirmedVendors int, page int, totalPages int, search string, csrfToken string, nonce string, flash string, t i18n.T, lang string) {
 	@DashboardLayout(pageTitle(t("title.dashboard"), settings.GroomName, settings.BrideName), lang, nonce) {
 		<div id="dashboard-flash">
@@ -1482,27 +1609,7 @@ templ Dashboard(settings models.Settings, content SettingsContent, guests []mode
 			}
 		</div>
 		<!-- counters -->
-		<div id="dashboard-counters" class="counters-row">
-			@Donut(t("counter.rsvp"), confirmedReception, confirmedReception+refusedReception+pendingRSVP, []DonutSlice{
-				{Value: confirmedReception, ClassName: "donut-confirmed", Label: t("counter.confirmed"), Category: "confirmed_reception"},
-				{Value: refusedReception, ClassName: "donut-refused", Label: t("counter.refused"), Category: "refused_reception"},
-				{Value: pendingRSVP, ClassName: "donut-pending", Label: t("counter.pending_rsvp"), Category: "pending_rsvp"},
-			})
-			@Donut(t("counter.confirmed_by_type"), confirmedAdults+confirmedChildren+confirmedVendors, confirmedAdults+confirmedChildren+confirmedInfants+confirmedVendors, []DonutSlice{
-				{Value: confirmedAdults, ClassName: "donut-type-adult", Label: t("guest_type.adult"), Category: "confirmed_reception_adult"},
-				{Value: confirmedChildren, ClassName: "donut-type-child", Label: t("guest_type.child"), Category: "confirmed_reception_child"},
-				{Value: confirmedInfants, ClassName: "donut-type-infant", Label: t("guest_type.infant"), Category: "confirmed_reception_infant"},
-				{Value: confirmedVendors, ClassName: "donut-type-vendor", Label: t("guest_type.vendor"), Category: "confirmed_reception_vendor"},
-			})
-			@Donut(t("counter.visualization"), invitedGuests-nonVisualizedInvited, invitedGuests, []DonutSlice{
-				{Value: invitedGuests - nonVisualizedInvited, ClassName: "donut-viewed", Label: t("counter.viewed"), Category: "viewed"},
-				{Value: nonVisualizedInvited, ClassName: "donut-nonvisualized", Label: t("counter.nonvisualized"), Category: "nonvisualized"},
-			})
-			@Donut(t("counter.reach"), invitedGuests, total, []DonutSlice{
-				{Value: invitedGuests, ClassName: "donut-invited", Label: t("counter.invited"), Category: "invited"},
-				{Value: total - invitedGuests, ClassName: "donut-uninvited", Label: t("counter.uninvited"), Category: "uninvited"},
-			})
-		</div>
+		@CountersResults(confirmedReception, refusedReception, pendingRSVP, invitedGuests, nonVisualizedInvited, total, confirmedAdults, confirmedChildren, confirmedInfants, confirmedVendors, t)
 		<!-- details -->
 		<article id="dashboard-settings" data-signals={ settingsSignals() } data-effect={ settingsRebindExpr } data-on:settings-refresh={ settingsRefreshExpr }>
 			@SettingsResults(settings, content, csrfToken, nonce, t, lang)
@@ -1538,89 +1645,7 @@ templ Dashboard(settings models.Settings, content SettingsContent, guests []mode
 		<article id="dashboard-invitations" data-signals={ invitationsSignals(inviteSearch, invitePage) } data-on:invitations-refresh={ invitationsRefreshExpr }>
 			<h2>{ t("dashboard.invitations") }</h2>
 			@InvitationsResults(pagedInvitations, len(invitations), invitePage, inviteTotalPages, inviteSearch, csrfToken, t, lang)
-			<div class="accordion dashboard-accordion dashboard-subsection-accordion" id="polls-results">
-				<div class="accordion-item dashboard-subsection">
-					<h2 class="accordion-header" id="invitations-polls-heading">
-						<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#invitations-polls-panel" aria-expanded="false" aria-controls="invitations-polls-panel">
-							<span class="dashboard-subsection-title">{ t("dashboard.polls") }</span>
-						</button>
-					</h2>
-					<div id="invitations-polls-panel" class="accordion-collapse collapse" data-dashboard-key="invitations-polls" aria-labelledby="invitations-polls-heading">
-						<div class="accordion-body dashboard-subsection-body">
-							<form class="add-poll-form" method="POST" action="/dashboard/polls">
-								<input type="hidden" name="_csrf" value={ csrfToken }/>
-								<input type="text" name="question" placeholder={ t("placeholder.question") } required/>
-								<input type="text" name="description" placeholder={ t("placeholder.description") }/>
-								<button type="submit">{ t("btn.add") }</button>
-							</form>
-							if len(polls) > 0 {
-								<div class="overflow-auto">
-									<table>
-										<thead>
-											<tr>
-												<th>{ t("th.question") }</th>
-												<th>{ t("th.description") }</th>
-												<th>{ t("th.yes") }</th>
-												<th>{ t("th.actions") }</th>
-											</tr>
-										</thead>
-										<tbody>
-											for _, p := range polls {
-												<tr>
-													<td data-label={ t("th.question") }>{ p.Question }</td>
-													<td data-label={ t("th.description") }>{ p.Description }</td>
-													<td data-label={ t("th.yes") }>
-														if len(p.YesVoters) > 0 {
-															<a href="#" class="poll-yes-link" data-poll-id={ strconv.Itoa(p.ID) }>{ strconv.Itoa(len(p.YesVoters)) }<small>/{ strconv.Itoa(p.TotalCount) }</small></a>
-														} else {
-															{ strconv.Itoa(len(p.YesVoters)) }<small>/{ strconv.Itoa(p.TotalCount) }</small>
-														}
-													</td>
-													<td data-label={ t("th.actions") }>
-														<div class="actions">
-															<a href={ templ.SafeURL("/dashboard/polls/" + strconv.Itoa(p.ID) + "/edit") }>{ t("btn.edit") }</a>
-															<form method="POST" action={ templ.SafeURL("/dashboard/polls/" + strconv.Itoa(p.ID) + "/delete") } data-confirm={ t("confirm.delete_poll") } onsubmit="return confirm(this.dataset.confirm)">
-																<input type="hidden" name="_csrf" value={ csrfToken }/>
-																<button type="submit" class="outline secondary">{ t("btn.delete") }</button>
-															</form>
-														</div>
-													</td>
-												</tr>
-											}
-										</tbody>
-									</table>
-								</div>
-								for _, p := range polls {
-									if len(p.YesVoters) > 0 {
-										<div id={ "poll-modal-" + strconv.Itoa(p.ID) } class="modal-overlay" style="display:none" onclick="if(event.target===this)this.style.display='none'">
-											<div class="modal-box">
-												<h3>{ p.Question }</h3>
-												<ul>
-													for _, voter := range p.YesVoters {
-														<li>
-															if voter.Notes != "" {
-																<details>
-																	<summary>{ voter.Name }</summary>
-																	<p>{ voter.Notes }</p>
-																</details>
-															} else {
-																{ voter.Name }
-															}
-														</li>
-													}
-												</ul>
-												<div class="modal-actions">
-													<button type="button" class="outline secondary" onclick="this.closest('.modal-overlay').style.display='none'">{ t("btn.close") }</button>
-												</div>
-											</div>
-										</div>
-									}
-								}
-							}
-						</div>
-					</div>
-				</div>
-			</div>
+			@PollsResults(polls, csrfToken, t, lang)
 		</article>
 		<!-- registry -->
 		<article id="dashboard-registry" data-signals={ registrySignals(registryPage, giftsPage) } data-on:registry-refresh={ registryRefreshExpr }>
@@ -1687,7 +1712,6 @@ templ Dashboard(settings models.Settings, content SettingsContent, guests []mode
 		</script>
 		<script src={ templ.SafeURL(assetURL("/static/autocomplete.js")) }></script>
 		<script src={ templ.SafeURL(assetURL("/static/dashboard-features.js")) }></script>
-		<script src={ templ.SafeURL(assetURL("/static/dashboard-spa.js")) }></script>
 		<hr class="footer-separator"/>
 		<footer>
 			<a href="/">{ t("link.home") }</a>
