@@ -92,10 +92,10 @@ jobs:
           go install github.com/a-h/templ/cmd/templ@v0.3.1020
           templ generate
       - run: |
+          set -o pipefail
           echo Testing...
-          go test -race -p 1 -v -timeout 1800s ./...
+          go test -race -p 1 -v -timeout 1800s -cover ./... | tee coverage.txt
           echo Checking coverage...
-          go test -race -p 1 -timeout 1800s -cover ./... | tee coverage.txt
           awk '/coverage:/ { pct = ""; for (i = 1; i <= NF; i++) if ($i == "coverage:") { pct = $(i+1); gsub(/%/, "", pct) } if (pct != "" && pct + 0 < 90) { print "coverage below 90%:", $0; bad = 1 } } END { exit bad }' coverage.txt
   docker:
     needs: [super-linter, changes, test]
