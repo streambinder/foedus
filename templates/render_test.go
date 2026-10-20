@@ -663,3 +663,21 @@ func TestRenderDatastarTableResults(t *testing.T) {
 		t.Errorf("empty soundtrack results should render no table: %.200s", out)
 	}
 }
+
+func TestRenderSettingsResults(t *testing.T) {
+	settings, content, _, _ := dashboardFixtures()
+	translator := i18n.NewT("en")
+
+	out := render(t, SettingsResults(settings, content, "csrf", "nonce-value", translator, "en"))
+	for _, want := range []string{`id="settings-results"`, `action="/dashboard/settings"`, `data-preserve-attr="class"`, `data-preserve-attr="class aria-expanded"`, "Bar", "Serengeti", "Hotel"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("settings results missing %q: %.200s", want, out)
+		}
+	}
+
+	// empty content renders the bare form without entry cards
+	out = render(t, SettingsResults(models.Settings{}, SettingsContent{}, "csrf", "", translator, "it"))
+	if !strings.Contains(out, `id="settings-results"`) || strings.Contains(out, "Serengeti") {
+		t.Errorf("empty settings results: %.200s", out)
+	}
+}
