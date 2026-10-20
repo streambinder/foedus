@@ -291,8 +291,8 @@ templ Donut(title string, primaryValue, primaryTotal int, slices []DonutSlice) {
 	</div>
 }
 
-templ Dashboard(settings models.Settings, content SettingsContent, guests []models.Guest, pagedGifts []models.Gift, giftsPage int, giftsTotalPages int, giftsCount int, giftsTotal int, pagedRegistry []models.RegistryItem, registryPage int, registryTotalPages int, registryItems []models.RegistryItem, invitations []models.Invitation, pagedInvitations []models.Invitation, invitePage int, inviteTotalPages int, inviteSearch string, polls []models.Poll, pagedSoundtrack []models.SoundtrackEvent, soundtrackPage int, soundtrackTotalPages int, confirmedReception int, refusedReception int, pendingRSVP int, invitedGuests int, nonVisualizedInvited int, total int, confirmedAdults int, confirmedChildren int, confirmedInfants int, confirmedVendors int, page int, totalPages int, search string, csrfToken string, flash string, t i18n.T, lang string) {
-	@DashboardLayout(pageTitle(t("title.dashboard"), settings.GroomName, settings.BrideName), lang) {
+templ Dashboard(settings models.Settings, content SettingsContent, guests []models.Guest, pagedGifts []models.Gift, giftsPage int, giftsTotalPages int, giftsCount int, giftsTotal int, pagedRegistry []models.RegistryItem, registryPage int, registryTotalPages int, registryItems []models.RegistryItem, invitations []models.Invitation, pagedInvitations []models.Invitation, invitePage int, inviteTotalPages int, inviteSearch string, polls []models.Poll, pagedSoundtrack []models.SoundtrackEvent, soundtrackPage int, soundtrackTotalPages int, confirmedReception int, refusedReception int, pendingRSVP int, invitedGuests int, nonVisualizedInvited int, total int, confirmedAdults int, confirmedChildren int, confirmedInfants int, confirmedVendors int, page int, totalPages int, search string, csrfToken string, nonce string, flash string, t i18n.T, lang string) {
+	@DashboardLayout(pageTitle(t("title.dashboard"), settings.GroomName, settings.BrideName), lang, nonce) {
 		<div id="dashboard-flash">
 			if flash != "" {
 				<div class="flash-success">{ flash }</div>
@@ -1588,8 +1588,8 @@ templ Dashboard(settings models.Settings, content SettingsContent, guests []mode
 	}
 }
 
-templ EditGuest(guest models.Guest, settings models.Settings, csrfToken string, t i18n.T, lang string) {
-	@DashboardLayout(pageTitle(t("title.edit_guest"), settings.GroomName, settings.BrideName), lang) {
+templ EditGuest(guest models.Guest, settings models.Settings, csrfToken string, nonce string, t i18n.T, lang string) {
+	@DashboardLayout(pageTitle(t("title.edit_guest"), settings.GroomName, settings.BrideName), lang, nonce) {
 		<a href="/dashboard">&larr; { t("btn.back") }</a>
 		<h1>{ t("title.edit_guest") }</h1>
 		<article>
@@ -1614,8 +1614,8 @@ templ EditGuest(guest models.Guest, settings models.Settings, csrfToken string, 
 	}
 }
 
-templ EditRegistryItem(item models.RegistryItem, settings models.Settings, csrfToken string, t i18n.T, lang string) {
-	@DashboardLayout(pageTitle(t("title.edit_item"), settings.GroomName, settings.BrideName), lang) {
+templ EditRegistryItem(item models.RegistryItem, settings models.Settings, csrfToken string, nonce string, t i18n.T, lang string) {
+	@DashboardLayout(pageTitle(t("title.edit_item"), settings.GroomName, settings.BrideName), lang, nonce) {
 		<a href="/dashboard">&larr; { t("btn.back") }</a>
 		<h1>{ t("title.edit_item") }</h1>
 		<article>
@@ -1655,8 +1655,8 @@ templ EditRegistryItem(item models.RegistryItem, settings models.Settings, csrfT
 	}
 }
 
-templ EditGift(gift models.Gift, registryItems []models.RegistryItem, settings models.Settings, csrfToken string, t i18n.T, lang string) {
-	@DashboardLayout(pageTitle(t("title.edit_gift"), settings.GroomName, settings.BrideName), lang) {
+templ EditGift(gift models.Gift, registryItems []models.RegistryItem, settings models.Settings, csrfToken string, nonce string, t i18n.T, lang string) {
+	@DashboardLayout(pageTitle(t("title.edit_gift"), settings.GroomName, settings.BrideName), lang, nonce) {
 		<a href="/dashboard">&larr; { t("btn.back") }</a>
 		<h1>{ t("title.edit_gift") }</h1>
 		<article>
@@ -1699,8 +1699,8 @@ templ EditGift(gift models.Gift, registryItems []models.RegistryItem, settings m
 	}
 }
 
-templ EditPoll(poll models.Poll, settings models.Settings, csrfToken string, t i18n.T, lang string) {
-	@DashboardLayout(pageTitle(t("title.edit_poll"), settings.GroomName, settings.BrideName), lang) {
+templ EditPoll(poll models.Poll, settings models.Settings, csrfToken string, nonce string, t i18n.T, lang string) {
+	@DashboardLayout(pageTitle(t("title.edit_poll"), settings.GroomName, settings.BrideName), lang, nonce) {
 		<a href="/dashboard">&larr; { t("btn.back") }</a>
 		<h1>{ t("title.edit_poll") }</h1>
 		<article>
@@ -1714,8 +1714,8 @@ templ EditPoll(poll models.Poll, settings models.Settings, csrfToken string, t i
 	}
 }
 
-templ EditInvitation(inv models.Invitation, settings models.Settings, csrfToken string, t i18n.T, lang string) {
-	@DashboardLayout(pageTitle(t("title.edit_invitation"), settings.GroomName, settings.BrideName), lang) {
+templ EditInvitation(inv models.Invitation, settings models.Settings, csrfToken string, nonce string, t i18n.T, lang string) {
+	@DashboardLayout(pageTitle(t("title.edit_invitation"), settings.GroomName, settings.BrideName), lang, nonce) {
 		<a href="/dashboard">&larr; { t("btn.back") }</a>
 		<h1>{ t("title.edit_invitation") }</h1>
 		<article>

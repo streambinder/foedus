@@ -50,6 +50,15 @@ func publicImageURL(mediaID int) string {
 	return "/media/" + strconv.Itoa(mediaID)
 }
 
+// datastarNonceAttrs returns the data-nonce attribute that Datastar's CSP
+// mode reads from the <html> element, or no attribute when nonce is empty.
+func datastarNonceAttrs(nonce string) templ.Attributes {
+	if nonce == "" {
+		return templ.Attributes{}
+	}
+	return templ.Attributes{"data-nonce": nonce}
+}
+
 func pageTitle(title, groom, bride string) string {
 	if groom != "" && bride != "" {
 		return title + " · " + groom + " & " + bride
@@ -136,9 +145,9 @@ templ Layout(title string, lang string, t i18n.T, ogMeta OGMeta, includeLeaflet 
 	</html>
 }
 
-templ DashboardLayout(title string, lang string) {
+templ DashboardLayout(title string, lang string, nonce string) {
 	<!DOCTYPE html>
-	<html lang={ lang } data-bs-theme="light">
+	<html lang={ lang } data-bs-theme="light" { datastarNonceAttrs(nonce)... }>
 		<head>
 			<meta charset="UTF-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
@@ -152,6 +161,7 @@ templ DashboardLayout(title string, lang string) {
 				href="https://cdn.jsdelivr.net/npm/@tabler/core@1.4.0/dist/css/tabler.min.css"
 			/>
 			<link rel="stylesheet" href={ templ.SafeURL(assetURL("/static/css/dashboard.css")) }/>
+			<script type="module" src="https://cdn.jsdelivr.net/gh/starfederation/datastar@v1.0.4/bundles/datastar.js" integrity="sha384-twbOvafhSBQ0rJDNPzJdUw6DRvthVgAVfSIG1BQVmCiNO7Qh2zeVn7T5qstgjJ9q" crossorigin="anonymous"></script>
 		</head>
 		<body class="dashboard-page">
 			<div class="page">

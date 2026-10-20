@@ -437,7 +437,7 @@ func TestRenderDashboardFull(t *testing.T) {
 		soundtrack, 2, 3,
 		5, 2, 3, 8, 4, 10,
 		4, 1, 0, 0,
-		2, 3, "ada", "csrf-token", "Settings saved", i18n.NewT("en"), "en"))
+		2, 3, "ada", "csrf-token", "nonce", "Settings saved", i18n.NewT("en"), "en"))
 	for _, want := range []string{"Settings saved", "Ada", "Toaster", "Famiglia", "Bus?", "Song"} {
 		if !strings.Contains(out, want) {
 			t.Errorf("full dashboard missing %q", want)
@@ -453,7 +453,7 @@ func TestRenderDashboardFull(t *testing.T) {
 		soundtrack, 1, 3,
 		0, 0, 0, 0, 0, 0,
 		0, 0, 0, 0,
-		1, 3, "", "csrf-token", "", i18n.NewT("it"), "it"))
+		1, 3, "", "csrf-token", "nonce", "", i18n.NewT("it"), "it"))
 	if !strings.Contains(out, "Ada") {
 		t.Errorf("dashboard pagination variant failed: %.200s", out)
 	}
@@ -474,7 +474,7 @@ func TestRenderDashboardPaginationExtremes(t *testing.T) {
 		polls, soundtrack, 3, 3,
 		0, 0, 0, 0, 0, 0,
 		0, 0, 0, 0,
-		3, 3, "", "csrf", "", i18n.NewT("en"), "en"))
+		3, 3, "", "csrf", "nonce", "", i18n.NewT("en"), "en"))
 	if !strings.Contains(out, "disabled") {
 		t.Error("pagination extremes render missing a disabled span")
 	}
@@ -497,7 +497,7 @@ func TestRenderDashboardPlaceMediaVariants(t *testing.T) {
 		nil, nil, 1, 1,
 		0, 0, 0, 0, 0, 0,
 		0, 0, 0, 0,
-		1, 1, "", "", "", i18n.NewT("en"), "en"))
+		1, 1, "", "", "", "", i18n.NewT("en"), "en"))
 	if !strings.Contains(out, "display:none") {
 		t.Error("place media variants render missing a hidden preview")
 	}
@@ -512,7 +512,7 @@ func TestRenderDashboardEmpty(t *testing.T) {
 		nil, 1, 1,
 		0, 0, 0, 0, 0, 0,
 		0, 0, 0, 0,
-		1, 1, "", "", "", i18n.NewT("en"), "en"))
+		1, 1, "", "", "", "", i18n.NewT("en"), "en"))
 	if out == "" {
 		t.Fatal("empty dashboard rendered no output")
 	}
@@ -525,43 +525,43 @@ func TestRenderEditPages(t *testing.T) {
 	settings := fullSettings()
 	translator := i18n.NewT("en")
 
-	out := render(t, EditGuest(models.Guest{ID: 1, FirstName: "Ada", LastName: "Love", Type: "child"}, settings, "csrf", translator, "en"))
+	out := render(t, EditGuest(models.Guest{ID: 1, FirstName: "Ada", LastName: "Love", Type: "child"}, settings, "csrf", "nonce", translator, "en"))
 	if !strings.Contains(out, "Ada") {
 		t.Errorf("edit guest = %.200s", out)
 	}
 	// every guest type must mark its own option as selected
 	for _, guestType := range []string{"adult", "infant", "vendor"} {
-		out = render(t, EditGuest(models.Guest{ID: 1, FirstName: "Ada", Type: guestType}, settings, "csrf", translator, "en"))
+		out = render(t, EditGuest(models.Guest{ID: 1, FirstName: "Ada", Type: guestType}, settings, "csrf", "nonce", translator, "en"))
 		if !strings.Contains(out, "selected") {
 			t.Errorf("edit guest type %q: no selected option rendered", guestType)
 		}
 	}
-	out = render(t, EditRegistryItem(models.RegistryItem{ID: 2, Name: "Lamp", Price: 80, MediaID: 61}, settings, "csrf", translator, "en"))
+	out = render(t, EditRegistryItem(models.RegistryItem{ID: 2, Name: "Lamp", Price: 80, MediaID: 61}, settings, "csrf", "nonce", translator, "en"))
 	if !strings.Contains(out, "Lamp") {
 		t.Errorf("edit registry item = %.200s", out)
 	}
-	out = render(t, EditRegistryItem(models.RegistryItem{ID: 3, Name: "NoPic", Price: 10}, settings, "csrf", translator, "en"))
+	out = render(t, EditRegistryItem(models.RegistryItem{ID: 3, Name: "NoPic", Price: 10}, settings, "csrf", "nonce", translator, "en"))
 	if !strings.Contains(out, "NoPic") {
 		t.Errorf("edit registry item without media = %.200s", out)
 	}
 	items := []models.RegistryItem{{ID: 1, Name: "Toaster"}, {ID: 2, Name: "Lamp"}}
-	out = render(t, EditGift(models.Gift{ID: 4, Amount: 50, Donor: "Alice", RegistryItemID: intPtr(2), Confirmed: true}, items, settings, "csrf", translator, "en"))
+	out = render(t, EditGift(models.Gift{ID: 4, Amount: 50, Donor: "Alice", RegistryItemID: intPtr(2), Confirmed: true}, items, settings, "csrf", "nonce", translator, "en"))
 	if !strings.Contains(out, "Alice") {
 		t.Errorf("edit gift = %.200s", out)
 	}
-	out = render(t, EditGift(models.Gift{ID: 5, Amount: 20, Donor: "Bob"}, items, settings, "csrf", translator, "en"))
+	out = render(t, EditGift(models.Gift{ID: 5, Amount: 20, Donor: "Bob"}, items, settings, "csrf", "nonce", translator, "en"))
 	if !strings.Contains(out, "Bob") {
 		t.Errorf("edit unconfirmed gift = %.200s", out)
 	}
-	out = render(t, EditPoll(models.Poll{ID: 6, Question: "Bus?", Description: "From station"}, settings, "csrf", translator, "en"))
+	out = render(t, EditPoll(models.Poll{ID: 6, Question: "Bus?", Description: "From station"}, settings, "csrf", "nonce", translator, "en"))
 	if !strings.Contains(out, "Bus?") {
 		t.Errorf("edit poll = %.200s", out)
 	}
-	out = render(t, EditInvitation(models.Invitation{ID: 7, Code: "CODE7", Label: "Famiglia"}, settings, "csrf", translator, "en"))
+	out = render(t, EditInvitation(models.Invitation{ID: 7, Code: "CODE7", Label: "Famiglia"}, settings, "csrf", "nonce", translator, "en"))
 	if !strings.Contains(out, "Famiglia") {
 		t.Errorf("edit invitation = %.200s", out)
 	}
-	out = render(t, EditInvitation(models.Invitation{ID: 8, Code: "CODE8"}, settings, "csrf", translator, "en"))
+	out = render(t, EditInvitation(models.Invitation{ID: 8, Code: "CODE8"}, settings, "csrf", "nonce", translator, "en"))
 	if out == "" {
 		t.Error("edit invitation without label rendered empty output")
 	}

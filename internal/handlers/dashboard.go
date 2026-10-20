@@ -16,6 +16,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/streambinder/foedus/internal/database"
 	"github.com/streambinder/foedus/internal/i18n"
+	"github.com/streambinder/foedus/internal/middleware"
 	"github.com/streambinder/foedus/internal/models"
 	"github.com/streambinder/foedus/internal/observability"
 	"github.com/streambinder/foedus/templates"
@@ -28,6 +29,13 @@ func setFlash(c *fiber.Ctx, msg string) {
 		Expires: time.Now().Add(5 * time.Second),
 		Path:    "/dashboard",
 	})
+}
+
+// getCSPNonce returns the per-request CSP nonce set by middleware.CSPNonce,
+// or "" when the route does not run that middleware.
+func getCSPNonce(c *fiber.Ctx) string {
+	nonce, _ := c.Locals(middleware.CSPNonceKey).(string)
+	return nonce
 }
 
 func getFlash(c *fiber.Ctx) string {
@@ -254,7 +262,7 @@ func DashboardIndex(c *fiber.Ctx) error {
 		"non_visualized_invited", nonVisualizedInvited,
 		"total_guests", totalGuests,
 	)
-	return Render(c, templates.Dashboard(settings, content, guests, pagedGifts, giftsPage, giftsTotalPages, len(gifts), giftsTotal, pagedRegistry, registryPage, registryTotalPages, registryItems, invitations, pagedInvitations, invitePage, inviteTotalPages, inviteSearch, polls, pagedSoundtrack, soundtrackPage, soundtrackTotalPages, confirmedReception, refusedReception, pendingRSVP, invitedGuests, nonVisualizedInvited, totalGuests, confirmedAdults, confirmedChildren, confirmedInfants, confirmedVendors, page, totalPages, search, csrfToken, getFlash(c), getT(c), getLang(c)))
+	return Render(c, templates.Dashboard(settings, content, guests, pagedGifts, giftsPage, giftsTotalPages, len(gifts), giftsTotal, pagedRegistry, registryPage, registryTotalPages, registryItems, invitations, pagedInvitations, invitePage, inviteTotalPages, inviteSearch, polls, pagedSoundtrack, soundtrackPage, soundtrackTotalPages, confirmedReception, refusedReception, pendingRSVP, invitedGuests, nonVisualizedInvited, totalGuests, confirmedAdults, confirmedChildren, confirmedInfants, confirmedVendors, page, totalPages, search, csrfToken, getCSPNonce(c), getFlash(c), getT(c), getLang(c)))
 }
 
 func resolveImageMediaID(q database.Querier, rawImage, rawMediaID string, existingMediaID int, allowedAny bool) (int, error) {
@@ -803,7 +811,7 @@ func EditGuestPage(c *fiber.Ctx) error {
 		return c.Status(500).SendString("failed to load settings")
 	}
 	csrfToken, _ := c.Locals("csrf").(string)
-	return Render(c, templates.EditGuest(guest, settings, csrfToken, getT(c), getLang(c)))
+	return Render(c, templates.EditGuest(guest, settings, csrfToken, getCSPNonce(c), getT(c), getLang(c)))
 }
 
 func UpdateGuest(c *fiber.Ctx) error {
@@ -927,7 +935,7 @@ func EditRegistryItemPage(c *fiber.Ctx) error {
 		return c.Status(500).SendString("failed to load settings")
 	}
 	csrfToken, _ := c.Locals("csrf").(string)
-	return Render(c, templates.EditRegistryItem(item, settings, csrfToken, getT(c), getLang(c)))
+	return Render(c, templates.EditRegistryItem(item, settings, csrfToken, getCSPNonce(c), getT(c), getLang(c)))
 }
 
 func UpdateRegistryItem(c *fiber.Ctx) error {
@@ -1032,7 +1040,7 @@ func EditGiftPage(c *fiber.Ctx) error {
 		return c.Status(500).SendString("failed to load settings")
 	}
 	csrfToken, _ := c.Locals("csrf").(string)
-	return Render(c, templates.EditGift(gift, registryItems, settings, csrfToken, getT(c), getLang(c)))
+	return Render(c, templates.EditGift(gift, registryItems, settings, csrfToken, getCSPNonce(c), getT(c), getLang(c)))
 }
 
 func UpdateGift(c *fiber.Ctx) error {
@@ -1186,7 +1194,7 @@ func EditPollPage(c *fiber.Ctx) error {
 		return c.Status(500).SendString("failed to load settings")
 	}
 	csrfToken, _ := c.Locals("csrf").(string)
-	return Render(c, templates.EditPoll(poll, settings, csrfToken, getT(c), getLang(c)))
+	return Render(c, templates.EditPoll(poll, settings, csrfToken, getCSPNonce(c), getT(c), getLang(c)))
 }
 
 func UpdatePoll(c *fiber.Ctx) error {
@@ -1287,7 +1295,7 @@ func EditInvitationPage(c *fiber.Ctx) error {
 		return c.Status(500).SendString("failed to load settings")
 	}
 	csrfToken, _ := c.Locals("csrf").(string)
-	return Render(c, templates.EditInvitation(inv, settings, csrfToken, getT(c), getLang(c)))
+	return Render(c, templates.EditInvitation(inv, settings, csrfToken, getCSPNonce(c), getT(c), getLang(c)))
 }
 
 func UpdateInvitation(c *fiber.Ctx) error {
