@@ -152,6 +152,7 @@ func main() {
 	admin.Get("/invitations/fragment", handlers.InvitationsFragment)
 	admin.Get("/registry/fragment", handlers.RegistryFragment)
 	admin.Get("/soundtrack/fragment", handlers.SoundtrackFragment)
+	admin.Get("/settings/fragment", handlers.SettingsFragment)
 	admin.Post("/settings", handlers.SaveSettings)
 	admin.Post("/guests", handlers.AddGuest)
 	admin.Post("/guests/import", handlers.ImportGuestsCSV)

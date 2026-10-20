@@ -441,6 +441,33 @@ func SoundtrackFragment(c *fiber.Ctx) error {
 	return datastar.PatchComponent(c, templates.SoundtrackResults(pagedSoundtrack, soundtrackPage, soundtrackTotalPages, invitations, csrfToken, getT(c), getLang(c)))
 }
 
+// SettingsFragment answers a Datastar settings-refresh event with an
+// SSE patch of the SettingsResults block, re-rendered from the saved
+// settings. It carries no signals: the section state is the form itself.
+func SettingsFragment(c *fiber.Ctx) error {
+	logger := handlerLogger(c)
+	settings, err := database.GetSettings()
+	if err != nil {
+		logger.Error("settings fragment failed to load settings", "error", err.Error())
+		return c.Status(500).SendString("failed to load settings")
+	}
+	content, err := loadSettingsContent()
+	if err != nil {
+		logger.Error("settings fragment failed to load settings content", "error", err.Error())
+		return c.Status(500).SendString("failed to load settings content")
+	}
+	csrfToken, _ := c.Locals("csrf").(string)
+	elements, err := datastar.PatchComponentEvent(c, templates.SettingsResults(settings, content, csrfToken, getCSPNonce(c), getT(c), getLang(c)))
+	if err != nil {
+		return err
+	}
+	signals, err := datastar.PatchSignalsEvent(map[string]int64{"settingsrev": time.Now().UnixNano()})
+	if err != nil {
+		return err
+	}
+	return datastar.SendEvents(c, elements, signals)
+}
+
 func resolveImageMediaID(q database.Querier, rawImage, rawMediaID string, existingMediaID int, allowedAny bool) (int, error) {
 	image := strings.TrimSpace(rawImage)
 	if image != "" {
