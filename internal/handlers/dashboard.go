@@ -312,6 +312,135 @@ func GuestsFragment(c *fiber.Ctx) error {
 	return datastar.PatchComponent(c, templates.GuestsResults(guests, invitations, page, totalPages, search, view, csrfToken, getT(c), getLang(c)))
 }
 
+// invitationSignals carries the invitations section state a Datastar
+// action sends back: the search text and the table page.
+type invitationSignals struct {
+	IQ    string `json:"iq"`
+	IPage int    `json:"ipage"`
+}
+
+// InvitationsFragment answers a Datastar action from the invitations
+// section with an SSE patch of the InvitationsResults block, re-rendered
+// from the signals with the same filtering and pagination as the index.
+func InvitationsFragment(c *fiber.Ctx) error {
+	logger := handlerLogger(c)
+	var sig invitationSignals
+	if err := datastar.ReadSignals(c, &sig); err != nil {
+		return c.Status(400).SendString("bad signals")
+	}
+	invitations, err := database.GetAllInvitations()
+	if err != nil {
+		logger.Error("invitations fragment failed to load invitations", "error", err.Error())
+		return c.Status(500).SendString("failed to load invitations")
+	}
+	inviteSearch := strings.TrimSpace(sig.IQ)
+	filteredInvitations := filterInvitations(invitations, inviteSearch)
+	invitePage := sig.IPage
+	if invitePage < 1 {
+		invitePage = 1
+	}
+	inviteTotalPages := (len(filteredInvitations) + invitationsPerPage - 1) / invitationsPerPage
+	if inviteTotalPages < 1 {
+		inviteTotalPages = 1
+	}
+	if invitePage > inviteTotalPages {
+		invitePage = inviteTotalPages
+	}
+	inviteStart := (invitePage - 1) * invitationsPerPage
+	inviteEnd := inviteStart + invitationsPerPage
+	if inviteEnd > len(filteredInvitations) {
+		inviteEnd = len(filteredInvitations)
+	}
+	pagedInvitations := filteredInvitations[inviteStart:inviteEnd]
+	csrfToken, _ := c.Locals("csrf").(string)
+	return datastar.PatchComponent(c, templates.InvitationsResults(pagedInvitations, len(invitations), invitePage, inviteTotalPages, inviteSearch, csrfToken, getT(c), getLang(c)))
+}
+
+// registrySignals carries the registry section state a Datastar action
+// sends back: the items page and the gifts page.
+type registrySignals struct {
+	RPage int `json:"rpage"`
+	GPage int `json:"gpage"`
+}
+
+// RegistryFragment answers a Datastar action from the registry section
+// with SSE patches of the items table, the gifts summary and the gifts
+// table, re-rendered from the signals. The gifts accordion element is
+// never patched, so it keeps its open state.
+func RegistryFragment(c *fiber.Ctx) error {
+	logger := handlerLogger(c)
+	var sig registrySignals
+	if err := datastar.ReadSignals(c, &sig); err != nil {
+		return c.Status(400).SendString("bad signals")
+	}
+	registryItems, err := database.GetAllRegistryItems()
+	if err != nil {
+		logger.Error("registry fragment failed to load registry items", "error", err.Error())
+		return c.Status(500).SendString("failed to load registry items")
+	}
+	gifts, err := database.GetAllGifts()
+	if err != nil {
+		logger.Error("registry fragment failed to load gifts", "error", err.Error())
+		return c.Status(500).SendString("failed to load gifts")
+	}
+	invitations, err := database.GetAllInvitations()
+	if err != nil {
+		logger.Error("registry fragment failed to load invitations", "error", err.Error())
+		return c.Status(500).SendString("failed to load invitations")
+	}
+	pagedRegistry, registryPage, registryTotalPages := paginateSlice(registryItems, sig.RPage, registryPerPage)
+	pagedGifts, giftsPage, giftsTotalPages := paginateSlice(gifts, sig.GPage, giftsPerPage)
+	var giftsTotal int
+	for _, g := range gifts {
+		giftsTotal += g.Amount
+	}
+	csrfToken, _ := c.Locals("csrf").(string)
+	t, lang := getT(c), getLang(c)
+	itemsEvent, err := datastar.PatchComponentEvent(c, templates.RegistryResults(pagedRegistry, registryItems, registryPage, registryTotalPages, csrfToken, t, lang))
+	if err != nil {
+		return err
+	}
+	summaryEvent, err := datastar.PatchComponentEvent(c, templates.GiftsSummary(len(gifts), giftsTotal, t))
+	if err != nil {
+		return err
+	}
+	giftsEvent, err := datastar.PatchComponentEvent(c, templates.GiftsResults(pagedGifts, giftsPage, giftsTotalPages, invitations, registryItems, csrfToken, t, lang))
+	if err != nil {
+		return err
+	}
+	return datastar.SendEvents(c, itemsEvent, summaryEvent, giftsEvent)
+}
+
+// soundtrackSignals carries the soundtrack section state a Datastar
+// action sends back: the events table page.
+type soundtrackSignals struct {
+	SPage int `json:"spage"`
+}
+
+// SoundtrackFragment answers a Datastar action from the soundtrack
+// section with an SSE patch of the SoundtrackResults block, re-rendered
+// from the signals.
+func SoundtrackFragment(c *fiber.Ctx) error {
+	logger := handlerLogger(c)
+	var sig soundtrackSignals
+	if err := datastar.ReadSignals(c, &sig); err != nil {
+		return c.Status(400).SendString("bad signals")
+	}
+	soundtrackEvents, err := database.GetAllSoundtrackEvents()
+	if err != nil {
+		logger.Error("soundtrack fragment failed to load events", "error", err.Error())
+		return c.Status(500).SendString("failed to load soundtrack events")
+	}
+	invitations, err := database.GetAllInvitations()
+	if err != nil {
+		logger.Error("soundtrack fragment failed to load invitations", "error", err.Error())
+		return c.Status(500).SendString("failed to load invitations")
+	}
+	pagedSoundtrack, soundtrackPage, soundtrackTotalPages := paginateSlice(soundtrackEvents, sig.SPage, soundtrackPerPage)
+	csrfToken, _ := c.Locals("csrf").(string)
+	return datastar.PatchComponent(c, templates.SoundtrackResults(pagedSoundtrack, soundtrackPage, soundtrackTotalPages, invitations, csrfToken, getT(c), getLang(c)))
+}
+
 func resolveImageMediaID(q database.Querier, rawImage, rawMediaID string, existingMediaID int, allowedAny bool) (int, error) {
 	image := strings.TrimSpace(rawImage)
 	if image != "" {

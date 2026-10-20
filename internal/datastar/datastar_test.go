@@ -181,6 +181,42 @@ func TestPatchComponent(t *testing.T) {
 	}
 }
 
+func TestPatchComponentEvent(t *testing.T) {
+	app := fiber.New()
+	var got string
+	var gotErr error
+	app.Get("/", func(c *fiber.Ctx) error {
+		got, gotErr = PatchComponentEvent(c, stubComponent{html: "<div id=\"x\">hi</div>"})
+		return c.SendStatus(204)
+	})
+
+	code, _, _ := doRequest(t, app, "GET", "/", "")
+	if code != 204 || gotErr != nil {
+		t.Fatalf("status = %d, err = %v", code, gotErr)
+	}
+	want := "event: datastar-patch-elements\ndata: elements <div id=\"x\">hi</div>\n\n"
+	if got != want {
+		t.Fatalf("event = %q, want %q", got, want)
+	}
+}
+
+func TestPatchComponentEventRenderError(t *testing.T) {
+	app := fiber.New()
+	var gotErr error
+	app.Get("/", func(c *fiber.Ctx) error {
+		_, gotErr = PatchComponentEvent(c, stubComponent{err: io.ErrClosedPipe})
+		return c.SendStatus(204)
+	})
+
+	code, _, _ := doRequest(t, app, "GET", "/", "")
+	if code != 204 {
+		t.Fatalf("status = %d", code)
+	}
+	if gotErr == nil {
+		t.Fatal("expected a render error, got nil")
+	}
+}
+
 func TestPatchComponentRenderError(t *testing.T) {
 	app := fiber.New()
 	app.Get("/", func(c *fiber.Ctx) error {

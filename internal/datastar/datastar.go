@@ -61,14 +61,26 @@ func PatchElementsAt(c *fiber.Ctx, selector, elements string) error {
 	return SendEvents(c, PatchElementsEvent(selector, elements))
 }
 
+// PatchComponentEvent renders a templ component into a
+// datastar-patch-elements SSE event. Handlers that patch several
+// components in one response build one event per component and send them
+// together with SendEvents.
+func PatchComponentEvent(c *fiber.Ctx, comp templ.Component) (string, error) {
+	var buf bytes.Buffer
+	if err := comp.Render(c.Context(), &buf); err != nil {
+		return "", err
+	}
+	return PatchElementsEvent("", buf.String()), nil
+}
+
 // PatchComponent renders a templ component and sends it as a
 // datastar-patch-elements SSE event.
 func PatchComponent(c *fiber.Ctx, comp templ.Component) error {
-	var buf bytes.Buffer
-	if err := comp.Render(c.Context(), &buf); err != nil {
+	event, err := PatchComponentEvent(c, comp)
+	if err != nil {
 		return err
 	}
-	return PatchElements(c, buf.String())
+	return SendEvents(c, event)
 }
 
 // PatchSignals sends a datastar-patch-signals SSE event carrying the given
