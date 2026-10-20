@@ -199,6 +199,25 @@ func soundtrackSignals(page int) string {
 // the section after a form submit changes soundtrack data.
 const soundtrackRefreshExpr = "@get('/dashboard/soundtrack/fragment')"
 
+// settingsRefreshExpr refetches the settings fragment. dashboard-spa.js
+// dispatches a settings-refresh CustomEvent on the section after the
+// settings form is saved.
+const settingsRefreshExpr = "@get('/dashboard/settings/fragment')"
+
+// settingsSignals is the initial Datastar signal state of the settings
+// section: a revision counter the fragment bumps after every morph.
+func settingsSignals() string {
+	raw, _ := json.Marshal(map[string]any{
+		"settingsrev": 0,
+	})
+	return string(raw)
+}
+
+// settingsRebindExpr rebinds the dashboard features (place autocomplete,
+// image editors) on the morphed settings form whenever the fragment bumps
+// the revision signal.
+const settingsRebindExpr = "if ($settingsrev) { window.FoedusRebindDashboard && window.FoedusRebindDashboard() }"
+
 // tablePageExpr switches one page signal of a dashboard table and refetches
 // its fragment, keeping the link href as the no-JavaScript path.
 func tablePageExpr(signal string, page int, fragment string) string {
@@ -741,6 +760,720 @@ templ SoundtrackResults(pagedSoundtrack []models.SoundtrackEvent, soundtrackPage
 	</div>
 }
 
+// SettingsResults is the morph target of the settings section: the
+// whole settings form. Accordion panels and their toggle buttons
+// carry data-preserve-attr, so a refresh after saving keeps the
+// panels open exactly as the admin left them. The fragment bumps
+// the settingsrev signal after the morph, and the section effect
+// rebinds the dashboard features on the fresh DOM.
+templ SettingsResults(settings models.Settings, content SettingsContent, csrfToken, nonce string, t i18n.T, lang string) {
+	<div id="settings-results">
+		<h2>{ t("dashboard.details") }</h2>
+		<form class="dashboard-settings-form" method="POST" action="/dashboard/settings">
+			<input type="hidden" name="_csrf" value={ csrfToken }/>
+			<label>{ t("label.spouses") }</label>
+			<div class="grid">
+				<input type="text" name="groom_name" value={ settings.GroomName } placeholder={ t("placeholder.name") }/>
+				<input type="text" name="bride_name" value={ settings.BrideName } placeholder={ t("placeholder.name") }/>
+			</div>
+			<label>{ t("label.ceremony") }</label>
+			<div class="grid">
+				<div style="position:relative">
+					<input type="text" id="ceremony-input" value={ locationDisplay(settings.CeremonyAddress, settings.CeremonyLocation) } autocomplete="off" placeholder={ t("placeholder.ceremony_address") }/>
+					<div id="ceremony-dropdown" class="autocomplete-dropdown" data-no-results-label={ t("dashboard.no_place_found") }></div>
+					<input type="hidden" name="ceremony_address" id="ceremony-address-hidden" value={ settings.CeremonyAddress }/>
+					<input type="hidden" name="ceremony_location" id="ceremony-location-hidden" value={ settings.CeremonyLocation }/>
+					<input type="hidden" name="ceremony_city" id="ceremony-city-hidden" value={ settings.CeremonyCity }/>
+					<input type="hidden" name="ceremony_lat" id="ceremony-lat-hidden" value={ coordValue(settings.CeremonyLat) }/>
+					<input type="hidden" name="ceremony_lng" id="ceremony-lng-hidden" value={ coordValue(settings.CeremonyLng) }/>
+				</div>
+				<input type="datetime-local" name="ceremony_datetime" value={ settings.CeremonyDatetime }/>
+			</div>
+			<div class="venue-image-row">
+				<input type="file" id="ceremony-file" accept="image/*" class="venue-file-input"/>
+				<input type="hidden" name="ceremony_image" id="ceremony-image-data"/>
+				<input type="hidden" name="ceremony_media_id" id="ceremony-media-id" value={ mediaIDValue(settings.CeremonyMediaID) }/>
+				if settings.CeremonyMediaID > 0 {
+					<img class="venue-image-preview" id="ceremony-preview" src={ publicImageURL(settings.CeremonyMediaID) } loading="lazy" decoding="async" alt="ceremony"/>
+				} else {
+					<img class="venue-image-preview" id="ceremony-preview" style="display:none" alt="ceremony"/>
+				}
+			</div>
+			<label>{ t("label.reception") }</label>
+			<div class="grid">
+				<div style="position:relative">
+					<input type="text" id="reception-input" value={ locationDisplay(settings.ReceptionAddress, settings.ReceptionLocation) } autocomplete="off" placeholder={ t("placeholder.reception_address") }/>
+					<div id="reception-dropdown" class="autocomplete-dropdown" data-no-results-label={ t("dashboard.no_place_found") }></div>
+					<input type="hidden" name="reception_address" id="reception-address-hidden" value={ settings.ReceptionAddress }/>
+					<input type="hidden" name="reception_location" id="reception-location-hidden" value={ settings.ReceptionLocation }/>
+					<input type="hidden" name="reception_city" id="reception-city-hidden" value={ settings.ReceptionCity }/>
+					<input type="hidden" name="reception_lat" id="reception-lat-hidden" value={ coordValue(settings.ReceptionLat) }/>
+					<input type="hidden" name="reception_lng" id="reception-lng-hidden" value={ coordValue(settings.ReceptionLng) }/>
+				</div>
+				<input type="datetime-local" name="reception_datetime" value={ settings.ReceptionDatetime }/>
+			</div>
+			<div class="venue-image-row">
+				<input type="file" id="reception-file" accept="image/*" class="venue-file-input"/>
+				<input type="hidden" name="reception_image" id="reception-image-data"/>
+				<input type="hidden" name="reception_media_id" id="reception-media-id" value={ mediaIDValue(settings.ReceptionMediaID) }/>
+				if settings.ReceptionMediaID > 0 {
+					<img class="venue-image-preview" id="reception-preview" src={ publicImageURL(settings.ReceptionMediaID) } loading="lazy" decoding="async" alt="reception"/>
+				} else {
+					<img class="venue-image-preview" id="reception-preview" style="display:none" alt="reception"/>
+				}
+			</div>
+			<label>{ t("label.bank") }</label>
+			<div class="grid">
+				<input type="text" name="bank_account_iban" value={ settings.BankAccountIBAN } placeholder={ t("placeholder.bank_account_iban") }/>
+				<input type="text" name="bank_account_holder" value={ settings.BankAccountHolder } placeholder={ t("placeholder.bank_account_holder") }/>
+			</div>
+			<!-- share preview image (og:image) -->
+			<label>Share Preview Image</label>
+			<p class="muted" style="margin-top:-0.5rem;margin-bottom:0.75rem">Image shown when sharing the website link on WhatsApp and social media. Defaults to the built-in share preview graphic.</p>
+			<div class="venue-image-row">
+				<input type="file" id="share-preview-file" accept="image/*" class="venue-file-input"/>
+				<input type="hidden" name="share_preview_image" id="share-preview-image-data"/>
+				<input type="hidden" name="share_preview_media_id" id="share-preview-media-id" value={ mediaIDValue(settings.SharePreviewMediaID) }/>
+				if settings.SharePreviewMediaID > 0 {
+					<img class="venue-image-preview" id="share-preview-preview" src={ publicImageURL(settings.SharePreviewMediaID) } loading="lazy" decoding="async" alt="share preview"/>
+					<button type="button" id="share-preview-remove" class="outline secondary" style="margin-top:0.5rem">{ t("btn.remove") }</button>
+				} else {
+					<img class="venue-image-preview" id="share-preview-preview" style="display:none" alt="share preview"/>
+					<button type="button" id="share-preview-remove" class="outline secondary" style="margin-top:0.5rem;display:none">{ t("btn.remove") }</button>
+				}
+			</div>
+			<div class="accordion dashboard-accordion hero-gallery-accordion">
+				<div class="accordion-item settings-section">
+					<h2 class="accordion-header" id="settings-homepage-backgrounds-heading">
+						<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-preserve-attr="class aria-expanded" data-bs-target="#settings-homepage-backgrounds-panel" aria-expanded="false" aria-controls="settings-homepage-backgrounds-panel">
+							<span class="settings-section-title">Homepage Landing Backgrounds</span>
+							<span class="settings-section-description">Upload image pairs for the landing section. One set is picked at random on each homepage load.</span>
+						</button>
+					</h2>
+					<div id="settings-homepage-backgrounds-panel" class="accordion-collapse collapse" data-preserve-attr="class" data-dashboard-key="settings-homepage-backgrounds" aria-labelledby="settings-homepage-backgrounds-heading">
+						<div class="accordion-body settings-section-body">
+							<p class="muted">Use one horizontal image for desktop and one vertical image for mobile for the same photo or moment. If only one side is uploaded, it falls back to the available image.</p>
+							<input type="hidden" name="homepage_hero_background_count" id="homepage-hero-background-count" value={ strconv.Itoa(len(content.HeroBackgrounds)) }/>
+							<div id="homepage-hero-backgrounds-container">
+								if len(content.HeroBackgrounds) > 0 {
+									for idx, bg := range content.HeroBackgrounds {
+										<div class="hero-background-card">
+											<div class="hero-background-card-header">
+												<span class="hero-background-number">{ strconv.Itoa(idx + 1) }</span>
+												<button type="button" class="hero-background-remove outline secondary" aria-label={ t("btn.delete") } onclick="return window.removeHomepageHeroBackground ? window.removeHomepageHeroBackground(this) : false">&times;</button>
+											</div>
+											<div class="grid hero-background-grid">
+												<div>
+													<label>Desktop / horizontal</label>
+													<div class="managed-image-field">
+														<input
+															type="file"
+															accept="image/*"
+															class="managed-image-file"
+															data-target-input={ "homepage-hero-background-desktop-data-" + strconv.Itoa(idx) }
+															data-preview-target={ "homepage-hero-background-desktop-preview-" + strconv.Itoa(idx) }
+															data-media-id-input={ "homepage-hero-background-desktop-media-id-" + strconv.Itoa(idx) }
+															data-format="image/jpeg"
+															data-quality="0.78"
+															data-max-width="1600"
+															data-max-height="900"
+															data-max-bytes="262144"
+														/>
+														<input type="hidden" name={ fmt.Sprintf("homepage_hero_background_desktop_%d", idx) } id={ "homepage-hero-background-desktop-data-" + strconv.Itoa(idx) } class="hero-background-image-hidden"/>
+														<input type="hidden" name={ fmt.Sprintf("homepage_hero_background_desktop_media_id_%d", idx) } id={ "homepage-hero-background-desktop-media-id-" + strconv.Itoa(idx) } class="hero-background-media-id-hidden" value={ mediaIDValue(bg.DesktopMediaID) }/>
+														if bg.DesktopMediaID > 0 {
+															<img class="hero-background-preview dashboard-lazy-image" id={ "homepage-hero-background-desktop-preview-" + strconv.Itoa(idx) } data-src={ publicImageURL(bg.DesktopMediaID) } loading="lazy" decoding="async" alt="desktop background preview"/>
+														} else {
+															<img class="hero-background-preview" id={ "homepage-hero-background-desktop-preview-" + strconv.Itoa(idx) } style="display:none" alt="desktop background preview"/>
+														}
+													</div>
+												</div>
+												<div>
+													<label>Mobile / vertical</label>
+													<div class="managed-image-field">
+														<input
+															type="file"
+															accept="image/*"
+															class="managed-image-file"
+															data-target-input={ "homepage-hero-background-mobile-data-" + strconv.Itoa(idx) }
+															data-preview-target={ "homepage-hero-background-mobile-preview-" + strconv.Itoa(idx) }
+															data-media-id-input={ "homepage-hero-background-mobile-media-id-" + strconv.Itoa(idx) }
+															data-format="image/jpeg"
+															data-quality="0.78"
+															data-max-width="1080"
+															data-max-height="1440"
+															data-max-bytes="196608"
+														/>
+														<input type="hidden" name={ fmt.Sprintf("homepage_hero_background_mobile_%d", idx) } id={ "homepage-hero-background-mobile-data-" + strconv.Itoa(idx) } class="hero-background-image-hidden"/>
+														<input type="hidden" name={ fmt.Sprintf("homepage_hero_background_mobile_media_id_%d", idx) } id={ "homepage-hero-background-mobile-media-id-" + strconv.Itoa(idx) } class="hero-background-media-id-hidden" value={ mediaIDValue(bg.MobileMediaID) }/>
+														if bg.MobileMediaID > 0 {
+															<img class="hero-background-preview hero-background-preview-portrait dashboard-lazy-image" id={ "homepage-hero-background-mobile-preview-" + strconv.Itoa(idx) } data-src={ publicImageURL(bg.MobileMediaID) } loading="lazy" decoding="async" alt="mobile background preview"/>
+														} else {
+															<img class="hero-background-preview hero-background-preview-portrait" id={ "homepage-hero-background-mobile-preview-" + strconv.Itoa(idx) } style="display:none" alt="mobile background preview"/>
+														}
+													</div>
+												</div>
+											</div>
+										</div>
+									}
+									}
+								</div>
+							<button type="button" id="add-homepage-hero-background-btn" class="add-entry-btn" onclick="return window.addHomepageHeroBackground ? window.addHomepageHeroBackground() : false">+ Add background set</button>
+							<template id="homepage-hero-background-card-template">
+								<div class="hero-background-card">
+									<div class="hero-background-card-header">
+										<span class="hero-background-number">1</span>
+										<button type="button" class="hero-background-remove outline secondary" aria-label={ t("btn.delete") } onclick="return window.removeHomepageHeroBackground ? window.removeHomepageHeroBackground(this) : false">&times;</button>
+									</div>
+									<div class="grid hero-background-grid">
+										<div>
+											<label>Desktop / horizontal</label>
+											<div class="managed-image-field">
+												<input
+													type="file"
+													accept="image/*"
+													class="managed-image-file"
+													data-target-input="homepage-hero-background-desktop-data-__INDEX__"
+													data-preview-target="homepage-hero-background-desktop-preview-__INDEX__"
+													data-media-id-input="homepage-hero-background-desktop-media-id-__INDEX__"
+													data-format="image/jpeg"
+													data-quality="0.78"
+													data-max-width="1600"
+													data-max-height="900"
+													data-max-bytes="262144"
+												/>
+												<input type="hidden" name="homepage_hero_background_desktop___INDEX__" id="homepage-hero-background-desktop-data-__INDEX__" class="hero-background-image-hidden"/>
+												<input type="hidden" name="homepage_hero_background_desktop_media_id___INDEX__" id="homepage-hero-background-desktop-media-id-__INDEX__" class="hero-background-media-id-hidden"/>
+												<img class="hero-background-preview" id="homepage-hero-background-desktop-preview-__INDEX__" style="display:none" alt="desktop background preview"/>
+											</div>
+										</div>
+										<div>
+											<label>Mobile / vertical</label>
+											<div class="managed-image-field">
+												<input
+													type="file"
+													accept="image/*"
+													class="managed-image-file"
+													data-target-input="homepage-hero-background-mobile-data-__INDEX__"
+													data-preview-target="homepage-hero-background-mobile-preview-__INDEX__"
+													data-media-id-input="homepage-hero-background-mobile-media-id-__INDEX__"
+													data-format="image/jpeg"
+													data-quality="0.78"
+													data-max-width="1080"
+													data-max-height="1440"
+													data-max-bytes="196608"
+												/>
+												<input type="hidden" name="homepage_hero_background_mobile___INDEX__" id="homepage-hero-background-mobile-data-__INDEX__" class="hero-background-image-hidden"/>
+												<input type="hidden" name="homepage_hero_background_mobile_media_id___INDEX__" id="homepage-hero-background-mobile-media-id-__INDEX__" class="hero-background-media-id-hidden"/>
+												<img class="hero-background-preview hero-background-preview-portrait" id="homepage-hero-background-mobile-preview-__INDEX__" style="display:none" alt="mobile background preview"/>
+											</div>
+										</div>
+									</div>
+								</div>
+							</template>
+							<script nonce={ nonce }>
+								(function () {
+									function getHeroBackgroundsContainer() {
+										return document.getElementById("homepage-hero-backgrounds-container");
+									}
+
+									function reindexHeroBackgrounds() {
+										var container = getHeroBackgroundsContainer();
+										var countInput = document.getElementById("homepage-hero-background-count");
+										if (!container || !countInput) return;
+										var cards = container.querySelectorAll(".hero-background-card");
+										cards.forEach(function (card, idx) {
+											var number = card.querySelector(".hero-background-number");
+											if (number) number.textContent = idx + 1;
+
+											var desktopFile = card.querySelector('.managed-image-file[data-target-input^="homepage-hero-background-desktop-data-"]');
+											var desktopHidden = card.querySelector('.hero-background-image-hidden[id^="homepage-hero-background-desktop-data-"]');
+											var desktopMediaId = card.querySelector('.hero-background-media-id-hidden[id^="homepage-hero-background-desktop-media-id-"]');
+											var desktopPreview = card.querySelector('.hero-background-preview[id^="homepage-hero-background-desktop-preview-"]');
+											if (desktopFile && desktopHidden && desktopMediaId && desktopPreview) {
+												desktopFile.dataset.targetInput = "homepage-hero-background-desktop-data-" + idx;
+												desktopFile.dataset.previewTarget = "homepage-hero-background-desktop-preview-" + idx;
+												desktopFile.dataset.mediaIdInput = "homepage-hero-background-desktop-media-id-" + idx;
+												desktopHidden.name = "homepage_hero_background_desktop_" + idx;
+												desktopHidden.id = "homepage-hero-background-desktop-data-" + idx;
+												desktopMediaId.name = "homepage_hero_background_desktop_media_id_" + idx;
+												desktopMediaId.id = "homepage-hero-background-desktop-media-id-" + idx;
+												desktopPreview.id = "homepage-hero-background-desktop-preview-" + idx;
+											}
+
+											var mobileFile = card.querySelector('.managed-image-file[data-target-input^="homepage-hero-background-mobile-data-"]');
+											var mobileHidden = card.querySelector('.hero-background-image-hidden[id^="homepage-hero-background-mobile-data-"]');
+											var mobileMediaId = card.querySelector('.hero-background-media-id-hidden[id^="homepage-hero-background-mobile-media-id-"]');
+											var mobilePreview = card.querySelector('.hero-background-preview[id^="homepage-hero-background-mobile-preview-"]');
+											if (mobileFile && mobileHidden && mobileMediaId && mobilePreview) {
+												mobileFile.dataset.targetInput = "homepage-hero-background-mobile-data-" + idx;
+												mobileFile.dataset.previewTarget = "homepage-hero-background-mobile-preview-" + idx;
+												mobileFile.dataset.mediaIdInput = "homepage-hero-background-mobile-media-id-" + idx;
+												mobileHidden.name = "homepage_hero_background_mobile_" + idx;
+												mobileHidden.id = "homepage-hero-background-mobile-data-" + idx;
+												mobileMediaId.name = "homepage_hero_background_mobile_media_id_" + idx;
+												mobileMediaId.id = "homepage-hero-background-mobile-media-id-" + idx;
+												mobilePreview.id = "homepage-hero-background-mobile-preview-" + idx;
+											}
+										});
+										countInput.value = cards.length;
+									}
+
+									window.addHomepageHeroBackground = function () {
+										var container = getHeroBackgroundsContainer();
+										var template = document.getElementById("homepage-hero-background-card-template");
+										if (!container || !template) return false;
+										var idx = container.querySelectorAll(".hero-background-card").length;
+										var html = template.innerHTML.replaceAll("__INDEX__", String(idx));
+										container.insertAdjacentHTML("beforeend", html);
+										var card = container.lastElementChild;
+										reindexHeroBackgrounds();
+										if (card && window.initDashboardImageResizers) {
+											window.initDashboardImageResizers(card);
+										}
+										return false;
+									};
+
+									window.removeHomepageHeroBackground = function (button) {
+										var card = button && button.closest ? button.closest(".hero-background-card") : null;
+										if (!card) return false;
+										card.remove();
+										reindexHeroBackgrounds();
+										return false;
+									};
+
+									reindexHeroBackgrounds();
+								})();
+							</script>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="accordion dashboard-accordion" id="dashboard-settings-accordion">
+				<div class="accordion-item settings-section">
+					<h2 class="accordion-header" id="settings-appearance-heading">
+						<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-preserve-attr="class aria-expanded" data-bs-target="#settings-appearance-panel" aria-expanded="false" aria-controls="settings-appearance-panel">
+							<span class="settings-section-title">{ t("dashboard.appearance") }</span>
+							<span class="settings-section-description">{ t("dashboard.appearance_description") }</span>
+						</button>
+					</h2>
+					<div id="settings-appearance-panel" class="accordion-collapse collapse" data-preserve-attr="class" data-dashboard-key="settings-appearance" aria-labelledby="settings-appearance-heading">
+						<div class="accordion-body settings-section-body">
+							<div class="appearance-color-field">
+								<label for="envelope-color">{ t("label.envelope_color") }</label>
+								<input type="color" id="envelope-color" name="envelope_color" value={ appearanceColorOrDefault(settings.EnvelopeColor, models.DefaultEnvelopeColor) } data-hex-target="envelope-color-hex"/>
+								<span class="color-hex" id="envelope-color-hex">{ appearanceColorOrDefault(settings.EnvelopeColor, models.DefaultEnvelopeColor) }</span>
+								<button type="button" class="appearance-color-reset outline secondary" data-color-reset="envelope-color" data-default-color={ models.DefaultEnvelopeColor }>{ t("btn.reset_default") }</button>
+							</div>
+							<p class="muted">{ t("appearance.envelope_color_description") }</p>
+							<label>{ t("label.stamp") }</label>
+							<p class="muted" style="margin-top:-0.5rem;margin-bottom:0.75rem">{ t("appearance.stamp_description") }</p>
+							<div class="venue-image-row">
+								<input type="file" id="stamp-file" accept="image/*" class="venue-file-input"/>
+								<input type="hidden" name="stamp_image" id="stamp-image-data"/>
+								<input type="hidden" name="stamp_media_id" id="stamp-media-id" value={ mediaIDValue(settings.StampMediaID) }/>
+								if settings.StampMediaID > 0 {
+									<img class="venue-image-preview" id="stamp-preview" src={ publicImageURL(settings.StampMediaID) } loading="lazy" decoding="async" alt="envelope stamp"/>
+									<button type="button" id="stamp-remove" class="outline secondary" style="margin-top:0.5rem">{ t("btn.remove") }</button>
+								} else {
+									<img class="venue-image-preview" id="stamp-preview" style="display:none" alt="envelope stamp"/>
+									<button type="button" id="stamp-remove" class="outline secondary" style="margin-top:0.5rem;display:none">{ t("btn.remove") }</button>
+								}
+							</div>
+							<div class="appearance-color-field">
+								<label for="page-bg-color">{ t("label.page_bg_color") }</label>
+								<input type="color" id="page-bg-color" name="page_bg_color" value={ appearanceColorOrDefault(settings.PageBgColor, models.DefaultPageBgColor) } data-hex-target="page-bg-color-hex"/>
+								<span class="color-hex" id="page-bg-color-hex">{ appearanceColorOrDefault(settings.PageBgColor, models.DefaultPageBgColor) }</span>
+								<button type="button" class="appearance-color-reset outline secondary" data-color-reset="page-bg-color" data-default-color={ models.DefaultPageBgColor }>{ t("btn.reset_default") }</button>
+							</div>
+							<p class="muted">{ t("appearance.page_bg_color_description") }</p>
+							<div class="appearance-color-field">
+								<label for="home-bg-color">{ t("label.home_bg_color") }</label>
+								<input type="color" id="home-bg-color" name="home_bg_color" value={ appearanceColorOrDefault(settings.HomeBgColor, models.DefaultHomeBgColor) } data-hex-target="home-bg-color-hex"/>
+								<span class="color-hex" id="home-bg-color-hex">{ appearanceColorOrDefault(settings.HomeBgColor, models.DefaultHomeBgColor) }</span>
+								<button type="button" class="appearance-color-reset outline secondary" data-color-reset="home-bg-color" data-default-color={ models.DefaultHomeBgColor }>{ t("btn.reset_default") }</button>
+							</div>
+							<p class="muted">{ t("appearance.home_bg_color_description") }</p>
+							<label>{ t("label.flora_bl") }</label>
+							<p class="muted" style="margin-top:-0.5rem;margin-bottom:0.75rem">{ t("appearance.flora_description") }</p>
+							<div class="venue-image-row">
+								<input type="file" id="flora-bl-file" accept="image/*" class="venue-file-input"/>
+								<input type="hidden" name="flora_bl_image" id="flora-bl-image-data"/>
+								<input type="hidden" name="flora_bl_media_id" id="flora-bl-media-id" value={ mediaIDValue(settings.FloraBlMediaID) }/>
+								if settings.FloraBlMediaID > 0 {
+									<img class="venue-image-preview flora-image-preview flora-image-preview-bl" id="flora-bl-preview" src={ publicImageURL(settings.FloraBlMediaID) } loading="lazy" decoding="async" alt="flora bottom-left"/>
+									<button type="button" id="flora-bl-remove" class="outline secondary" style="margin-top:0.5rem">{ t("btn.remove") }</button>
+								} else {
+									<img class="venue-image-preview flora-image-preview flora-image-preview-bl" id="flora-bl-preview" style="display:none" alt="flora bottom-left"/>
+									<button type="button" id="flora-bl-remove" class="outline secondary" style="margin-top:0.5rem;display:none">{ t("btn.remove") }</button>
+								}
+							</div>
+							<label>{ t("label.flora_tr") }</label>
+							<p class="muted" style="margin-top:-0.5rem;margin-bottom:0.75rem">{ t("appearance.flora_description") }</p>
+							<div class="venue-image-row">
+								<input type="file" id="flora-tr-file" accept="image/*" class="venue-file-input"/>
+								<input type="hidden" name="flora_tr_image" id="flora-tr-image-data"/>
+								<input type="hidden" name="flora_tr_media_id" id="flora-tr-media-id" value={ mediaIDValue(settings.FloraTrMediaID) }/>
+								if settings.FloraTrMediaID > 0 {
+									<img class="venue-image-preview flora-image-preview flora-image-preview-tr" id="flora-tr-preview" src={ publicImageURL(settings.FloraTrMediaID) } loading="lazy" decoding="async" alt="flora top-right"/>
+									<button type="button" id="flora-tr-remove" class="outline secondary" style="margin-top:0.5rem">{ t("btn.remove") }</button>
+								} else {
+									<img class="venue-image-preview flora-image-preview flora-image-preview-tr" id="flora-tr-preview" style="display:none" alt="flora top-right"/>
+									<button type="button" id="flora-tr-remove" class="outline secondary" style="margin-top:0.5rem;display:none">{ t("btn.remove") }</button>
+								}
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="accordion-item settings-section">
+					<h2 class="accordion-header" id="settings-playlists-heading">
+						<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-preserve-attr="class aria-expanded" data-bs-target="#settings-playlists-panel" aria-expanded="false" aria-controls="settings-playlists-panel">
+							<span class="settings-section-title">{ t("dashboard.playlists") }</span>
+							<span class="settings-section-description">{ t("dashboard.playlists_description") }</span>
+						</button>
+					</h2>
+					<div id="settings-playlists-panel" class="accordion-collapse collapse" data-preserve-attr="class" data-dashboard-key="settings-playlists" aria-labelledby="settings-playlists-heading">
+						<div class="accordion-body settings-section-body">
+							<div class="spotify-playlist-field">
+								<label for="spotify-playlist">{ t("label.playlist_url") }</label>
+								<input id="spotify-playlist" type="text" name="spotify_playlist" value={ settings.SpotifyPlaylist } placeholder={ t("placeholder.playlist_url") }/>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="accordion-item settings-section">
+					<h2 class="accordion-header" id="settings-places-heading">
+						<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-preserve-attr="class aria-expanded" data-bs-target="#settings-places-panel" aria-expanded="false" aria-controls="settings-places-panel">
+							<span class="settings-section-title">{ t("dashboard.places") }</span>
+							<span class="settings-section-description">{ t("dashboard.places_description") }</span>
+						</button>
+					</h2>
+					<div id="settings-places-panel" class="accordion-collapse collapse" data-preserve-attr="class" data-dashboard-key="settings-places" aria-labelledby="settings-places-heading">
+						<div class="accordion-body settings-section-body">
+							<div id="places-container">
+								if len(content.Places) > 0 {
+									for idx, place := range content.Places {
+										<div class="place-card" data-index={ strconv.Itoa(idx) }>
+											<div class="place-card-header">
+												<div class="place-card-meta">
+													<span class="place-number">{ strconv.Itoa(idx + 1) }</span>
+													if place.Lat != 0 || place.Lng != 0 {
+														<div class="place-coords">
+															<span class="place-coords-check">&#10003;</span>
+															<code>{ fmt.Sprintf("%.4f, %.4f", place.Lat, place.Lng) }</code>
+														</div>
+													}
+												</div>
+												<div class="place-card-actions">
+													<button type="button" class="place-move-up" aria-label="Move up">&uarr;</button>
+													<button type="button" class="place-move-down" aria-label="Move down">&darr;</button>
+													<button type="button" class="place-remove outline secondary" aria-label={ t("btn.delete") }>&times;</button>
+												</div>
+											</div>
+											<div class="grid">
+												<div>
+													<label>{ t("label.place_label") }</label>
+													<input type="text" name={ fmt.Sprintf("place_label_%d", idx) } value={ place.Label } placeholder={ t("placeholder.place_label") }/>
+												</div>
+												<div>
+													<label>{ t("label.place_date") }</label>
+													<input type="date" name={ fmt.Sprintf("place_date_%d", idx) } value={ place.Date }/>
+												</div>
+											</div>
+											<div class="grid">
+												<div style="position:relative">
+													<label>{ t("label.place_address") }</label>
+													<input type="text" class="place-location-input" value={ locationDisplay(place.Name, place.Address) } autocomplete="off" placeholder={ t("placeholder.place_address") }/>
+													<div class="autocomplete-dropdown place-dropdown" data-no-results-label={ t("dashboard.no_place_found") }></div>
+													<input type="hidden" name={ fmt.Sprintf("place_name_%d", idx) } class="place-name-hidden" value={ place.Name }/>
+													<input type="hidden" name={ fmt.Sprintf("place_address_%d", idx) } class="place-address-hidden" value={ place.Address }/>
+													<input type="hidden" name={ fmt.Sprintf("place_lat_%d", idx) } class="place-lat-hidden" value={ coordValue(place.Lat) }/>
+													<input type="hidden" name={ fmt.Sprintf("place_lng_%d", idx) } class="place-lng-hidden" value={ coordValue(place.Lng) }/>
+												</div>
+												<div>
+													<label>{ t("label.place_image") }</label>
+													<div class="managed-image-field">
+														<input
+															type="file"
+															accept="image/*"
+															class="managed-image-file"
+															data-target-input={ fmt.Sprintf("place-image-data-%d", idx) }
+															data-preview-target={ fmt.Sprintf("place-image-preview-%d", idx) }
+															data-media-id-input={ fmt.Sprintf("place-image-media-id-%d", idx) }
+															data-format="image/jpeg"
+															data-quality="0.88"
+															data-max-width="1200"
+															data-max-height="1200"
+															data-max-bytes="524288"
+														/>
+														<input type="hidden" name={ fmt.Sprintf("place_image_%d", idx) } id={ fmt.Sprintf("place-image-data-%d", idx) } class="place-image-hidden"/>
+														<input type="hidden" name={ fmt.Sprintf("place_media_id_%d", idx) } id={ fmt.Sprintf("place-media-id-%d", idx) } class="place-media-id-hidden" value={ mediaIDValue(place.MediaID) }/>
+														if place.MediaID > 0 {
+															<img
+																class="venue-image-preview place-image-preview dashboard-lazy-image"
+																id={ fmt.Sprintf("place-image-preview-%d", idx) }
+																data-src={ publicImageURL(place.MediaID) }
+																loading="lazy"
+																decoding="async"
+																alt={ place.Label }
+															/>
+														} else {
+															<img
+																class="venue-image-preview place-image-preview"
+																id={ fmt.Sprintf("place-image-preview-%d", idx) }
+																style="display:none"
+																alt={ place.Label }
+															/>
+														}
+													</div>
+												</div>
+											</div>
+										</div>
+									}
+								}
+							</div>
+							<button type="button" id="add-place-btn" class="add-entry-btn">+ { t("btn.add_place") }</button>
+						</div>
+					</div>
+				</div>
+				<div class="accordion-item settings-section">
+					<h2 class="accordion-header" id="settings-honeymoon-heading">
+						<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-preserve-attr="class aria-expanded" data-bs-target="#settings-honeymoon-panel" aria-expanded="false" aria-controls="settings-honeymoon-panel">
+							<span class="settings-section-title">{ t("dashboard.honeymoon") }</span>
+							<span class="settings-section-description">{ t("dashboard.honeymoon_description") }</span>
+						</button>
+					</h2>
+					<div id="settings-honeymoon-panel" class="accordion-collapse collapse" data-preserve-attr="class" data-dashboard-key="settings-honeymoon" aria-labelledby="settings-honeymoon-heading">
+						<div class="accordion-body settings-section-body">
+							<div id="honeymoon-container">
+								if len(content.Honeymoon) > 0 {
+									for idx, place := range content.Honeymoon {
+										<div class="place-card honeymoon-card" data-index={ strconv.Itoa(idx) }>
+											<div class="place-card-header">
+												<div class="place-card-meta">
+													<span class="place-number">{ strconv.Itoa(idx + 1) }</span>
+													if place.Lat != 0 || place.Lng != 0 {
+														<div class="place-coords">
+															<span class="place-coords-check">&#10003;</span>
+															<code>{ fmt.Sprintf("%.4f, %.4f", place.Lat, place.Lng) }</code>
+														</div>
+													}
+												</div>
+												<div class="place-card-actions">
+													<button type="button" class="place-move-up" aria-label="Move up">&uarr;</button>
+													<button type="button" class="place-move-down" aria-label="Move down">&darr;</button>
+													<button type="button" class="place-remove outline secondary" aria-label={ t("btn.delete") }>&times;</button>
+												</div>
+											</div>
+											<div>
+												<label>{ t("label.place_label") }</label>
+												<input type="text" name={ fmt.Sprintf("honeymoon_label_%d", idx) } value={ place.Label } placeholder={ t("placeholder.place_label") }/>
+											</div>
+											<div class="grid">
+												<div style="position:relative">
+													<label>{ t("label.place_address") }</label>
+													<input type="text" class="place-location-input" value={ locationDisplay(place.Name, place.Address) } autocomplete="off" placeholder={ t("placeholder.place_address") }/>
+													<div class="autocomplete-dropdown place-dropdown" data-no-results-label={ t("dashboard.no_place_found") }></div>
+													<input type="hidden" name={ fmt.Sprintf("honeymoon_name_%d", idx) } class="place-name-hidden" value={ place.Name }/>
+													<input type="hidden" name={ fmt.Sprintf("honeymoon_address_%d", idx) } class="place-address-hidden" value={ place.Address }/>
+													<input type="hidden" name={ fmt.Sprintf("honeymoon_lat_%d", idx) } class="place-lat-hidden" value={ coordValue(place.Lat) }/>
+													<input type="hidden" name={ fmt.Sprintf("honeymoon_lng_%d", idx) } class="place-lng-hidden" value={ coordValue(place.Lng) }/>
+												</div>
+												<div>
+													<label>{ t("label.place_image") }</label>
+													<div class="managed-image-field">
+														<input
+															type="file"
+															accept="image/*"
+															class="managed-image-file"
+															data-target-input={ fmt.Sprintf("honeymoon-image-data-%d", idx) }
+															data-preview-target={ fmt.Sprintf("honeymoon-image-preview-%d", idx) }
+															data-media-id-input={ fmt.Sprintf("honeymoon-image-media-id-%d", idx) }
+															data-format="image/png"
+															data-quality="0.82"
+															data-max-width="900"
+															data-max-height="900"
+															data-max-bytes="614400"
+														/>
+														<input type="hidden" name={ fmt.Sprintf("honeymoon_image_%d", idx) } id={ fmt.Sprintf("honeymoon-image-data-%d", idx) } class="place-image-hidden"/>
+														<input type="hidden" name={ fmt.Sprintf("honeymoon_media_id_%d", idx) } id={ fmt.Sprintf("honeymoon-media-id-%d", idx) } class="place-media-id-hidden" value={ mediaIDValue(place.MediaID) }/>
+														if place.MediaID > 0 {
+															<img
+																class="venue-image-preview place-image-preview dashboard-lazy-image"
+																id={ fmt.Sprintf("honeymoon-image-preview-%d", idx) }
+																data-src={ publicImageURL(place.MediaID) }
+																loading="lazy"
+																decoding="async"
+																alt={ place.Label }
+															/>
+														} else {
+															<img
+																class="venue-image-preview place-image-preview"
+																id={ fmt.Sprintf("honeymoon-image-preview-%d", idx) }
+																style="display:none"
+																alt={ place.Label }
+															/>
+														}
+													</div>
+												</div>
+											</div>
+										</div>
+									}
+								}
+							</div>
+							<button type="button" id="add-honeymoon-btn" class="add-entry-btn">+ { t("btn.add_honeymoon_location") }</button>
+						</div>
+					</div>
+				</div>
+				<div class="accordion-item settings-section">
+					<h2 class="accordion-header" id="settings-parking-heading">
+						<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-preserve-attr="class aria-expanded" data-bs-target="#settings-parking-panel" aria-expanded="false" aria-controls="settings-parking-panel">
+							<span class="settings-section-title">{ t("dashboard.parking") }</span>
+							<span class="settings-section-description">{ t("dashboard.parking_description") }</span>
+						</button>
+					</h2>
+					<div id="settings-parking-panel" class="accordion-collapse collapse" data-preserve-attr="class" data-dashboard-key="settings-parking" aria-labelledby="settings-parking-heading">
+						<div class="accordion-body settings-section-body">
+							<div id="parking-container">
+								if len(content.ParkingSpots) > 0 {
+									for idx, spot := range content.ParkingSpots {
+										<div class="place-card parking-card" data-index={ strconv.Itoa(idx) }>
+											<div class="place-card-header">
+												<div class="place-card-meta">
+													<span class="place-number">{ strconv.Itoa(idx + 1) }</span>
+													if spot.Lat != 0 || spot.Lng != 0 {
+														<div class="place-coords">
+															<span class="place-coords-check">&#10003;</span>
+															<code>{ fmt.Sprintf("%.4f, %.4f", spot.Lat, spot.Lng) }</code>
+														</div>
+													}
+												</div>
+												<div class="place-card-actions">
+													<button type="button" class="place-remove outline secondary" aria-label={ t("btn.delete") }>&times;</button>
+												</div>
+											</div>
+											<div style="position:relative">
+												<label>{ t("label.parking_address") }</label>
+												<input type="text" class="place-location-input" autocomplete="off" placeholder={ t("placeholder.parking_address") }/>
+												<div class="autocomplete-dropdown place-dropdown" data-no-results-label={ t("dashboard.no_place_found") }></div>
+												<input type="hidden" name={ fmt.Sprintf("parking_lat_%d", idx) } class="place-lat-hidden" value={ coordValue(spot.Lat) }/>
+												<input type="hidden" name={ fmt.Sprintf("parking_lng_%d", idx) } class="place-lng-hidden" value={ coordValue(spot.Lng) }/>
+											</div>
+										</div>
+									}
+								}
+							</div>
+							<button type="button" id="add-parking-btn" class="add-entry-btn">+ { t("btn.add_parking") }</button>
+						</div>
+					</div>
+				</div>
+				<div class="accordion-item settings-section">
+					<h2 class="accordion-header" id="settings-accommodations-heading">
+						<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-preserve-attr="class aria-expanded" data-bs-target="#settings-accommodations-panel" aria-expanded="false" aria-controls="settings-accommodations-panel">
+							<span class="settings-section-title">{ t("dashboard.accommodations") }</span>
+							<span class="settings-section-description">{ t("dashboard.accommodations_description") }</span>
+						</button>
+					</h2>
+					<div id="settings-accommodations-panel" class="accordion-collapse collapse" data-preserve-attr="class" data-dashboard-key="settings-accommodations" aria-labelledby="settings-accommodations-heading">
+						<div class="accordion-body settings-section-body">
+							<div id="accommodations-container">
+								if len(content.Accommodations) > 0 {
+									for idx, suggestion := range content.Accommodations {
+										<div class="accommodation-card">
+											<div class="accommodation-card-header">
+												<span class="accommodation-number">{ strconv.Itoa(idx + 1) }</span>
+												<button type="button" class="accommodation-remove outline secondary" aria-label={ t("btn.delete") }>&times;</button>
+											</div>
+											<div class="grid">
+												<div>
+													<label>{ t("label.accommodation_name") }</label>
+													<input type="text" name={ fmt.Sprintf("accommodation_name_%d", idx) } value={ suggestion.Name } placeholder={ t("placeholder.accommodation_name") }/>
+												</div>
+												<div>
+													<label>{ t("label.accommodation_url") }</label>
+													<input type="url" name={ fmt.Sprintf("accommodation_url_%d", idx) } value={ suggestion.URL } placeholder={ t("placeholder.accommodation_url") }/>
+												</div>
+											</div>
+											<div>
+												<label>{ t("label.accommodation_description") }</label>
+												<textarea name={ fmt.Sprintf("accommodation_description_%d", idx) } rows="3" placeholder={ t("placeholder.accommodation_description") }>{ suggestion.Description }</textarea>
+											</div>
+										</div>
+									}
+								}
+							</div>
+							<button type="button" id="add-accommodation-btn" class="add-entry-btn">+ { t("btn.add_accommodation") }</button>
+						</div>
+					</div>
+				</div>
+				<div class="accordion-item settings-section">
+					<h2 class="accordion-header" id="settings-impersonations-heading">
+						<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-preserve-attr="class aria-expanded" data-bs-target="#settings-impersonations-panel" aria-expanded="false" aria-controls="settings-impersonations-panel">
+							<span class="settings-section-title">{ t("dashboard.impersonations") }</span>
+							<span class="settings-section-description">{ t("dashboard.impersonations_description") }</span>
+						</button>
+					</h2>
+					<div id="settings-impersonations-panel" class="accordion-collapse collapse" data-preserve-attr="class" data-dashboard-key="settings-impersonations" aria-labelledby="settings-impersonations-heading">
+						<div class="accordion-body settings-section-body">
+							<div id="impersonations-container">
+								if len(content.Impersonations) > 0 {
+									for idx, imp := range content.Impersonations {
+										<div class="impersonation-card">
+											<div class="impersonation-card-header">
+												<span class="impersonation-number">{ strconv.Itoa(idx + 1) }</span>
+												<button type="button" class="impersonation-remove outline secondary" aria-label={ t("btn.delete") }>&times;</button>
+											</div>
+											<input type="text" name={ fmt.Sprintf("impersonation_codename_%d", idx) } value={ imp.Codename } placeholder={ t("placeholder.impersonation_codename") }/>
+											<textarea name={ fmt.Sprintf("impersonation_profile_%d", idx) } rows="3" placeholder={ t("placeholder.impersonation_profile") }>{ imp.Profile }</textarea>
+										</div>
+									}
+								}
+							</div>
+							<button type="button" id="add-impersonation-btn" class="add-entry-btn">+ { t("btn.add_impersonation") }</button>
+						</div>
+					</div>
+				</div>
+				<div class="accordion-item settings-section">
+					<h2 class="accordion-header" id="settings-homepage-labels-heading">
+						<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-preserve-attr="class aria-expanded" data-bs-target="#settings-homepage-labels-panel" aria-expanded="false" aria-controls="settings-homepage-labels-panel">
+							<span class="settings-section-title">Homepage Labels</span>
+							<span class="settings-section-description">Override guest-facing text on the homepage and invitation pages.</span>
+						</button>
+					</h2>
+					<div id="settings-homepage-labels-panel" class="accordion-collapse collapse" data-preserve-attr="class" data-dashboard-key="settings-homepage-labels" aria-labelledby="settings-homepage-labels-heading">
+						<div class="accordion-body settings-section-body settings-section-body-labels">
+							for _, lang := range []string{"en", "it"} {
+								<div class="accordion dashboard-subaccordion">
+									<div class="accordion-item settings-subsection">
+										<h3 class="accordion-header" id={ "settings-homepage-labels-" + lang + "-heading" }>
+											<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-preserve-attr="class aria-expanded" data-bs-target={ "#" + "settings-homepage-labels-" + lang + "-panel" } aria-expanded="false" aria-controls={ "settings-homepage-labels-" + lang + "-panel" }>
+												{ lang }
+											</button>
+										</h3>
+										<div id={ "settings-homepage-labels-" + lang + "-panel" } class="accordion-collapse collapse" data-preserve-attr="class" data-dashboard-key={ "settings-homepage-labels-" + lang } aria-labelledby={ "settings-homepage-labels-" + lang + "-heading" }>
+											<div class="accordion-body settings-subsection-body">
+												<div class="homepage-label-groups">
+													@homepageLabelGroup(lang, "home", []string{"home.getting_married", "home.ceremony", "home.reception", "home.soundtrack", "home.soundtrack_description", "home.places", "home.places_description", "home.honeymoon", "home.honeymoon_description", "home.accommodations", "home.accommodations_description", "home.registry", "home.registry_description", "home.generic_gift", "home.generic_gift_description", "home.remaining", "home.update_invitation"}, content.HomepageLabels, i18n.Defaults(lang))
+													@homepageLabelGroup(lang, "invitation", []string{"invitation.title", "invitation.rsvp", "invitation.rsvp_description", "invitation.confirm", "invitation.already_answered", "invitation.change_answer", "invitation.go_home", "invitation.submitted_message"}, content.HomepageLabels, i18n.Defaults(lang))
+													@homepageLabelGroup(lang, "gift / badge", []string{"gift.thank_you", "gift.thanks_message", "badge.sold"}, content.HomepageLabels, i18n.Defaults(lang))
+													@homepageLabelGroup(lang, "buttons", []string{"btn.buy", "btn.copy", "btn.copied", "btn.cancel", "btn.confirm", "btn.close"}, content.HomepageLabels, i18n.Defaults(lang))
+													@homepageLabelGroup(lang, "modal", []string{"modal.transfer_intro", "modal.iban", "modal.owner", "modal.reason", "modal.transfer_confirm_text"}, content.HomepageLabels, i18n.Defaults(lang))
+													@homepageLabelGroup(lang, "placeholders / chat / misc", []string{"placeholder.custom_amount", "placeholder.donor", "chat.title", "chat.placeholder", "chat.send", "chat.error", "chat.rate_limited", "rsvp.yes", "rsvp.no", "th.amount", "th.ceremony", "th.reception", "link.dashboard"}, content.HomepageLabels, i18n.Defaults(lang))
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+							}
+						</div>
+					</div>
+				</div>
+			</div>
+			<button type="submit" class="save-btn">{ t("btn.save_settings") }</button>
+		</form>
+	</div>
+}
+
 templ Dashboard(settings models.Settings, content SettingsContent, guests []models.Guest, pagedGifts []models.Gift, giftsPage int, giftsTotalPages int, giftsCount int, giftsTotal int, pagedRegistry []models.RegistryItem, registryPage int, registryTotalPages int, registryItems []models.RegistryItem, invitations []models.Invitation, pagedInvitations []models.Invitation, invitePage int, inviteTotalPages int, inviteSearch string, polls []models.Poll, pagedSoundtrack []models.SoundtrackEvent, soundtrackPage int, soundtrackTotalPages int, confirmedReception int, refusedReception int, pendingRSVP int, invitedGuests int, nonVisualizedInvited int, total int, confirmedAdults int, confirmedChildren int, confirmedInfants int, confirmedVendors int, page int, totalPages int, search string, csrfToken string, nonce string, flash string, t i18n.T, lang string) {
 	@DashboardLayout(pageTitle(t("title.dashboard"), settings.GroomName, settings.BrideName), lang, nonce) {
 		<div id="dashboard-flash">
@@ -771,710 +1504,8 @@ templ Dashboard(settings models.Settings, content SettingsContent, guests []mode
 			})
 		</div>
 		<!-- details -->
-		<article id="dashboard-settings">
-			<h2>{ t("dashboard.details") }</h2>
-			<form class="dashboard-settings-form" method="POST" action="/dashboard/settings">
-				<input type="hidden" name="_csrf" value={ csrfToken }/>
-				<label>{ t("label.spouses") }</label>
-				<div class="grid">
-					<input type="text" name="groom_name" value={ settings.GroomName } placeholder={ t("placeholder.name") }/>
-					<input type="text" name="bride_name" value={ settings.BrideName } placeholder={ t("placeholder.name") }/>
-				</div>
-				<label>{ t("label.ceremony") }</label>
-				<div class="grid">
-					<div style="position:relative">
-						<input type="text" id="ceremony-input" value={ locationDisplay(settings.CeremonyAddress, settings.CeremonyLocation) } autocomplete="off" placeholder={ t("placeholder.ceremony_address") }/>
-						<div id="ceremony-dropdown" class="autocomplete-dropdown" data-no-results-label={ t("dashboard.no_place_found") }></div>
-						<input type="hidden" name="ceremony_address" id="ceremony-address-hidden" value={ settings.CeremonyAddress }/>
-						<input type="hidden" name="ceremony_location" id="ceremony-location-hidden" value={ settings.CeremonyLocation }/>
-						<input type="hidden" name="ceremony_city" id="ceremony-city-hidden" value={ settings.CeremonyCity }/>
-						<input type="hidden" name="ceremony_lat" id="ceremony-lat-hidden" value={ coordValue(settings.CeremonyLat) }/>
-						<input type="hidden" name="ceremony_lng" id="ceremony-lng-hidden" value={ coordValue(settings.CeremonyLng) }/>
-					</div>
-					<input type="datetime-local" name="ceremony_datetime" value={ settings.CeremonyDatetime }/>
-				</div>
-				<div class="venue-image-row">
-					<input type="file" id="ceremony-file" accept="image/*" class="venue-file-input"/>
-					<input type="hidden" name="ceremony_image" id="ceremony-image-data"/>
-					<input type="hidden" name="ceremony_media_id" id="ceremony-media-id" value={ mediaIDValue(settings.CeremonyMediaID) }/>
-					if settings.CeremonyMediaID > 0 {
-						<img class="venue-image-preview" id="ceremony-preview" src={ publicImageURL(settings.CeremonyMediaID) } loading="lazy" decoding="async" alt="ceremony"/>
-					} else {
-						<img class="venue-image-preview" id="ceremony-preview" style="display:none" alt="ceremony"/>
-					}
-				</div>
-				<label>{ t("label.reception") }</label>
-				<div class="grid">
-					<div style="position:relative">
-						<input type="text" id="reception-input" value={ locationDisplay(settings.ReceptionAddress, settings.ReceptionLocation) } autocomplete="off" placeholder={ t("placeholder.reception_address") }/>
-						<div id="reception-dropdown" class="autocomplete-dropdown" data-no-results-label={ t("dashboard.no_place_found") }></div>
-						<input type="hidden" name="reception_address" id="reception-address-hidden" value={ settings.ReceptionAddress }/>
-						<input type="hidden" name="reception_location" id="reception-location-hidden" value={ settings.ReceptionLocation }/>
-						<input type="hidden" name="reception_city" id="reception-city-hidden" value={ settings.ReceptionCity }/>
-						<input type="hidden" name="reception_lat" id="reception-lat-hidden" value={ coordValue(settings.ReceptionLat) }/>
-						<input type="hidden" name="reception_lng" id="reception-lng-hidden" value={ coordValue(settings.ReceptionLng) }/>
-					</div>
-					<input type="datetime-local" name="reception_datetime" value={ settings.ReceptionDatetime }/>
-				</div>
-				<div class="venue-image-row">
-					<input type="file" id="reception-file" accept="image/*" class="venue-file-input"/>
-					<input type="hidden" name="reception_image" id="reception-image-data"/>
-					<input type="hidden" name="reception_media_id" id="reception-media-id" value={ mediaIDValue(settings.ReceptionMediaID) }/>
-					if settings.ReceptionMediaID > 0 {
-						<img class="venue-image-preview" id="reception-preview" src={ publicImageURL(settings.ReceptionMediaID) } loading="lazy" decoding="async" alt="reception"/>
-					} else {
-						<img class="venue-image-preview" id="reception-preview" style="display:none" alt="reception"/>
-					}
-				</div>
-				<label>{ t("label.bank") }</label>
-				<div class="grid">
-					<input type="text" name="bank_account_iban" value={ settings.BankAccountIBAN } placeholder={ t("placeholder.bank_account_iban") }/>
-					<input type="text" name="bank_account_holder" value={ settings.BankAccountHolder } placeholder={ t("placeholder.bank_account_holder") }/>
-				</div>
-				<!-- share preview image (og:image) -->
-				<label>Share Preview Image</label>
-				<p class="muted" style="margin-top:-0.5rem;margin-bottom:0.75rem">Image shown when sharing the website link on WhatsApp and social media. Defaults to the built-in share preview graphic.</p>
-				<div class="venue-image-row">
-					<input type="file" id="share-preview-file" accept="image/*" class="venue-file-input"/>
-					<input type="hidden" name="share_preview_image" id="share-preview-image-data"/>
-					<input type="hidden" name="share_preview_media_id" id="share-preview-media-id" value={ mediaIDValue(settings.SharePreviewMediaID) }/>
-					if settings.SharePreviewMediaID > 0 {
-						<img class="venue-image-preview" id="share-preview-preview" src={ publicImageURL(settings.SharePreviewMediaID) } loading="lazy" decoding="async" alt="share preview"/>
-						<button type="button" id="share-preview-remove" class="outline secondary" style="margin-top:0.5rem">{ t("btn.remove") }</button>
-					} else {
-						<img class="venue-image-preview" id="share-preview-preview" style="display:none" alt="share preview"/>
-						<button type="button" id="share-preview-remove" class="outline secondary" style="margin-top:0.5rem;display:none">{ t("btn.remove") }</button>
-					}
-				</div>
-				<div class="accordion dashboard-accordion hero-gallery-accordion">
-					<div class="accordion-item settings-section">
-						<h2 class="accordion-header" id="settings-homepage-backgrounds-heading">
-							<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#settings-homepage-backgrounds-panel" aria-expanded="false" aria-controls="settings-homepage-backgrounds-panel">
-								<span class="settings-section-title">Homepage Landing Backgrounds</span>
-								<span class="settings-section-description">Upload image pairs for the landing section. One set is picked at random on each homepage load.</span>
-							</button>
-						</h2>
-						<div id="settings-homepage-backgrounds-panel" class="accordion-collapse collapse" data-dashboard-key="settings-homepage-backgrounds" aria-labelledby="settings-homepage-backgrounds-heading">
-							<div class="accordion-body settings-section-body">
-								<p class="muted">Use one horizontal image for desktop and one vertical image for mobile for the same photo or moment. If only one side is uploaded, it falls back to the available image.</p>
-								<input type="hidden" name="homepage_hero_background_count" id="homepage-hero-background-count" value={ strconv.Itoa(len(content.HeroBackgrounds)) }/>
-								<div id="homepage-hero-backgrounds-container">
-									if len(content.HeroBackgrounds) > 0 {
-										for idx, bg := range content.HeroBackgrounds {
-											<div class="hero-background-card">
-												<div class="hero-background-card-header">
-													<span class="hero-background-number">{ strconv.Itoa(idx + 1) }</span>
-													<button type="button" class="hero-background-remove outline secondary" aria-label={ t("btn.delete") } onclick="return window.removeHomepageHeroBackground ? window.removeHomepageHeroBackground(this) : false">&times;</button>
-												</div>
-												<div class="grid hero-background-grid">
-													<div>
-														<label>Desktop / horizontal</label>
-														<div class="managed-image-field">
-															<input
-																type="file"
-																accept="image/*"
-																class="managed-image-file"
-																data-target-input={ "homepage-hero-background-desktop-data-" + strconv.Itoa(idx) }
-																data-preview-target={ "homepage-hero-background-desktop-preview-" + strconv.Itoa(idx) }
-																data-media-id-input={ "homepage-hero-background-desktop-media-id-" + strconv.Itoa(idx) }
-																data-format="image/jpeg"
-																data-quality="0.78"
-																data-max-width="1600"
-																data-max-height="900"
-																data-max-bytes="262144"
-															/>
-															<input type="hidden" name={ fmt.Sprintf("homepage_hero_background_desktop_%d", idx) } id={ "homepage-hero-background-desktop-data-" + strconv.Itoa(idx) } class="hero-background-image-hidden"/>
-															<input type="hidden" name={ fmt.Sprintf("homepage_hero_background_desktop_media_id_%d", idx) } id={ "homepage-hero-background-desktop-media-id-" + strconv.Itoa(idx) } class="hero-background-media-id-hidden" value={ mediaIDValue(bg.DesktopMediaID) }/>
-															if bg.DesktopMediaID > 0 {
-																<img class="hero-background-preview dashboard-lazy-image" id={ "homepage-hero-background-desktop-preview-" + strconv.Itoa(idx) } data-src={ publicImageURL(bg.DesktopMediaID) } loading="lazy" decoding="async" alt="desktop background preview"/>
-															} else {
-																<img class="hero-background-preview" id={ "homepage-hero-background-desktop-preview-" + strconv.Itoa(idx) } style="display:none" alt="desktop background preview"/>
-															}
-														</div>
-													</div>
-													<div>
-														<label>Mobile / vertical</label>
-														<div class="managed-image-field">
-															<input
-																type="file"
-																accept="image/*"
-																class="managed-image-file"
-																data-target-input={ "homepage-hero-background-mobile-data-" + strconv.Itoa(idx) }
-																data-preview-target={ "homepage-hero-background-mobile-preview-" + strconv.Itoa(idx) }
-																data-media-id-input={ "homepage-hero-background-mobile-media-id-" + strconv.Itoa(idx) }
-																data-format="image/jpeg"
-																data-quality="0.78"
-																data-max-width="1080"
-																data-max-height="1440"
-																data-max-bytes="196608"
-															/>
-															<input type="hidden" name={ fmt.Sprintf("homepage_hero_background_mobile_%d", idx) } id={ "homepage-hero-background-mobile-data-" + strconv.Itoa(idx) } class="hero-background-image-hidden"/>
-															<input type="hidden" name={ fmt.Sprintf("homepage_hero_background_mobile_media_id_%d", idx) } id={ "homepage-hero-background-mobile-media-id-" + strconv.Itoa(idx) } class="hero-background-media-id-hidden" value={ mediaIDValue(bg.MobileMediaID) }/>
-															if bg.MobileMediaID > 0 {
-																<img class="hero-background-preview hero-background-preview-portrait dashboard-lazy-image" id={ "homepage-hero-background-mobile-preview-" + strconv.Itoa(idx) } data-src={ publicImageURL(bg.MobileMediaID) } loading="lazy" decoding="async" alt="mobile background preview"/>
-															} else {
-																<img class="hero-background-preview hero-background-preview-portrait" id={ "homepage-hero-background-mobile-preview-" + strconv.Itoa(idx) } style="display:none" alt="mobile background preview"/>
-															}
-														</div>
-													</div>
-												</div>
-											</div>
-										}
-										}
-									</div>
-								<button type="button" id="add-homepage-hero-background-btn" class="add-entry-btn" onclick="return window.addHomepageHeroBackground ? window.addHomepageHeroBackground() : false">+ Add background set</button>
-								<template id="homepage-hero-background-card-template">
-									<div class="hero-background-card">
-										<div class="hero-background-card-header">
-											<span class="hero-background-number">1</span>
-											<button type="button" class="hero-background-remove outline secondary" aria-label={ t("btn.delete") } onclick="return window.removeHomepageHeroBackground ? window.removeHomepageHeroBackground(this) : false">&times;</button>
-										</div>
-										<div class="grid hero-background-grid">
-											<div>
-												<label>Desktop / horizontal</label>
-												<div class="managed-image-field">
-													<input
-														type="file"
-														accept="image/*"
-														class="managed-image-file"
-														data-target-input="homepage-hero-background-desktop-data-__INDEX__"
-														data-preview-target="homepage-hero-background-desktop-preview-__INDEX__"
-														data-media-id-input="homepage-hero-background-desktop-media-id-__INDEX__"
-														data-format="image/jpeg"
-														data-quality="0.78"
-														data-max-width="1600"
-														data-max-height="900"
-														data-max-bytes="262144"
-													/>
-													<input type="hidden" name="homepage_hero_background_desktop___INDEX__" id="homepage-hero-background-desktop-data-__INDEX__" class="hero-background-image-hidden"/>
-													<input type="hidden" name="homepage_hero_background_desktop_media_id___INDEX__" id="homepage-hero-background-desktop-media-id-__INDEX__" class="hero-background-media-id-hidden"/>
-													<img class="hero-background-preview" id="homepage-hero-background-desktop-preview-__INDEX__" style="display:none" alt="desktop background preview"/>
-												</div>
-											</div>
-											<div>
-												<label>Mobile / vertical</label>
-												<div class="managed-image-field">
-													<input
-														type="file"
-														accept="image/*"
-														class="managed-image-file"
-														data-target-input="homepage-hero-background-mobile-data-__INDEX__"
-														data-preview-target="homepage-hero-background-mobile-preview-__INDEX__"
-														data-media-id-input="homepage-hero-background-mobile-media-id-__INDEX__"
-														data-format="image/jpeg"
-														data-quality="0.78"
-														data-max-width="1080"
-														data-max-height="1440"
-														data-max-bytes="196608"
-													/>
-													<input type="hidden" name="homepage_hero_background_mobile___INDEX__" id="homepage-hero-background-mobile-data-__INDEX__" class="hero-background-image-hidden"/>
-													<input type="hidden" name="homepage_hero_background_mobile_media_id___INDEX__" id="homepage-hero-background-mobile-media-id-__INDEX__" class="hero-background-media-id-hidden"/>
-													<img class="hero-background-preview hero-background-preview-portrait" id="homepage-hero-background-mobile-preview-__INDEX__" style="display:none" alt="mobile background preview"/>
-												</div>
-											</div>
-										</div>
-									</div>
-								</template>
-								<script nonce={ nonce }>
-									(function () {
-										function getHeroBackgroundsContainer() {
-											return document.getElementById("homepage-hero-backgrounds-container");
-										}
-
-										function reindexHeroBackgrounds() {
-											var container = getHeroBackgroundsContainer();
-											var countInput = document.getElementById("homepage-hero-background-count");
-											if (!container || !countInput) return;
-											var cards = container.querySelectorAll(".hero-background-card");
-											cards.forEach(function (card, idx) {
-												var number = card.querySelector(".hero-background-number");
-												if (number) number.textContent = idx + 1;
-
-												var desktopFile = card.querySelector('.managed-image-file[data-target-input^="homepage-hero-background-desktop-data-"]');
-												var desktopHidden = card.querySelector('.hero-background-image-hidden[id^="homepage-hero-background-desktop-data-"]');
-												var desktopMediaId = card.querySelector('.hero-background-media-id-hidden[id^="homepage-hero-background-desktop-media-id-"]');
-												var desktopPreview = card.querySelector('.hero-background-preview[id^="homepage-hero-background-desktop-preview-"]');
-												if (desktopFile && desktopHidden && desktopMediaId && desktopPreview) {
-													desktopFile.dataset.targetInput = "homepage-hero-background-desktop-data-" + idx;
-													desktopFile.dataset.previewTarget = "homepage-hero-background-desktop-preview-" + idx;
-													desktopFile.dataset.mediaIdInput = "homepage-hero-background-desktop-media-id-" + idx;
-													desktopHidden.name = "homepage_hero_background_desktop_" + idx;
-													desktopHidden.id = "homepage-hero-background-desktop-data-" + idx;
-													desktopMediaId.name = "homepage_hero_background_desktop_media_id_" + idx;
-													desktopMediaId.id = "homepage-hero-background-desktop-media-id-" + idx;
-													desktopPreview.id = "homepage-hero-background-desktop-preview-" + idx;
-												}
-
-												var mobileFile = card.querySelector('.managed-image-file[data-target-input^="homepage-hero-background-mobile-data-"]');
-												var mobileHidden = card.querySelector('.hero-background-image-hidden[id^="homepage-hero-background-mobile-data-"]');
-												var mobileMediaId = card.querySelector('.hero-background-media-id-hidden[id^="homepage-hero-background-mobile-media-id-"]');
-												var mobilePreview = card.querySelector('.hero-background-preview[id^="homepage-hero-background-mobile-preview-"]');
-												if (mobileFile && mobileHidden && mobileMediaId && mobilePreview) {
-													mobileFile.dataset.targetInput = "homepage-hero-background-mobile-data-" + idx;
-													mobileFile.dataset.previewTarget = "homepage-hero-background-mobile-preview-" + idx;
-													mobileFile.dataset.mediaIdInput = "homepage-hero-background-mobile-media-id-" + idx;
-													mobileHidden.name = "homepage_hero_background_mobile_" + idx;
-													mobileHidden.id = "homepage-hero-background-mobile-data-" + idx;
-													mobileMediaId.name = "homepage_hero_background_mobile_media_id_" + idx;
-													mobileMediaId.id = "homepage-hero-background-mobile-media-id-" + idx;
-													mobilePreview.id = "homepage-hero-background-mobile-preview-" + idx;
-												}
-											});
-											countInput.value = cards.length;
-										}
-
-										window.addHomepageHeroBackground = function () {
-											var container = getHeroBackgroundsContainer();
-											var template = document.getElementById("homepage-hero-background-card-template");
-											if (!container || !template) return false;
-											var idx = container.querySelectorAll(".hero-background-card").length;
-											var html = template.innerHTML.replaceAll("__INDEX__", String(idx));
-											container.insertAdjacentHTML("beforeend", html);
-											var card = container.lastElementChild;
-											reindexHeroBackgrounds();
-											if (card && window.initDashboardImageResizers) {
-												window.initDashboardImageResizers(card);
-											}
-											return false;
-										};
-
-										window.removeHomepageHeroBackground = function (button) {
-											var card = button && button.closest ? button.closest(".hero-background-card") : null;
-											if (!card) return false;
-											card.remove();
-											reindexHeroBackgrounds();
-											return false;
-										};
-
-										reindexHeroBackgrounds();
-									})();
-								</script>
-							</div>
-						</div>
-					</div>
-				</div>
-				<div class="accordion dashboard-accordion" id="dashboard-settings-accordion">
-					<div class="accordion-item settings-section">
-						<h2 class="accordion-header" id="settings-appearance-heading">
-							<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#settings-appearance-panel" aria-expanded="false" aria-controls="settings-appearance-panel">
-								<span class="settings-section-title">{ t("dashboard.appearance") }</span>
-								<span class="settings-section-description">{ t("dashboard.appearance_description") }</span>
-							</button>
-						</h2>
-						<div id="settings-appearance-panel" class="accordion-collapse collapse" data-dashboard-key="settings-appearance" aria-labelledby="settings-appearance-heading">
-							<div class="accordion-body settings-section-body">
-								<div class="appearance-color-field">
-									<label for="envelope-color">{ t("label.envelope_color") }</label>
-									<input type="color" id="envelope-color" name="envelope_color" value={ appearanceColorOrDefault(settings.EnvelopeColor, models.DefaultEnvelopeColor) } data-hex-target="envelope-color-hex"/>
-									<span class="color-hex" id="envelope-color-hex">{ appearanceColorOrDefault(settings.EnvelopeColor, models.DefaultEnvelopeColor) }</span>
-									<button type="button" class="appearance-color-reset outline secondary" data-color-reset="envelope-color" data-default-color={ models.DefaultEnvelopeColor }>{ t("btn.reset_default") }</button>
-								</div>
-								<p class="muted">{ t("appearance.envelope_color_description") }</p>
-								<label>{ t("label.stamp") }</label>
-								<p class="muted" style="margin-top:-0.5rem;margin-bottom:0.75rem">{ t("appearance.stamp_description") }</p>
-								<div class="venue-image-row">
-									<input type="file" id="stamp-file" accept="image/*" class="venue-file-input"/>
-									<input type="hidden" name="stamp_image" id="stamp-image-data"/>
-									<input type="hidden" name="stamp_media_id" id="stamp-media-id" value={ mediaIDValue(settings.StampMediaID) }/>
-									if settings.StampMediaID > 0 {
-										<img class="venue-image-preview" id="stamp-preview" src={ publicImageURL(settings.StampMediaID) } loading="lazy" decoding="async" alt="envelope stamp"/>
-										<button type="button" id="stamp-remove" class="outline secondary" style="margin-top:0.5rem">{ t("btn.remove") }</button>
-									} else {
-										<img class="venue-image-preview" id="stamp-preview" style="display:none" alt="envelope stamp"/>
-										<button type="button" id="stamp-remove" class="outline secondary" style="margin-top:0.5rem;display:none">{ t("btn.remove") }</button>
-									}
-								</div>
-								<div class="appearance-color-field">
-									<label for="page-bg-color">{ t("label.page_bg_color") }</label>
-									<input type="color" id="page-bg-color" name="page_bg_color" value={ appearanceColorOrDefault(settings.PageBgColor, models.DefaultPageBgColor) } data-hex-target="page-bg-color-hex"/>
-									<span class="color-hex" id="page-bg-color-hex">{ appearanceColorOrDefault(settings.PageBgColor, models.DefaultPageBgColor) }</span>
-									<button type="button" class="appearance-color-reset outline secondary" data-color-reset="page-bg-color" data-default-color={ models.DefaultPageBgColor }>{ t("btn.reset_default") }</button>
-								</div>
-								<p class="muted">{ t("appearance.page_bg_color_description") }</p>
-								<div class="appearance-color-field">
-									<label for="home-bg-color">{ t("label.home_bg_color") }</label>
-									<input type="color" id="home-bg-color" name="home_bg_color" value={ appearanceColorOrDefault(settings.HomeBgColor, models.DefaultHomeBgColor) } data-hex-target="home-bg-color-hex"/>
-									<span class="color-hex" id="home-bg-color-hex">{ appearanceColorOrDefault(settings.HomeBgColor, models.DefaultHomeBgColor) }</span>
-									<button type="button" class="appearance-color-reset outline secondary" data-color-reset="home-bg-color" data-default-color={ models.DefaultHomeBgColor }>{ t("btn.reset_default") }</button>
-								</div>
-								<p class="muted">{ t("appearance.home_bg_color_description") }</p>
-								<label>{ t("label.flora_bl") }</label>
-								<p class="muted" style="margin-top:-0.5rem;margin-bottom:0.75rem">{ t("appearance.flora_description") }</p>
-								<div class="venue-image-row">
-									<input type="file" id="flora-bl-file" accept="image/*" class="venue-file-input"/>
-									<input type="hidden" name="flora_bl_image" id="flora-bl-image-data"/>
-									<input type="hidden" name="flora_bl_media_id" id="flora-bl-media-id" value={ mediaIDValue(settings.FloraBlMediaID) }/>
-									if settings.FloraBlMediaID > 0 {
-										<img class="venue-image-preview flora-image-preview flora-image-preview-bl" id="flora-bl-preview" src={ publicImageURL(settings.FloraBlMediaID) } loading="lazy" decoding="async" alt="flora bottom-left"/>
-										<button type="button" id="flora-bl-remove" class="outline secondary" style="margin-top:0.5rem">{ t("btn.remove") }</button>
-									} else {
-										<img class="venue-image-preview flora-image-preview flora-image-preview-bl" id="flora-bl-preview" style="display:none" alt="flora bottom-left"/>
-										<button type="button" id="flora-bl-remove" class="outline secondary" style="margin-top:0.5rem;display:none">{ t("btn.remove") }</button>
-									}
-								</div>
-								<label>{ t("label.flora_tr") }</label>
-								<p class="muted" style="margin-top:-0.5rem;margin-bottom:0.75rem">{ t("appearance.flora_description") }</p>
-								<div class="venue-image-row">
-									<input type="file" id="flora-tr-file" accept="image/*" class="venue-file-input"/>
-									<input type="hidden" name="flora_tr_image" id="flora-tr-image-data"/>
-									<input type="hidden" name="flora_tr_media_id" id="flora-tr-media-id" value={ mediaIDValue(settings.FloraTrMediaID) }/>
-									if settings.FloraTrMediaID > 0 {
-										<img class="venue-image-preview flora-image-preview flora-image-preview-tr" id="flora-tr-preview" src={ publicImageURL(settings.FloraTrMediaID) } loading="lazy" decoding="async" alt="flora top-right"/>
-										<button type="button" id="flora-tr-remove" class="outline secondary" style="margin-top:0.5rem">{ t("btn.remove") }</button>
-									} else {
-										<img class="venue-image-preview flora-image-preview flora-image-preview-tr" id="flora-tr-preview" style="display:none" alt="flora top-right"/>
-										<button type="button" id="flora-tr-remove" class="outline secondary" style="margin-top:0.5rem;display:none">{ t("btn.remove") }</button>
-									}
-								</div>
-							</div>
-						</div>
-					</div>
-					<div class="accordion-item settings-section">
-						<h2 class="accordion-header" id="settings-playlists-heading">
-							<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#settings-playlists-panel" aria-expanded="false" aria-controls="settings-playlists-panel">
-								<span class="settings-section-title">{ t("dashboard.playlists") }</span>
-								<span class="settings-section-description">{ t("dashboard.playlists_description") }</span>
-							</button>
-						</h2>
-						<div id="settings-playlists-panel" class="accordion-collapse collapse" data-dashboard-key="settings-playlists" aria-labelledby="settings-playlists-heading">
-							<div class="accordion-body settings-section-body">
-								<div class="spotify-playlist-field">
-									<label for="spotify-playlist">{ t("label.playlist_url") }</label>
-									<input id="spotify-playlist" type="text" name="spotify_playlist" value={ settings.SpotifyPlaylist } placeholder={ t("placeholder.playlist_url") }/>
-								</div>
-							</div>
-						</div>
-					</div>
-					<div class="accordion-item settings-section">
-						<h2 class="accordion-header" id="settings-places-heading">
-							<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#settings-places-panel" aria-expanded="false" aria-controls="settings-places-panel">
-								<span class="settings-section-title">{ t("dashboard.places") }</span>
-								<span class="settings-section-description">{ t("dashboard.places_description") }</span>
-							</button>
-						</h2>
-						<div id="settings-places-panel" class="accordion-collapse collapse" data-dashboard-key="settings-places" aria-labelledby="settings-places-heading">
-							<div class="accordion-body settings-section-body">
-								<div id="places-container">
-									if len(content.Places) > 0 {
-										for idx, place := range content.Places {
-											<div class="place-card" data-index={ strconv.Itoa(idx) }>
-												<div class="place-card-header">
-													<div class="place-card-meta">
-														<span class="place-number">{ strconv.Itoa(idx + 1) }</span>
-														if place.Lat != 0 || place.Lng != 0 {
-															<div class="place-coords">
-																<span class="place-coords-check">&#10003;</span>
-																<code>{ fmt.Sprintf("%.4f, %.4f", place.Lat, place.Lng) }</code>
-															</div>
-														}
-													</div>
-													<div class="place-card-actions">
-														<button type="button" class="place-move-up" aria-label="Move up">&uarr;</button>
-														<button type="button" class="place-move-down" aria-label="Move down">&darr;</button>
-														<button type="button" class="place-remove outline secondary" aria-label={ t("btn.delete") }>&times;</button>
-													</div>
-												</div>
-												<div class="grid">
-													<div>
-														<label>{ t("label.place_label") }</label>
-														<input type="text" name={ fmt.Sprintf("place_label_%d", idx) } value={ place.Label } placeholder={ t("placeholder.place_label") }/>
-													</div>
-													<div>
-														<label>{ t("label.place_date") }</label>
-														<input type="date" name={ fmt.Sprintf("place_date_%d", idx) } value={ place.Date }/>
-													</div>
-												</div>
-												<div class="grid">
-													<div style="position:relative">
-														<label>{ t("label.place_address") }</label>
-														<input type="text" class="place-location-input" value={ locationDisplay(place.Name, place.Address) } autocomplete="off" placeholder={ t("placeholder.place_address") }/>
-														<div class="autocomplete-dropdown place-dropdown" data-no-results-label={ t("dashboard.no_place_found") }></div>
-														<input type="hidden" name={ fmt.Sprintf("place_name_%d", idx) } class="place-name-hidden" value={ place.Name }/>
-														<input type="hidden" name={ fmt.Sprintf("place_address_%d", idx) } class="place-address-hidden" value={ place.Address }/>
-														<input type="hidden" name={ fmt.Sprintf("place_lat_%d", idx) } class="place-lat-hidden" value={ coordValue(place.Lat) }/>
-														<input type="hidden" name={ fmt.Sprintf("place_lng_%d", idx) } class="place-lng-hidden" value={ coordValue(place.Lng) }/>
-													</div>
-													<div>
-														<label>{ t("label.place_image") }</label>
-														<div class="managed-image-field">
-															<input
-																type="file"
-																accept="image/*"
-																class="managed-image-file"
-																data-target-input={ fmt.Sprintf("place-image-data-%d", idx) }
-																data-preview-target={ fmt.Sprintf("place-image-preview-%d", idx) }
-																data-media-id-input={ fmt.Sprintf("place-image-media-id-%d", idx) }
-																data-format="image/jpeg"
-																data-quality="0.88"
-																data-max-width="1200"
-																data-max-height="1200"
-																data-max-bytes="524288"
-															/>
-															<input type="hidden" name={ fmt.Sprintf("place_image_%d", idx) } id={ fmt.Sprintf("place-image-data-%d", idx) } class="place-image-hidden"/>
-															<input type="hidden" name={ fmt.Sprintf("place_media_id_%d", idx) } id={ fmt.Sprintf("place-media-id-%d", idx) } class="place-media-id-hidden" value={ mediaIDValue(place.MediaID) }/>
-															if place.MediaID > 0 {
-																<img
-																	class="venue-image-preview place-image-preview dashboard-lazy-image"
-																	id={ fmt.Sprintf("place-image-preview-%d", idx) }
-																	data-src={ publicImageURL(place.MediaID) }
-																	loading="lazy"
-																	decoding="async"
-																	alt={ place.Label }
-																/>
-															} else {
-																<img
-																	class="venue-image-preview place-image-preview"
-																	id={ fmt.Sprintf("place-image-preview-%d", idx) }
-																	style="display:none"
-																	alt={ place.Label }
-																/>
-															}
-														</div>
-													</div>
-												</div>
-											</div>
-										}
-									}
-								</div>
-								<button type="button" id="add-place-btn" class="add-entry-btn">+ { t("btn.add_place") }</button>
-							</div>
-						</div>
-					</div>
-					<div class="accordion-item settings-section">
-						<h2 class="accordion-header" id="settings-honeymoon-heading">
-							<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#settings-honeymoon-panel" aria-expanded="false" aria-controls="settings-honeymoon-panel">
-								<span class="settings-section-title">{ t("dashboard.honeymoon") }</span>
-								<span class="settings-section-description">{ t("dashboard.honeymoon_description") }</span>
-							</button>
-						</h2>
-						<div id="settings-honeymoon-panel" class="accordion-collapse collapse" data-dashboard-key="settings-honeymoon" aria-labelledby="settings-honeymoon-heading">
-							<div class="accordion-body settings-section-body">
-								<div id="honeymoon-container">
-									if len(content.Honeymoon) > 0 {
-										for idx, place := range content.Honeymoon {
-											<div class="place-card honeymoon-card" data-index={ strconv.Itoa(idx) }>
-												<div class="place-card-header">
-													<div class="place-card-meta">
-														<span class="place-number">{ strconv.Itoa(idx + 1) }</span>
-														if place.Lat != 0 || place.Lng != 0 {
-															<div class="place-coords">
-																<span class="place-coords-check">&#10003;</span>
-																<code>{ fmt.Sprintf("%.4f, %.4f", place.Lat, place.Lng) }</code>
-															</div>
-														}
-													</div>
-													<div class="place-card-actions">
-														<button type="button" class="place-move-up" aria-label="Move up">&uarr;</button>
-														<button type="button" class="place-move-down" aria-label="Move down">&darr;</button>
-														<button type="button" class="place-remove outline secondary" aria-label={ t("btn.delete") }>&times;</button>
-													</div>
-												</div>
-												<div>
-													<label>{ t("label.place_label") }</label>
-													<input type="text" name={ fmt.Sprintf("honeymoon_label_%d", idx) } value={ place.Label } placeholder={ t("placeholder.place_label") }/>
-												</div>
-												<div class="grid">
-													<div style="position:relative">
-														<label>{ t("label.place_address") }</label>
-														<input type="text" class="place-location-input" value={ locationDisplay(place.Name, place.Address) } autocomplete="off" placeholder={ t("placeholder.place_address") }/>
-														<div class="autocomplete-dropdown place-dropdown" data-no-results-label={ t("dashboard.no_place_found") }></div>
-														<input type="hidden" name={ fmt.Sprintf("honeymoon_name_%d", idx) } class="place-name-hidden" value={ place.Name }/>
-														<input type="hidden" name={ fmt.Sprintf("honeymoon_address_%d", idx) } class="place-address-hidden" value={ place.Address }/>
-														<input type="hidden" name={ fmt.Sprintf("honeymoon_lat_%d", idx) } class="place-lat-hidden" value={ coordValue(place.Lat) }/>
-														<input type="hidden" name={ fmt.Sprintf("honeymoon_lng_%d", idx) } class="place-lng-hidden" value={ coordValue(place.Lng) }/>
-													</div>
-													<div>
-														<label>{ t("label.place_image") }</label>
-														<div class="managed-image-field">
-															<input
-																type="file"
-																accept="image/*"
-																class="managed-image-file"
-																data-target-input={ fmt.Sprintf("honeymoon-image-data-%d", idx) }
-																data-preview-target={ fmt.Sprintf("honeymoon-image-preview-%d", idx) }
-																data-media-id-input={ fmt.Sprintf("honeymoon-image-media-id-%d", idx) }
-																data-format="image/png"
-																data-quality="0.82"
-																data-max-width="900"
-																data-max-height="900"
-																data-max-bytes="614400"
-															/>
-															<input type="hidden" name={ fmt.Sprintf("honeymoon_image_%d", idx) } id={ fmt.Sprintf("honeymoon-image-data-%d", idx) } class="place-image-hidden"/>
-															<input type="hidden" name={ fmt.Sprintf("honeymoon_media_id_%d", idx) } id={ fmt.Sprintf("honeymoon-media-id-%d", idx) } class="place-media-id-hidden" value={ mediaIDValue(place.MediaID) }/>
-															if place.MediaID > 0 {
-																<img
-																	class="venue-image-preview place-image-preview dashboard-lazy-image"
-																	id={ fmt.Sprintf("honeymoon-image-preview-%d", idx) }
-																	data-src={ publicImageURL(place.MediaID) }
-																	loading="lazy"
-																	decoding="async"
-																	alt={ place.Label }
-																/>
-															} else {
-																<img
-																	class="venue-image-preview place-image-preview"
-																	id={ fmt.Sprintf("honeymoon-image-preview-%d", idx) }
-																	style="display:none"
-																	alt={ place.Label }
-																/>
-															}
-														</div>
-													</div>
-												</div>
-											</div>
-										}
-									}
-								</div>
-								<button type="button" id="add-honeymoon-btn" class="add-entry-btn">+ { t("btn.add_honeymoon_location") }</button>
-							</div>
-						</div>
-					</div>
-					<div class="accordion-item settings-section">
-						<h2 class="accordion-header" id="settings-parking-heading">
-							<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#settings-parking-panel" aria-expanded="false" aria-controls="settings-parking-panel">
-								<span class="settings-section-title">{ t("dashboard.parking") }</span>
-								<span class="settings-section-description">{ t("dashboard.parking_description") }</span>
-							</button>
-						</h2>
-						<div id="settings-parking-panel" class="accordion-collapse collapse" data-dashboard-key="settings-parking" aria-labelledby="settings-parking-heading">
-							<div class="accordion-body settings-section-body">
-								<div id="parking-container">
-									if len(content.ParkingSpots) > 0 {
-										for idx, spot := range content.ParkingSpots {
-											<div class="place-card parking-card" data-index={ strconv.Itoa(idx) }>
-												<div class="place-card-header">
-													<div class="place-card-meta">
-														<span class="place-number">{ strconv.Itoa(idx + 1) }</span>
-														if spot.Lat != 0 || spot.Lng != 0 {
-															<div class="place-coords">
-																<span class="place-coords-check">&#10003;</span>
-																<code>{ fmt.Sprintf("%.4f, %.4f", spot.Lat, spot.Lng) }</code>
-															</div>
-														}
-													</div>
-													<div class="place-card-actions">
-														<button type="button" class="place-remove outline secondary" aria-label={ t("btn.delete") }>&times;</button>
-													</div>
-												</div>
-												<div style="position:relative">
-													<label>{ t("label.parking_address") }</label>
-													<input type="text" class="place-location-input" autocomplete="off" placeholder={ t("placeholder.parking_address") }/>
-													<div class="autocomplete-dropdown place-dropdown" data-no-results-label={ t("dashboard.no_place_found") }></div>
-													<input type="hidden" name={ fmt.Sprintf("parking_lat_%d", idx) } class="place-lat-hidden" value={ coordValue(spot.Lat) }/>
-													<input type="hidden" name={ fmt.Sprintf("parking_lng_%d", idx) } class="place-lng-hidden" value={ coordValue(spot.Lng) }/>
-												</div>
-											</div>
-										}
-									}
-								</div>
-								<button type="button" id="add-parking-btn" class="add-entry-btn">+ { t("btn.add_parking") }</button>
-							</div>
-						</div>
-					</div>
-					<div class="accordion-item settings-section">
-						<h2 class="accordion-header" id="settings-accommodations-heading">
-							<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#settings-accommodations-panel" aria-expanded="false" aria-controls="settings-accommodations-panel">
-								<span class="settings-section-title">{ t("dashboard.accommodations") }</span>
-								<span class="settings-section-description">{ t("dashboard.accommodations_description") }</span>
-							</button>
-						</h2>
-						<div id="settings-accommodations-panel" class="accordion-collapse collapse" data-dashboard-key="settings-accommodations" aria-labelledby="settings-accommodations-heading">
-							<div class="accordion-body settings-section-body">
-								<div id="accommodations-container">
-									if len(content.Accommodations) > 0 {
-										for idx, suggestion := range content.Accommodations {
-											<div class="accommodation-card">
-												<div class="accommodation-card-header">
-													<span class="accommodation-number">{ strconv.Itoa(idx + 1) }</span>
-													<button type="button" class="accommodation-remove outline secondary" aria-label={ t("btn.delete") }>&times;</button>
-												</div>
-												<div class="grid">
-													<div>
-														<label>{ t("label.accommodation_name") }</label>
-														<input type="text" name={ fmt.Sprintf("accommodation_name_%d", idx) } value={ suggestion.Name } placeholder={ t("placeholder.accommodation_name") }/>
-													</div>
-													<div>
-														<label>{ t("label.accommodation_url") }</label>
-														<input type="url" name={ fmt.Sprintf("accommodation_url_%d", idx) } value={ suggestion.URL } placeholder={ t("placeholder.accommodation_url") }/>
-													</div>
-												</div>
-												<div>
-													<label>{ t("label.accommodation_description") }</label>
-													<textarea name={ fmt.Sprintf("accommodation_description_%d", idx) } rows="3" placeholder={ t("placeholder.accommodation_description") }>{ suggestion.Description }</textarea>
-												</div>
-											</div>
-										}
-									}
-								</div>
-								<button type="button" id="add-accommodation-btn" class="add-entry-btn">+ { t("btn.add_accommodation") }</button>
-							</div>
-						</div>
-					</div>
-					<div class="accordion-item settings-section">
-						<h2 class="accordion-header" id="settings-impersonations-heading">
-							<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#settings-impersonations-panel" aria-expanded="false" aria-controls="settings-impersonations-panel">
-								<span class="settings-section-title">{ t("dashboard.impersonations") }</span>
-								<span class="settings-section-description">{ t("dashboard.impersonations_description") }</span>
-							</button>
-						</h2>
-						<div id="settings-impersonations-panel" class="accordion-collapse collapse" data-dashboard-key="settings-impersonations" aria-labelledby="settings-impersonations-heading">
-							<div class="accordion-body settings-section-body">
-								<div id="impersonations-container">
-									if len(content.Impersonations) > 0 {
-										for idx, imp := range content.Impersonations {
-											<div class="impersonation-card">
-												<div class="impersonation-card-header">
-													<span class="impersonation-number">{ strconv.Itoa(idx + 1) }</span>
-													<button type="button" class="impersonation-remove outline secondary" aria-label={ t("btn.delete") }>&times;</button>
-												</div>
-												<input type="text" name={ fmt.Sprintf("impersonation_codename_%d", idx) } value={ imp.Codename } placeholder={ t("placeholder.impersonation_codename") }/>
-												<textarea name={ fmt.Sprintf("impersonation_profile_%d", idx) } rows="3" placeholder={ t("placeholder.impersonation_profile") }>{ imp.Profile }</textarea>
-											</div>
-										}
-									}
-								</div>
-								<button type="button" id="add-impersonation-btn" class="add-entry-btn">+ { t("btn.add_impersonation") }</button>
-							</div>
-						</div>
-					</div>
-					<div class="accordion-item settings-section">
-						<h2 class="accordion-header" id="settings-homepage-labels-heading">
-							<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#settings-homepage-labels-panel" aria-expanded="false" aria-controls="settings-homepage-labels-panel">
-								<span class="settings-section-title">Homepage Labels</span>
-								<span class="settings-section-description">Override guest-facing text on the homepage and invitation pages.</span>
-							</button>
-						</h2>
-						<div id="settings-homepage-labels-panel" class="accordion-collapse collapse" data-dashboard-key="settings-homepage-labels" aria-labelledby="settings-homepage-labels-heading">
-							<div class="accordion-body settings-section-body settings-section-body-labels">
-								for _, lang := range []string{"en", "it"} {
-									<div class="accordion dashboard-subaccordion">
-										<div class="accordion-item settings-subsection">
-											<h3 class="accordion-header" id={ "settings-homepage-labels-" + lang + "-heading" }>
-												<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target={ "#" + "settings-homepage-labels-" + lang + "-panel" } aria-expanded="false" aria-controls={ "settings-homepage-labels-" + lang + "-panel" }>
-													{ lang }
-												</button>
-											</h3>
-											<div id={ "settings-homepage-labels-" + lang + "-panel" } class="accordion-collapse collapse" data-dashboard-key={ "settings-homepage-labels-" + lang } aria-labelledby={ "settings-homepage-labels-" + lang + "-heading" }>
-												<div class="accordion-body settings-subsection-body">
-													<div class="homepage-label-groups">
-														@homepageLabelGroup(lang, "home", []string{"home.getting_married", "home.ceremony", "home.reception", "home.soundtrack", "home.soundtrack_description", "home.places", "home.places_description", "home.honeymoon", "home.honeymoon_description", "home.accommodations", "home.accommodations_description", "home.registry", "home.registry_description", "home.generic_gift", "home.generic_gift_description", "home.remaining", "home.update_invitation"}, content.HomepageLabels, i18n.Defaults(lang))
-														@homepageLabelGroup(lang, "invitation", []string{"invitation.title", "invitation.rsvp", "invitation.rsvp_description", "invitation.confirm", "invitation.already_answered", "invitation.change_answer", "invitation.go_home", "invitation.submitted_message"}, content.HomepageLabels, i18n.Defaults(lang))
-														@homepageLabelGroup(lang, "gift / badge", []string{"gift.thank_you", "gift.thanks_message", "badge.sold"}, content.HomepageLabels, i18n.Defaults(lang))
-														@homepageLabelGroup(lang, "buttons", []string{"btn.buy", "btn.copy", "btn.copied", "btn.cancel", "btn.confirm", "btn.close"}, content.HomepageLabels, i18n.Defaults(lang))
-														@homepageLabelGroup(lang, "modal", []string{"modal.transfer_intro", "modal.iban", "modal.owner", "modal.reason", "modal.transfer_confirm_text"}, content.HomepageLabels, i18n.Defaults(lang))
-														@homepageLabelGroup(lang, "placeholders / chat / misc", []string{"placeholder.custom_amount", "placeholder.donor", "chat.title", "chat.placeholder", "chat.send", "chat.error", "chat.rate_limited", "rsvp.yes", "rsvp.no", "th.amount", "th.ceremony", "th.reception", "link.dashboard"}, content.HomepageLabels, i18n.Defaults(lang))
-													</div>
-												</div>
-											</div>
-										</div>
-									</div>
-								}
-							</div>
-						</div>
-					</div>
-				</div>
-				<button type="submit" class="save-btn">{ t("btn.save_settings") }</button>
-			</form>
+		<article id="dashboard-settings" data-signals={ settingsSignals() } data-effect={ settingsRebindExpr } data-on:settings-refresh={ settingsRefreshExpr }>
+			@SettingsResults(settings, content, csrfToken, nonce, t, lang)
 		</article>
 		<!-- guests -->
 		<article id="dashboard-guests" data-signals={ guestsSignals(search, page) } data-computed:guest-ids="$selected.join(',')" data-computed:label-default={ guestLabelDefaultExpr } data-effect="if (!$labelEdited) { $label = $labelDefault }" data-on:guests-refresh={ guestsRefreshExpr }>

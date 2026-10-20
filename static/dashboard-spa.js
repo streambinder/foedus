@@ -1,15 +1,19 @@
 (() => {
-  const SECTION_IDS = [
-    "dashboard-flash",
-    "dashboard-counters",
-    "dashboard-settings",
-  ];
+  const SECTION_IDS = ["dashboard-flash", "dashboard-counters"];
 
   function init() {
     bindGlobalListeners();
     initDashboardFeatures();
     initImageResizers();
   }
+
+  // The settings fragment ends with a script that calls this hook after
+  // Datastar morphs the settings form, so feature bindings (place
+  // autocomplete, image editors) are re-applied to the fresh DOM.
+  window.FoedusRebindDashboard = () => {
+    initDashboardFeatures();
+    initImageResizers();
+  };
 
   function bindGlobalListeners() {
     if (document.body.dataset.dashboardSpaBound === "true") return;
@@ -123,6 +127,9 @@
         "soundtrack-refresh",
       );
     }
+    if (/\/dashboard\/settings$/.test(action)) {
+      dispatchSectionRefresh("dashboard-settings", "settings-refresh");
+    }
     closeDashboardModal();
   }
 
@@ -232,7 +239,7 @@
       return ["dashboard-flash"];
     }
     if (/\/dashboard\/settings$/.test(action)) {
-      return ["dashboard-flash", "dashboard-counters", "dashboard-settings"];
+      return ["dashboard-flash", "dashboard-counters"];
     }
     return SECTION_IDS;
   }
