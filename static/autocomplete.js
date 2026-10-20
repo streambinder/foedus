@@ -101,7 +101,7 @@
   // nominatim.openstreetmap.org is answered with a redirect, which
   // browsers treat as a failure, so the header silently disabled
   // Nominatim from every real browser.
-  const FETCH_TIMEOUT_MS = 3000;
+  const FETCH_TIMEOUT_MS = 4000;
 
   function fetchJSON(url) {
     const controller = new AbortController();
@@ -222,6 +222,17 @@
         return fetchPhotonBiased(nameQuery, anchor).then((biased) => {
           const near = biased.filter((item) => distanceKm(item, anchor) <= 2);
           if (!near.length) return attempt(idx + 1);
+          // the anchor validates only when a nearby result actually
+          // matches the name: half the name tokens in the name, or the
+          // whole name query in the address (an address-shaped query).
+          // A token that appears only inside an address locality (a
+          // district sharing the venue's name) must not validate a
+          // wrong anchor.
+          const nameTokens = tokenize(nameQuery);
+          const validates = (item) =>
+            tokenCoverage(nameTokens, item.name) >= 0.5 ||
+            tokenCoverage(nameTokens, item.address) === 1;
+          if (!near.some(validates)) return attempt(idx + 1);
           return fetchNominatimBounded(nameQuery, anchor).then((bounded) => ({
             anchor: anchor,
             items: mergeResults([
@@ -304,8 +315,7 @@
       const longest = step.reduce((a, b) => (b.length > a.length ? b : a));
       return fetchProviders(step.join(" ")).then((items) => {
         const accepted = items.filter(
-          (item) =>
-            tokenCoverage([longest], `${item.name} ${item.address}`) === 1,
+          (item) => tokenCoverage([longest], item.name) === 1,
         );
         if (accepted.length) return rankByCoverage(accepted, query);
         return attempt(idx + 1);
@@ -322,14 +332,31 @@
         const pool = mergeResults([anch.items, items]);
         return rankWithAnchor(pool, query, anch.anchor);
       }
-      if (items.length >= 3) return rankByCoverage(items, query);
       const relaxed = relaxQuery(query);
-      const merged = relaxed
-        ? fetchProviders(relaxed).then((more) => mergeResults([items, more]))
-        : Promise.resolve(items);
+      const merged =
+        items.length >= 3 || !relaxed
+          ? Promise.resolve(items)
+          : fetchProviders(relaxed).then((more) => mergeResults([items, more]));
       return merged.then((all) => {
         const ranked = rankByCoverage(all, query);
-        return ranked.length ? ranked : ladderSearch(query);
+        // the search is satisfied only when some result carries the
+        // distinctive token in its name; a list of fuzzy matches on
+        // the generic words alone still earns the relaxation ladder,
+        // whose finds merge ahead of the junk
+        const tokens = tokenize(stripGeneric(query));
+        const longest = tokens.reduce(
+          (a, b) => (b.length > a.length ? b : a),
+          "",
+        );
+        const satisfied =
+          longest &&
+          ranked.some((item) => tokenCoverage([longest], item.name) === 1);
+        if (satisfied) return ranked;
+        return ladderSearch(query).then((found) =>
+          found.length
+            ? rankByCoverage(mergeResults([found, ranked]), query)
+            : ranked,
+        );
       });
     });
   }
