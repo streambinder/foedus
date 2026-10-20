@@ -226,6 +226,26 @@ func TestSoundtrackFragment(t *testing.T) {
 	}
 }
 
+func TestSettingsFragment(t *testing.T) {
+	setupDB(t)
+	configureSettings(t, nil)
+	app := newTestApp()
+	defer app.Shutdown()
+
+	status, header, body := get(t, app, "/dashboard/settings/fragment")
+	if status != 200 {
+		t.Fatalf("fragment: status %d", status)
+	}
+	if ct := header.Get("Content-Type"); ct != "text/event-stream" {
+		t.Errorf("fragment Content-Type = %q", ct)
+	}
+	for _, want := range []string{`id="settings-results"`, `action="/dashboard/settings"`, `data-preserve-attr="class"`, "event: datastar-patch-signals", `"settingsrev":`} {
+		if !strings.Contains(body, want) {
+			t.Errorf("fragment missing %q: %.200s", want, body)
+		}
+	}
+}
+
 func TestDashboardIndexErrors(t *testing.T) {
 	// note: dropping invitations is not in this table because the guest
 	// counters query the invitations table first, so the paginated
