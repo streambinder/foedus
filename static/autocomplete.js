@@ -417,6 +417,13 @@
     let activeIndex = -1;
     let results = [];
     let searchSeq = 0;
+    function clearSelection() {
+      nameHidden.value = "";
+      addressHidden.value = "";
+      if (cityHidden) cityHidden.value = "";
+      if (latHidden) latHidden.value = "";
+      if (lngHidden) lngHidden.value = "";
+    }
 
     function hide() {
       searchSeq++;
@@ -474,8 +481,8 @@
       if (cityHidden) cityHidden.value = item.city;
       // providers return coordinates as strings; capture them for venues
       // that pin on the parking map (ceremony/reception)
-      if (latHidden) latHidden.value = item.lat || "0";
-      if (lngHidden) lngHidden.value = item.lon || "0";
+      if (latHidden) latHidden.value = item.lat || "";
+      if (lngHidden) lngHidden.value = item.lon || "";
       input.value = item.name + (item.address ? `, ${item.address}` : "");
       hide();
     }
@@ -503,11 +510,23 @@
     }
 
     input.addEventListener("input", () => {
-      nameHidden.value = "";
-      addressHidden.value = "";
-      if (cityHidden) cityHidden.value = "";
-      if (latHidden) latHidden.value = "0";
-      if (lngHidden) lngHidden.value = "0";
+      if (!input.value.trim()) {
+        // an emptied field clears the venue altogether
+        clearSelection();
+      } else {
+        // the field mirrors what the admin sees: the text before the
+        // first comma is the name the public pages show, the rest is
+        // the address behind the directions link. The map data may
+        // know a venue by a locality name while everyone knows it by
+        // its commercial name, and a venue can be entered in full by
+        // hand together with the coordinate fields below it.
+        const comma = input.value.indexOf(",");
+        nameHidden.value = (
+          comma === -1 ? input.value : input.value.slice(0, comma)
+        ).trim();
+        addressHidden.value =
+          comma === -1 ? "" : input.value.slice(comma + 1).trim();
+      }
       clearTimeout(debounceTimer);
       const q = input.value.trim();
       if (q.length < 3) {
@@ -552,8 +571,8 @@
     nameHiddenId: "ceremony-address-hidden",
     addressHiddenId: "ceremony-location-hidden",
     cityHiddenId: "ceremony-city-hidden",
-    latHiddenId: "ceremony-lat-hidden",
-    lngHiddenId: "ceremony-lng-hidden",
+    latHiddenId: "ceremony-lat",
+    lngHiddenId: "ceremony-lng",
   });
   initAutocomplete({
     inputId: "reception-input",
@@ -561,7 +580,7 @@
     nameHiddenId: "reception-address-hidden",
     addressHiddenId: "reception-location-hidden",
     cityHiddenId: "reception-city-hidden",
-    latHiddenId: "reception-lat-hidden",
-    lngHiddenId: "reception-lng-hidden",
+    latHiddenId: "reception-lat",
+    lngHiddenId: "reception-lng",
   });
 })();

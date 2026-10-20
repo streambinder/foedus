@@ -794,10 +794,18 @@ templ SettingsResults(settings models.Settings, content SettingsContent, csrfTok
 					<input type="hidden" name="ceremony_address" id="ceremony-address-hidden" value={ settings.CeremonyAddress }/>
 					<input type="hidden" name="ceremony_location" id="ceremony-location-hidden" value={ settings.CeremonyLocation }/>
 					<input type="hidden" name="ceremony_city" id="ceremony-city-hidden" value={ settings.CeremonyCity }/>
-					<input type="hidden" name="ceremony_lat" id="ceremony-lat-hidden" value={ coordValue(settings.CeremonyLat) }/>
-					<input type="hidden" name="ceremony_lng" id="ceremony-lng-hidden" value={ coordValue(settings.CeremonyLng) }/>
 				</div>
 				<input type="datetime-local" name="ceremony_datetime" value={ settings.CeremonyDatetime }/>
+			</div>
+			<div class="grid">
+				<div>
+					<label for="ceremony-lat">{ t("dashboard.latitude") }</label>
+					<input type="text" inputmode="decimal" name="ceremony_lat" id="ceremony-lat" value={ coordInputValue(settings.CeremonyLat) } placeholder="41.006381"/>
+				</div>
+				<div>
+					<label for="ceremony-lng">{ t("dashboard.longitude") }</label>
+					<input type="text" inputmode="decimal" name="ceremony_lng" id="ceremony-lng" value={ coordInputValue(settings.CeremonyLng) } placeholder="12.483000"/>
+				</div>
 			</div>
 			<div class="venue-image-row">
 				<input type="file" id="ceremony-file" accept="image/*" class="venue-file-input"/>
@@ -817,10 +825,18 @@ templ SettingsResults(settings models.Settings, content SettingsContent, csrfTok
 					<input type="hidden" name="reception_address" id="reception-address-hidden" value={ settings.ReceptionAddress }/>
 					<input type="hidden" name="reception_location" id="reception-location-hidden" value={ settings.ReceptionLocation }/>
 					<input type="hidden" name="reception_city" id="reception-city-hidden" value={ settings.ReceptionCity }/>
-					<input type="hidden" name="reception_lat" id="reception-lat-hidden" value={ coordValue(settings.ReceptionLat) }/>
-					<input type="hidden" name="reception_lng" id="reception-lng-hidden" value={ coordValue(settings.ReceptionLng) }/>
 				</div>
 				<input type="datetime-local" name="reception_datetime" value={ settings.ReceptionDatetime }/>
+			</div>
+			<div class="grid">
+				<div>
+					<label for="reception-lat">{ t("dashboard.latitude") }</label>
+					<input type="text" inputmode="decimal" name="reception_lat" id="reception-lat" value={ coordInputValue(settings.ReceptionLat) } placeholder="41.006381"/>
+				</div>
+				<div>
+					<label for="reception-lng">{ t("dashboard.longitude") }</label>
+					<input type="text" inputmode="decimal" name="reception_lng" id="reception-lng" value={ coordInputValue(settings.ReceptionLng) } placeholder="12.483000"/>
+				</div>
 			</div>
 			<div class="venue-image-row">
 				<input type="file" id="reception-file" accept="image/*" class="venue-file-input"/>

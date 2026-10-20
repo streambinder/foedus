@@ -620,7 +620,8 @@ func collectExistingMediaIDs(settings models.Settings, content templates.Setting
 }
 
 func parseCoord(raw string) float64 {
-	coord, _ := strconv.ParseFloat(strings.TrimSpace(raw), 64)
+	// admins paste coordinates with a decimal comma; accept both forms
+	coord, _ := strconv.ParseFloat(strings.ReplaceAll(strings.TrimSpace(raw), ",", "."), 64)
 	return coord
 }
 

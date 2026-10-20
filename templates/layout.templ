@@ -37,6 +37,15 @@ func coordValue(coord float64) string {
 	return strconv.FormatFloat(coord, 'f', -1, 64)
 }
 
+// coordInputValue renders a coordinate for an editable input: an unset
+// coordinate stays empty instead of showing a misleading zero.
+func coordInputValue(coord float64) string {
+	if coord == 0 {
+		return ""
+	}
+	return coordValue(coord)
+}
+
 // cartoAPIKey returns the publishable CARTO basemaps API key from the
 // CARTO_API_KEY environment variable, or "" when unset (tiles stay keyless).
 func cartoAPIKey() string {
