@@ -267,19 +267,69 @@
     return scored.map((entry) => entry.item).slice(0, 8);
   }
 
-  function searchPlaces(query) {
-    return fetchProviders(query).then((items) => {
-      return anchoredSearch(query).then((anchored) => {
-        if (anchored) {
-          const pool = mergeResults([anchored.items, items]);
-          return rankWithAnchor(pool, query, anchored.anchor);
-        }
-        if (items.length >= 3) return items;
-        const relaxed = relaxQuery(query);
-        if (!relaxed) return items;
-        return fetchProviders(relaxed).then((more) =>
-          mergeResults([items, more]),
+  // Plain-path ranking: name coverage weighs double, address coverage
+  // single, and an item matching the longest query token in its name
+  // gets a bonus, because the longest token is usually the distinctive
+  // one ("colonnetta", not "villa"). Ties keep provider order.
+  function rankByCoverage(items, query) {
+    const tokens = tokenize(stripGeneric(query));
+    if (!tokens.length || items.length < 2) return items;
+    const longest = tokens.reduce((a, b) => (b.length > a.length ? b : a));
+    const scored = items.map((item, idx) => {
+      let score =
+        2 * tokenCoverage(tokens, item.name) +
+        tokenCoverage(tokens, item.address);
+      if (tokenCoverage([longest], item.name) === 1) score += 0.5;
+      return { item: item, idx: idx, score: score };
+    });
+    scored.sort((a, b) => b.score - a.score || a.idx - b.idx);
+    return scored.map((entry) => entry.item);
+  }
+
+  // Last-resort relaxation for a query written the way people know a
+  // place ("villa colonnetta giardini e roseti") when the map data
+  // knows a shorter name ("colonnetta la memoria"): drop one trailing
+  // token at a time. A step counts only when some result matches the
+  // step's longest token, so fuzzy matches on the generic words alone
+  // ("villa", "giardini") never end the search early.
+  function ladderSearch(query) {
+    const tokens = tokenize(query);
+    const steps = [];
+    for (let n = tokens.length - 1; n >= 2; n--) {
+      steps.push(tokens.slice(0, n));
+    }
+    function attempt(idx) {
+      if (idx >= steps.length) return Promise.resolve([]);
+      const step = steps[idx];
+      const longest = step.reduce((a, b) => (b.length > a.length ? b : a));
+      return fetchProviders(step.join(" ")).then((items) => {
+        const accepted = items.filter(
+          (item) =>
+            tokenCoverage([longest], `${item.name} ${item.address}`) === 1,
         );
+        if (accepted.length) return rankByCoverage(accepted, query);
+        return attempt(idx + 1);
+      });
+    }
+    return attempt(0);
+  }
+
+  function searchPlaces(query) {
+    const providers = fetchProviders(query);
+    const anchored = anchoredSearch(query);
+    return Promise.all([providers, anchored]).then(([items, anch]) => {
+      if (anch) {
+        const pool = mergeResults([anch.items, items]);
+        return rankWithAnchor(pool, query, anch.anchor);
+      }
+      if (items.length >= 3) return rankByCoverage(items, query);
+      const relaxed = relaxQuery(query);
+      const merged = relaxed
+        ? fetchProviders(relaxed).then((more) => mergeResults([items, more]))
+        : Promise.resolve(items);
+      return merged.then((all) => {
+        const ranked = rankByCoverage(all, query);
+        return ranked.length ? ranked : ladderSearch(query);
       });
     });
   }
