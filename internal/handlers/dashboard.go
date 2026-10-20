@@ -468,6 +468,37 @@ func SettingsFragment(c *fiber.Ctx) error {
 	return datastar.SendEvents(c, elements, signals)
 }
 
+// CountersFragment answers a Datastar counters-refresh event with an
+// SSE patch of the CountersResults row, re-rendered from the current
+// guest counts.
+func CountersFragment(c *fiber.Ctx) error {
+	logger := handlerLogger(c)
+	confirmedReception, refusedReception, pendingRSVP, invitedGuests, nonVisualizedInvited, totalGuests, err := database.CountConfirmed()
+	if err != nil {
+		logger.Error("counters fragment failed to count guests", "error", err.Error())
+		return c.Status(500).SendString("failed to count guests")
+	}
+	confirmedAdults, confirmedChildren, confirmedInfants, confirmedVendors, err := database.CountConfirmedByType()
+	if err != nil {
+		logger.Error("counters fragment failed to count guests by type", "error", err.Error())
+		return c.Status(500).SendString("failed to count guests by type")
+	}
+	return datastar.PatchComponent(c, templates.CountersResults(confirmedReception, refusedReception, pendingRSVP, invitedGuests, nonVisualizedInvited, totalGuests, confirmedAdults, confirmedChildren, confirmedInfants, confirmedVendors, getT(c)))
+}
+
+// PollsFragment answers a Datastar polls-refresh event with an SSE patch
+// of the PollsResults block, re-rendered from the current polls.
+func PollsFragment(c *fiber.Ctx) error {
+	logger := handlerLogger(c)
+	polls, err := database.GetAllPollsWithCounts()
+	if err != nil {
+		logger.Error("polls fragment failed to load polls", "error", err.Error())
+		return c.Status(500).SendString("failed to load polls")
+	}
+	csrfToken, _ := c.Locals("csrf").(string)
+	return datastar.PatchComponent(c, templates.PollsResults(polls, csrfToken, getT(c), getLang(c)))
+}
+
 func resolveImageMediaID(q database.Querier, rawImage, rawMediaID string, existingMediaID int, allowedAny bool) (int, error) {
 	image := strings.TrimSpace(rawImage)
 	if image != "" {

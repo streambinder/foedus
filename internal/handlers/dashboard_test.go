@@ -246,6 +246,55 @@ func TestSettingsFragment(t *testing.T) {
 	}
 }
 
+func TestCountersFragment(t *testing.T) {
+	setupDB(t)
+	configureSettings(t, nil)
+	app := newTestApp()
+	defer app.Shutdown()
+
+	ada := mustCreateGuest(t, "Ada", "Love", "adult")
+	if _, err := database.CreateInvitation([]int{ada.ID}, "Ada"); err != nil {
+		t.Fatal(err)
+	}
+
+	status, header, body := get(t, app, "/dashboard/counters/fragment")
+	if status != 200 {
+		t.Fatalf("fragment: status %d", status)
+	}
+	if ct := header.Get("Content-Type"); ct != "text/event-stream" {
+		t.Errorf("fragment Content-Type = %q", ct)
+	}
+	for _, want := range []string{`id="dashboard-counters"`, "donut", "counter-names-trigger"} {
+		if !strings.Contains(body, want) {
+			t.Errorf("fragment missing %q: %.200s", want, body)
+		}
+	}
+}
+
+func TestPollsFragment(t *testing.T) {
+	setupDB(t)
+	configureSettings(t, nil)
+	app := newTestApp()
+	defer app.Shutdown()
+
+	if err := database.CreatePoll("Bus navetta?", "Dal centro"); err != nil {
+		t.Fatal(err)
+	}
+
+	status, header, body := get(t, app, "/dashboard/polls/fragment")
+	if status != 200 {
+		t.Fatalf("fragment: status %d", status)
+	}
+	if ct := header.Get("Content-Type"); ct != "text/event-stream" {
+		t.Errorf("fragment Content-Type = %q", ct)
+	}
+	for _, want := range []string{`id="polls-results"`, "Bus navetta?", `data-preserve-attr="class"`} {
+		if !strings.Contains(body, want) {
+			t.Errorf("fragment missing %q: %.200s", want, body)
+		}
+	}
+}
+
 func TestDashboardIndexErrors(t *testing.T) {
 	// note: dropping invitations is not in this table because the guest
 	// counters query the invitations table first, so the paginated
