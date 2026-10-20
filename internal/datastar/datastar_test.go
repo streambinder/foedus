@@ -1,6 +1,7 @@
 package datastar
 
 import (
+	"context"
 	"io"
 	"net/http/httptest"
 	"strings"
@@ -148,6 +149,65 @@ func TestReadSignalsAbsent(t *testing.T) {
 	}
 	if got.Q != "preset" {
 		t.Fatalf("signals overwritten: %+v", got)
+	}
+}
+
+type stubComponent struct {
+	html string
+	err  error
+}
+
+func (s stubComponent) Render(_ context.Context, w io.Writer) error {
+	if s.err != nil {
+		return s.err
+	}
+	_, err := io.WriteString(w, s.html)
+	return err
+}
+
+func TestPatchComponent(t *testing.T) {
+	app := fiber.New()
+	app.Get("/", func(c *fiber.Ctx) error {
+		return PatchComponent(c, stubComponent{html: "<div id=\"x\">hi</div>"})
+	})
+
+	_, contentType, body := doRequest(t, app, "GET", "/", "")
+	if contentType != "text/event-stream" {
+		t.Fatalf("Content-Type = %q", contentType)
+	}
+	want := "event: datastar-patch-elements\ndata: elements <div id=\"x\">hi</div>\n\n"
+	if body != want {
+		t.Fatalf("body = %q, want %q", body, want)
+	}
+}
+
+func TestPatchComponentRenderError(t *testing.T) {
+	app := fiber.New()
+	app.Get("/", func(c *fiber.Ctx) error {
+		return PatchComponent(c, stubComponent{err: io.ErrClosedPipe})
+	})
+
+	code, _, _ := doRequest(t, app, "GET", "/", "")
+	if code != 500 {
+		t.Fatalf("status = %d, want 500", code)
+	}
+}
+
+func TestSendEventsMultiple(t *testing.T) {
+	app := fiber.New()
+	app.Get("/", func(c *fiber.Ctx) error {
+		signals, err := PatchSignalsEvent(map[string]any{"page": 2})
+		if err != nil {
+			return err
+		}
+		return SendEvents(c, PatchElementsEvent("", "<p id=\"a\">x</p>"), signals)
+	})
+
+	_, _, body := doRequest(t, app, "GET", "/", "")
+	want := "event: datastar-patch-elements\ndata: elements <p id=\"a\">x</p>\n\n" +
+		"event: datastar-patch-signals\ndata: signals {\"page\":2}\n\n"
+	if body != want {
+		t.Fatalf("body = %q, want %q", body, want)
 	}
 }
 

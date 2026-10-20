@@ -8,25 +8,18 @@
 package datastar
 
 import (
+	"bytes"
 	"encoding/json"
 	"strings"
 
+	"github.com/a-h/templ"
 	"github.com/gofiber/fiber/v2"
 )
 
-// PatchElements sends a datastar-patch-elements SSE event. The elements are
-// morphed into the DOM by element ID (Datastar's default outer morph).
-func PatchElements(c *fiber.Ctx, elements string) error {
-	return send(c, patchElementsEvent("", elements))
-}
-
-// PatchElementsAt sends a datastar-patch-elements SSE event that morphs the
-// elements into the element matching the given CSS selector.
-func PatchElementsAt(c *fiber.Ctx, selector, elements string) error {
-	return send(c, patchElementsEvent(selector, elements))
-}
-
-func patchElementsEvent(selector, elements string) string {
+// PatchElementsEvent builds a datastar-patch-elements SSE event. The
+// elements are morphed into the DOM by element ID, or into the element
+// matching selector when one is given.
+func PatchElementsEvent(selector, elements string) string {
 	var b strings.Builder
 	b.WriteString("event: datastar-patch-elements\n")
 	if selector != "" {
@@ -39,14 +32,53 @@ func patchElementsEvent(selector, elements string) string {
 	return b.String()
 }
 
+// PatchSignalsEvent builds a datastar-patch-signals SSE event carrying the
+// given value encoded as JSON.
+func PatchSignalsEvent(signals any) (string, error) {
+	raw, err := json.Marshal(signals)
+	if err != nil {
+		return "", err
+	}
+	return "event: datastar-patch-signals\ndata: signals " + string(raw) + "\n\n", nil
+}
+
+// SendEvents writes one or more SSE events as a single response.
+func SendEvents(c *fiber.Ctx, events ...string) error {
+	c.Set("Content-Type", "text/event-stream")
+	c.Set("Cache-Control", "no-cache")
+	return c.SendString(strings.Join(events, ""))
+}
+
+// PatchElements sends a datastar-patch-elements SSE event. The elements are
+// morphed into the DOM by element ID (Datastar's default outer morph).
+func PatchElements(c *fiber.Ctx, elements string) error {
+	return SendEvents(c, PatchElementsEvent("", elements))
+}
+
+// PatchElementsAt sends a datastar-patch-elements SSE event that morphs the
+// elements into the element matching the given CSS selector.
+func PatchElementsAt(c *fiber.Ctx, selector, elements string) error {
+	return SendEvents(c, PatchElementsEvent(selector, elements))
+}
+
+// PatchComponent renders a templ component and sends it as a
+// datastar-patch-elements SSE event.
+func PatchComponent(c *fiber.Ctx, comp templ.Component) error {
+	var buf bytes.Buffer
+	if err := comp.Render(c.Context(), &buf); err != nil {
+		return err
+	}
+	return PatchElements(c, buf.String())
+}
+
 // PatchSignals sends a datastar-patch-signals SSE event carrying the given
 // value encoded as JSON.
 func PatchSignals(c *fiber.Ctx, signals any) error {
-	raw, err := json.Marshal(signals)
+	event, err := PatchSignalsEvent(signals)
 	if err != nil {
 		return err
 	}
-	return send(c, "event: datastar-patch-signals\ndata: signals "+string(raw)+"\n\n")
+	return SendEvents(c, event)
 }
 
 // ReadSignals decodes the signals a Datastar action sent into out. GET
@@ -61,10 +93,4 @@ func ReadSignals(c *fiber.Ctx, out any) error {
 		return nil
 	}
 	return json.Unmarshal([]byte(raw), out)
-}
-
-func send(c *fiber.Ctx, event string) error {
-	c.Set("Content-Type", "text/event-stream")
-	c.Set("Cache-Control", "no-cache")
-	return c.SendString(event)
 }
