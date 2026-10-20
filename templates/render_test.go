@@ -594,3 +594,72 @@ func TestRenderEditPages(t *testing.T) {
 		t.Error("edit invitation without label rendered empty output")
 	}
 }
+
+func TestRenderDatastarTableResults(t *testing.T) {
+	translator := i18n.NewT("en")
+	viewed := models.Timestamp{}
+	invitations := []models.Invitation{
+		{ID: 7, Code: "CODE7", Label: "Ada & Bob", ViewedAt: &viewed, Guests: []models.Guest{
+			{ID: 1, FirstName: "Ada", LastName: "Love"},
+			{ID: 2, FirstName: "Bob", LastName: "Ray"},
+		}},
+		{ID: 8, Code: "CODE8", Label: "Cid", Guests: []models.Guest{
+			{ID: 3, FirstName: "Cid", LastName: "High"},
+		}},
+	}
+
+	// middle page: both pagination links carry the Datastar page expression
+	out := render(t, InvitationsResults(invitations, 25, 2, 3, "ada", "csrf", translator, "en"))
+	for _, want := range []string{`id="invitations-results"`, `id="invitation-row-7"`, `data-bind:iq`, "$ipage = 1", "$ipage = 3", "Ada &amp; Bob"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("invitations results missing %q: %.300s", want, out)
+		}
+	}
+	// empty catalogue renders the wrapper only
+	out = render(t, InvitationsResults(nil, 0, 1, 1, "", "csrf", translator, "en"))
+	if !strings.Contains(out, `id="invitations-results"`) || strings.Contains(out, "<table") {
+		t.Errorf("empty invitations results should render no table: %.200s", out)
+	}
+
+	items := []models.RegistryItem{{ID: 4, Name: "Toaster", Price: 100}, {ID: 5, Name: "Lamp", Price: 80}}
+	out = render(t, RegistryResults(items, items, 1, 2, "csrf", translator, "en"))
+	for _, want := range []string{`id="registry-results"`, `id="registry-row-4"`, "Toaster", "$rpage = 2"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("registry results missing %q: %.300s", want, out)
+		}
+	}
+	out = render(t, RegistryResults(nil, nil, 1, 1, "csrf", translator, "en"))
+	if strings.Contains(out, "<table") {
+		t.Errorf("empty registry results should render no table: %.200s", out)
+	}
+
+	out = render(t, GiftsSummary(3, 150, translator))
+	if !strings.Contains(out, `id="gifts-summary"`) || !strings.Contains(out, "3 gifts") {
+		t.Errorf("gifts summary: %.200s", out)
+	}
+
+	invID := 7
+	itemID := 4
+	gifts := []models.Gift{
+		{ID: 9, Amount: 50, Donor: "Alice", RegistryItemID: &itemID, InvitationID: &invID, Confirmed: true},
+		{ID: 10, Amount: 20, Donor: "Eve"},
+	}
+	out = render(t, GiftsResults(gifts, 1, 2, invitations, items, "csrf", translator, "en"))
+	for _, want := range []string{`id="gifts-results"`, `id="gift-row-9"`, "Alice", "Toaster", "Ada", "$gpage = 2"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("gifts results missing %q: %.300s", want, out)
+		}
+	}
+
+	events := []models.SoundtrackEvent{{ID: 6, Title: "Song One", Artist: "Artist", InviteID: "CODE7"}}
+	out = render(t, SoundtrackResults(events, 1, 2, invitations, "csrf", translator, "en"))
+	for _, want := range []string{`id="soundtrack-results"`, `id="soundtrack-row-6"`, "Song One", "Ada, Bob", "$spage = 2"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("soundtrack results missing %q: %.300s", want, out)
+		}
+	}
+	out = render(t, SoundtrackResults(nil, 1, 1, nil, "csrf", translator, "en"))
+	if strings.Contains(out, "<table") {
+		t.Errorf("empty soundtrack results should render no table: %.200s", out)
+	}
+}

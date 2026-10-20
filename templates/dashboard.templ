@@ -151,6 +151,60 @@ func guestPageExpr(page int) string {
 	return "evt.preventDefault(); $page = " + strconv.Itoa(page) + "; @get('/dashboard/guests/fragment')"
 }
 
+// invitationsSignals is the initial Datastar signal state of the invitations
+// section: the search text and the page of the invitations table.
+func invitationsSignals(search string, page int) string {
+	raw, _ := json.Marshal(map[string]any{
+		"iq":    search,
+		"ipage": page,
+	})
+	return string(raw)
+}
+
+// invitationsSearchExpr refetches the invitations fragment from the first
+// page whenever the search text changes.
+const invitationsSearchExpr = "$ipage = 1; @get('/dashboard/invitations/fragment')"
+
+// invitationsRefreshExpr refetches the invitations fragment with the
+// current signals. dashboard-spa.js dispatches an invitations-refresh
+// CustomEvent on the section after a form submit changes invitation data.
+const invitationsRefreshExpr = "@get('/dashboard/invitations/fragment')"
+
+// registrySignals is the initial Datastar signal state of the registry
+// section: the pages of the items table and of the gifts table.
+func registrySignals(registryPage, giftsPage int) string {
+	raw, _ := json.Marshal(map[string]any{
+		"rpage": registryPage,
+		"gpage": giftsPage,
+	})
+	return string(raw)
+}
+
+// registryRefreshExpr refetches the registry fragment with the current
+// signals. dashboard-spa.js dispatches a registry-refresh CustomEvent on
+// the section after a form submit changes registry or gift data.
+const registryRefreshExpr = "@get('/dashboard/registry/fragment')"
+
+// soundtrackSignals is the initial Datastar signal state of the soundtrack
+// section: the page of the events table.
+func soundtrackSignals(page int) string {
+	raw, _ := json.Marshal(map[string]any{
+		"spage": page,
+	})
+	return string(raw)
+}
+
+// soundtrackRefreshExpr refetches the soundtrack fragment with the current
+// signals. dashboard-spa.js dispatches a soundtrack-refresh CustomEvent on
+// the section after a form submit changes soundtrack data.
+const soundtrackRefreshExpr = "@get('/dashboard/soundtrack/fragment')"
+
+// tablePageExpr switches one page signal of a dashboard table and refetches
+// its fragment, keeping the link href as the no-JavaScript path.
+func tablePageExpr(signal string, page int, fragment string) string {
+	return "evt.preventDefault(); $" + signal + " = " + strconv.Itoa(page) + "; @get('" + fragment + "')"
+}
+
 // boolAttr returns a boolean HTML attribute (checked, disabled) when on,
 // and no attribute when off.
 func boolAttr(name string, on bool) templ.Attributes {
@@ -370,6 +424,320 @@ templ Donut(title string, primaryValue, primaryTotal int, slices []DonutSlice) {
 				</li>
 			}
 		</ul>
+	</div>
+}
+
+// InvitationsResults is the morph target of the invitations section: the
+// search row, the invitations table and its pagination. The fragment
+// handler re-renders it from the section signals.
+templ InvitationsResults(pagedInvitations []models.Invitation, invitationsTotal int, invitePage, inviteTotalPages int, inviteSearch, csrfToken string, t i18n.T, lang string) {
+	<div id="invitations-results">
+		if invitationsTotal > 0 {
+			<form class="guest-search-row" method="GET" action="/dashboard" role="search">
+				<input type="search" id="invitation-search" name="iq" value={ inviteSearch } placeholder={ t("placeholder.invitation_search") } autocomplete="off" data-bind:iq data-on:input__debounce.350ms={ invitationsSearchExpr }/>
+			</form>
+			<div class="overflow-auto">
+				<table>
+					<thead>
+						<tr>
+							<th>{ t("th.code") }</th>
+							<th>{ t("th.label") }</th>
+							<th>{ t("th.guests") }</th>
+							<th>{ t("th.actioned") }</th>
+							<th>{ t("th.viewed") }</th>
+							<th>{ t("th.created") }</th>
+							<th>{ t("th.actions") }</th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, inv := range pagedInvitations {
+							<tr id={ "invitation-row-" + strconv.Itoa(inv.ID) } data-invitation-guests={ invitationGuestNames(inv) }>
+								<td data-label={ t("th.code") }>
+									<code class="invitation-code">{ inv.Code }</code>
+								</td>
+								<td data-label={ t("th.label") }>{ invitationDisplayLabel(inv) }</td>
+								<td class="invitation-guests-cell" data-label={ t("th.guests") }>{ invitationGuestNames(inv) }</td>
+								<td data-label={ t("th.actioned") }>
+									if invitationActioned(inv) {
+										{ t("status.confirmed") }
+									} else {
+										{ t("status.pending_confirmation") }
+									}
+								</td>
+								<td data-label={ t("th.viewed") }>
+									if inv.ViewedAt != nil {
+										{ i18n.FormatDate(inv.ViewedAt.Time, lang) }
+										<form method="POST" action={ templ.SafeURL("/dashboard/invitations/" + strconv.Itoa(inv.ID) + "/viewed/reset") } class="inline-reset-form">
+											<input type="hidden" name="_csrf" value={ csrfToken }/>
+											<button type="submit" class="reset-viewed-btn outline secondary" aria-label={ t("btn.reset_viewed") } title={ t("btn.reset_viewed") }>&times;</button>
+										</form>
+									} else {
+										—
+									}
+								</td>
+								<td data-label={ t("th.created") }>{ i18n.FormatDate(inv.CreatedAt.Time, lang) }</td>
+								<td data-label={ t("th.actions") }>
+									<div class="actions">
+										<a href={ templ.SafeURL("/dashboard/invitations/" + strconv.Itoa(inv.ID) + "/edit") }>{ t("btn.edit") }</a>
+										<button type="button" class="copy-btn" data-code={ inv.Code } onclick="copyInvitationURL(this.dataset.code, this)">{ t("btn.copy") }</button>
+										<form method="POST" action={ templ.SafeURL("/dashboard/invitations/" + strconv.Itoa(inv.ID) + "/delete") } data-confirm={ t("confirm.delete_invitation") } onsubmit="return confirm(this.dataset.confirm)">
+											<input type="hidden" name="_csrf" value={ csrfToken }/>
+											<button type="submit" class="outline secondary">{ t("btn.delete") }</button>
+										</form>
+									</div>
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+			if inviteTotalPages > 1 {
+				<nav class="pagination">
+					if invitePage > 1 {
+						<a href={ templ.SafeURL(invitePaginationURL(invitePage-1, 1, "", inviteSearch)) } data-on:click={ tablePageExpr("ipage", invitePage-1, "/dashboard/invitations/fragment") }>{ t("btn.prev") }</a>
+					} else {
+						<span class="disabled">{ t("btn.prev") }</span>
+					}
+					<span class="page-info">{ strconv.Itoa(invitePage) } / { strconv.Itoa(inviteTotalPages) }</span>
+					if invitePage < inviteTotalPages {
+						<a href={ templ.SafeURL(invitePaginationURL(invitePage+1, 1, "", inviteSearch)) } data-on:click={ tablePageExpr("ipage", invitePage+1, "/dashboard/invitations/fragment") }>{ t("btn.next") }</a>
+					} else {
+						<span class="disabled">{ t("btn.next") }</span>
+					}
+				</nav>
+			}
+		}
+	</div>
+}
+
+// RegistryResults is the morph target of the registry items table and
+// its pagination inside the registry section.
+templ RegistryResults(pagedRegistry []models.RegistryItem, registryItems []models.RegistryItem, registryPage, registryTotalPages int, csrfToken string, t i18n.T, lang string) {
+	<div id="registry-results">
+		if len(pagedRegistry) > 0 {
+			<div class="overflow-auto">
+				<table>
+					<thead>
+						<tr>
+							<th>{ t("th.item_order") }</th>
+							<th>{ t("th.item_image") }</th>
+							<th>{ t("th.item_name") }</th>
+							<th>{ t("th.item_price") }</th>
+							<th>{ t("th.actions") }</th>
+						</tr>
+					</thead>
+					<tbody>
+						for i, item := range pagedRegistry {
+							{{ absIdx := (registryPage-1)*10 + i }}
+							<tr id={ "registry-row-" + strconv.Itoa(item.ID) }>
+								<td data-label={ t("th.item_order") }>
+									<div class="actions registry-order-actions">
+										<form method="POST" action={ templ.SafeURL("/dashboard/registry/" + strconv.Itoa(item.ID) + "/move/up") }>
+											<input type="hidden" name="_csrf" value={ csrfToken }/>
+											<button type="submit" class="outline secondary" aria-label={ t("btn.move_up") } disabled?={ absIdx == 0 }>&uarr;</button>
+										</form>
+										<form method="POST" action={ templ.SafeURL("/dashboard/registry/" + strconv.Itoa(item.ID) + "/move/down") }>
+											<input type="hidden" name="_csrf" value={ csrfToken }/>
+											<button type="submit" class="outline secondary" aria-label={ t("btn.move_down") } disabled?={ absIdx == len(registryItems)-1 }>&darr;</button>
+										</form>
+									</div>
+								</td>
+								<td data-label={ t("th.item_image") }>
+									if item.MediaID > 0 {
+										<img class="registry-thumb" src={ publicImageURL(item.MediaID) } loading="lazy" decoding="async" alt={ item.Name }/>
+									}
+								</td>
+								<td data-label={ t("th.item_name") }>{ item.Name }</td>
+								<td data-label={ t("th.item_price") }>{ formatPrice(item.Price) }</td>
+								<td data-label={ t("th.actions") }>
+									<div class="actions">
+										<a href={ templ.SafeURL("/dashboard/registry/" + strconv.Itoa(item.ID) + "/edit") }>{ t("btn.edit") }</a>
+										<form method="POST" action={ templ.SafeURL("/dashboard/registry/" + strconv.Itoa(item.ID) + "/delete") } data-confirm={ t("confirm.delete_item") } onsubmit="return confirm(this.dataset.confirm)">
+											<input type="hidden" name="_csrf" value={ csrfToken }/>
+											<button type="submit" class="outline secondary">{ t("btn.delete") }</button>
+										</form>
+									</div>
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+			if registryTotalPages > 1 {
+				<nav class="pagination">
+					if registryPage > 1 {
+						<a href={ templ.SafeURL(tablePaginationURL("rpage", registryPage-1)) } data-on:click={ tablePageExpr("rpage", registryPage-1, "/dashboard/registry/fragment") }>{ t("btn.prev") }</a>
+					} else {
+						<span class="disabled">{ t("btn.prev") }</span>
+					}
+					<span class="page-info">{ strconv.Itoa(registryPage) } / { strconv.Itoa(registryTotalPages) }</span>
+					if registryPage < registryTotalPages {
+						<a href={ templ.SafeURL(tablePaginationURL("rpage", registryPage+1)) } data-on:click={ tablePageExpr("rpage", registryPage+1, "/dashboard/registry/fragment") }>{ t("btn.next") }</a>
+					} else {
+						<span class="disabled">{ t("btn.next") }</span>
+					}
+				</nav>
+			}
+		}
+	</div>
+}
+
+// GiftsSummary is the gifts accordion heading: the gift count and the
+// total amount. The registry fragment patches it on its own, so the
+// accordion element itself is never morphed and keeps its open state.
+templ GiftsSummary(giftsCount int, giftsTotal int, t i18n.T) {
+	<span class="dashboard-subsection-title" id="gifts-summary">{ strconv.Itoa(giftsCount) + " " + strings.ToLower(t("dashboard.gifts")) + " · " + formatGiftAmount(giftsTotal) }</span>
+}
+
+// GiftsResults is the morph target of the gifts table and its
+// pagination, inside the gifts accordion panel.
+templ GiftsResults(pagedGifts []models.Gift, giftsPage, giftsTotalPages int, invitations []models.Invitation, registryItems []models.RegistryItem, csrfToken string, t i18n.T, lang string) {
+	<div id="gifts-results">
+			<div class="overflow-auto">
+				<table>
+					<thead>
+						<tr>
+							<th>{ t("th.donor") }</th>
+							<th class="amount-cell">{ t("th.amount") }</th>
+							<th>{ t("th.registry_item") }</th>
+							if giftsHaveInvitationIDs(pagedGifts) {
+								<th>{ t("th.invite_guests") }</th>
+							}
+							<th>{ t("th.confirmed") }</th>
+							<th>{ t("th.date") }</th>
+							<th>{ t("th.actions") }</th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, g := range pagedGifts {
+							<tr id={ "gift-row-" + strconv.Itoa(g.ID) }>
+								<td data-label={ t("th.donor") }>{ g.Donor }</td>
+								<td class="amount-cell" data-label={ t("th.amount") }>{ formatGiftAmount(g.Amount) }</td>
+								<td data-label={ t("th.registry_item") }>{ registryItemName(registryItems, g.RegistryItemID) }</td>
+								if giftsHaveInvitationIDs(pagedGifts) {
+									<td data-label={ t("th.invite_guests") }>
+										if giftInvitationGuestFirstNames(invitations, g.InvitationID) != "" {
+											{ giftInvitationGuestFirstNames(invitations, g.InvitationID) }
+										} else {
+											—
+										}
+									</td>
+								}
+								<td data-label={ t("th.confirmed") }>
+									if g.Confirmed {
+										{ t("status.confirmed") }
+									} else {
+										{ t("status.pending_confirmation") }
+									}
+								</td>
+								<td data-label={ t("th.date") }>{ i18n.FormatDate(g.CreatedAt.Time, lang) }</td>
+								<td data-label={ t("th.actions") }>
+									<div class="actions">
+										<a href={ templ.SafeURL("/dashboard/gifts/" + strconv.Itoa(g.ID) + "/edit") }>{ t("btn.edit") }</a>
+										<form method="POST" action={ templ.SafeURL("/dashboard/gifts/" + strconv.Itoa(g.ID) + "/delete") } data-confirm={ t("confirm.delete_gift") } onsubmit="return confirm(this.dataset.confirm)">
+											<input type="hidden" name="_csrf" value={ csrfToken }/>
+											<button type="submit" class="outline secondary">{ t("btn.delete") }</button>
+										</form>
+									</div>
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+			if giftsTotalPages > 1 {
+				<nav class="pagination">
+					if giftsPage > 1 {
+						<a href={ templ.SafeURL(tablePaginationURL("gpage", giftsPage-1)) } data-on:click={ tablePageExpr("gpage", giftsPage-1, "/dashboard/registry/fragment") }>{ t("btn.prev") }</a>
+					} else {
+						<span class="disabled">{ t("btn.prev") }</span>
+					}
+					<span class="page-info">{ strconv.Itoa(giftsPage) } / { strconv.Itoa(giftsTotalPages) }</span>
+					if giftsPage < giftsTotalPages {
+						<a href={ templ.SafeURL(tablePaginationURL("gpage", giftsPage+1)) } data-on:click={ tablePageExpr("gpage", giftsPage+1, "/dashboard/registry/fragment") }>{ t("btn.next") }</a>
+					} else {
+						<span class="disabled">{ t("btn.next") }</span>
+					}
+				</nav>
+			}
+
+	</div>
+}
+
+// SoundtrackResults is the morph target of the soundtrack events table
+// and its pagination.
+templ SoundtrackResults(pagedSoundtrack []models.SoundtrackEvent, soundtrackPage, soundtrackTotalPages int, invitations []models.Invitation, csrfToken string, t i18n.T, lang string) {
+	<div id="soundtrack-results">
+		if len(pagedSoundtrack) > 0 {
+			<div class="overflow-auto">
+				<table>
+					<thead>
+						<tr>
+							<th>{ t("th.track_title") }</th>
+							<th>{ t("th.track_artist") }</th>
+							<th>{ t("th.track_url") }</th>
+							if soundtrackHasInviteIDs(pagedSoundtrack) {
+								<th>{ t("th.invite_id") }</th>
+								<th>{ t("th.invite_guests") }</th>
+							}
+							<th>{ t("th.date") }</th>
+							<th>{ t("th.actions") }</th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, event := range pagedSoundtrack {
+							<tr id={ "soundtrack-row-" + strconv.Itoa(event.ID) }>
+								<td data-label={ t("th.track_title") }>{ event.Title }</td>
+								<td data-label={ t("th.track_artist") }>{ event.Artist }</td>
+								<td data-label={ t("th.track_url") }>
+									if strings.TrimSpace(event.URL) != "" {
+										<a href={ templ.SafeURL(event.URL) } target="_blank" rel="noreferrer">{ event.URL }</a>
+									}
+								</td>
+								if soundtrackHasInviteIDs(pagedSoundtrack) {
+									<td data-label={ t("th.invite_id") }>
+										if strings.TrimSpace(event.InviteID) != "" {
+											<code>{ event.InviteID }</code>
+										} else {
+											—
+										}
+									</td>
+									<td data-label={ t("th.invite_guests") }>
+										if soundtrackInviteGuestFirstNames(invitations, event.InviteID) != "" {
+											{ soundtrackInviteGuestFirstNames(invitations, event.InviteID) }
+										} else {
+											—
+										}
+									</td>
+								}
+								<td data-label={ t("th.date") }>{ i18n.FormatDate(event.CreatedAt.Time, lang) }</td>
+								<td data-label={ t("th.actions") }>
+									<form method="POST" action={ templ.SafeURL("/dashboard/soundtrack/" + strconv.Itoa(event.ID) + "/delete") } data-confirm={ t("confirm.delete_track") } onsubmit="return confirm(this.dataset.confirm)">
+										<input type="hidden" name="_csrf" value={ csrfToken }/>
+										<button type="submit" class="outline secondary">{ t("btn.delete") }</button>
+									</form>
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+			if soundtrackTotalPages > 1 {
+				<nav class="pagination">
+					if soundtrackPage > 1 {
+						<a href={ templ.SafeURL(tablePaginationURL("spage", soundtrackPage-1)) } data-on:click={ tablePageExpr("spage", soundtrackPage-1, "/dashboard/soundtrack/fragment") }>{ t("btn.prev") }</a>
+					} else {
+						<span class="disabled">{ t("btn.prev") }</span>
+					}
+					<span class="page-info">{ strconv.Itoa(soundtrackPage) } / { strconv.Itoa(soundtrackTotalPages) }</span>
+					if soundtrackPage < soundtrackTotalPages {
+						<a href={ templ.SafeURL(tablePaginationURL("spage", soundtrackPage+1)) } data-on:click={ tablePageExpr("spage", soundtrackPage+1, "/dashboard/soundtrack/fragment") }>{ t("btn.next") }</a>
+					} else {
+						<span class="disabled">{ t("btn.next") }</span>
+					}
+				</nav>
+			}
+		}
 	</div>
 }
 
@@ -1136,87 +1504,10 @@ templ Dashboard(settings models.Settings, content SettingsContent, guests []mode
 			@GuestsResults(guests, invitations, page, totalPages, search, GuestView{}, csrfToken, t, lang)
 		</article>
 		<!-- invitations -->
-		<article id="dashboard-invitations">
+		<article id="dashboard-invitations" data-signals={ invitationsSignals(inviteSearch, invitePage) } data-on:invitations-refresh={ invitationsRefreshExpr }>
 			<h2>{ t("dashboard.invitations") }</h2>
-			if len(invitations) > 0 {
-				<form class="guest-search-row" method="GET" action="/dashboard" role="search">
-					<input type="search" id="invitation-search" name="iq" value={ inviteSearch } placeholder={ t("placeholder.invitation_search") } autocomplete="off"/>
-					if search != "" {
-						<input type="hidden" name="q" value={ search }/>
-					}
-				</form>
-				<div class="overflow-auto">
-					<table>
-						<thead>
-							<tr>
-								<th>{ t("th.code") }</th>
-								<th>{ t("th.label") }</th>
-								<th>{ t("th.guests") }</th>
-								<th>{ t("th.actioned") }</th>
-								<th>{ t("th.viewed") }</th>
-								<th>{ t("th.created") }</th>
-								<th>{ t("th.actions") }</th>
-							</tr>
-						</thead>
-						<tbody>
-							for _, inv := range pagedInvitations {
-								<tr data-invitation-guests={ invitationGuestNames(inv) }>
-									<td data-label={ t("th.code") }>
-										<code class="invitation-code">{ inv.Code }</code>
-									</td>
-									<td data-label={ t("th.label") }>{ invitationDisplayLabel(inv) }</td>
-									<td class="invitation-guests-cell" data-label={ t("th.guests") }>{ invitationGuestNames(inv) }</td>
-									<td data-label={ t("th.actioned") }>
-										if invitationActioned(inv) {
-											{ t("status.confirmed") }
-										} else {
-											{ t("status.pending_confirmation") }
-										}
-									</td>
-									<td data-label={ t("th.viewed") }>
-										if inv.ViewedAt != nil {
-											{ i18n.FormatDate(inv.ViewedAt.Time, lang) }
-											<form method="POST" action={ templ.SafeURL("/dashboard/invitations/" + strconv.Itoa(inv.ID) + "/viewed/reset") } class="inline-reset-form">
-												<input type="hidden" name="_csrf" value={ csrfToken }/>
-												<button type="submit" class="reset-viewed-btn outline secondary" aria-label={ t("btn.reset_viewed") } title={ t("btn.reset_viewed") }>&times;</button>
-											</form>
-										} else {
-											—
-										}
-									</td>
-									<td data-label={ t("th.created") }>{ i18n.FormatDate(inv.CreatedAt.Time, lang) }</td>
-									<td data-label={ t("th.actions") }>
-										<div class="actions">
-											<a href={ templ.SafeURL("/dashboard/invitations/" + strconv.Itoa(inv.ID) + "/edit") }>{ t("btn.edit") }</a>
-											<button type="button" class="copy-btn" data-code={ inv.Code } onclick="copyInvitationURL(this.dataset.code, this)">{ t("btn.copy") }</button>
-											<form method="POST" action={ templ.SafeURL("/dashboard/invitations/" + strconv.Itoa(inv.ID) + "/delete") } data-confirm={ t("confirm.delete_invitation") } onsubmit="return confirm(this.dataset.confirm)">
-												<input type="hidden" name="_csrf" value={ csrfToken }/>
-												<button type="submit" class="outline secondary">{ t("btn.delete") }</button>
-											</form>
-										</div>
-									</td>
-								</tr>
-							}
-						</tbody>
-					</table>
-				</div>
-				if inviteTotalPages > 1 {
-					<nav class="pagination">
-						if invitePage > 1 {
-							<a href={ templ.SafeURL(invitePaginationURL(invitePage-1, page, search, inviteSearch)) }>{ t("btn.prev") }</a>
-						} else {
-							<span class="disabled">{ t("btn.prev") }</span>
-						}
-						<span class="page-info">{ strconv.Itoa(invitePage) } / { strconv.Itoa(inviteTotalPages) }</span>
-						if invitePage < inviteTotalPages {
-							<a href={ templ.SafeURL(invitePaginationURL(invitePage+1, page, search, inviteSearch)) }>{ t("btn.next") }</a>
-						} else {
-							<span class="disabled">{ t("btn.next") }</span>
-						}
-					</nav>
-				}
-			}
-			<div class="accordion dashboard-accordion dashboard-subsection-accordion">
+			@InvitationsResults(pagedInvitations, len(invitations), invitePage, inviteTotalPages, inviteSearch, csrfToken, t, lang)
+			<div class="accordion dashboard-accordion dashboard-subsection-accordion" id="polls-results">
 				<div class="accordion-item dashboard-subsection">
 					<h2 class="accordion-header" id="invitations-polls-heading">
 						<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#invitations-polls-panel" aria-expanded="false" aria-controls="invitations-polls-panel">
@@ -1301,7 +1592,7 @@ templ Dashboard(settings models.Settings, content SettingsContent, guests []mode
 			</div>
 		</article>
 		<!-- registry -->
-		<article id="dashboard-registry">
+		<article id="dashboard-registry" data-signals={ registrySignals(registryPage, giftsPage) } data-on:registry-refresh={ registryRefreshExpr }>
 			<h2>{ t("dashboard.registry") }</h2>
 			<form class="registry-add-form" method="POST" action="/dashboard/registry" enctype="multipart/form-data">
 				<input type="hidden" name="_csrf" value={ csrfToken }/>
@@ -1313,226 +1604,27 @@ templ Dashboard(settings models.Settings, content SettingsContent, guests []mode
 					<button type="submit">{ t("btn.add_item") }</button>
 				</div>
 			</form>
-			if len(registryItems) > 0 {
-				<div class="overflow-auto">
-					<table>
-						<thead>
-							<tr>
-								<th>{ t("th.item_order") }</th>
-								<th>{ t("th.item_image") }</th>
-								<th>{ t("th.item_name") }</th>
-								<th>{ t("th.item_price") }</th>
-								<th>{ t("th.actions") }</th>
-							</tr>
-						</thead>
-						<tbody>
-							for i, item := range pagedRegistry {
-								{{ absIdx := (registryPage-1)*10 + i }}
-								<tr>
-									<td data-label={ t("th.item_order") }>
-										<div class="actions registry-order-actions">
-											<form method="POST" action={ templ.SafeURL("/dashboard/registry/" + strconv.Itoa(item.ID) + "/move/up") }>
-												<input type="hidden" name="_csrf" value={ csrfToken }/>
-												<button type="submit" class="outline secondary" aria-label={ t("btn.move_up") } disabled?={ absIdx == 0 }>&uarr;</button>
-											</form>
-											<form method="POST" action={ templ.SafeURL("/dashboard/registry/" + strconv.Itoa(item.ID) + "/move/down") }>
-												<input type="hidden" name="_csrf" value={ csrfToken }/>
-												<button type="submit" class="outline secondary" aria-label={ t("btn.move_down") } disabled?={ absIdx == len(registryItems)-1 }>&darr;</button>
-											</form>
-										</div>
-									</td>
-									<td data-label={ t("th.item_image") }>
-										if item.MediaID > 0 {
-											<img class="registry-thumb" src={ publicImageURL(item.MediaID) } loading="lazy" decoding="async" alt={ item.Name }/>
-										}
-									</td>
-									<td data-label={ t("th.item_name") }>{ item.Name }</td>
-									<td data-label={ t("th.item_price") }>{ formatPrice(item.Price) }</td>
-									<td data-label={ t("th.actions") }>
-										<div class="actions">
-											<a href={ templ.SafeURL("/dashboard/registry/" + strconv.Itoa(item.ID) + "/edit") }>{ t("btn.edit") }</a>
-											<form method="POST" action={ templ.SafeURL("/dashboard/registry/" + strconv.Itoa(item.ID) + "/delete") } data-confirm={ t("confirm.delete_item") } onsubmit="return confirm(this.dataset.confirm)">
-												<input type="hidden" name="_csrf" value={ csrfToken }/>
-												<button type="submit" class="outline secondary">{ t("btn.delete") }</button>
-											</form>
-										</div>
-									</td>
-								</tr>
-							}
-						</tbody>
-					</table>
-				</div>
-				if registryTotalPages > 1 {
-					<nav class="pagination">
-						if registryPage > 1 {
-							<a href={ templ.SafeURL(tablePaginationURL("rpage", registryPage-1)) }>{ t("btn.prev") }</a>
-						} else {
-							<span class="disabled">{ t("btn.prev") }</span>
-						}
-						<span class="page-info">{ strconv.Itoa(registryPage) } / { strconv.Itoa(registryTotalPages) }</span>
-						if registryPage < registryTotalPages {
-							<a href={ templ.SafeURL(tablePaginationURL("rpage", registryPage+1)) }>{ t("btn.next") }</a>
-						} else {
-							<span class="disabled">{ t("btn.next") }</span>
-						}
-					</nav>
-				}
-			}
+			@RegistryResults(pagedRegistry, registryItems, registryPage, registryTotalPages, csrfToken, t, lang)
 			if len(pagedGifts) > 0 {
 				<div class="accordion dashboard-accordion dashboard-subsection-accordion">
 					<div class="accordion-item dashboard-subsection">
 						<h2 class="accordion-header" id="registry-gifts-heading">
 							<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#registry-gifts-panel" aria-expanded="false" aria-controls="registry-gifts-panel">
-								<span class="dashboard-subsection-title">{ strconv.Itoa(giftsCount) + " " + strings.ToLower(t("dashboard.gifts")) + " · " + formatGiftAmount(giftsTotal) }</span>
+								@GiftsSummary(giftsCount, giftsTotal, t)
 							</button>
 						</h2>
 						<div id="registry-gifts-panel" class="accordion-collapse collapse" data-dashboard-key="registry-gifts" aria-labelledby="registry-gifts-heading">
 							<div class="accordion-body dashboard-subsection-body">
-								<div class="overflow-auto">
-									<table>
-										<thead>
-											<tr>
-												<th>{ t("th.donor") }</th>
-												<th class="amount-cell">{ t("th.amount") }</th>
-												<th>{ t("th.registry_item") }</th>
-												if giftsHaveInvitationIDs(pagedGifts) {
-													<th>{ t("th.invite_guests") }</th>
-												}
-												<th>{ t("th.confirmed") }</th>
-												<th>{ t("th.date") }</th>
-												<th>{ t("th.actions") }</th>
-											</tr>
-										</thead>
-										<tbody>
-											for _, g := range pagedGifts {
-												<tr>
-													<td data-label={ t("th.donor") }>{ g.Donor }</td>
-													<td class="amount-cell" data-label={ t("th.amount") }>{ formatGiftAmount(g.Amount) }</td>
-													<td data-label={ t("th.registry_item") }>{ registryItemName(registryItems, g.RegistryItemID) }</td>
-													if giftsHaveInvitationIDs(pagedGifts) {
-														<td data-label={ t("th.invite_guests") }>
-															if giftInvitationGuestFirstNames(invitations, g.InvitationID) != "" {
-																{ giftInvitationGuestFirstNames(invitations, g.InvitationID) }
-															} else {
-																—
-															}
-														</td>
-													}
-													<td data-label={ t("th.confirmed") }>
-														if g.Confirmed {
-															{ t("status.confirmed") }
-														} else {
-															{ t("status.pending_confirmation") }
-														}
-													</td>
-													<td data-label={ t("th.date") }>{ i18n.FormatDate(g.CreatedAt.Time, lang) }</td>
-													<td data-label={ t("th.actions") }>
-														<div class="actions">
-															<a href={ templ.SafeURL("/dashboard/gifts/" + strconv.Itoa(g.ID) + "/edit") }>{ t("btn.edit") }</a>
-															<form method="POST" action={ templ.SafeURL("/dashboard/gifts/" + strconv.Itoa(g.ID) + "/delete") } data-confirm={ t("confirm.delete_gift") } onsubmit="return confirm(this.dataset.confirm)">
-																<input type="hidden" name="_csrf" value={ csrfToken }/>
-																<button type="submit" class="outline secondary">{ t("btn.delete") }</button>
-															</form>
-														</div>
-													</td>
-												</tr>
-											}
-										</tbody>
-									</table>
-								</div>
-								if giftsTotalPages > 1 {
-									<nav class="pagination">
-										if giftsPage > 1 {
-											<a href={ templ.SafeURL(tablePaginationURL("gpage", giftsPage-1)) }>{ t("btn.prev") }</a>
-										} else {
-											<span class="disabled">{ t("btn.prev") }</span>
-										}
-										<span class="page-info">{ strconv.Itoa(giftsPage) } / { strconv.Itoa(giftsTotalPages) }</span>
-										if giftsPage < giftsTotalPages {
-											<a href={ templ.SafeURL(tablePaginationURL("gpage", giftsPage+1)) }>{ t("btn.next") }</a>
-										} else {
-											<span class="disabled">{ t("btn.next") }</span>
-										}
-									</nav>
-								}
+								@GiftsResults(pagedGifts, giftsPage, giftsTotalPages, invitations, registryItems, csrfToken, t, lang)
 							</div>
 						</div>
 					</div>
 				</div>
 			}
 		</article>
-		<article id="dashboard-soundtrack-events">
+		<article id="dashboard-soundtrack-events" data-signals={ soundtrackSignals(soundtrackPage) } data-on:soundtrack-refresh={ soundtrackRefreshExpr }>
 			<h2>{ t("dashboard.track_additions") }</h2>
-			if len(pagedSoundtrack) > 0 {
-				<div class="overflow-auto">
-					<table>
-						<thead>
-							<tr>
-								<th>{ t("th.track_title") }</th>
-								<th>{ t("th.track_artist") }</th>
-								<th>{ t("th.track_url") }</th>
-								if soundtrackHasInviteIDs(pagedSoundtrack) {
-									<th>{ t("th.invite_id") }</th>
-									<th>{ t("th.invite_guests") }</th>
-								}
-								<th>{ t("th.date") }</th>
-								<th>{ t("th.actions") }</th>
-							</tr>
-						</thead>
-						<tbody>
-							for _, event := range pagedSoundtrack {
-								<tr>
-									<td data-label={ t("th.track_title") }>{ event.Title }</td>
-									<td data-label={ t("th.track_artist") }>{ event.Artist }</td>
-									<td data-label={ t("th.track_url") }>
-										if strings.TrimSpace(event.URL) != "" {
-											<a href={ templ.SafeURL(event.URL) } target="_blank" rel="noreferrer">{ event.URL }</a>
-										}
-									</td>
-									if soundtrackHasInviteIDs(pagedSoundtrack) {
-										<td data-label={ t("th.invite_id") }>
-											if strings.TrimSpace(event.InviteID) != "" {
-												<code>{ event.InviteID }</code>
-											} else {
-												—
-											}
-										</td>
-										<td data-label={ t("th.invite_guests") }>
-											if soundtrackInviteGuestFirstNames(invitations, event.InviteID) != "" {
-												{ soundtrackInviteGuestFirstNames(invitations, event.InviteID) }
-											} else {
-												—
-											}
-										</td>
-									}
-									<td data-label={ t("th.date") }>{ i18n.FormatDate(event.CreatedAt.Time, lang) }</td>
-									<td data-label={ t("th.actions") }>
-										<form method="POST" action={ templ.SafeURL("/dashboard/soundtrack/" + strconv.Itoa(event.ID) + "/delete") } data-confirm={ t("confirm.delete_track") } onsubmit="return confirm(this.dataset.confirm)">
-											<input type="hidden" name="_csrf" value={ csrfToken }/>
-											<button type="submit" class="outline secondary">{ t("btn.delete") }</button>
-										</form>
-									</td>
-								</tr>
-							}
-						</tbody>
-					</table>
-				</div>
-				if soundtrackTotalPages > 1 {
-					<nav class="pagination">
-						if soundtrackPage > 1 {
-							<a href={ templ.SafeURL(tablePaginationURL("spage", soundtrackPage-1)) }>{ t("btn.prev") }</a>
-						} else {
-							<span class="disabled">{ t("btn.prev") }</span>
-						}
-						<span class="page-info">{ strconv.Itoa(soundtrackPage) } / { strconv.Itoa(soundtrackTotalPages) }</span>
-						if soundtrackPage < soundtrackTotalPages {
-							<a href={ templ.SafeURL(tablePaginationURL("spage", soundtrackPage+1)) }>{ t("btn.next") }</a>
-						} else {
-							<span class="disabled">{ t("btn.next") }</span>
-						}
-					</nav>
-				}
-			}
+			@SoundtrackResults(pagedSoundtrack, soundtrackPage, soundtrackTotalPages, invitations, csrfToken, t, lang)
 		</article>
 		<div id="dashboard-modal-root"></div>
 		<script nonce={ nonce }>

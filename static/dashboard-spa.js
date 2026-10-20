@@ -1,21 +1,14 @@
 (() => {
-  let invitationSearchTimer = null;
-  let invitationSearchValue = "";
-  let invitationSearchSeq = 0;
   const SECTION_IDS = [
     "dashboard-flash",
     "dashboard-counters",
     "dashboard-settings",
-    "dashboard-invitations",
-    "dashboard-registry",
-    "dashboard-soundtrack-events",
   ];
 
   function init() {
     bindGlobalListeners();
     initDashboardFeatures();
     initImageResizers();
-    syncInvitationSearchInput();
   }
 
   function bindGlobalListeners() {
@@ -24,10 +17,6 @@
 
     document.addEventListener("click", handleClick);
     document.addEventListener("submit", handleSubmit);
-    document.addEventListener("input", handleInput);
-    window.addEventListener("popstate", () => {
-      refreshSections(window.location.href, ["dashboard-invitations"]);
-    });
   }
 
   function handleClick(event) {
@@ -37,40 +26,6 @@
     if (editLink) {
       event.preventDefault();
       openDashboardEditModal(editLink.href);
-      return;
-    }
-
-    const invitePaginationLink = event.target.closest(
-      '#dashboard-invitations .pagination a[href^="/dashboard"]',
-    );
-    if (invitePaginationLink) {
-      event.preventDefault();
-      history.pushState({}, "", invitePaginationLink.href);
-      refreshSections(invitePaginationLink.href, ["dashboard-invitations"]);
-      return;
-    }
-
-    const registryPaginationLink = event.target.closest(
-      '#dashboard-registry .pagination a[href^="/dashboard"]',
-    );
-    if (registryPaginationLink) {
-      event.preventDefault();
-      history.pushState({}, "", registryPaginationLink.href);
-      // gifts table also lives inside #dashboard-registry, so a single section
-      // refresh covers rpage and gpage links
-      refreshSections(registryPaginationLink.href, ["dashboard-registry"]);
-      return;
-    }
-
-    const soundtrackPaginationLink = event.target.closest(
-      '#dashboard-soundtrack-events .pagination a[href^="/dashboard"]',
-    );
-    if (soundtrackPaginationLink) {
-      event.preventDefault();
-      history.pushState({}, "", soundtrackPaginationLink.href);
-      refreshSections(soundtrackPaginationLink.href, [
-        "dashboard-soundtrack-events",
-      ]);
       return;
     }
 
@@ -97,30 +52,6 @@
     if (modalClose) {
       event.preventDefault();
       closeDashboardModal();
-    }
-  }
-
-  function handleInput(event) {
-    if (event.target.id === "invitation-search") {
-      invitationSearchValue = event.target.value;
-      clearTimeout(invitationSearchTimer);
-      invitationSearchTimer = setTimeout(() => {
-        const url = new URL(window.location.href);
-        const value = event.target.value.trim();
-        if (value) {
-          url.searchParams.set("iq", value);
-        } else {
-          url.searchParams.delete("iq");
-        }
-        url.searchParams.delete("ipage");
-        history.replaceState({}, "", url);
-        const seq = ++invitationSearchSeq;
-        refreshSections(
-          url.toString(),
-          ["dashboard-invitations"],
-          () => seq === invitationSearchSeq,
-        );
-      }, 350);
     }
   }
 
@@ -178,6 +109,20 @@
       }
       dispatchGuestsRefresh(detail);
     }
+    // the invitations, registry and soundtrack sections are Datastar-driven
+    // too: their tables refetch their fragments instead of being replaced
+    if (affectsInvitations(action)) {
+      dispatchSectionRefresh("dashboard-invitations", "invitations-refresh");
+    }
+    if (affectsRegistry(action)) {
+      dispatchSectionRefresh("dashboard-registry", "registry-refresh");
+    }
+    if (affectsSoundtrack(action)) {
+      dispatchSectionRefresh(
+        "dashboard-soundtrack-events",
+        "soundtrack-refresh",
+      );
+    }
     closeDashboardModal();
   }
 
@@ -200,6 +145,39 @@
         new CustomEvent("guests-refresh", { detail: detail || {} }),
       );
     }
+  }
+
+  function dispatchSectionRefresh(sectionId, eventName) {
+    const section = document.getElementById(sectionId);
+    if (section) {
+      section.dispatchEvent(new CustomEvent(eventName));
+    }
+  }
+
+  function affectsInvitations(action) {
+    return (
+      /\/dashboard\/invitations(\/\d+\/(delete|viewed\/reset))?$/.test(
+        action,
+      ) ||
+      /\/dashboard\/guests(\/import)?$/.test(action) ||
+      /\/dashboard\/guests\/\d+$/.test(action) ||
+      /\/dashboard\/guests\/\d+\/delete$/.test(action) ||
+      /\/dashboard\/settings$/.test(action)
+    );
+  }
+
+  function affectsRegistry(action) {
+    return (
+      /\/dashboard\/registry(\/\d+(\/(move\/(up|down)|delete))?)?$/.test(
+        action,
+      ) ||
+      /\/dashboard\/gifts\/\d+(\/delete)?$/.test(action) ||
+      /\/dashboard\/settings$/.test(action)
+    );
+  }
+
+  function affectsSoundtrack(action) {
+    return /\/dashboard\/soundtrack\/\d+\/delete$/.test(action);
   }
 
   function getCsrfToken(form) {
@@ -226,39 +204,35 @@
       /\/dashboard\/guests\/\d+$/.test(action) ||
       /\/dashboard\/guests\/\d+\/delete$/.test(action)
     ) {
-      return ["dashboard-flash", "dashboard-counters", "dashboard-invitations"];
+      // the invitations table is Datastar-driven and refetches itself; the
+      // polls block still rides the section replacement path
+      return ["dashboard-flash", "dashboard-counters", "polls-results"];
     }
     if (
       /\/dashboard\/invitations$/.test(action) ||
       /\/dashboard\/invitations\/\d+\/delete$/.test(action) ||
       /\/dashboard\/invitations\/\d+\/viewed\/reset$/.test(action)
     ) {
-      return ["dashboard-flash", "dashboard-invitations"];
+      return ["dashboard-flash"];
     }
     if (/\/dashboard\/polls(\/\d+\/delete)?$/.test(action)) {
-      return ["dashboard-flash", "dashboard-invitations"];
+      return ["dashboard-flash", "polls-results"];
     }
     if (/\/dashboard\/gifts\/\d+(\/delete)?$/.test(action)) {
-      return ["dashboard-flash", "dashboard-registry"];
+      return ["dashboard-flash"];
     }
     if (
       /\/dashboard\/registry(?:\/\d+(?:\/(?:move\/(?:up|down)|delete))?)?$/.test(
         action,
       )
     ) {
-      return ["dashboard-flash", "dashboard-registry"];
+      return ["dashboard-flash"];
     }
     if (/\/dashboard\/soundtrack\/\d+\/delete$/.test(action)) {
-      return ["dashboard-flash", "dashboard-soundtrack-events"];
+      return ["dashboard-flash"];
     }
     if (/\/dashboard\/settings$/.test(action)) {
-      return [
-        "dashboard-flash",
-        "dashboard-counters",
-        "dashboard-settings",
-        "dashboard-invitations",
-        "dashboard-registry",
-      ];
+      return ["dashboard-flash", "dashboard-counters", "dashboard-settings"];
     }
     return SECTION_IDS;
   }
@@ -283,10 +257,6 @@
     restoreOpenAccordions(openDetails);
     initDashboardFeatures();
     initImageResizers();
-    syncInvitationSearchInput();
-    if (sectionIds.indexOf("dashboard-invitations") !== -1) {
-      focusInvitationSearchIfPresent();
-    }
   }
 
   async function fetchDocument(url) {
@@ -307,26 +277,6 @@
     if (current && next) {
       current.replaceWith(next);
     }
-  }
-
-  function syncInvitationSearchInput() {
-    // server renders the input w/ value=iq from URL; track locally so the
-    // SPA refresh path doesn't lose what user is typing
-    const input = document.getElementById("invitation-search");
-    if (!input) return;
-    if (invitationSearchValue && input.value !== invitationSearchValue) {
-      input.value = invitationSearchValue;
-    } else {
-      invitationSearchValue = input.value;
-    }
-  }
-
-  function focusInvitationSearchIfPresent() {
-    const input = document.getElementById("invitation-search");
-    if (!input) return;
-    input.focus({ preventScroll: true });
-    const end = input.value.length;
-    input.setSelectionRange(end, end);
   }
 
   function getOpenAccordionKeys() {
