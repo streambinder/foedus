@@ -507,9 +507,17 @@ function initDashboardFeatures() {
 
     function search(query) {
       const seq = ++searchSeq;
-      window.FoedusSearchPlaces(query).then((items) => {
-        if (seq === searchSeq) render(items);
-      });
+      results = [];
+      activeIndex = -1;
+      window.FoedusRenderSearching(dropdown);
+      window
+        .FoedusSearchPlaces(query)
+        .then((items) => {
+          if (seq === searchSeq) render(items);
+        })
+        .catch(() => {
+          if (seq === searchSeq) render([]);
+        });
     }
 
     input.addEventListener("input", () => {
