@@ -509,11 +509,77 @@
         });
     }
 
+    // a pasted google maps link carries the place directly: full links
+    // parse locally, short links resolve through the dashboard because
+    // the browser cannot follow their redirect under CORS
+    function parseMapsLink(raw) {
+      let name = "";
+      const placeMatch = raw.match(/\/place\/([^/]+)/);
+      if (placeMatch) {
+        try {
+          name = decodeURIComponent(placeMatch[1]).replace(/\+/g, " ").trim();
+        } catch {
+          name = "";
+        }
+      }
+      const pin = raw.match(/!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/);
+      const at = raw.match(/@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/);
+      const m = pin || at;
+      if (!m) return null;
+      return { name, lat: m[1], lng: m[2] };
+    }
+
+    function mapsLinkOf(value) {
+      let u;
+      try {
+        u = new URL(value);
+      } catch {
+        return null;
+      }
+      const host = u.hostname.toLowerCase();
+      const short = host === "maps.app.goo.gl" || host === "goo.gl";
+      const full =
+        /(^|\.)google\.[a-z]{2,}(\.[a-z]{2})?$/.test(host) &&
+        (u.pathname.includes("/maps") || u.pathname.includes("/place/"));
+      if (!short && !full) return null;
+      return { url: value, place: parseMapsLink(value) };
+    }
+
+    async function importMapsLink(link) {
+      const seq = ++searchSeq;
+      renderSearching(dropdown);
+      try {
+        let place = link.place;
+        if (!place) {
+          const res = await fetchJSON(
+            "/dashboard/places/resolve?url=" + encodeURIComponent(link.url),
+          );
+          place = {
+            name: res.name || "",
+            lat: String(res.lat || ""),
+            lng: String(res.lng || ""),
+          };
+        }
+        if (seq !== searchSeq) return;
+        nameHidden.value = place.name;
+        addressHidden.value = "";
+        if (cityHidden) cityHidden.value = "";
+        if (latHidden) latHidden.value = place.lat;
+        if (lngHidden) lngHidden.value = place.lng;
+        input.value = place.name;
+        hide();
+      } catch {
+        if (seq !== searchSeq) return;
+        render([]);
+      }
+    }
+
     input.addEventListener("input", () => {
+      const link = mapsLinkOf(input.value.trim());
       if (!input.value.trim()) {
         // an emptied field clears the venue altogether
         clearSelection();
-      } else {
+      } else if (!link) {
         // the field mirrors what the admin sees: the text before the
         // first comma is the name the public pages show, the rest is
         // the address behind the directions link. The map data may
@@ -534,7 +600,11 @@
         return;
       }
       debounceTimer = setTimeout(() => {
-        search(q);
+        if (link) {
+          importMapsLink(link);
+        } else {
+          search(q);
+        }
       }, 350);
     });
 
