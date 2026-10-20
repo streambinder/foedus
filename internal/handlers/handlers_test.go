@@ -49,6 +49,7 @@ func newTestApp() *fiber.App {
 	app.Get("/dashboard/soundtrack/fragment", SoundtrackFragment)
 	app.Get("/dashboard/settings/fragment", SettingsFragment)
 	app.Get("/dashboard/polls/fragment", PollsFragment)
+	app.Get("/dashboard/places/resolve", ResolveMapsLink)
 	app.Post("/dashboard/settings", SaveSettings)
 	app.Post("/dashboard/guests", AddGuest)
 	app.Post("/dashboard/guests/import", ImportGuestsCSV)
