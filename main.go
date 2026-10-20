@@ -155,6 +155,7 @@ func main() {
 	admin.Get("/soundtrack/fragment", handlers.SoundtrackFragment)
 	admin.Get("/settings/fragment", handlers.SettingsFragment)
 	admin.Get("/polls/fragment", handlers.PollsFragment)
+	admin.Get("/places/resolve", handlers.ResolveMapsLink)
 	admin.Post("/settings", handlers.SaveSettings)
 	admin.Post("/guests", handlers.AddGuest)
 	admin.Post("/guests/import", handlers.ImportGuestsCSV)
