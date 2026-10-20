@@ -7,6 +7,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/streambinder/foedus/internal/database"
+	"github.com/streambinder/foedus/internal/datastar"
 	"github.com/streambinder/foedus/internal/i18n"
 	"github.com/streambinder/foedus/internal/models"
 	"github.com/streambinder/foedus/internal/observability"
@@ -78,7 +79,7 @@ func ViewInvitation(c *fiber.Ctx) error {
 		"poll_count", len(polls),
 		"viewed", inv.ViewedAt != nil,
 	)
-	return Render(c, templates.Invitation(inv, settings, polls, inv.ViewedAt != nil, noRedirect, t, lang, ogMeta, title))
+	return Render(c, templates.Invitation(inv, settings, polls, inv.ViewedAt != nil, noRedirect, t, lang, ogMeta, title, getCSPNonce(c)))
 }
 
 func MarkInvitationViewed(c *fiber.Ctx) error {
@@ -162,6 +163,21 @@ func UpdateInvitationRSVP(c *fiber.Ctx) error {
 		"answered_guests", answeredGuests,
 		"poll_count", len(polls),
 	)
+	if c.Get("Datastar-Request") == "true" {
+		updated, err := database.GetInvitationByCode(code)
+		if err != nil {
+			logger.Error("invitation rsvp failed to reload invitation", "invitation_code", observability.Redact(code), "error", err.Error())
+			return c.Status(500).SendString("failed to load invitation")
+		}
+		lang := getLang(c)
+		labelOverrides, err := database.GetHomepageLabels(lang)
+		if err != nil {
+			logger.Error("invitation rsvp failed to load labels", "invitation_code", observability.Redact(code), "error", err.Error())
+			return c.Status(500).SendString("failed to load labels")
+		}
+		t := i18n.NewTWithOverrides(lang, labelOverrides)
+		return datastar.PatchComponent(c, templates.InvitationRSVPCard(updated, settings, polls, t))
+	}
 	return c.Redirect(redirectURL)
 }
 

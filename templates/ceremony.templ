@@ -6,7 +6,7 @@ import (
 )
 
 templ Ceremony(settings models.Settings, t i18n.T, lang string, ogMeta OGMeta) {
-	@Layout(pageTitle(t("ceremony.title"), settings.GroomName, settings.BrideName), lang, t, ogMeta, false, nil, "") {
+	@Layout(pageTitle(t("ceremony.title"), settings.GroomName, settings.BrideName), lang, t, ogMeta, false, nil, "", "") {
 		<section class="vp-section vp-hero vp-venues ceremony-standalone">
 			@Flora(settings, "bl")
 			@Flora(settings, "tr")

@@ -68,7 +68,7 @@ func newTestApp() *fiber.App {
 	app.Post("/dashboard/polls/:id", UpdatePoll)
 	app.Post("/dashboard/polls/:id/delete", DeletePoll)
 	app.Post("/dashboard/soundtrack/:id/delete", DeleteSoundtrackEvent)
-	app.Get("/:code", ViewInvitation)
+	app.Get("/:code", middleware.CSPNonce(), ViewInvitation)
 	app.Post("/:code/viewed", MarkInvitationViewed)
 	app.Post("/:code/rsvp", UpdateInvitationRSVP)
 	return app
@@ -403,6 +403,65 @@ func TestMarkAndRSVP(t *testing.T) {
 	status, _, _ = postForm(t, app, "/"+code+"/rsvp", form)
 	if status != 403 {
 		t.Errorf("rsvp after event: status %d, want 403", status)
+	}
+}
+
+func TestInvitationDatastar(t *testing.T) {
+	setupDB(t)
+	configureSettings(t, nil)
+	app := newTestApp()
+	defer app.Shutdown()
+
+	guest := mustCreateGuest(t, "Ada", "Love", "adult")
+	code, err := database.CreateInvitation([]int{guest.ID}, "solo")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// the invitation page alone carries the nonce policy and the client
+	status, headers, body := get(t, app, "/"+code)
+	if status != 200 {
+		t.Fatalf("view invitation: status %d", status)
+	}
+	csp := headers.Get("Content-Security-Policy")
+	if !strings.Contains(csp, "'nonce-") || strings.Contains(csp, "unsafe-eval") {
+		t.Errorf("invitation CSP = %q, want a nonce and no unsafe-eval", csp)
+	}
+	if !strings.Contains(body, "data-nonce=") || !strings.Contains(body, "starfederation/datastar") {
+		t.Errorf("invitation page misses the Datastar client or its nonce attribute")
+	}
+	// the public home keeps the base policy and no client
+	_, headers, body = get(t, app, "/")
+	if strings.Contains(headers.Get("Content-Security-Policy"), "'nonce-") {
+		t.Errorf("home CSP carries a nonce, want the base policy")
+	}
+	if strings.Contains(body, "starfederation/datastar") {
+		t.Errorf("home loads the Datastar client, want it only on the invitation page")
+	}
+
+	// a Datastar form post answers with a patch of the answered card
+	form := url.Values{}
+	form.Set("ceremony_"+strconv.Itoa(guest.ID), "1")
+	form.Set("reception_"+strconv.Itoa(guest.ID), "1")
+	req := httptest.NewRequest(fiber.MethodPost, "/"+code+"/rsvp", strings.NewReader(form.Encode()))
+	req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationForm)
+	req.Header.Set("Datastar-Request", "true")
+	status, headers, body = doReq(t, app, req)
+	if status != 200 {
+		t.Fatalf("datastar rsvp: status %d body %q", status, body)
+	}
+	if ct := headers.Get(fiber.HeaderContentType); !strings.Contains(ct, "text/event-stream") {
+		t.Errorf("datastar rsvp content type = %q, want an event stream", ct)
+	}
+	if !strings.Contains(body, "datastar-patch-elements") || !strings.Contains(body, `id="rsvp-card"`) || !strings.Contains(body, `id="rsvp-locked"`) {
+		t.Errorf("datastar rsvp patch misses the answered card:\n%s", body)
+	}
+	updated, err := database.GetGuest(guest.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if updated.ConfirmedCeremony == nil || !*updated.ConfirmedCeremony {
+		t.Errorf("guest ceremony confirmation = %v, want true", updated.ConfirmedCeremony)
 	}
 }
 

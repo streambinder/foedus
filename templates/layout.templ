@@ -67,7 +67,7 @@ func pageTitle(title, groom, bride string) string {
 }
 
 templ SetupGuard(lang string, t i18n.T) {
-	@Layout(t("title.setup"), lang, t, OGMeta{}, false, nil, "") {
+	@Layout(t("title.setup"), lang, t, OGMeta{}, false, nil, "", "") {
 		<div class="setup-guard">
 			<h1>{ t("setup.not_ready") }</h1>
 			<p><a href="/dashboard">{ t("setup.go_to_dashboard") }</a></p>
@@ -75,9 +75,9 @@ templ SetupGuard(lang string, t i18n.T) {
 	}
 }
 
-templ Layout(title string, lang string, t i18n.T, ogMeta OGMeta, includeLeaflet bool, imagePreloads []ImagePreload, htmlStyle string) {
+templ Layout(title string, lang string, t i18n.T, ogMeta OGMeta, includeLeaflet bool, imagePreloads []ImagePreload, htmlStyle string, nonce string) {
 	<!DOCTYPE html>
-	<html lang={ lang } data-theme="light" style={ htmlStyle }>
+	<html lang={ lang } data-theme="light" style={ htmlStyle } { datastarNonceAttrs(nonce)... }>
 		<head>
 			<meta charset="UTF-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-visual"/>
@@ -136,6 +136,9 @@ templ Layout(title string, lang string, t i18n.T, ogMeta OGMeta, includeLeaflet 
 			<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600&family=Courier+Prime:wght@400;700&display=swap" fetchpriority="high"/>
 			<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600&family=Courier+Prime:wght@400;700&display=swap" media="print" onload="this.media='all'"/>
 			<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600&family=Courier+Prime:wght@400;700&display=swap"/></noscript>
+			if nonce != "" {
+				<script type="module" src="https://cdn.jsdelivr.net/gh/starfederation/datastar@v1.0.4/bundles/datastar.js" integrity="sha384-twbOvafhSBQ0rJDNPzJdUw6DRvthVgAVfSIG1BQVmCiNO7Qh2zeVn7T5qstgjJ9q" crossorigin="anonymous"></script>
+			}
 		</head>
 		<body>
 			<main class="container" role="main">

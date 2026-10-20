@@ -176,7 +176,7 @@ func main() {
 	admin.Post("/soundtrack/:id/delete", handlers.DeleteSoundtrackEvent)
 
 	// invitation public routes (catch-all, must be last)
-	app.Get("/:code", publicCSRF, handlers.ViewInvitation)
+	app.Get("/:code", publicCSRF, middleware.CSPNonce(), handlers.ViewInvitation)
 	app.Post("/:code/viewed", publicBodyLimit, publicCSRF, handlers.MarkInvitationViewed)
 	app.Post("/:code/rsvp", publicBodyLimit, publicCSRF, handlers.UpdateInvitationRSVP)
 

@@ -6,6 +6,14 @@ import (
 	"strconv"
 )
 
+// rsvpSubmitExpr is the Datastar submit action of the RSVP form. The form
+// stays a plain HTML form that posts the same fields; with Datastar loaded
+// the submit is intercepted and the server answers with a patch of the card
+// in its answered state instead of the redirect.
+func rsvpSubmitExpr(code string) string {
+	return "@post('/" + code + "/rsvp', {contentType: 'form'})"
+}
+
 func guestAnsweredYes(g models.Guest, pollID int) bool {
 	for _, a := range g.PollAnswers {
 		if a.PollID == pollID && a.Answer {
@@ -60,8 +68,155 @@ func appearanceVars(settings models.Settings) string {
 	return "--envelope-base:" + envelope + ";--invitation-page-bg:" + pageBg + ";"
 }
 
-templ Invitation(inv models.Invitation, settings models.Settings, polls []models.Poll, alreadyViewed bool, noRedirect bool, t i18n.T, lang string, ogMeta OGMeta, title string) {
-	@Layout(title, lang, t, ogMeta, false, invitationImagePreloads(settings, alreadyViewed), "") {
+// InvitationRSVPCard renders the RSVP card of the invitation page. It is
+// also the morph target of the Datastar RSVP submit: the handler answers
+// a Datastar form post by patching this same component in its answered
+// state, so the two renders can never drift apart.
+templ InvitationRSVPCard(inv models.Invitation, settings models.Settings, polls []models.Poll, t i18n.T) {
+	<article class="rsvp-card" id="rsvp-card">
+		<h2>{ t("invitation.rsvp") }</h2>
+		if settings.EventPassed() {
+			<div id="rsvp-locked">
+				<p class="rsvp-subtitle rsvp-answered-notice">{ t("invitation.event_passed") }</p>
+				<div class="rsvp-locked-actions">
+					<a href={ templ.SafeURL("/?invite=" + inv.Code) } class="secondary outline rsvp-action-btn"><span class="rsvp-btn-icon rsvp-btn-icon-home" aria-hidden="true"></span>{ t("invitation.go_home") }</a>
+				</div>
+			</div>
+		} else if InvitationAnswered(inv) {
+			<div id="rsvp-locked">
+				<p class="rsvp-subtitle rsvp-answered-notice">{ t("invitation.already_answered") }</p>
+				<div class="rsvp-locked-actions">
+					<a href={ templ.SafeURL("/?invite=" + inv.Code) } class="secondary outline rsvp-action-btn"><span class="rsvp-btn-icon rsvp-btn-icon-home" aria-hidden="true"></span>{ t("invitation.go_home") }</a>
+					<button type="button" id="rsvp-unlock-btn" class="secondary outline rsvp-action-btn"><span class="rsvp-btn-icon rsvp-btn-icon-edit" aria-hidden="true"></span>{ t("invitation.change_answer") }</button>
+				</div>
+			</div>
+		} else {
+			<p class="rsvp-subtitle">{ t("invitation.rsvp_description") }</p>
+		}
+		if !settings.EventPassed() {
+		<form method="POST" action={ templ.SafeURL("/" + inv.Code + "/rsvp") } id="rsvp-form" data-on:submit={ rsvpSubmitExpr(inv.Code) } class={ templ.KV("rsvp-form-locked", InvitationAnswered(inv)) } inert?={ InvitationAnswered(inv) }>
+			for i, g := range inv.Guests {
+				<div class="rsvp-guest">
+					<span class="rsvp-name"><span class="rsvp-name-number">{ strconv.Itoa(i + 1) }.</span>{ g.FirstName }</span>
+					<div class="rsvp-fields">
+						<div class="rsvp-radio-group" role="group" aria-labelledby={ "ceremony_label_" + strconv.Itoa(g.ID) }>
+							<span class="rsvp-radio-legend" id={ "ceremony_label_" + strconv.Itoa(g.ID) }>{ t("th.ceremony") }</span>
+							<div class="rsvp-radio-options">
+								<label>
+									if g.ConfirmedCeremony != nil && !*g.ConfirmedCeremony {
+										<input type="radio" name={ "ceremony_" + strconv.Itoa(g.ID) } value="0" required checked/>
+									} else {
+										<input type="radio" name={ "ceremony_" + strconv.Itoa(g.ID) } value="0" required/>
+									}
+									{ t("rsvp.no") }
+								</label>
+								<label>
+									if g.ConfirmedCeremony != nil && *g.ConfirmedCeremony {
+										<input type="radio" name={ "ceremony_" + strconv.Itoa(g.ID) } value="1" required checked/>
+									} else {
+										<input type="radio" name={ "ceremony_" + strconv.Itoa(g.ID) } value="1" required/>
+									}
+									{ t("rsvp.yes") }
+								</label>
+							</div>
+						</div>
+						<div class="rsvp-radio-group" role="group" aria-labelledby={ "reception_label_" + strconv.Itoa(g.ID) }>
+							<span class="rsvp-radio-legend" id={ "reception_label_" + strconv.Itoa(g.ID) }>{ t("th.reception") }</span>
+							<div class="rsvp-radio-options">
+								<label>
+									if g.ConfirmedReception != nil && !*g.ConfirmedReception {
+										<input type="radio" name={ "reception_" + strconv.Itoa(g.ID) } value="0" required checked/>
+									} else {
+										<input type="radio" name={ "reception_" + strconv.Itoa(g.ID) } value="0" required/>
+									}
+									{ t("rsvp.no") }
+								</label>
+								<label>
+									if g.ConfirmedReception != nil && *g.ConfirmedReception {
+										<input type="radio" name={ "reception_" + strconv.Itoa(g.ID) } value="1" required checked/>
+									} else {
+										<input type="radio" name={ "reception_" + strconv.Itoa(g.ID) } value="1" required/>
+									}
+									{ t("rsvp.yes") }
+								</label>
+							</div>
+						</div>
+					</div>
+					if len(polls) > 0 {
+						<div class="rsvp-polls">
+							for _, p := range polls {
+								<div class="rsvp-poll-item">
+									<div class="rsvp-radio-group rsvp-poll-group" role="group" aria-labelledby={ "poll_label_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }>
+										<div class="rsvp-poll-text">
+											<span class="rsvp-radio-legend rsvp-poll-label" id={ "poll_label_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }>
+												{ p.Question }
+											</span>
+											if p.Description != "" {
+												<span class="rsvp-poll-description">{ p.Description }</span>
+											}
+										</div>
+										<div class="rsvp-radio-options">
+											<label>
+												if guestAnsweredYes(g, p.ID) {
+													<input
+														type="radio"
+														name={ "poll_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }
+														value="0"
+														data-poll-answer="true"/>
+												} else {
+													<input
+														type="radio"
+														name={ "poll_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }
+														value="0"
+														checked
+														data-poll-answer="true"/>
+												}
+												{ t("rsvp.no") }
+											</label>
+											<label>
+												if guestAnsweredYes(g, p.ID) {
+													<input
+														type="radio"
+														name={ "poll_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }
+														value="1"
+														checked
+														data-poll-answer="true"/>
+												} else {
+													<input
+														type="radio"
+														name={ "poll_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }
+														value="1"
+														data-poll-answer="true"/>
+												}
+												{ t("rsvp.yes") }
+											</label>
+										</div>
+									</div>
+									<div
+										class="rsvp-poll-notes"
+										id={ "poll_notes_wrap_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }
+										>
+										<textarea
+											name={ "poll_notes_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }
+											id={ "poll_notes_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }
+											placeholder={ t("placeholder.poll_notes") }
+											aria-label={ t("invitation.poll_notes") }
+											>{ guestPollNotes(g, p.ID) }</textarea>
+									</div>
+								</div>
+							}
+						</div>
+					}
+				</div>
+			}
+			<button type="submit" id="rsvp-submit-btn">{ t("invitation.confirm") }</button>
+		</form>
+		}
+	</article>
+}
+
+templ Invitation(inv models.Invitation, settings models.Settings, polls []models.Poll, alreadyViewed bool, noRedirect bool, t i18n.T, lang string, ogMeta OGMeta, title string, nonce string) {
+	@Layout(title, lang, t, ogMeta, false, invitationImagePreloads(settings, alreadyViewed), "", nonce) {
 		<div id="envelope-overlay" class={ templ.KV("is-complete", alreadyViewed) } style={ appearanceVars(settings) }>
 			<div id="envelope-open-button" role="button" tabindex="0" aria-label={ t("invitation.title") }></div>
 			<div class="envelope">
@@ -161,146 +316,7 @@ templ Invitation(inv models.Invitation, settings models.Settings, polls []models
 							</a>
 						</section>
 					}
-					<article class="rsvp-card">
-						<h2>{ t("invitation.rsvp") }</h2>
-						if settings.EventPassed() {
-							<div id="rsvp-locked">
-								<p class="rsvp-subtitle rsvp-answered-notice">{ t("invitation.event_passed") }</p>
-								<div class="rsvp-locked-actions">
-									<a href={ templ.SafeURL("/?invite=" + inv.Code) } class="secondary outline rsvp-action-btn"><span class="rsvp-btn-icon rsvp-btn-icon-home" aria-hidden="true"></span>{ t("invitation.go_home") }</a>
-								</div>
-							</div>
-						} else if InvitationAnswered(inv) {
-							<div id="rsvp-locked">
-								<p class="rsvp-subtitle rsvp-answered-notice">{ t("invitation.already_answered") }</p>
-								<div class="rsvp-locked-actions">
-									<a href={ templ.SafeURL("/?invite=" + inv.Code) } class="secondary outline rsvp-action-btn"><span class="rsvp-btn-icon rsvp-btn-icon-home" aria-hidden="true"></span>{ t("invitation.go_home") }</a>
-									<button type="button" id="rsvp-unlock-btn" class="secondary outline rsvp-action-btn"><span class="rsvp-btn-icon rsvp-btn-icon-edit" aria-hidden="true"></span>{ t("invitation.change_answer") }</button>
-								</div>
-							</div>
-						} else {
-							<p class="rsvp-subtitle">{ t("invitation.rsvp_description") }</p>
-						}
-						if !settings.EventPassed() {
-						<form method="POST" action={ templ.SafeURL("/" + inv.Code + "/rsvp") } id="rsvp-form" class={ templ.KV("rsvp-form-locked", InvitationAnswered(inv)) } inert?={ InvitationAnswered(inv) }>
-							for i, g := range inv.Guests {
-								<div class="rsvp-guest">
-									<span class="rsvp-name"><span class="rsvp-name-number">{ strconv.Itoa(i + 1) }.</span>{ g.FirstName }</span>
-									<div class="rsvp-fields">
-										<div class="rsvp-radio-group" role="group" aria-labelledby={ "ceremony_label_" + strconv.Itoa(g.ID) }>
-											<span class="rsvp-radio-legend" id={ "ceremony_label_" + strconv.Itoa(g.ID) }>{ t("th.ceremony") }</span>
-											<div class="rsvp-radio-options">
-												<label>
-													if g.ConfirmedCeremony != nil && !*g.ConfirmedCeremony {
-														<input type="radio" name={ "ceremony_" + strconv.Itoa(g.ID) } value="0" required checked/>
-													} else {
-														<input type="radio" name={ "ceremony_" + strconv.Itoa(g.ID) } value="0" required/>
-													}
-													{ t("rsvp.no") }
-												</label>
-												<label>
-													if g.ConfirmedCeremony != nil && *g.ConfirmedCeremony {
-														<input type="radio" name={ "ceremony_" + strconv.Itoa(g.ID) } value="1" required checked/>
-													} else {
-														<input type="radio" name={ "ceremony_" + strconv.Itoa(g.ID) } value="1" required/>
-													}
-													{ t("rsvp.yes") }
-												</label>
-											</div>
-										</div>
-										<div class="rsvp-radio-group" role="group" aria-labelledby={ "reception_label_" + strconv.Itoa(g.ID) }>
-											<span class="rsvp-radio-legend" id={ "reception_label_" + strconv.Itoa(g.ID) }>{ t("th.reception") }</span>
-											<div class="rsvp-radio-options">
-												<label>
-													if g.ConfirmedReception != nil && !*g.ConfirmedReception {
-														<input type="radio" name={ "reception_" + strconv.Itoa(g.ID) } value="0" required checked/>
-													} else {
-														<input type="radio" name={ "reception_" + strconv.Itoa(g.ID) } value="0" required/>
-													}
-													{ t("rsvp.no") }
-												</label>
-												<label>
-													if g.ConfirmedReception != nil && *g.ConfirmedReception {
-														<input type="radio" name={ "reception_" + strconv.Itoa(g.ID) } value="1" required checked/>
-													} else {
-														<input type="radio" name={ "reception_" + strconv.Itoa(g.ID) } value="1" required/>
-													}
-													{ t("rsvp.yes") }
-												</label>
-											</div>
-										</div>
-									</div>
-									if len(polls) > 0 {
-										<div class="rsvp-polls">
-											for _, p := range polls {
-												<div class="rsvp-poll-item">
-													<div class="rsvp-radio-group rsvp-poll-group" role="group" aria-labelledby={ "poll_label_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }>
-														<div class="rsvp-poll-text">
-															<span class="rsvp-radio-legend rsvp-poll-label" id={ "poll_label_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }>
-																{ p.Question }
-															</span>
-															if p.Description != "" {
-																<span class="rsvp-poll-description">{ p.Description }</span>
-															}
-														</div>
-														<div class="rsvp-radio-options">
-															<label>
-																if guestAnsweredYes(g, p.ID) {
-																	<input
-																		type="radio"
-																		name={ "poll_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }
-																		value="0"
-																		data-poll-answer="true"/>
-																} else {
-																	<input
-																		type="radio"
-																		name={ "poll_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }
-																		value="0"
-																		checked
-																		data-poll-answer="true"/>
-																}
-																{ t("rsvp.no") }
-															</label>
-															<label>
-																if guestAnsweredYes(g, p.ID) {
-																	<input
-																		type="radio"
-																		name={ "poll_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }
-																		value="1"
-																		checked
-																		data-poll-answer="true"/>
-																} else {
-																	<input
-																		type="radio"
-																		name={ "poll_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }
-																		value="1"
-																		data-poll-answer="true"/>
-																}
-																{ t("rsvp.yes") }
-															</label>
-														</div>
-													</div>
-													<div
-														class="rsvp-poll-notes"
-														id={ "poll_notes_wrap_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }
-														>
-														<textarea
-															name={ "poll_notes_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }
-															id={ "poll_notes_" + strconv.Itoa(p.ID) + "_" + strconv.Itoa(g.ID) }
-															placeholder={ t("placeholder.poll_notes") }
-															aria-label={ t("invitation.poll_notes") }
-															>{ guestPollNotes(g, p.ID) }</textarea>
-													</div>
-												</div>
-											}
-										</div>
-									}
-								</div>
-							}
-							<button type="submit" id="rsvp-submit-btn">{ t("invitation.confirm") }</button>
-						</form>
-						}
-					</article>
+					@InvitationRSVPCard(inv, settings, polls, t)
 					<div class="invitation-replay">
 						<button type="button" id="replay-invitation-animation" class="secondary outline">{ t("invitation.close_envelope") }</button>
 					</div>
@@ -322,7 +338,7 @@ templ Invitation(inv models.Invitation, settings models.Settings, polls []models
 				</div>
 			</div>
 		</div>
-		<script>
+		<script nonce={ nonce }>
 			(function() {
 				var overlay = document.getElementById('envelope-overlay');
 				var content = document.getElementById('invitation-content');
@@ -349,6 +365,18 @@ templ Invitation(inv models.Invitation, settings models.Settings, polls []models
 						existing.value = readCsrfPublic();
 					});
 				}
+				// Delegated on the document so it also wires the unlock button of a
+				// card morphed in by the Datastar RSVP submit.
+				document.addEventListener('click', function(event) {
+					if (!event.target.closest || !event.target.closest('#rsvp-unlock-btn')) return;
+					var lockedEl = document.getElementById('rsvp-locked');
+					if (lockedEl) lockedEl.style.display = 'none';
+					var formEl = document.getElementById('rsvp-form');
+					if (formEl) {
+						formEl.classList.remove('rsvp-form-locked');
+						formEl.removeAttribute('inert');
+					}
+				});
 				if (!overlay || !content || !openButton || !replayButton) return;
 				var shouldMarkViewed = !overlay.classList.contains('is-complete');
 				var reducedMotionQuery = window.matchMedia
@@ -423,22 +451,5 @@ templ Invitation(inv models.Invitation, settings models.Settings, polls []models
 				});
 			})();
 		</script>
-		if InvitationAnswered(inv) {
-			<script>
-				(function() {
-					var unlockBtn = document.getElementById('rsvp-unlock-btn');
-					if (!unlockBtn) return;
-					unlockBtn.addEventListener('click', function() {
-						var lockedEl = document.getElementById('rsvp-locked');
-						if (lockedEl) lockedEl.style.display = 'none';
-						var formEl = document.getElementById('rsvp-form');
-						if (formEl) {
-							formEl.classList.remove('rsvp-form-locked');
-							formEl.removeAttribute('inert');
-						}
-					});
-				})();
-			</script>
-		}
 	}
 }

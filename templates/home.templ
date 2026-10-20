@@ -205,7 +205,7 @@ func homePageStyle(settings models.Settings) string {
 }
 
 templ Home(settings models.Settings, content HomeContent, registryItems []models.RegistryItem, claimedAmounts map[int]int, bankConfigured bool, chatEnabled bool, soundtrackEnabled bool, inviteUpdateURL string, rsvpSubmitted bool, t i18n.T, lang string, ogMeta OGMeta) {
-	@Layout(settings.GroomName+" & "+settings.BrideName, lang, t, ogMeta, len(content.Places) > 0 || len(content.Honeymoon) > 0 || len(content.ParkingSpots) > 0, homepageHeroPreloads(content.HeroBackground), homePageStyle(settings)) {
+	@Layout(settings.GroomName+" & "+settings.BrideName, lang, t, ogMeta, len(content.Places) > 0 || len(content.Honeymoon) > 0 || len(content.ParkingSpots) > 0, homepageHeroPreloads(content.HeroBackground), homePageStyle(settings), "") {
 		<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
 			<symbol id="chev-d" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></symbol>
 			<symbol id="chev-u" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></symbol>
