@@ -110,6 +110,122 @@ func TestGuestsFragment(t *testing.T) {
 	}
 }
 
+func TestInvitationsFragment(t *testing.T) {
+	setupDB(t)
+	configureSettings(t, nil)
+	app := newTestApp()
+	defer app.Shutdown()
+
+	ada := mustCreateGuest(t, "Ada", "Love", "adult")
+	bob := mustCreateGuest(t, "Bob", "Ray", "child")
+	if _, err := database.CreateInvitation([]int{ada.ID}, "Ada"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := database.CreateInvitation([]int{bob.ID}, "Bob"); err != nil {
+		t.Fatal(err)
+	}
+
+	signals := `{"iq":"ada","ipage":1}`
+	status, header, body := get(t, app, "/dashboard/invitations/fragment?datastar="+url.QueryEscape(signals))
+	if status != 200 {
+		t.Fatalf("fragment: status %d", status)
+	}
+	if ct := header.Get("Content-Type"); ct != "text/event-stream" {
+		t.Errorf("fragment Content-Type = %q", ct)
+	}
+	if !strings.Contains(body, `id="invitations-results"`) || !strings.Contains(body, "invitation-row-") {
+		t.Errorf("fragment missing the invitations results block: %q", body)
+	}
+	if !strings.Contains(body, ">Ada<") {
+		t.Errorf("fragment missing the filtered invitation: %q", body)
+	}
+	if strings.Contains(body, ">Bob<") {
+		t.Errorf("fragment leaked the filtered-out invitation: %q", body)
+	}
+
+	// no signals renders every invitation; an out-of-range page clamps
+	status, _, body = get(t, app, "/dashboard/invitations/fragment")
+	if status != 200 || !strings.Contains(body, ">Ada<") || !strings.Contains(body, ">Bob<") {
+		t.Errorf("fragment without signals: status %d body %q", status, body)
+	}
+	status, _, body = get(t, app, "/dashboard/invitations/fragment?datastar="+url.QueryEscape(`{"ipage":99}`))
+	if status != 200 || !strings.Contains(body, ">Ada<") {
+		t.Errorf("fragment clamped page: status %d body %q", status, body)
+	}
+
+	// malformed signals are rejected
+	status, _, _ = get(t, app, "/dashboard/invitations/fragment?datastar=notjson")
+	if status != 400 {
+		t.Errorf("fragment with bad signals: status %d, want 400", status)
+	}
+}
+
+func TestRegistryFragment(t *testing.T) {
+	setupDB(t)
+	configureSettings(t, nil)
+	app := newTestApp()
+	defer app.Shutdown()
+
+	if err := database.CreateRegistryItem("Toaster", 100, 0); err != nil {
+		t.Fatal(err)
+	}
+	if err := database.CreateGift(50, "Alice", nil, nil); err != nil {
+		t.Fatal(err)
+	}
+
+	signals := `{"rpage":1,"gpage":1}`
+	status, header, body := get(t, app, "/dashboard/registry/fragment?datastar="+url.QueryEscape(signals))
+	if status != 200 {
+		t.Fatalf("fragment: status %d", status)
+	}
+	if ct := header.Get("Content-Type"); ct != "text/event-stream" {
+		t.Errorf("fragment Content-Type = %q", ct)
+	}
+	if n := strings.Count(body, "event: datastar-patch-elements"); n != 3 {
+		t.Errorf("fragment carries %d patch events, want 3: %q", n, body)
+	}
+	for _, want := range []string{`id="registry-results"`, "registry-row-", "Toaster", `id="gifts-summary"`, `id="gifts-results"`, "gift-row-", "Alice"} {
+		if !strings.Contains(body, want) {
+			t.Errorf("fragment missing %q: %q", want, body)
+		}
+	}
+
+	// malformed signals are rejected
+	status, _, _ = get(t, app, "/dashboard/registry/fragment?datastar=notjson")
+	if status != 400 {
+		t.Errorf("fragment with bad signals: status %d, want 400", status)
+	}
+}
+
+func TestSoundtrackFragment(t *testing.T) {
+	setupDB(t)
+	configureSettings(t, nil)
+	app := newTestApp()
+	defer app.Shutdown()
+
+	if err := database.CreateSoundtrackEvent("Song One", "Artist", "https://open.spotify.com/track/x", ""); err != nil {
+		t.Fatal(err)
+	}
+
+	signals := `{"spage":1}`
+	status, header, body := get(t, app, "/dashboard/soundtrack/fragment?datastar="+url.QueryEscape(signals))
+	if status != 200 {
+		t.Fatalf("fragment: status %d", status)
+	}
+	if ct := header.Get("Content-Type"); ct != "text/event-stream" {
+		t.Errorf("fragment Content-Type = %q", ct)
+	}
+	if !strings.Contains(body, `id="soundtrack-results"`) || !strings.Contains(body, "soundtrack-row-") || !strings.Contains(body, "Song One") {
+		t.Errorf("fragment missing the soundtrack results block: %q", body)
+	}
+
+	// malformed signals are rejected
+	status, _, _ = get(t, app, "/dashboard/soundtrack/fragment?datastar=notjson")
+	if status != 400 {
+		t.Errorf("fragment with bad signals: status %d, want 400", status)
+	}
+}
+
 func TestDashboardIndexErrors(t *testing.T) {
 	// note: dropping invitations is not in this table because the guest
 	// counters query the invitations table first, so the paginated
