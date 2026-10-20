@@ -148,6 +148,7 @@ func main() {
 
 	admin.Get("/", handlers.DashboardIndex)
 	admin.Get("/counters/:category", handlers.CounterGuestNames)
+	admin.Get("/guests/fragment", handlers.GuestsFragment)
 	admin.Post("/settings", handlers.SaveSettings)
 	admin.Post("/guests", handlers.AddGuest)
 	admin.Post("/guests/import", handlers.ImportGuestsCSV)

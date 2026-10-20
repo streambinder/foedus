@@ -15,6 +15,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/streambinder/foedus/internal/database"
+	"github.com/streambinder/foedus/internal/datastar"
 	"github.com/streambinder/foedus/internal/i18n"
 	"github.com/streambinder/foedus/internal/middleware"
 	"github.com/streambinder/foedus/internal/models"
@@ -263,6 +264,52 @@ func DashboardIndex(c *fiber.Ctx) error {
 		"total_guests", totalGuests,
 	)
 	return Render(c, templates.Dashboard(settings, content, guests, pagedGifts, giftsPage, giftsTotalPages, len(gifts), giftsTotal, pagedRegistry, registryPage, registryTotalPages, registryItems, invitations, pagedInvitations, invitePage, inviteTotalPages, inviteSearch, polls, pagedSoundtrack, soundtrackPage, soundtrackTotalPages, confirmedReception, refusedReception, pendingRSVP, invitedGuests, nonVisualizedInvited, totalGuests, confirmedAdults, confirmedChildren, confirmedInfants, confirmedVendors, page, totalPages, search, csrfToken, getCSPNonce(c), getFlash(c), getT(c), getLang(c)))
+}
+
+// guestSignals carries the guests section state a Datastar action sends
+// back: the search text, the page and the invitation selection.
+type guestSignals struct {
+	Q           string            `json:"q"`
+	Page        int               `json:"page"`
+	Selected    []string          `json:"selected"`
+	Names       map[string]string `json:"names"`
+	Label       string            `json:"label"`
+	LabelEdited bool              `json:"labelEdited"`
+}
+
+// GuestsFragment answers a Datastar action from the guests section with an
+// SSE patch of the GuestsResults block, re-rendered from the signals.
+func GuestsFragment(c *fiber.Ctx) error {
+	logger := handlerLogger(c)
+	var sig guestSignals
+	if err := datastar.ReadSignals(c, &sig); err != nil {
+		return c.Status(400).SendString("bad signals")
+	}
+	search := strings.TrimSpace(sig.Q)
+	page := sig.Page
+	if page < 1 {
+		page = 1
+	}
+	guests, filteredTotal, err := database.GetGuestsPaginated(page, guestsPerPage, search)
+	if err != nil {
+		logger.Error("guests fragment failed to load guests", "error", err.Error())
+		return c.Status(500).SendString("failed to load guests")
+	}
+	totalPages := (filteredTotal + guestsPerPage - 1) / guestsPerPage
+	if totalPages < 1 {
+		totalPages = 1
+	}
+	if page > totalPages {
+		page = totalPages
+	}
+	invitations, err := database.GetAllInvitations()
+	if err != nil {
+		logger.Error("guests fragment failed to load invitations", "error", err.Error())
+		return c.Status(500).SendString("failed to load invitations")
+	}
+	csrfToken, _ := c.Locals("csrf").(string)
+	view := templates.GuestView{Selected: sig.Selected, Names: sig.Names, Label: sig.Label, LabelEdited: sig.LabelEdited}
+	return datastar.PatchComponent(c, templates.GuestsResults(guests, invitations, page, totalPages, search, view, csrfToken, getT(c), getLang(c)))
 }
 
 func resolveImageMediaID(q database.Querier, rawImage, rawMediaID string, existingMediaID int, allowedAny bool) (int, error) {

@@ -1,18 +1,11 @@
 (() => {
-  const selectedGuestIds = new Set();
-  let guestSearchTimer = null;
   let invitationSearchTimer = null;
   let invitationSearchValue = "";
-  let invitationLabelValue = "";
-  let invitationLabelUserEdited = false;
-  const guestFirstNames = {};
-  let guestSearchSeq = 0;
   let invitationSearchSeq = 0;
   const SECTION_IDS = [
     "dashboard-flash",
     "dashboard-counters",
     "dashboard-settings",
-    "dashboard-guests",
     "dashboard-invitations",
     "dashboard-registry",
     "dashboard-soundtrack-events",
@@ -22,7 +15,6 @@
     bindGlobalListeners();
     initDashboardFeatures();
     initImageResizers();
-    syncGuestSelectionUI();
     syncInvitationSearchInput();
   }
 
@@ -32,13 +24,9 @@
 
     document.addEventListener("click", handleClick);
     document.addEventListener("submit", handleSubmit);
-    document.addEventListener("change", handleChange);
     document.addEventListener("input", handleInput);
     window.addEventListener("popstate", () => {
-      refreshSections(window.location.href, [
-        "dashboard-guests",
-        "dashboard-invitations",
-      ]);
+      refreshSections(window.location.href, ["dashboard-invitations"]);
     });
   }
 
@@ -49,16 +37,6 @@
     if (editLink) {
       event.preventDefault();
       openDashboardEditModal(editLink.href);
-      return;
-    }
-
-    const paginationLink = event.target.closest(
-      '#dashboard-guests .pagination a[href^="/dashboard"]',
-    );
-    if (paginationLink) {
-      event.preventDefault();
-      history.pushState({}, "", paginationLink.href);
-      refreshSections(paginationLink.href, ["dashboard-guests"]);
       return;
     }
 
@@ -122,46 +100,7 @@
     }
   }
 
-  function handleChange(event) {
-    if (!event.target.classList.contains("guest-checkbox")) return;
-    const id = event.target.value;
-    if (event.target.checked) {
-      selectedGuestIds.add(id);
-    } else {
-      selectedGuestIds.delete(id);
-    }
-    syncGuestSelectionUI();
-  }
-
   function handleInput(event) {
-    if (event.target.id === "invitation-label-input") {
-      invitationLabelValue = event.target.value;
-      invitationLabelUserEdited = event.target.value.trim() !== "";
-      event.target.dataset.userEdited = invitationLabelUserEdited ? "1" : "";
-      return;
-    }
-    if (event.target.id === "guest-search") {
-      clearTimeout(guestSearchTimer);
-      guestSearchTimer = setTimeout(() => {
-        const url = new URL(window.location.href);
-        const value = event.target.value.trim();
-        if (value) {
-          url.searchParams.set("q", value);
-        } else {
-          url.searchParams.delete("q");
-        }
-        url.searchParams.delete("page");
-        history.replaceState({}, "", url);
-        const seq = ++guestSearchSeq;
-        refreshSections(
-          url.toString(),
-          ["dashboard-guests"],
-          () => seq === guestSearchSeq,
-        );
-      }, 350);
-      return;
-    }
-
     if (event.target.id === "invitation-search") {
       invitationSearchValue = event.target.value;
       clearTimeout(invitationSearchTimer);
@@ -204,12 +143,6 @@
   }
 
   async function submitForm(form) {
-    if (form.id === "invitation-form") {
-      const hidden = form.querySelector("#guest-ids-input");
-      if (hidden) hidden.value = Array.from(selectedGuestIds).join(",");
-      if (selectedGuestIds.size === 0) return;
-    }
-
     const action = form.getAttribute("action") || window.location.pathname;
     const method = (form.getAttribute("method") || "GET").toUpperCase();
     const formData = new FormData(form);
@@ -225,29 +158,48 @@
     }
 
     if (form.id === "invitation-form") {
-      selectedGuestIds.clear();
-      invitationLabelValue = "";
-      invitationLabelUserEdited = false;
-      const labelInput = form.querySelector("#invitation-label-input");
-      if (labelInput) {
-        labelInput.value = "";
-        labelInput.dataset.userEdited = "";
-      }
       const code = response.headers.get("X-Invitation-Code");
       if (code && typeof window.copyInvitationURL === "function") {
         window.copyInvitationURL(code);
       }
     }
 
-    if (isGuestDeleteForm(form)) {
-      selectedGuestIds.delete(extractTrailingID(action));
-    }
-
     await refreshSections(
       window.location.href,
       getRefreshSections(action, form),
     );
+    if (affectsGuests(action)) {
+      // the guests section is Datastar-driven: ask it to refetch its
+      // fragment with its current signals instead of replacing its DOM
+      const detail = {};
+      if (form.id === "invitation-form") detail.reset = true;
+      if (isGuestDeleteForm(form)) {
+        detail.removeId = extractTrailingID(action);
+      }
+      dispatchGuestsRefresh(detail);
+    }
     closeDashboardModal();
+  }
+
+  function affectsGuests(action) {
+    return (
+      /\/dashboard\/guests\/\d+\/confirm\/(ceremony|reception)$/.test(action) ||
+      /\/dashboard\/guests(\/import)?$/.test(action) ||
+      /\/dashboard\/guests\/\d+$/.test(action) ||
+      /\/dashboard\/guests\/\d+\/delete$/.test(action) ||
+      /\/dashboard\/invitations$/.test(action) ||
+      /\/dashboard\/invitations\/\d+\/delete$/.test(action) ||
+      /\/dashboard\/invitations\/\d+\/viewed\/reset$/.test(action)
+    );
+  }
+
+  function dispatchGuestsRefresh(detail) {
+    const section = document.getElementById("dashboard-guests");
+    if (section) {
+      section.dispatchEvent(
+        new CustomEvent("guests-refresh", { detail: detail || {} }),
+      );
+    }
   }
 
   function getCsrfToken(form) {
@@ -267,26 +219,21 @@
     if (
       /\/dashboard\/guests\/\d+\/confirm\/(ceremony|reception)$/.test(action)
     ) {
-      return ["dashboard-counters", "dashboard-guests"];
+      return ["dashboard-counters"];
     }
     if (
       /\/dashboard\/guests(\/import)?$/.test(action) ||
       /\/dashboard\/guests\/\d+$/.test(action) ||
       /\/dashboard\/guests\/\d+\/delete$/.test(action)
     ) {
-      return [
-        "dashboard-flash",
-        "dashboard-counters",
-        "dashboard-guests",
-        "dashboard-invitations",
-      ];
+      return ["dashboard-flash", "dashboard-counters", "dashboard-invitations"];
     }
     if (
       /\/dashboard\/invitations$/.test(action) ||
       /\/dashboard\/invitations\/\d+\/delete$/.test(action) ||
       /\/dashboard\/invitations\/\d+\/viewed\/reset$/.test(action)
     ) {
-      return ["dashboard-flash", "dashboard-guests", "dashboard-invitations"];
+      return ["dashboard-flash", "dashboard-invitations"];
     }
     if (/\/dashboard\/polls(\/\d+\/delete)?$/.test(action)) {
       return ["dashboard-flash", "dashboard-invitations"];
@@ -336,11 +283,7 @@
     restoreOpenAccordions(openDetails);
     initDashboardFeatures();
     initImageResizers();
-    syncGuestSelectionUI();
     syncInvitationSearchInput();
-    if (sectionIds.indexOf("dashboard-guests") !== -1) {
-      focusGuestSearchIfPresent();
-    }
     if (sectionIds.indexOf("dashboard-invitations") !== -1) {
       focusInvitationSearchIfPresent();
     }
@@ -364,69 +307,6 @@
     if (current && next) {
       current.replaceWith(next);
     }
-  }
-
-  function syncGuestSelectionUI() {
-    const checkboxes = document.querySelectorAll(".guest-checkbox");
-    checkboxes.forEach((checkbox) => {
-      checkbox.checked = selectedGuestIds.has(checkbox.value);
-    });
-
-    const hidden = document.getElementById("guest-ids-input");
-    if (hidden) {
-      hidden.value = Array.from(selectedGuestIds).join(",");
-    }
-
-    const button = document.getElementById("create-invitation-btn");
-    if (button) {
-      button.disabled = selectedGuestIds.size === 0;
-    }
-
-    syncInvitationLabelDefault();
-  }
-
-  function syncInvitationLabelDefault() {
-    const input = document.getElementById("invitation-label-input");
-    if (!input) return;
-
-    // cache first names from currently rendered guests so filtered-out selections keep their names
-    document.querySelectorAll(".guest-checkbox").forEach((checkbox) => {
-      const name = (checkbox.dataset.firstName || "").trim();
-      if (name) guestFirstNames[checkbox.value] = name;
-    });
-
-    // restore user-typed label across guest section refreshes (search/pagination)
-    if (invitationLabelUserEdited) {
-      input.dataset.userEdited = "1";
-      if (input.value !== invitationLabelValue) {
-        input.value = invitationLabelValue;
-      }
-      return;
-    }
-    if (input.dataset.userEdited === "1") return;
-
-    const firstNames = [];
-    selectedGuestIds.forEach((id) => {
-      const name = guestFirstNames[id];
-      if (name) firstNames.push(name);
-    });
-    input.value = composeDefaultInvitationLabel(firstNames);
-    invitationLabelValue = input.value;
-  }
-
-  function composeDefaultInvitationLabel(firstNames) {
-    if (firstNames.length === 0) return "";
-    if (firstNames.length === 1) return firstNames[0];
-    if (firstNames.length === 2) return `${firstNames[0]} & ${firstNames[1]}`;
-    return `${firstNames[0]} + ${firstNames.length - 1}`;
-  }
-
-  function focusGuestSearchIfPresent() {
-    const input = document.getElementById("guest-search");
-    if (!input) return;
-    input.focus({ preventScroll: true });
-    const end = input.value.length;
-    input.setSelectionRange(end, end);
   }
 
   function syncInvitationSearchInput() {

@@ -61,6 +61,55 @@ func TestDashboardIndex(t *testing.T) {
 	}
 }
 
+func TestGuestsFragment(t *testing.T) {
+	setupDB(t)
+	configureSettings(t, nil)
+	app := newTestApp()
+	defer app.Shutdown()
+
+	ada := mustCreateGuest(t, "Ada", "Love", "adult")
+	mustCreateGuest(t, "Bob", "Ray", "child")
+
+	signals := `{"q":"ada","page":1,"selected":["` + strconv.Itoa(ada.ID) + `"],"names":{"` + strconv.Itoa(ada.ID) + `":"Ada"}}`
+	status, header, body := get(t, app, "/dashboard/guests/fragment?datastar="+url.QueryEscape(signals))
+	if status != 200 {
+		t.Fatalf("fragment: status %d", status)
+	}
+	if ct := header.Get("Content-Type"); ct != "text/event-stream" {
+		t.Errorf("fragment Content-Type = %q", ct)
+	}
+	if !strings.Contains(body, "event: datastar-patch-elements") {
+		t.Errorf("fragment is not a patch-elements event: %q", body)
+	}
+	if !strings.Contains(body, `id="guests-results"`) || !strings.Contains(body, "Ada") {
+		t.Errorf("fragment missing filtered guest: %q", body)
+	}
+	if strings.Contains(body, "Bob") {
+		t.Errorf("fragment leaked the filtered-out guest: %q", body)
+	}
+	if !strings.Contains(body, "checked") {
+		t.Errorf("fragment does not render the selected guest checked: %q", body)
+	}
+	if !strings.Contains(body, `name="guest_ids" id="guest-ids-input" value="`+strconv.Itoa(ada.ID)+`"`) {
+		t.Errorf("fragment does not render the selection into guest_ids: %q", body)
+	}
+	if !strings.Contains(body, `id="invitation-label-input"`) || !strings.Contains(body, `value="Ada"`) {
+		t.Errorf("fragment does not render the default invitation label: %q", body)
+	}
+
+	// no signals renders the unfiltered first page
+	status, _, body = get(t, app, "/dashboard/guests/fragment")
+	if status != 200 || !strings.Contains(body, "Ada") || !strings.Contains(body, "Bob") {
+		t.Errorf("fragment without signals: status %d body %q", status, body)
+	}
+
+	// malformed signals are rejected
+	status, _, _ = get(t, app, "/dashboard/guests/fragment?datastar=notjson")
+	if status != 400 {
+		t.Errorf("fragment with bad signals: status %d, want 400", status)
+	}
+}
+
 func TestDashboardIndexErrors(t *testing.T) {
 	// note: dropping invitations is not in this table because the guest
 	// counters query the invitations table first, so the paginated

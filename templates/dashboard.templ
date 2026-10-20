@@ -1,10 +1,12 @@
 package templates
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/streambinder/foedus/internal/i18n"
 	"github.com/streambinder/foedus/internal/models"
 	"net/url"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -76,6 +78,86 @@ func registryItemName(items []models.RegistryItem, id *int) string {
 		}
 	}
 	return ""
+}
+
+// GuestView is the guests section state the client owns through Datastar
+// signals. The server renders it back into the fragment HTML so a morph
+// lands on the current values; Datastar owns the changes in between.
+type GuestView struct {
+	Selected    []string
+	Names       map[string]string
+	Label       string
+	LabelEdited bool
+}
+
+// guestLabelValue is the invitation label to render: the user-edited label
+// when there is one, else the default composed from the selected guests'
+// first names in selection order.
+func guestLabelValue(view GuestView) string {
+	if view.LabelEdited {
+		return view.Label
+	}
+	names := make([]string, 0, len(view.Selected))
+	for _, id := range view.Selected {
+		names = append(names, view.Names[id])
+	}
+	switch {
+	case len(names) == 0:
+		return ""
+	case len(names) == 1:
+		return names[0]
+	case len(names) == 2:
+		return names[0] + " & " + names[1]
+	default:
+		return names[0] + " + " + strconv.Itoa(len(names)-1)
+	}
+}
+
+// guestsSignals is the initial Datastar signal state of the guests section,
+// rendered as data-signals JSON on the section element. The selection and
+// the invitation label live client-side from here; the server re-renders
+// them from the signals every fragment request carries back.
+func guestsSignals(search string, page int) string {
+	raw, _ := json.Marshal(map[string]any{
+		"q":           search,
+		"page":        page,
+		"selected":    []string{},
+		"names":       map[string]string{},
+		"label":       "",
+		"labelEdited": false,
+	})
+	return string(raw)
+}
+
+// guestLabelDefaultExpr composes the default invitation label from the
+// selected guests' first names: one name, two joined with &, more as
+// first name + count. It mirrors the server-side defaultInvitationLabel.
+const guestLabelDefaultExpr = "$selected.length === 0 ? '' : $selected.length === 1 ? ($names[$selected[0]] || '') : $selected.length === 2 ? ($names[$selected[0]] || '') + ' & ' + ($names[$selected[1]] || '') : ($names[$selected[0]] || '') + ' + ' + ($selected.length - 1)"
+
+// guestToggleExpr keeps the $selected and $names signals in sync with a
+// guest checkbox. Signal values are data; the expression itself is static.
+const guestToggleExpr = "const id = evt.target.value; if (evt.target.checked) { if (!$selected.includes(id)) { $selected = [...$selected, id] } $names = { ...$names, [id]: evt.target.dataset.firstName } } else { $selected = $selected.filter(s => s !== id) }"
+
+// guestsRefreshExpr refetches the guests fragment with the current signals.
+// dashboard-spa.js dispatches a guests-refresh CustomEvent on the section
+// after a form submit changes guest data; the event detail may carry a
+// reset flag (after an invitation is created) or a removeId (a deleted
+// guest still present in the selection).
+const guestsRefreshExpr = "const d = evt.detail || {}; if (d.reset) { $selected = []; $names = {}; $label = ''; $labelEdited = false } if (d.removeId) { $selected = $selected.filter(s => s !== d.removeId) } @get('/dashboard/guests/fragment')"
+
+// guestPageExpr switches the guests page signal and refetches the fragment,
+// keeping the link href as the no-JavaScript path.
+func guestPageExpr(page int) string {
+	return "evt.preventDefault(); $page = " + strconv.Itoa(page) + "; @get('/dashboard/guests/fragment')"
+}
+
+// boolAttr returns a boolean HTML attribute (checked, disabled) when on,
+// and no attribute when off.
+func boolAttr(name string, on bool) templ.Attributes {
+	if !on {
+		return templ.Attributes{}
+	}
+	return templ.Attributes{name: name}
 }
 
 // find invitation code for a guest by their invitation_id
@@ -525,7 +607,7 @@ templ Dashboard(settings models.Settings, content SettingsContent, guests []mode
 										</div>
 									</div>
 								</template>
-								<script>
+								<script nonce={ nonce }>
 									(function () {
 										function getHeroBackgroundsContainer() {
 											return document.getElementById("homepage-hero-backgrounds-container");
@@ -1027,7 +1109,7 @@ templ Dashboard(settings models.Settings, content SettingsContent, guests []mode
 			</form>
 		</article>
 		<!-- guests -->
-		<article id="dashboard-guests">
+		<article id="dashboard-guests" data-signals={ guestsSignals(search, page) } data-computed:guest-ids="$selected.join(',')" data-computed:label-default={ guestLabelDefaultExpr } data-effect="if (!$labelEdited) { $label = $labelDefault }" data-on:guests-refresh={ guestsRefreshExpr }>
 			<h2>{ t("dashboard.guests") }</h2>
 			<div class="guest-forms-row">
 				<form class="add-guest-form" method="POST" action="/dashboard/guests">
@@ -1051,105 +1133,7 @@ templ Dashboard(settings models.Settings, content SettingsContent, guests []mode
 					<button type="submit">{ t("btn.import_csv") }</button>
 				</form>
 			</div>
-			<div class="guest-search-row">
-				<input type="search" id="guest-search" name="q" value={ search } placeholder={ t("placeholder.search") } autocomplete="off"/>
-				if len(guests) > 0 {
-					<form id="invitation-form" method="POST" action="/dashboard/invitations">
-						<input type="hidden" name="_csrf" value={ csrfToken }/>
-						<input type="hidden" name="guest_ids" id="guest-ids-input"/>
-						<div class="invitation-bar">
-							<input type="text" name="label" id="invitation-label-input" placeholder={ t("placeholder.invitation_label") } autocomplete="off"/>
-							<button type="submit" id="create-invitation-btn" disabled>{ t("btn.create_invitation") }</button>
-						</div>
-					</form>
-				}
-			</div>
-			if len(guests) > 0 {
-				<div class="overflow-auto">
-					<table>
-						<thead>
-							<tr>
-								<th class="checkbox-col"></th>
-								<th>{ t("th.first_name") }</th>
-								<th>{ t("th.last_name") }</th>
-								<th>{ t("th.type") }</th>
-								<th>{ t("th.ceremony") }</th>
-								<th>{ t("th.reception") }</th>
-								<th>{ t("th.actions") }</th>
-							</tr>
-						</thead>
-						<tbody>
-							for _, g := range guests {
-								<tr>
-									<td class="checkbox-col">
-										if g.InvitationID == nil {
-											<input type="checkbox" class="guest-checkbox" value={ strconv.Itoa(g.ID) } data-first-name={ g.FirstName }/>
-										}
-									</td>
-									<td data-label={ t("th.first_name") }>
-										{ g.FirstName }
-										if guestInvitationCode(invitations, g.InvitationID) != "" {
-											<span class="invitation-badge">{ guestInvitationCode(invitations, g.InvitationID) }</span>
-										}
-									</td>
-									<td data-label={ t("th.last_name") }>{ g.LastName }</td>
-									<td data-label={ t("th.type") }>
-										<span class={ "guest-type-badge", "guest-type-" + g.Type }>{ t("guest_type." + g.Type) }</span>
-									</td>
-									<td data-label={ t("th.ceremony") }>
-										<form method="POST" action={ templ.SafeURL("/dashboard/guests/" + strconv.Itoa(g.ID) + "/confirm/ceremony") }>
-											<input type="hidden" name="_csrf" value={ csrfToken }/>
-											if g.ConfirmedCeremony == nil {
-												<input type="checkbox" role="switch" class="toggle-null" onchange="window.dashboardSubmitForm ? window.dashboardSubmitForm(this.form) : this.form.requestSubmit()"/>
-											} else if *g.ConfirmedCeremony {
-												<input type="checkbox" role="switch" checked onchange="window.dashboardSubmitForm ? window.dashboardSubmitForm(this.form) : this.form.requestSubmit()"/>
-											} else {
-												<input type="checkbox" role="switch" onchange="window.dashboardSubmitForm ? window.dashboardSubmitForm(this.form) : this.form.requestSubmit()"/>
-											}
-										</form>
-									</td>
-									<td data-label={ t("th.reception") }>
-										<form method="POST" action={ templ.SafeURL("/dashboard/guests/" + strconv.Itoa(g.ID) + "/confirm/reception") }>
-											<input type="hidden" name="_csrf" value={ csrfToken }/>
-											if g.ConfirmedReception == nil {
-												<input type="checkbox" role="switch" class="toggle-null" onchange="window.dashboardSubmitForm ? window.dashboardSubmitForm(this.form) : this.form.requestSubmit()"/>
-											} else if *g.ConfirmedReception {
-												<input type="checkbox" role="switch" checked onchange="window.dashboardSubmitForm ? window.dashboardSubmitForm(this.form) : this.form.requestSubmit()"/>
-											} else {
-												<input type="checkbox" role="switch" onchange="window.dashboardSubmitForm ? window.dashboardSubmitForm(this.form) : this.form.requestSubmit()"/>
-											}
-										</form>
-									</td>
-									<td data-label={ t("th.actions") }>
-										<div class="actions">
-											<a href={ templ.SafeURL("/dashboard/guests/" + strconv.Itoa(g.ID) + "/edit") }>{ t("btn.edit") }</a>
-											<form method="POST" action={ templ.SafeURL("/dashboard/guests/" + strconv.Itoa(g.ID) + "/delete") } data-confirm={ t("confirm.delete_guest") } onsubmit="return confirm(this.dataset.confirm)">
-												<input type="hidden" name="_csrf" value={ csrfToken }/>
-												<button type="submit" class="outline secondary">{ t("btn.delete") }</button>
-											</form>
-										</div>
-									</td>
-								</tr>
-							}
-						</tbody>
-					</table>
-				</div>
-				if totalPages > 1 {
-					<nav class="pagination">
-						if page > 1 {
-							<a href={ templ.SafeURL(paginationURL(page-1, search)) }>{ t("btn.prev") }</a>
-						} else {
-							<span class="disabled">{ t("btn.prev") }</span>
-						}
-						<span class="page-info">{ strconv.Itoa(page) } / { strconv.Itoa(totalPages) }</span>
-						if page < totalPages {
-							<a href={ templ.SafeURL(paginationURL(page+1, search)) }>{ t("btn.next") }</a>
-						} else {
-							<span class="disabled">{ t("btn.next") }</span>
-						}
-					</nav>
-				}
-			}
+			@GuestsResults(guests, invitations, page, totalPages, search, GuestView{}, csrfToken, t, lang)
 		</article>
 		<!-- invitations -->
 		<article id="dashboard-invitations">
@@ -1551,7 +1535,7 @@ templ Dashboard(settings models.Settings, content SettingsContent, guests []mode
 			}
 		</article>
 		<div id="dashboard-modal-root"></div>
-		<script>
+		<script nonce={ nonce }>
 			// poll yes-voters modal
 			document.addEventListener("click", function (e) {
 				var link = e.target.closest(".poll-yes-link");
@@ -1562,7 +1546,7 @@ templ Dashboard(settings models.Settings, content SettingsContent, guests []mode
 				).style.display = "";
 			});
 		</script>
-		<script>
+		<script nonce={ nonce }>
 			// copy invitation URL to clipboard; btn optional (visual feedback when invoked from a button)
 			function copyInvitationURL(code, btn) {
 				const url =
@@ -1754,4 +1738,112 @@ templ homepageLabelGroup(lang, groupLabel string, keys []string, overrides map[s
 			/>
 		</label>
 	}
+}
+
+
+// GuestsResults renders the reactive part of the guests section: the
+// search row with the invitation bar, the guests table and its pagination.
+// Datastar morphs this block by its id when the fragment endpoint answers.
+templ GuestsResults(guests []models.Guest, invitations []models.Invitation, page int, totalPages int, search string, view GuestView, csrfToken string, t i18n.T, lang string) {
+	<div id="guests-results">
+		<div class="guest-search-row">
+			<input type="search" id="guest-search" name="q" value={ search } placeholder={ t("placeholder.search") } autocomplete="off" data-bind:q data-on:input__debounce.300ms="$page = 1; @get('/dashboard/guests/fragment')"/>
+			if len(guests) > 0 {
+				<form id="invitation-form" method="POST" action="/dashboard/invitations">
+					<input type="hidden" name="_csrf" value={ csrfToken }/>
+					<input type="hidden" name="guest_ids" id="guest-ids-input" value={ strings.Join(view.Selected, ",") } data-bind:guest-ids/>
+					<div class="invitation-bar">
+						<input type="text" name="label" id="invitation-label-input" placeholder={ t("placeholder.invitation_label") } autocomplete="off" value={ guestLabelValue(view) } data-bind:label data-on:input="$labelEdited = $label.trim() !== ''"/>
+						<button type="submit" id="create-invitation-btn" { boolAttr("disabled", len(view.Selected) == 0)... } data-attr:disabled="$selected.length === 0">{ t("btn.create_invitation") }</button>
+					</div>
+				</form>
+			}
+		</div>
+		if len(guests) > 0 {
+			<div class="overflow-auto">
+				<table>
+					<thead>
+						<tr>
+							<th class="checkbox-col"></th>
+							<th>{ t("th.first_name") }</th>
+							<th>{ t("th.last_name") }</th>
+							<th>{ t("th.type") }</th>
+							<th>{ t("th.ceremony") }</th>
+							<th>{ t("th.reception") }</th>
+							<th>{ t("th.actions") }</th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, g := range guests {
+							<tr id={ "guest-row-" + strconv.Itoa(g.ID) }>
+								<td class="checkbox-col">
+									if g.InvitationID == nil {
+										<input type="checkbox" class="guest-checkbox" id={ "guest-check-" + strconv.Itoa(g.ID) } value={ strconv.Itoa(g.ID) } data-first-name={ g.FirstName } { boolAttr("checked", slices.Contains(view.Selected, strconv.Itoa(g.ID)))... } data-on:change={ guestToggleExpr }/>
+									}
+								</td>
+								<td data-label={ t("th.first_name") }>
+									{ g.FirstName }
+									if guestInvitationCode(invitations, g.InvitationID) != "" {
+										<span class="invitation-badge">{ guestInvitationCode(invitations, g.InvitationID) }</span>
+									}
+								</td>
+								<td data-label={ t("th.last_name") }>{ g.LastName }</td>
+								<td data-label={ t("th.type") }>
+									<span class={ "guest-type-badge", "guest-type-" + g.Type }>{ t("guest_type." + g.Type) }</span>
+								</td>
+								<td data-label={ t("th.ceremony") }>
+									<form method="POST" action={ templ.SafeURL("/dashboard/guests/" + strconv.Itoa(g.ID) + "/confirm/ceremony") }>
+										<input type="hidden" name="_csrf" value={ csrfToken }/>
+										if g.ConfirmedCeremony == nil {
+											<input type="checkbox" role="switch" class="toggle-null" onchange="window.dashboardSubmitForm ? window.dashboardSubmitForm(this.form) : this.form.requestSubmit()"/>
+										} else if *g.ConfirmedCeremony {
+											<input type="checkbox" role="switch" checked onchange="window.dashboardSubmitForm ? window.dashboardSubmitForm(this.form) : this.form.requestSubmit()"/>
+										} else {
+											<input type="checkbox" role="switch" onchange="window.dashboardSubmitForm ? window.dashboardSubmitForm(this.form) : this.form.requestSubmit()"/>
+										}
+									</form>
+								</td>
+								<td data-label={ t("th.reception") }>
+									<form method="POST" action={ templ.SafeURL("/dashboard/guests/" + strconv.Itoa(g.ID) + "/confirm/reception") }>
+										<input type="hidden" name="_csrf" value={ csrfToken }/>
+										if g.ConfirmedReception == nil {
+											<input type="checkbox" role="switch" class="toggle-null" onchange="window.dashboardSubmitForm ? window.dashboardSubmitForm(this.form) : this.form.requestSubmit()"/>
+										} else if *g.ConfirmedReception {
+											<input type="checkbox" role="switch" checked onchange="window.dashboardSubmitForm ? window.dashboardSubmitForm(this.form) : this.form.requestSubmit()"/>
+										} else {
+											<input type="checkbox" role="switch" onchange="window.dashboardSubmitForm ? window.dashboardSubmitForm(this.form) : this.form.requestSubmit()"/>
+										}
+									</form>
+								</td>
+								<td data-label={ t("th.actions") }>
+									<div class="actions">
+										<a href={ templ.SafeURL("/dashboard/guests/" + strconv.Itoa(g.ID) + "/edit") }>{ t("btn.edit") }</a>
+										<form method="POST" action={ templ.SafeURL("/dashboard/guests/" + strconv.Itoa(g.ID) + "/delete") } data-confirm={ t("confirm.delete_guest") } onsubmit="return confirm(this.dataset.confirm)">
+											<input type="hidden" name="_csrf" value={ csrfToken }/>
+											<button type="submit" class="outline secondary">{ t("btn.delete") }</button>
+										</form>
+									</div>
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+			if totalPages > 1 {
+				<nav class="pagination">
+					if page > 1 {
+						<a href={ templ.SafeURL(paginationURL(page-1, search)) } data-on:click={ guestPageExpr(page-1) }>{ t("btn.prev") }</a>
+					} else {
+						<span class="disabled">{ t("btn.prev") }</span>
+					}
+					<span class="page-info">{ strconv.Itoa(page) } / { strconv.Itoa(totalPages) }</span>
+					if page < totalPages {
+						<a href={ templ.SafeURL(paginationURL(page+1, search)) } data-on:click={ guestPageExpr(page+1) }>{ t("btn.next") }</a>
+					} else {
+						<span class="disabled">{ t("btn.next") }</span>
+					}
+				</nav>
+			}
+		}
+	</div>
 }
