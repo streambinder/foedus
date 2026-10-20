@@ -94,19 +94,34 @@
     return merged.slice(0, 8);
   }
 
+  // Every provider fetch shares one timeout: a stalled request must
+  // degrade to an empty result, never hang the whole search. Nominatim
+  // takes the language as a query parameter; a custom Accept-Language
+  // header makes the request non-simple, and the CORS preflight to
+  // nominatim.openstreetmap.org is answered with a redirect, which
+  // browsers treat as a failure, so the header silently disabled
+  // Nominatim from every real browser.
+  const FETCH_TIMEOUT_MS = 3000;
+
+  function fetchJSON(url) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+    return fetch(url, { signal: controller.signal })
+      .then((res) => res.json())
+      .finally(() => clearTimeout(timer));
+  }
+
   function fetchNominatim(query) {
     const lang = document.documentElement.lang || "en";
-    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=jsonv2&addressdetails=1&namedetails=1&limit=5`;
-    return fetch(url, { headers: { "Accept-Language": lang } })
-      .then((res) => res.json())
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=jsonv2&addressdetails=1&namedetails=1&limit=5&accept-language=${encodeURIComponent(lang)}`;
+    return fetchJSON(url)
       .then((data) => data.map(normalizeNominatim))
       .catch(() => []);
   }
 
   function fetchPhoton(query) {
     const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=6`;
-    return fetch(url)
-      .then((res) => res.json())
+    return fetchJSON(url)
       .then((data) => (data.features || []).map(normalizePhoton))
       .catch(() => []);
   }
@@ -153,8 +168,7 @@
 
   function fetchPhotonAnchor(hint) {
     const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(hint)}&limit=1`;
-    return fetch(url)
-      .then((res) => res.json())
+    return fetchJSON(url)
       .then((data) => {
         const first = (data.features || []).map(normalizePhoton)[0];
         return first?.lat ? first : null;
@@ -164,8 +178,7 @@
 
   function fetchPhotonBiased(nameQuery, anchor) {
     const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(nameQuery)}&lat=${anchor.lat}&lon=${anchor.lon}&zoom=16&location_bias_scale=0.1&limit=10`;
-    return fetch(url)
-      .then((res) => res.json())
+    return fetchJSON(url)
       .then((data) => (data.features || []).map(normalizePhoton))
       .catch(() => []);
   }
@@ -175,9 +188,8 @@
     const lat = Number(anchor.lat);
     const lon = Number(anchor.lon);
     const viewbox = `${(lon - 0.01).toFixed(6)},${(lat + 0.01).toFixed(6)},${(lon + 0.01).toFixed(6)},${(lat - 0.01).toFixed(6)}`;
-    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(nameQuery)}&format=jsonv2&addressdetails=1&namedetails=1&limit=10&layer=poi&viewbox=${viewbox}&bounded=1`;
-    return fetch(url, { headers: { "Accept-Language": lang } })
-      .then((res) => res.json())
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(nameQuery)}&format=jsonv2&addressdetails=1&namedetails=1&limit=10&layer=poi&viewbox=${viewbox}&bounded=1&accept-language=${encodeURIComponent(lang)}`;
+    return fetchJSON(url)
       .then((data) => data.map(normalizeNominatim))
       .catch(() => []);
   }
@@ -375,9 +387,15 @@
 
     function search(query) {
       const seq = ++searchSeq;
-      searchPlaces(query).then((items) => {
-        if (seq === searchSeq) render(items);
-      });
+      searchPlaces(query)
+        .then((items) => {
+          if (seq === searchSeq) render(items);
+        })
+        .catch(() => {
+          // the dropdown must always answer, even on a total failure:
+          // silence reads as a broken field, the empty state does not
+          if (seq === searchSeq) render([]);
+        });
     }
 
     input.addEventListener("input", () => {
