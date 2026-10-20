@@ -444,6 +444,18 @@ function initDashboardFeatures() {
     let results = [];
 
     let searchSeq = 0;
+    // the composed "name, address" text of the current selection,
+    // starting from the server-rendered value: edits to the field are
+    // compared against it to tell a rename from a fresh search
+    let selectedDisplay = input.value;
+
+    function clearSelection() {
+      if (nameHidden) nameHidden.value = "";
+      if (addressHidden) addressHidden.value = "";
+      latHidden.value = "0";
+      lngHidden.value = "0";
+      renderCoordsBadge(card, "", "");
+    }
 
     function hide() {
       searchSeq++;
@@ -501,6 +513,7 @@ function initDashboardFeatures() {
       latHidden.value = item.lat || "0";
       lngHidden.value = item.lon || "0";
       input.value = item.name + (item.address ? `, ${item.address}` : "");
+      selectedDisplay = input.value;
       renderCoordsBadge(card, item.lat, item.lon);
       hide();
     }
@@ -521,11 +534,18 @@ function initDashboardFeatures() {
     }
 
     input.addEventListener("input", () => {
-      if (nameHidden) nameHidden.value = "";
-      if (addressHidden) addressHidden.value = "";
-      latHidden.value = "0";
-      lngHidden.value = "0";
-      renderCoordsBadge(card, "", "");
+      if (!input.value.trim()) {
+        // an emptied field clears the place altogether
+        clearSelection();
+        selectedDisplay = "";
+      } else if (!selectedDisplay) {
+        clearSelection();
+      } else if (input.value !== selectedDisplay && nameHidden) {
+        // the text before the first comma is the display name: the
+        // admin can give the place its commercial name without losing
+        // the address and coordinates of the selection
+        nameHidden.value = input.value.split(",")[0].trim();
+      }
       clearTimeout(debounceTimer);
       const q = input.value.trim();
       if (q.length < 3) {
