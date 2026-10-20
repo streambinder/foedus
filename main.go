@@ -131,6 +131,9 @@ func main() {
 	// admin group (must be registered before the /:code catch-all)
 	admin := app.Group("/dashboard", middleware.BasicAuth())
 
+	// per-request CSP nonce for Datastar's CSP mode (dashboard pages only)
+	admin.Use(middleware.CSPNonce())
+
 	// csrf for all dashboard routes — token extracted from form field "_csrf"
 	admin.Use(csrf.New(csrf.Config{
 		Extractor: func(c *fiber.Ctx) (string, error) {

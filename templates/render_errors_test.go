@@ -127,7 +127,7 @@ func TestRenderWriteErrorSweeps(t *testing.T) {
 		polls, soundtrack, 2, 3,
 		5, 2, 3, 8, 4, 10,
 		4, 1, 0, 0,
-		2, 3, "ada", "csrf-token", "Settings saved", i18n.NewT("en"), "en"))
+		2, 3, "ada", "csrf-token", "nonce", "Settings saved", i18n.NewT("en"), "en"))
 	sweepComponent(t, "dashboard empty", Dashboard(models.Settings{}, SettingsContent{}, nil,
 		nil, 1, 1, 0, 0,
 		nil, 1, 1, nil,
@@ -135,7 +135,7 @@ func TestRenderWriteErrorSweeps(t *testing.T) {
 		nil, nil, 1, 1,
 		0, 0, 0, 0, 0, 0,
 		0, 0, 0, 0,
-		1, 1, "", "", "", i18n.NewT("en"), "en"))
+		1, 1, "", "", "", "", i18n.NewT("en"), "en"))
 
 	homeSettings, homeContent, homeItems, homeClaimed := homeFixtures()
 	ogMeta := OGMeta{Title: "Davide & Agnese", Description: "Wedding", ImageType: "image/png", ImageWidth: "1200", ImageHeight: "630"}
@@ -156,7 +156,7 @@ func TestRenderWriteErrorSweeps(t *testing.T) {
 	sweepComponent(t, "setup guard", SetupGuard("en", i18n.NewT("en")))
 	sweepComponent(t, "layout full", Layout("Title", "en", i18n.NewT("en"), ogMeta, true,
 		[]ImagePreload{{Href: "/media/1", Media: "(max-width: 767px)"}, {Href: "/media/2"}}, "--x:1;"))
-	sweepComponent(t, "dashboard layout", DashboardLayout("Title", "en"))
+	sweepComponent(t, "dashboard layout", DashboardLayout("Title", "en", "testnonce"))
 
 	sweepComponent(t, "donut", Donut("Types", 8, 8, []DonutSlice{
 		{Value: 0, ClassName: "zero", Label: "Zero", Category: "cat_zero"},
@@ -166,12 +166,12 @@ func TestRenderWriteErrorSweeps(t *testing.T) {
 	sweepComponent(t, "flora", Flora(fullSettings(), "bl"))
 
 	translator := i18n.NewT("en")
-	sweepComponent(t, "edit guest", EditGuest(models.Guest{ID: 1, FirstName: "Ada", LastName: "Love", Type: "child"}, fullSettings(), "csrf", translator, "en"))
-	sweepComponent(t, "edit registry item", EditRegistryItem(models.RegistryItem{ID: 2, Name: "Lamp", Price: 80, MediaID: 61}, fullSettings(), "csrf", translator, "en"))
+	sweepComponent(t, "edit guest", EditGuest(models.Guest{ID: 1, FirstName: "Ada", LastName: "Love", Type: "child"}, fullSettings(), "csrf", "nonce", translator, "en"))
+	sweepComponent(t, "edit registry item", EditRegistryItem(models.RegistryItem{ID: 2, Name: "Lamp", Price: 80, MediaID: 61}, fullSettings(), "csrf", "nonce", translator, "en"))
 	sweepComponent(t, "edit gift", EditGift(models.Gift{ID: 4, Amount: 50, Donor: "Alice", RegistryItemID: intPtr(2), Confirmed: true},
-		[]models.RegistryItem{{ID: 1, Name: "Toaster"}, {ID: 2, Name: "Lamp"}}, fullSettings(), "csrf", translator, "en"))
-	sweepComponent(t, "edit poll", EditPoll(models.Poll{ID: 6, Question: "Bus?", Description: "From station"}, fullSettings(), "csrf", translator, "en"))
-	sweepComponent(t, "edit invitation", EditInvitation(models.Invitation{ID: 7, Code: "CODE7", Label: "Famiglia"}, fullSettings(), "csrf", translator, "en"))
+		[]models.RegistryItem{{ID: 1, Name: "Toaster"}, {ID: 2, Name: "Lamp"}}, fullSettings(), "csrf", "nonce", translator, "en"))
+	sweepComponent(t, "edit poll", EditPoll(models.Poll{ID: 6, Question: "Bus?", Description: "From station"}, fullSettings(), "csrf", "nonce", translator, "en"))
+	sweepComponent(t, "edit invitation", EditInvitation(models.Invitation{ID: 7, Code: "CODE7", Label: "Famiglia"}, fullSettings(), "csrf", "nonce", translator, "en"))
 
 	// pagination extremes: the disabled prev/next spans are separate
 	// generated sections with their own writes
@@ -182,7 +182,7 @@ func TestRenderWriteErrorSweeps(t *testing.T) {
 		polls, soundtrack, 3, 3,
 		0, 0, 0, 0, 0, 0,
 		0, 0, 0, 0,
-		3, 3, "", "csrf-token", "", i18n.NewT("en"), "en"))
+		3, 3, "", "csrf-token", "nonce", "", i18n.NewT("en"), "en"))
 
 	// venues without media and label overrides take generated branches the
 	// full fixtures never reach
@@ -287,7 +287,7 @@ func TestRenderWriteErrorSweepsLongData(t *testing.T) {
 		polls, soundtrack, 1, 3,
 		5, 2, 3, 8, 4, 10,
 		4, 1, 0, 0,
-		1, 3, pad("ada"), "csrf-token", pad("Settings saved"), i18n.NewT("it"), "it"))
+		1, 3, pad("ada"), "csrf-token", "nonce", pad("Settings saved"), i18n.NewT("it"), "it"))
 
 	homeSettings, homeContent, homeItems, homeClaimed := homeFixtures()
 	homeSettings.GroomName = pad(homeSettings.GroomName)
@@ -387,7 +387,7 @@ func sweepPhaseFixtures(t *testing.T, size int) {
 		polls, soundtrack, 2, 3,
 		5, 2, 3, 8, 4, 10,
 		4, 1, 0, 0,
-		2, 3, "ada", "csrf-token", "Settings saved", i18n.NewT("en"), "en"))
+		2, 3, "ada", "csrf-token", "nonce", "Settings saved", i18n.NewT("en"), "en"))
 
 	homeSettings, homeContent, homeItems, homeClaimed := homeFixtures()
 	ogMeta := OGMeta{Title: "Davide & Agnese", Description: "Wedding", ImageType: "image/png", ImageWidth: "1200", ImageHeight: "630"}
@@ -402,12 +402,12 @@ func sweepPhaseFixtures(t *testing.T, size int) {
 		nil, nil, 1, 1,
 		0, 0, 0, 0, 0, 0,
 		0, 0, 0, 0,
-		1, 1, "", "", "", i18n.NewT("en"), "en"))
+		1, 1, "", "", "", "", i18n.NewT("en"), "en"))
 	sweepComponent(t, "ceremony phase", Ceremony(fullSettings(), i18n.NewT("en"), "en", ogMeta))
 	sweepComponent(t, "invitation viewed phase", Invitation(inv, fullSettings(), invPolls, true, true, i18n.NewT("it"), "it", ogMeta, "Titolo"))
 	translator := i18n.NewT("en")
 	sweepComponent(t, "edit gift phase", EditGift(models.Gift{ID: 4, Amount: 50, Donor: "Alice", RegistryItemID: intPtr(2), Confirmed: true},
-		[]models.RegistryItem{{ID: 1, Name: "Toaster"}, {ID: 2, Name: "Lamp"}}, fullSettings(), "csrf", translator, "en"))
+		[]models.RegistryItem{{ID: 1, Name: "Toaster"}, {ID: 2, Name: "Lamp"}}, fullSettings(), "csrf", "nonce", translator, "en"))
 	sweepComponent(t, "layout phase", Layout("Title", "en", translator, ogMeta, true,
 		[]ImagePreload{{Href: "/media/1", Media: "(max-width: 767px)"}, {Href: "/media/2"}}, "--x:1;"))
 }
@@ -427,7 +427,7 @@ func TestRenderChildError(t *testing.T) {
 
 	buf.Reset()
 	ctx = templ.WithChildren(context.Background(), broken)
-	if err := DashboardLayout("Title", "en").Render(ctx, &buf); err == nil {
+	if err := DashboardLayout("Title", "en", "testnonce").Render(ctx, &buf); err == nil {
 		t.Error("dashboard layout with a failing child succeeded, want an error")
 	}
 
