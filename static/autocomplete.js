@@ -348,6 +348,30 @@
 
   window.FoedusNoResultsLabel = noResultsLabel;
 
+  // localized "searching" label: same data-attribute pattern as the
+  // no-results label, so the template owns the wording
+  function searchingLabel(dropdown) {
+    if (dropdown.dataset.searchingLabel) return dropdown.dataset.searchingLabel;
+    const any = document.querySelector(
+      ".autocomplete-dropdown[data-searching-label]",
+    );
+    return any ? any.dataset.searchingLabel : "Searching…";
+  }
+
+  // placeholder row shown while a search runs: a multi-step search can
+  // take seconds, and a silent field reads as a broken one
+  function renderSearching(dropdown) {
+    dropdown.innerHTML = "";
+    const div = document.createElement("div");
+    div.className = "autocomplete-no-results autocomplete-searching";
+    div.textContent = searchingLabel(dropdown);
+    dropdown.appendChild(div);
+    dropdown.classList.remove("hidden");
+  }
+
+  window.FoedusSearchingLabel = searchingLabel;
+  window.FoedusRenderSearching = renderSearching;
+
   function initAutocomplete(config) {
     const input = document.getElementById(config.inputId);
     const dropdown = document.getElementById(config.dropdownId);
@@ -437,6 +461,9 @@
 
     function search(query) {
       const seq = ++searchSeq;
+      results = [];
+      activeIndex = -1;
+      renderSearching(dropdown);
       searchPlaces(query)
         .then((items) => {
           if (seq === searchSeq) render(items);

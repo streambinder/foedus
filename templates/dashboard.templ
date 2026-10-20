@@ -790,7 +790,7 @@ templ SettingsResults(settings models.Settings, content SettingsContent, csrfTok
 			<div class="grid">
 				<div style="position:relative">
 					<input type="text" id="ceremony-input" value={ locationDisplay(settings.CeremonyAddress, settings.CeremonyLocation) } autocomplete="off" placeholder={ t("placeholder.ceremony_address") }/>
-					<div id="ceremony-dropdown" class="autocomplete-dropdown" data-no-results-label={ t("dashboard.no_place_found") }></div>
+					<div id="ceremony-dropdown" class="autocomplete-dropdown" data-no-results-label={ t("dashboard.no_place_found") } data-searching-label={ t("dashboard.searching") }></div>
 					<input type="hidden" name="ceremony_address" id="ceremony-address-hidden" value={ settings.CeremonyAddress }/>
 					<input type="hidden" name="ceremony_location" id="ceremony-location-hidden" value={ settings.CeremonyLocation }/>
 					<input type="hidden" name="ceremony_city" id="ceremony-city-hidden" value={ settings.CeremonyCity }/>
@@ -813,7 +813,7 @@ templ SettingsResults(settings models.Settings, content SettingsContent, csrfTok
 			<div class="grid">
 				<div style="position:relative">
 					<input type="text" id="reception-input" value={ locationDisplay(settings.ReceptionAddress, settings.ReceptionLocation) } autocomplete="off" placeholder={ t("placeholder.reception_address") }/>
-					<div id="reception-dropdown" class="autocomplete-dropdown" data-no-results-label={ t("dashboard.no_place_found") }></div>
+					<div id="reception-dropdown" class="autocomplete-dropdown" data-no-results-label={ t("dashboard.no_place_found") } data-searching-label={ t("dashboard.searching") }></div>
 					<input type="hidden" name="reception_address" id="reception-address-hidden" value={ settings.ReceptionAddress }/>
 					<input type="hidden" name="reception_location" id="reception-location-hidden" value={ settings.ReceptionLocation }/>
 					<input type="hidden" name="reception_city" id="reception-city-hidden" value={ settings.ReceptionCity }/>
@@ -1194,7 +1194,7 @@ templ SettingsResults(settings models.Settings, content SettingsContent, csrfTok
 												<div style="position:relative">
 													<label>{ t("label.place_address") }</label>
 													<input type="text" class="place-location-input" value={ locationDisplay(place.Name, place.Address) } autocomplete="off" placeholder={ t("placeholder.place_address") }/>
-													<div class="autocomplete-dropdown place-dropdown" data-no-results-label={ t("dashboard.no_place_found") }></div>
+													<div class="autocomplete-dropdown place-dropdown" data-no-results-label={ t("dashboard.no_place_found") } data-searching-label={ t("dashboard.searching") }></div>
 													<input type="hidden" name={ fmt.Sprintf("place_name_%d", idx) } class="place-name-hidden" value={ place.Name }/>
 													<input type="hidden" name={ fmt.Sprintf("place_address_%d", idx) } class="place-address-hidden" value={ place.Address }/>
 													<input type="hidden" name={ fmt.Sprintf("place_lat_%d", idx) } class="place-lat-hidden" value={ coordValue(place.Lat) }/>
@@ -1283,7 +1283,7 @@ templ SettingsResults(settings models.Settings, content SettingsContent, csrfTok
 												<div style="position:relative">
 													<label>{ t("label.place_address") }</label>
 													<input type="text" class="place-location-input" value={ locationDisplay(place.Name, place.Address) } autocomplete="off" placeholder={ t("placeholder.place_address") }/>
-													<div class="autocomplete-dropdown place-dropdown" data-no-results-label={ t("dashboard.no_place_found") }></div>
+													<div class="autocomplete-dropdown place-dropdown" data-no-results-label={ t("dashboard.no_place_found") } data-searching-label={ t("dashboard.searching") }></div>
 													<input type="hidden" name={ fmt.Sprintf("honeymoon_name_%d", idx) } class="place-name-hidden" value={ place.Name }/>
 													<input type="hidden" name={ fmt.Sprintf("honeymoon_address_%d", idx) } class="place-address-hidden" value={ place.Address }/>
 													<input type="hidden" name={ fmt.Sprintf("honeymoon_lat_%d", idx) } class="place-lat-hidden" value={ coordValue(place.Lat) }/>
@@ -1365,7 +1365,7 @@ templ SettingsResults(settings models.Settings, content SettingsContent, csrfTok
 											<div style="position:relative">
 												<label>{ t("label.parking_address") }</label>
 												<input type="text" class="place-location-input" autocomplete="off" placeholder={ t("placeholder.parking_address") }/>
-												<div class="autocomplete-dropdown place-dropdown" data-no-results-label={ t("dashboard.no_place_found") }></div>
+												<div class="autocomplete-dropdown place-dropdown" data-no-results-label={ t("dashboard.no_place_found") } data-searching-label={ t("dashboard.searching") }></div>
 												<input type="hidden" name={ fmt.Sprintf("parking_lat_%d", idx) } class="place-lat-hidden" value={ coordValue(spot.Lat) }/>
 												<input type="hidden" name={ fmt.Sprintf("parking_lng_%d", idx) } class="place-lng-hidden" value={ coordValue(spot.Lng) }/>
 											</div>
