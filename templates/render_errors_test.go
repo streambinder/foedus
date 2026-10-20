@@ -146,16 +146,16 @@ func TestRenderWriteErrorSweeps(t *testing.T) {
 	sweepComponent(t, "home passed", Home(passedSettings, homeContent, homeItems, homeClaimed, true, true, true, "", false, i18n.NewT("en"), "en", OGMeta{}))
 
 	inv, invPolls := invitationFixtures()
-	sweepComponent(t, "invitation form", Invitation(inv, fullSettings(), invPolls, false, false, i18n.NewT("en"), "en", ogMeta, "Title"))
-	sweepComponent(t, "invitation viewed", Invitation(inv, fullSettings(), invPolls, true, true, i18n.NewT("it"), "it", ogMeta, "Titolo"))
-	sweepComponent(t, "invitation minimal", Invitation(inv, models.Settings{GroomName: "A", BrideName: "B"}, invPolls, false, false, i18n.NewT("en"), "en", OGMeta{}, "T"))
+	sweepComponent(t, "invitation form", Invitation(inv, fullSettings(), invPolls, false, false, i18n.NewT("en"), "en", ogMeta, "Title", ""))
+	sweepComponent(t, "invitation viewed", Invitation(inv, fullSettings(), invPolls, true, true, i18n.NewT("it"), "it", ogMeta, "Titolo", ""))
+	sweepComponent(t, "invitation minimal", Invitation(inv, models.Settings{GroomName: "A", BrideName: "B"}, invPolls, false, false, i18n.NewT("en"), "en", OGMeta{}, "T", ""))
 
 	sweepComponent(t, "ceremony full", Ceremony(fullSettings(), i18n.NewT("en"), "en", ogMeta))
 	sweepComponent(t, "ceremony empty", Ceremony(models.Settings{}, i18n.NewT("en"), "en", OGMeta{}))
 
 	sweepComponent(t, "setup guard", SetupGuard("en", i18n.NewT("en")))
 	sweepComponent(t, "layout full", Layout("Title", "en", i18n.NewT("en"), ogMeta, true,
-		[]ImagePreload{{Href: "/media/1", Media: "(max-width: 767px)"}, {Href: "/media/2"}}, "--x:1;"))
+		[]ImagePreload{{Href: "/media/1", Media: "(max-width: 767px)"}, {Href: "/media/2"}}, "--x:1;", ""))
 	sweepComponent(t, "dashboard layout", DashboardLayout("Title", "en", "testnonce"))
 
 	sweepComponent(t, "donut", Donut("Types", 8, 8, []DonutSlice{
@@ -198,7 +198,7 @@ func TestRenderWriteErrorSweeps(t *testing.T) {
 		"home.honeymoon_description": "After the party",
 	})
 	sweepComponent(t, "home overrides", Home(homeSettings, homeContent, homeItems, homeClaimed, true, false, false, "", false, overrideTranslator, "en", OGMeta{}))
-	sweepComponent(t, "invitation no media", Invitation(inv, noMediaSettings, invPolls, false, false, i18n.NewT("en"), "en", OGMeta{}, "T"))
+	sweepComponent(t, "invitation no media", Invitation(inv, noMediaSettings, invPolls, false, false, i18n.NewT("en"), "en", OGMeta{}, "T", ""))
 
 	// the two form building blocks only ever render as dashboard children;
 	// sweeping them directly covers their own guards and error returns
@@ -336,7 +336,7 @@ func TestRenderWriteErrorSweepsLongData(t *testing.T) {
 	invSettings.CeremonyLocation = pad(invSettings.CeremonyLocation)
 	invSettings.ReceptionAddress = pad(invSettings.ReceptionAddress)
 	invSettings.ReceptionLocation = pad(invSettings.ReceptionLocation)
-	sweepComponent(t, "invitation long", Invitation(inv, invSettings, invPolls, false, false, i18n.NewT("en"), "en", ogMeta, pad("Title")))
+	sweepComponent(t, "invitation long", Invitation(inv, invSettings, invPolls, false, false, i18n.NewT("en"), "en", ogMeta, pad("Title"), ""))
 	sweepComponent(t, "ceremony long", Ceremony(invSettings, i18n.NewT("it"), "it", ogMeta))
 }
 
@@ -394,7 +394,7 @@ func sweepPhaseFixtures(t *testing.T, size int) {
 	sweepComponent(t, "home full phase", Home(homeSettings, homeContent, homeItems, homeClaimed, true, true, true, "/CODE1?no_redirect=1", true, i18n.NewT("en"), "en", ogMeta))
 
 	inv, invPolls := invitationFixtures()
-	sweepComponent(t, "invitation form phase", Invitation(inv, fullSettings(), invPolls, false, false, i18n.NewT("en"), "en", ogMeta, "Title"))
+	sweepComponent(t, "invitation form phase", Invitation(inv, fullSettings(), invPolls, false, false, i18n.NewT("en"), "en", ogMeta, "Title", ""))
 	sweepComponent(t, "dashboard empty phase", Dashboard(models.Settings{}, SettingsContent{}, nil,
 		nil, 1, 1, 0, 0,
 		nil, 1, 1, nil,
@@ -404,12 +404,12 @@ func sweepPhaseFixtures(t *testing.T, size int) {
 		0, 0, 0, 0,
 		1, 1, "", "", "", "", i18n.NewT("en"), "en"))
 	sweepComponent(t, "ceremony phase", Ceremony(fullSettings(), i18n.NewT("en"), "en", ogMeta))
-	sweepComponent(t, "invitation viewed phase", Invitation(inv, fullSettings(), invPolls, true, true, i18n.NewT("it"), "it", ogMeta, "Titolo"))
+	sweepComponent(t, "invitation viewed phase", Invitation(inv, fullSettings(), invPolls, true, true, i18n.NewT("it"), "it", ogMeta, "Titolo", ""))
 	translator := i18n.NewT("en")
 	sweepComponent(t, "edit gift phase", EditGift(models.Gift{ID: 4, Amount: 50, Donor: "Alice", RegistryItemID: intPtr(2), Confirmed: true},
 		[]models.RegistryItem{{ID: 1, Name: "Toaster"}, {ID: 2, Name: "Lamp"}}, fullSettings(), "csrf", "nonce", translator, "en"))
 	sweepComponent(t, "layout phase", Layout("Title", "en", translator, ogMeta, true,
-		[]ImagePreload{{Href: "/media/1", Media: "(max-width: 767px)"}, {Href: "/media/2"}}, "--x:1;"))
+		[]ImagePreload{{Href: "/media/1", Media: "(max-width: 767px)"}, {Href: "/media/2"}}, "--x:1;", ""))
 }
 
 // A child component that fails must surface its error through the layout
@@ -421,7 +421,7 @@ func TestRenderChildError(t *testing.T) {
 
 	var buf bytes.Buffer
 	ctx := templ.WithChildren(context.Background(), broken)
-	if err := Layout("Title", "en", i18n.NewT("en"), OGMeta{}, false, nil, "").Render(ctx, &buf); err == nil {
+	if err := Layout("Title", "en", i18n.NewT("en"), OGMeta{}, false, nil, "", "").Render(ctx, &buf); err == nil {
 		t.Error("layout with a failing child succeeded, want an error")
 	}
 
@@ -438,7 +438,7 @@ func TestRenderChildError(t *testing.T) {
 	})
 	buf.Reset()
 	ctx = templ.WithChildren(context.Background(), working)
-	if err := Layout("Title", "en", i18n.NewT("en"), OGMeta{}, false, nil, "").Render(ctx, &buf); err != nil {
+	if err := Layout("Title", "en", i18n.NewT("en"), OGMeta{}, false, nil, "", "").Render(ctx, &buf); err != nil {
 		t.Fatal(err)
 	}
 	if !bytes.Contains(buf.Bytes(), []byte("child-content")) {

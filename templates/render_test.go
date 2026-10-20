@@ -58,7 +58,7 @@ func TestRenderLayoutVariants(t *testing.T) {
 		{Href: "/media/1", Media: "(max-width: 767px)"},
 		{Href: "/media/2"},
 		{Href: ""},
-	}, "--x:1;"))
+	}, "--x:1;", ""))
 	for _, want := range []string{"carto-api-key", "og:image:width", "og:image:height", "media=\"(max-width: 767px)\""} {
 		if !strings.Contains(out, want) {
 			t.Errorf("full layout missing %q", want)
@@ -66,7 +66,7 @@ func TestRenderLayoutVariants(t *testing.T) {
 	}
 
 	// OG title without description or image dimensions
-	out = render(t, Layout("Title", "it", i18n.NewT("it"), OGMeta{Title: "Solo titolo"}, false, nil, ""))
+	out = render(t, Layout("Title", "it", i18n.NewT("it"), OGMeta{Title: "Solo titolo"}, false, nil, "", ""))
 	if strings.Contains(out, "og:image:width") {
 		t.Error("layout rendered image width for an empty OG meta field")
 	}
@@ -292,13 +292,13 @@ func TestRenderInvitation(t *testing.T) {
 
 	// partially answered, not viewed: the RSVP form renders with every
 	// confirmation combination across the three guests
-	out := render(t, Invitation(inv, settings, polls, false, false, i18n.NewT("en"), "en", ogMeta, "Title"))
+	out := render(t, Invitation(inv, settings, polls, false, false, i18n.NewT("en"), "en", ogMeta, "Title", ""))
 	if !strings.Contains(out, "Ada") {
 		t.Errorf("invitation missing guest: %.300s", out)
 	}
 
 	// already viewed: the envelope renders complete
-	out = render(t, Invitation(inv, settings, polls, true, true, i18n.NewT("it"), "it", ogMeta, "Titolo"))
+	out = render(t, Invitation(inv, settings, polls, true, true, i18n.NewT("it"), "it", ogMeta, "Titolo", ""))
 	if !strings.Contains(out, "is-complete") {
 		t.Errorf("viewed invitation missing complete class: %.300s", out)
 	}
@@ -307,13 +307,13 @@ func TestRenderInvitation(t *testing.T) {
 	answered := models.Invitation{Guests: []models.Guest{
 		{FirstName: "Ada", ConfirmedCeremony: boolPtr(true), ConfirmedReception: boolPtr(true)},
 	}}
-	out = render(t, Invitation(answered, settings, nil, false, false, i18n.NewT("en"), "en", OGMeta{}, "T"))
+	out = render(t, Invitation(answered, settings, nil, false, false, i18n.NewT("en"), "en", OGMeta{}, "T", ""))
 	if !strings.Contains(out, "Ada") {
 		t.Errorf("answered invitation failed: %.200s", out)
 	}
 
 	// no guests at all counts as answered too
-	out = render(t, Invitation(models.Invitation{}, settings, nil, false, false, i18n.NewT("en"), "en", OGMeta{}, "T"))
+	out = render(t, Invitation(models.Invitation{}, settings, nil, false, false, i18n.NewT("en"), "en", OGMeta{}, "T", ""))
 	if out == "" {
 		t.Error("guestless invitation rendered empty output")
 	}
@@ -322,7 +322,7 @@ func TestRenderInvitation(t *testing.T) {
 	passed := fullSettings()
 	passed.CeremonyDatetime = "2020-01-01T10:00"
 	passed.StampMediaID = 0
-	out = render(t, Invitation(inv, passed, polls, false, false, i18n.NewT("en"), "en", OGMeta{}, "T"))
+	out = render(t, Invitation(inv, passed, polls, false, false, i18n.NewT("en"), "en", OGMeta{}, "T", ""))
 	if !strings.Contains(out, "This event has already taken place") {
 		t.Errorf("passed-event invitation missing the locked notice: %.200s", out)
 	}
@@ -331,16 +331,44 @@ func TestRenderInvitation(t *testing.T) {
 	noMedia := fullSettings()
 	noMedia.CeremonyMediaID = 0
 	noMedia.ReceptionMediaID = 0
-	out = render(t, Invitation(inv, noMedia, polls, false, false, i18n.NewT("en"), "en", OGMeta{}, "T"))
+	out = render(t, Invitation(inv, noMedia, polls, false, false, i18n.NewT("en"), "en", OGMeta{}, "T", ""))
 	if !strings.Contains(out, "Via Roma 1") || !strings.Contains(out, "Strada Verde 2") {
 		t.Errorf("no-media invitation missing venue addresses: %.300s", out)
 	}
 
 	// minimal settings: no venues, no stamp, invalid colours fall back
 	minimal := models.Settings{GroomName: "A", BrideName: "B", EnvelopeColor: "red", PageBgColor: ""}
-	out = render(t, Invitation(inv, minimal, polls, false, false, i18n.NewT("en"), "en", OGMeta{}, "T"))
+	out = render(t, Invitation(inv, minimal, polls, false, false, i18n.NewT("en"), "en", OGMeta{}, "T", ""))
 	if !strings.Contains(out, models.DefaultEnvelopeColor) {
 		t.Errorf("invalid envelope colour did not fall back: %.300s", out)
+	}
+}
+
+func TestRenderInvitationCardAndNonceLayout(t *testing.T) {
+	inv, polls := invitationFixtures()
+	settings := fullSettings()
+
+	// the card renders standalone as the morph target of the RSVP submit:
+	// the form keeps its plain action and gains the Datastar submit action
+	inv.Code = "abc123"
+	out := render(t, InvitationRSVPCard(inv, settings, polls, i18n.NewT("en")))
+	for _, want := range []string{`id="rsvp-card"`, `id="rsvp-form"`, `action="/abc123/rsvp"`, "data-on:submit", "@post(&#39;/abc123/rsvp&#39;"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("invitation card missing %q: %.300s", want, out)
+		}
+	}
+
+	// a layout with a nonce carries the CSP mode attribute and the client;
+	// without one it carries neither
+	out = render(t, Layout("Title", "en", i18n.NewT("en"), OGMeta{}, false, nil, "", "testnonce"))
+	for _, want := range []string{`data-nonce="testnonce"`, "starfederation/datastar"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("nonce layout missing %q", want)
+		}
+	}
+	out = render(t, Layout("Title", "en", i18n.NewT("en"), OGMeta{}, false, nil, "", ""))
+	if strings.Contains(out, "data-nonce") || strings.Contains(out, "starfederation/datastar") {
+		t.Errorf("plain layout carries Datastar markup: %.300s", out)
 	}
 }
 
