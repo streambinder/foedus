@@ -20,7 +20,7 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     -ldflags "-X github.com/streambinder/foedus/internal/buildinfo.AssetVersion=${ASSET_VERSION}" \
     -o foedus .
 
-FROM alpine:3.24.2
+FROM alpine:3.24.3
 RUN apk add --no-cache ca-certificates=20260909-r0
 WORKDIR /app
 COPY --from=builder /app/foedus .
