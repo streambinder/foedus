@@ -412,6 +412,101 @@ func sweepPhaseFixtures(t *testing.T, size int) {
 		[]ImagePreload{{Href: "/media/1", Media: "(max-width: 767px)"}, {Href: "/media/2"}}, "--x:1;", ""))
 }
 
+// The coarse sweep steps the failure budget by up to 12 bytes, so short
+// generated writes that never straddle a flush boundary keep their error
+// returns uncovered; the templ 0.3.1100 codegen added enough of those to
+// drop templates coverage below the 90% gate. Sweeping small components
+// byte by byte at tiny buffer sizes walks the failure through every
+// generated write, including the one-byte ones.
+func sweepComponentFine(t *testing.T, name string, component templ.Component) {
+	t.Helper()
+	var buf bytes.Buffer
+	if err := component.Render(context.Background(), &buf); err != nil {
+		t.Fatalf("%s: baseline render failed: %v", name, err)
+	}
+	total := buf.Len()
+	workers := runtime.GOMAXPROCS(0)
+	jobs := make(chan int)
+	var wg sync.WaitGroup
+	for range workers {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for budget := range jobs {
+				_ = component.Render(context.Background(), &failAfterWriter{budget: budget})
+			}
+		}()
+	}
+	for budget := 0; budget <= total; budget++ {
+		jobs <- budget
+	}
+	close(jobs)
+	wg.Wait()
+
+	// a cancelled context aborts the render before the first write
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	if err := component.Render(ctx, &bytes.Buffer{}); err == nil {
+		t.Errorf("%s: render with a cancelled context succeeded, want an error", name)
+	}
+}
+
+func TestRenderWriteErrorSweepsFine(t *testing.T) {
+	defer func() {
+		runtime.GC()
+		runtime.GC()
+		templruntime.DefaultBufferSize = 16
+	}()
+	inv, polls := invitationFixtures()
+	inv.Code = "abc123"
+	settings := fullSettings()
+	translator := i18n.NewT("en")
+	donutSlices := []DonutSlice{
+		{Value: 0, ClassName: "zero", Label: "Zero", Category: "cat_zero"},
+		{Value: 5, ClassName: "five", Label: "Five", Category: "cat_five"},
+		{Value: 3, ClassName: "three", Label: "Three"},
+	}
+	// variants taking the branches the coarse sweeps never render: the
+	// locked card for a past event, the answered card, the card without
+	// guests or polls, the empty donut and the flora corners
+	passedSettings := fullSettings()
+	passedSettings.CeremonyDatetime = "2020-06-01T15:30"
+	answeredInv := inv
+	answeredInv.Guests = []models.Guest{inv.Guests[0], inv.Guests[2]}
+	noGuestsInv := inv
+	noGuestsInv.Guests = nil
+	_, _, dashGuests, dashInvitations := dashboardFixtures()
+	for _, size := range []int{1, 2, 3} {
+		runtime.GC()
+		runtime.GC()
+		templruntime.DefaultBufferSize = size
+		sweepComponentFine(t, "rsvp card", InvitationRSVPCard(inv, settings, polls, translator))
+		sweepComponentFine(t, "rsvp card passed", InvitationRSVPCard(inv, passedSettings, polls, translator))
+		sweepComponentFine(t, "rsvp card answered", InvitationRSVPCard(answeredInv, settings, polls, translator))
+		sweepComponentFine(t, "rsvp card no guests", InvitationRSVPCard(noGuestsInv, settings, polls, translator))
+		sweepComponentFine(t, "rsvp card no polls", InvitationRSVPCard(inv, settings, nil, translator))
+		sweepComponentFine(t, "donut", Donut("Types", 8, 8, donutSlices))
+		sweepComponentFine(t, "donut empty", Donut("RSVP", 0, 0, nil))
+		sweepComponentFine(t, "flora bl", Flora(settings, "bl"))
+		sweepComponentFine(t, "flora tr", Flora(settings, "tr"))
+		sweepComponentFine(t, "flora empty", Flora(models.Settings{}, "bl"))
+		sweepComponentFine(t, "flora unknown corner", Flora(settings, "xx"))
+		sweepComponentFine(t, "guests results", GuestsResults(dashGuests, dashInvitations, 1, 1, "", GuestView{}, "csrf", translator, "en"))
+		sweepComponentFine(t, "guests results selected", GuestsResults(dashGuests, dashInvitations, 1, 1, "", GuestView{Selected: []string{"1"}, Names: map[string]string{"1": "Ada Love"}}, "csrf", translator, "en"))
+		sweepComponentFine(t, "guests results search", GuestsResults(dashGuests, dashInvitations, 2, 3, "ada", GuestView{LabelEdited: true, Label: "Famiglia"}, "csrf", translator, "en"))
+		sweepComponentFine(t, "edit guest", EditGuest(models.Guest{ID: 1, FirstName: "Ada", LastName: "Love", Type: "child"}, settings, "csrf", "nonce", translator, "en"))
+		sweepComponentFine(t, "edit registry item", EditRegistryItem(models.RegistryItem{ID: 2, Name: "Lamp", Price: 80, MediaID: 61}, settings, "csrf", "nonce", translator, "en"))
+		sweepComponentFine(t, "edit gift", EditGift(models.Gift{ID: 4, Amount: 50, Donor: "Alice", RegistryItemID: intPtr(2), Confirmed: true},
+			[]models.RegistryItem{{ID: 1, Name: "Toaster"}, {ID: 2, Name: "Lamp"}}, settings, "csrf", "nonce", translator, "en"))
+		sweepComponentFine(t, "edit poll", EditPoll(models.Poll{ID: 6, Question: "Bus?", Description: "From station"}, settings, "csrf", "nonce", translator, "en"))
+		sweepComponentFine(t, "edit invitation", EditInvitation(models.Invitation{ID: 7, Code: "CODE7", Label: "Famiglia"}, settings, "csrf", "nonce", translator, "en"))
+		sweepComponentFine(t, "setting input", settingInput("groom_name", "Groom", "Davide"))
+		sweepComponentFine(t, "homepage label group", homepageLabelGroup("en", "Homepage", []string{"home.ceremony", "btn.buy"},
+			map[string]map[string]string{"en": {"home.ceremony": "The Rite"}},
+			map[string]string{"home.ceremony": "The Ceremony", "btn.buy": "Give"}))
+	}
+}
+
 // A child component that fails must surface its error through the layout
 // instead of producing a half-rendered page.
 func TestRenderChildError(t *testing.T) {
