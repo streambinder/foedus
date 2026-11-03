@@ -29,7 +29,9 @@ jobs:
   changes:
     runs-on: ubuntu-latest
     outputs:
-      docker: ${{ steps.filter.outputs.docker }}
+      # Rule 11.3: master pushes run the full pipeline, so path
+      # outputs are forced true on refs/heads/master.
+      docker: ${{ steps.filter.outputs.docker == 'true' || github.ref == 'refs/heads/master' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
