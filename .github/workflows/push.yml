@@ -89,7 +89,7 @@ jobs:
       - run: |
           PATH="$PATH:$(go env GOPATH)/bin"
           export PATH
-          go install github.com/a-h/templ/cmd/templ@v0.3.1020
+          go install github.com/a-h/templ/cmd/templ@v0.3.1100
           templ generate
       - run: |
           set -o pipefail
