@@ -21,7 +21,7 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     -o foedus .
 
 FROM alpine:3.24.3
-RUN apk add --no-cache ca-certificates=20260909-r0
+RUN apk add --no-cache ca-certificates=20261020-r0
 WORKDIR /app
 COPY --from=builder /app/foedus .
 COPY --from=builder /app/static ./static
