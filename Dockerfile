@@ -9,7 +9,7 @@ COPY go.mod go.sum ./
 RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
     go mod download && \
-    go install github.com/a-h/templ/cmd/templ@v0.3.1020
+    go install github.com/a-h/templ/cmd/templ@v0.3.1100
 
 COPY . .
 RUN --mount=type=cache,target=/go/pkg/mod \
