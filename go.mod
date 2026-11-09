@@ -5,7 +5,7 @@ go 1.26.0
 require (
 	github.com/a-h/templ v0.3.1100
 	github.com/gofiber/fiber/v2 v2.52.16
-	modernc.org/sqlite v1.61.0
+	modernc.org/sqlite v1.61.1
 )
 
 require (
