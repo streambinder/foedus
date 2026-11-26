@@ -379,6 +379,43 @@ html:has(.vp-section) body {
   background: rgb(18 24 27 / 42%);
 }
 
+/* ---------------------------------------------------------------
+   dashboard: custom section cards
+   --------------------------------------------------------------- */
+.custom-section-card {
+  border: 1px solid var(--sage-light);
+  border-radius: var(--radius-md);
+  padding: var(--sp-4);
+  margin-bottom: var(--sp-3);
+  background: var(--ivory);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.custom-section-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.custom-section-number {
+  font-family: "Playfair Display", serif;
+  font-size: var(--fs-xl);
+  color: var(--sage);
+  font-weight: 400;
+}
+
+.custom-section-remove {
+  padding: var(--sp-1) var(--sp-2);
+  font-size: var(--fs-sm);
+  margin-bottom: 0;
+}
+
+.custom-section-grid {
+  gap: var(--sp-3);
+}
+
 .vp-venues {
   background: var(--home-page-bg, var(--ivory));
   overflow: hidden;

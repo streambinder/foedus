@@ -88,6 +88,15 @@ func TestSaveSettingsFull(t *testing.T) {
 	form.Set("homepage_hero_background_count", "1")
 	form.Set("homepage_hero_background_desktop_0", pngDataURI(t, "hero-desktop"))
 	form.Set("homepage_hero_background_mobile_media_id_0", strconv.Itoa(ceremonyMedia))
+	// one custom section: header + body, new desktop upload, mobile reuses ceremony media
+	form.Set("custom_section_count", "1")
+	form.Set("custom_section_position_0", "2")
+	form.Set("custom_section_header_it_0", "La nostra storia")
+	form.Set("custom_section_header_en_0", "Our story")
+	form.Set("custom_section_body_it_0", "Tutto comincia qui.")
+	form.Set("custom_section_body_en_0", "It all starts here.")
+	form.Set("custom_section_desktop_0", pngDataURI(t, "section-desktop"))
+	form.Set("custom_section_mobile_media_id_0", strconv.Itoa(ceremonyMedia))
 	// one label override
 	form.Set("homepage_label_en_home.ceremony", "The Rite")
 
@@ -143,6 +152,10 @@ func TestSaveSettingsFull(t *testing.T) {
 	if len(heroes) != 1 || heroes[0].DesktopMediaID == 0 || heroes[0].MobileMediaID != ceremonyMedia {
 		t.Errorf("hero backgrounds = %+v", heroes)
 	}
+	sections, _ := database.GetCustomSections()
+	if len(sections) != 1 || sections[0].Position != 2 || sections[0].HeaderEn != "Our story" || sections[0].DesktopMediaID == 0 || sections[0].MobileMediaID != ceremonyMedia {
+		t.Errorf("custom sections = %+v", sections)
+	}
 	labels, _ := database.GetAllHomepageLabels()
 	if labels["en"]["home.ceremony"] != "The Rite" {
 		t.Errorf("homepage labels = %+v", labels)
@@ -174,6 +187,29 @@ func TestSaveSettingsRejections(t *testing.T) {
 		{"hero foreign media", func(f url.Values) {
 			f.Set("homepage_hero_background_count", "1")
 			f.Set("homepage_hero_background_desktop_media_id_0", "987")
+		}},
+		{"custom section declared but empty", func(f url.Values) { f.Set("custom_section_count", "1") }},
+		{"custom section no header", func(f url.Values) {
+			f.Set("custom_section_count", "1")
+			f.Set("custom_section_position_0", "2")
+			f.Set("custom_section_body_en_0", "Body without header")
+		}},
+		{"custom section no body or image", func(f url.Values) {
+			f.Set("custom_section_count", "1")
+			f.Set("custom_section_position_0", "2")
+			f.Set("custom_section_header_en_0", "Header only")
+		}},
+		{"custom section bad position", func(f url.Values) {
+			f.Set("custom_section_count", "1")
+			f.Set("custom_section_position_0", "0")
+			f.Set("custom_section_header_en_0", "Header")
+			f.Set("custom_section_body_en_0", "Body")
+		}},
+		{"custom section foreign media", func(f url.Values) {
+			f.Set("custom_section_count", "1")
+			f.Set("custom_section_position_0", "2")
+			f.Set("custom_section_header_en_0", "Header")
+			f.Set("custom_section_desktop_media_id_0", "987")
 		}},
 	}
 	for _, tc := range cases {
@@ -274,6 +310,64 @@ func TestSaveSettingsHeroMobileOnly(t *testing.T) {
 	}
 	if len(heroes) != 2 || heroes[0].MobileMediaID == 0 || heroes[1].DesktopMediaID == 0 {
 		t.Errorf("heroes = %+v", heroes)
+	}
+}
+
+func TestSaveSettingsCustomSections(t *testing.T) {
+	setupDB(t)
+	configureSettings(t, nil)
+	app := newTestApp()
+	defer app.Shutdown()
+
+	// header + image, no body
+	form := baseSettingsForm()
+	form.Set("custom_section_count", "1")
+	form.Set("custom_section_position_0", "3")
+	form.Set("custom_section_header_en_0", "Photos")
+	form.Set("custom_section_desktop_0", pngDataURI(t, "photos"))
+	status, _, _ := postForm(t, app, "/dashboard/settings", form)
+	if status != 302 {
+		t.Fatalf("header+image save: status %d, want 302", status)
+	}
+	sections, err := database.GetCustomSections()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(sections) != 1 || sections[0].HeaderEn != "Photos" || sections[0].DesktopMediaID == 0 {
+		t.Errorf("sections after header+image save = %+v", sections)
+	}
+
+	// header + body, no image; Italian-only header and body
+	form = baseSettingsForm()
+	form.Set("custom_section_count", "1")
+	form.Set("custom_section_position_0", "2")
+	form.Set("custom_section_header_it_0", "Solo italiano")
+	form.Set("custom_section_body_it_0", "Testo italiano")
+	status, _, _ = postForm(t, app, "/dashboard/settings", form)
+	if status != 302 {
+		t.Fatalf("header+body save: status %d, want 302", status)
+	}
+	sections, err = database.GetCustomSections()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(sections) != 1 || sections[0].HeaderIt != "Solo italiano" || sections[0].HeaderEn != "" {
+		t.Errorf("sections after header+body save = %+v", sections)
+	}
+
+	// clearing all cards wipes the table
+	form = baseSettingsForm()
+	form.Set("custom_section_count", "0")
+	status, _, _ = postForm(t, app, "/dashboard/settings", form)
+	if status != 302 {
+		t.Fatalf("clear save: status %d, want 302", status)
+	}
+	sections, err = database.GetCustomSections()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(sections) != 0 {
+		t.Errorf("sections after clear = %+v", sections)
 	}
 }
 
