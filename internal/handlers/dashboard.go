@@ -144,6 +144,9 @@ func loadSettingsContent() (templates.SettingsContent, error) {
 	if content.HeroBackgrounds, err = database.GetHeroBackgrounds(); err != nil {
 		return content, err
 	}
+	if content.CustomSections, err = database.GetCustomSections(); err != nil {
+		return content, err
+	}
 	content.HomepageLabels, err = database.GetAllHomepageLabels()
 	return content, err
 }
@@ -616,6 +619,10 @@ func collectExistingMediaIDs(settings models.Settings, content templates.Setting
 		add(background.DesktopMediaID)
 		add(background.MobileMediaID)
 	}
+	for _, section := range content.CustomSections {
+		add(section.DesktopMediaID)
+		add(section.MobileMediaID)
+	}
 	return ids
 }
 
@@ -696,6 +703,76 @@ func parseHeroBackgrounds(c *fiber.Ctx, q database.Querier, logger *slog.Logger,
 		return nil, fiber.NewError(400, "background image references missing — not saved")
 	}
 	return backgrounds, nil
+}
+
+// parseCustomSections reads the declared custom-section cards. A card with
+// every text field empty, no position, and no media on either side is
+// skipped; any other card must have a header in at least one language, a
+// body or a background image in at least one language, and a position of 1
+// or above — otherwise the whole save is rejected.
+func parseCustomSections(c *fiber.Ctx, q database.Querier, logger *slog.Logger, existingMediaIDs map[int]struct{}) ([]models.CustomSection, error) {
+	declared, _ := strconv.Atoi(c.FormValue("custom_section_count"))
+	var sections []models.CustomSection
+	for index := range declared {
+		field := func(name string) string {
+			return strings.TrimSpace(c.FormValue(fmt.Sprintf("custom_section_%s_%d", name, index)))
+		}
+		headerIt, headerEn := field("header_it"), field("header_en")
+		subtitleIt, subtitleEn := field("subtitle_it"), field("subtitle_en")
+		bodyIt, bodyEn := field("body_it"), field("body_en")
+		rawPosition := field("position")
+		desktopMediaID, err := resolveImageMediaIDFromSet(q,
+			c.FormValue(fmt.Sprintf("custom_section_desktop_%d", index)),
+			c.FormValue(fmt.Sprintf("custom_section_desktop_media_id_%d", index)), existingMediaIDs)
+		if err != nil {
+			logger.Warn("settings save rejected", "field", fmt.Sprintf("custom_section_desktop_%d", index), "error", err.Error())
+			return nil, err
+		}
+		mobileMediaID, err := resolveImageMediaIDFromSet(q,
+			c.FormValue(fmt.Sprintf("custom_section_mobile_%d", index)),
+			c.FormValue(fmt.Sprintf("custom_section_mobile_media_id_%d", index)), existingMediaIDs)
+		if err != nil {
+			logger.Warn("settings save rejected", "field", fmt.Sprintf("custom_section_mobile_%d", index), "error", err.Error())
+			return nil, err
+		}
+		if headerIt == "" && headerEn == "" && subtitleIt == "" && subtitleEn == "" && bodyIt == "" && bodyEn == "" && rawPosition == "" && desktopMediaID == 0 && mobileMediaID == 0 {
+			continue
+		}
+		if headerIt == "" && headerEn == "" {
+			logger.Warn("settings save rejected", "field", fmt.Sprintf("custom_section_header_%d", index))
+			return nil, fiber.NewError(400, "custom section needs a header")
+		}
+		if bodyIt == "" && bodyEn == "" && desktopMediaID == 0 && mobileMediaID == 0 {
+			logger.Warn("settings save rejected", "field", fmt.Sprintf("custom_section_body_%d", index))
+			return nil, fiber.NewError(400, "custom section needs a body or a background image")
+		}
+		position, err := strconv.Atoi(rawPosition)
+		if err != nil || position < 1 {
+			logger.Warn("settings save rejected", "field", fmt.Sprintf("custom_section_position_%d", index), "value", rawPosition)
+			return nil, fiber.NewError(400, "custom section needs a position of 1 or above")
+		}
+		sections = append(sections, models.CustomSection{
+			Position:       position,
+			HeaderIt:       headerIt,
+			HeaderEn:       headerEn,
+			SubtitleIt:     subtitleIt,
+			SubtitleEn:     subtitleEn,
+			BodyIt:         bodyIt,
+			BodyEn:         bodyEn,
+			DesktopMediaID: desktopMediaID,
+			MobileMediaID:  mobileMediaID,
+		})
+	}
+	// guard against a silent wipe: if the form claimed N section cards but
+	// every card resolved to nothing, the submitted field names didn't match
+	// what is read here (client/server contract drift) — not a genuine
+	// "user cleared all". bail before persisting, otherwise the orphan
+	// cleanup would delete the still-referenced section media bytes.
+	if declared > 0 && len(sections) == 0 {
+		logger.Error("settings save rejected", "field", "custom_sections", "reason", "declared cards resolved to zero sections", "declared_count", declared)
+		return nil, fiber.NewError(400, "custom section data missing — not saved")
+	}
+	return sections, nil
 }
 
 func SaveSettings(c *fiber.Ctx) error {
@@ -832,6 +909,9 @@ func SaveSettings(c *fiber.Ctx) error {
 		if saved.HeroBackgrounds, parseErr = parseHeroBackgrounds(c, tx, logger, existingMediaIDs); parseErr != nil {
 			return parseErr
 		}
+		if saved.CustomSections, parseErr = parseCustomSections(c, tx, logger, existingMediaIDs); parseErr != nil {
+			return parseErr
+		}
 
 		// parking spots: coords-only entries. the loop terminates on the first index
 		// with no lat/lng fields at all; rows that resolve to 0,0 (un-geocoded) are
@@ -898,6 +978,7 @@ func SaveSettings(c *fiber.Ctx) error {
 			{"accommodations", func() error { return database.ReplaceAccommodations(tx, saved.Accommodations) }},
 			{"impersonations", func() error { return database.ReplaceImpersonations(tx, saved.Impersonations) }},
 			{"hero_backgrounds", func() error { return database.ReplaceHeroBackgrounds(tx, saved.HeroBackgrounds) }},
+			{"custom_sections", func() error { return database.ReplaceCustomSections(tx, saved.CustomSections) }},
 			{"homepage_labels", func() error { return database.ReplaceHomepageLabels(tx, saved.HomepageLabels) }},
 		} {
 			if err := write.replace(); err != nil {
@@ -938,6 +1019,7 @@ func SaveSettings(c *fiber.Ctx) error {
 		"impersonations", len(saved.Impersonations),
 		"homepage_label_langs", len(saved.HomepageLabels),
 		"hero_backgrounds", len(saved.HeroBackgrounds),
+		"custom_sections", len(saved.CustomSections),
 		"spotify_playlist_configured", strings.TrimSpace(c.FormValue("spotify_playlist")) != "",
 	)
 	setFlash(c, getT(c)("flash.settings_saved"))

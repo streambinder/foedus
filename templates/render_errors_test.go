@@ -120,6 +120,15 @@ func TestRenderWriteErrorSweeps(t *testing.T) {
 		{ID: 2, Title: "NoURL", Artist: "Artist", InviteID: "UNKNOWN"},
 		{ID: 3, Title: "Plain", Artist: "Artist"},
 	}
+	// every custom-section card shape the settings accordion renders:
+	// both images, desktop-only, mobile-only, and no media, mirroring
+	// the hero-backgrounds fixture shapes above
+	content.CustomSections = []models.CustomSection{
+		{ID: 7, Position: 2, HeaderIt: "Titolo", HeaderEn: "Title", SubtitleEn: "Sub", BodyEn: "Body", DesktopMediaID: 41, MobileMediaID: 42},
+		{ID: 8, Position: 3, HeaderEn: "Desktop only", DesktopMediaID: 43},
+		{ID: 9, Position: 4, HeaderEn: "Mobile only", MobileMediaID: 44},
+		{ID: 10, Position: 5, HeaderEn: "No media", BodyEn: "Text"},
+	}
 	sweepComponent(t, "dashboard full", Dashboard(settings, content, guests,
 		gifts, 2, 3, len(gifts), 80,
 		registry, 2, 3, registry,
@@ -138,12 +147,27 @@ func TestRenderWriteErrorSweeps(t *testing.T) {
 		1, 1, "", "", "", "", i18n.NewT("en"), "en"))
 
 	homeSettings, homeContent, homeItems, homeClaimed := homeFixtures()
+	// every custom-section shape the homepage renders: full-bleed with
+	// subtitle and body, image-only, and text-only, so the sweep walks
+	// the component's branches and its write-error returns
+	homeContent.CustomSections = []models.CustomSection{
+		{ID: 7, Position: 2, HeaderEn: "Extra", SubtitleEn: "Sub", BodyEn: "More", DesktopMediaID: 51, MobileMediaID: 52},
+		{ID: 8, Position: 3, HeaderEn: "Image only", DesktopMediaID: 53},
+		{ID: 9, Position: 99, HeaderEn: "Plain", BodyEn: "Text only"},
+	}
 	ogMeta := OGMeta{Title: "Davide & Agnese", Description: "Wedding", ImageType: "image/png", ImageWidth: "1200", ImageHeight: "630"}
 	sweepComponent(t, "home full", Home(homeSettings, homeContent, homeItems, homeClaimed, true, true, true, "/CODE1?no_redirect=1", true, i18n.NewT("en"), "en", ogMeta))
 	sweepComponent(t, "home bare", Home(models.Settings{GroomName: "A", BrideName: "B"}, HomeContent{}, nil, nil, false, false, false, "", false, i18n.NewT("en"), "en", OGMeta{}))
 	passedSettings := homeSettings
 	passedSettings.CeremonyDatetime = "2020-01-01T10:00"
 	sweepComponent(t, "home passed", Home(passedSettings, homeContent, homeItems, homeClaimed, true, true, true, "", false, i18n.NewT("en"), "en", OGMeta{}))
+
+	// the custom section on its own: as a child of Home its writes land
+	// in the parent buffer, so only a direct sweep walks every one of
+	// its write-error returns, including the buffer-release path
+	customPlan := planHomeSections("", nil, nil, false, homeContent.CustomSections, "en")
+	sweepComponent(t, "custom section full", CustomSection(homeContent.CustomSections[0], customPlan, "en"))
+	sweepComponent(t, "custom section plain", CustomSection(homeContent.CustomSections[2], customPlan, "en"))
 
 	inv, invPolls := invitationFixtures()
 	sweepComponent(t, "invitation form", Invitation(inv, fullSettings(), invPolls, false, false, i18n.NewT("en"), "en", ogMeta, "Title", ""))
