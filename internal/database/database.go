@@ -289,6 +289,24 @@ func migrate() {
 			sort_order        INTEGER NOT NULL DEFAULT 0,
 			created_at        INTEGER NOT NULL DEFAULT (unixepoch())
 		) STRICT`,
+		// custom sections are admin-defined homepage sections: a background
+		// image pair (or none), per-language texts, and a position counted
+		// across all homepage sections. sort_order is the dashboard form
+		// order and breaks ties between sections at the same position.
+		`CREATE TABLE IF NOT EXISTS custom_sections (
+			id               INTEGER PRIMARY KEY AUTOINCREMENT,
+			position         INTEGER NOT NULL DEFAULT 0,
+			header_it        TEXT NOT NULL DEFAULT '',
+			header_en        TEXT NOT NULL DEFAULT '',
+			subtitle_it      TEXT NOT NULL DEFAULT '',
+			subtitle_en      TEXT NOT NULL DEFAULT '',
+			body_it          TEXT NOT NULL DEFAULT '',
+			body_en          TEXT NOT NULL DEFAULT '',
+			desktop_media_id INTEGER REFERENCES media(id),
+			mobile_media_id  INTEGER REFERENCES media(id),
+			sort_order       INTEGER NOT NULL DEFAULT 0,
+			created_at       INTEGER NOT NULL DEFAULT (unixepoch())
+		) STRICT`,
 		// only overridden labels are stored; a missing (lang, key) falls through
 		// to the compiled-in i18n default.
 		`CREATE TABLE IF NOT EXISTS homepage_labels (
