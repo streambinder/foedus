@@ -15,6 +15,7 @@ type HomeContent struct {
 	ParkingSpots   []models.ParkingSpot
 	Accommodations []models.Accommodation
 	HeroBackground models.HeroBackground // one pair, already picked for this render
+	CustomSections []models.CustomSection
 }
 
 // SettingsContent is what the dashboard settings form edits.
@@ -25,5 +26,6 @@ type SettingsContent struct {
 	Accommodations  []models.Accommodation
 	Impersonations  []models.Impersonation
 	HeroBackgrounds []models.HeroBackground
+	CustomSections  []models.CustomSection
 	HomepageLabels  map[string]map[string]string
 }
