@@ -277,6 +277,18 @@ html:has(.vp-section) body {
   transform: translateY(25dvh);
 }
 
+#landing.vp-hero-anchor-top > .vp-section-inner {
+  transform: none;
+}
+
+#landing.vp-hero-anchor-top {
+  justify-content: flex-start;
+}
+
+#landing.vp-hero-anchor-center > .vp-section-inner {
+  transform: none;
+}
+
 .vp-hero-background-layer,
 .vp-hero-background-wash {
   position: absolute;
@@ -1860,6 +1872,30 @@ dialog.modal-overlay:not([open]) .modal-box {
 
 .copy-btn:hover {
   background: var(--cream);
+}
+
+/* gifts coordinate mode: one box with the IBAN in monospace, the
+   beneficiary below it in standard font, and the copy button below */
+.gift-coordinate-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-3);
+  margin: 0 auto;
+  max-width: 36rem;
+}
+
+.gift-coordinate-box code {
+  font-family: "SF Mono", "Fira Code", monospace;
+  font-size: var(--fs-md);
+  letter-spacing: 0.05em;
+  color: var(--charcoal-dark);
+  word-break: break-all;
+}
+
+.gift-coordinate-owner {
+  font-size: var(--fs-md);
+  color: var(--charcoal-dark);
 }
 
 .modal-actions {

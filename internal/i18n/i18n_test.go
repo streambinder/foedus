@@ -72,6 +72,43 @@ func TestDefaults(t *testing.T) {
 	if got := Defaults("it")["home.ceremony"]; got != "Il Rito" {
 		t.Errorf("italian default for home.ceremony = %q", got)
 	}
+	// the coordinate title is its own key per mode: Gift in english,
+	// Regalo in italian, while the standard title keeps its own defaults.
+	if got := Defaults("en")["home.registry_coordinate"]; got != "Gift" {
+		t.Errorf("english default for home.registry_coordinate = %q", got)
+	}
+	if got := Defaults("it")["home.registry_coordinate"]; got != "Regalo" {
+		t.Errorf("italian default for home.registry_coordinate = %q", got)
+	}
+	if got := Defaults("en")["home.registry"]; got != "Wedding List" {
+		t.Errorf("english default for home.registry = %q", got)
+	}
+	if got := Defaults("it")["home.registry"]; got != "Lista nozze" {
+		t.Errorf("italian default for home.registry = %q", got)
+	}
+}
+
+func TestCoordinateTitleOverrideIsolation(t *testing.T) {
+	// an override of the coordinate title in one language changes no other
+	// mode or language: the standard title and the other language keep
+	// their defaults.
+	translator := NewTWithOverrides("it", map[string]string{"home.registry_coordinate": "Il nostro regalo"})
+	if got := translator("home.registry_coordinate"); got != "Il nostro regalo" {
+		t.Errorf("italian coordinate override = %q", got)
+	}
+	if got := translator("home.registry"); got != "Lista nozze" {
+		t.Errorf("italian standard title after coordinate override = %q", got)
+	}
+	translator = NewTWithOverrides("en", map[string]string{"home.registry_coordinate": "Our gift"})
+	if got := translator("home.registry_coordinate"); got != "Our gift" {
+		t.Errorf("english coordinate override = %q", got)
+	}
+	if got := translator("home.registry"); got != "Wedding List" {
+		t.Errorf("english standard title after coordinate override = %q", got)
+	}
+	if got := NewT("it")("home.registry_coordinate"); got != "Regalo" {
+		t.Errorf("italian coordinate default without overrides = %q", got)
+	}
 }
 
 func TestDetectLang(t *testing.T) {

@@ -186,6 +186,7 @@ var translations = map[string]map[string]string{
 		// registry
 		"dashboard.registry":          "Wish List",
 		"home.registry":               "Wedding List",
+		"home.registry_coordinate":    "Gift",
 		"home.registry_description":   "no ideas? got you covered.",
 		"placeholder.item_name":       "Item name",
 		"placeholder.item_price":      "Price",
@@ -512,6 +513,7 @@ var translations = map[string]map[string]string{
 		// registry
 		"dashboard.registry":          "Lista dei desideri",
 		"home.registry":               "Lista nozze",
+		"home.registry_coordinate":    "Regalo",
 		"home.registry_description":   "Nessuna idea? Ci pensiamo noi.",
 		"placeholder.item_name":       "Nome articolo",
 		"placeholder.item_price":      "Prezzo",
@@ -692,7 +694,7 @@ var HomepageKeys = []string{
 	"home.places", "home.places_description",
 	"home.honeymoon", "home.honeymoon_description",
 	"home.accommodations", "home.accommodations_description",
-	"home.registry", "home.registry_description",
+	"home.registry", "home.registry_coordinate", "home.registry_description",
 	"home.generic_gift", "home.generic_gift_description", "home.remaining",
 	"invitation.title", "invitation.rsvp", "invitation.rsvp_description",
 	"invitation.confirm", "invitation.already_answered", "invitation.change_answer", "invitation.go_home", "invitation.submitted_message", "invitation.replay_animation", "invitation.close_envelope", "invitation.brought_to_you_by",

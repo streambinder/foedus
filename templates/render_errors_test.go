@@ -475,6 +475,10 @@ func TestRenderWriteErrorSweepsFine(t *testing.T) {
 	answeredInv.Guests = []models.Guest{inv.Guests[0], inv.Guests[2]}
 	noGuestsInv := inv
 	noGuestsInv.Guests = nil
+	// gifts coordinate mode takes generated branches the standard-mode
+	// sweeps never render: the single coordinate box and the gated modals
+	coordinateSettings, coordinateContent, coordinateItems, coordinateClaimed := homeFixtures()
+	coordinateSettings.GiftsMode = "coordinate"
 	_, _, dashGuests, dashInvitations := dashboardFixtures()
 	for _, size := range []int{1, 2, 3} {
 		runtime.GC()
@@ -501,6 +505,7 @@ func TestRenderWriteErrorSweepsFine(t *testing.T) {
 		sweepComponentFine(t, "edit poll", EditPoll(models.Poll{ID: 6, Question: "Bus?", Description: "From station"}, settings, "csrf", "nonce", translator, "en"))
 		sweepComponentFine(t, "edit invitation", EditInvitation(models.Invitation{ID: 7, Code: "CODE7", Label: "Famiglia"}, settings, "csrf", "nonce", translator, "en"))
 		sweepComponentFine(t, "setting input", settingInput("groom_name", "Groom", "Davide"))
+		sweepComponentFine(t, "home coordinate", Home(coordinateSettings, coordinateContent, coordinateItems, coordinateClaimed, true, false, false, "", false, i18n.NewT("it"), "it", OGMeta{}))
 		sweepComponentFine(t, "homepage label group", homepageLabelGroup("en", "Homepage", []string{"home.ceremony", "btn.buy"},
 			map[string]map[string]string{"en": {"home.ceremony": "The Rite"}},
 			map[string]string{"home.ceremony": "The Ceremony", "btn.buy": "Give"}))
