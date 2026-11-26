@@ -1086,6 +1086,277 @@ templ SettingsResults(settings models.Settings, content SettingsContent, csrfTok
 					</div>
 				</div>
 			</div>
+			<div class="accordion dashboard-accordion custom-sections-accordion">
+				<div class="accordion-item settings-section">
+					<h2 class="accordion-header" id="settings-custom-sections-heading">
+						<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-preserve-attr="class aria-expanded" data-bs-target="#settings-custom-sections-panel" aria-expanded="false" aria-controls="settings-custom-sections-panel">
+							<span class="settings-section-title">Custom Sections</span>
+							<span class="settings-section-description">Add your own homepage sections with a full-bleed background image, texts in both languages, and a position across all sections.</span>
+						</button>
+					</h2>
+					<div id="settings-custom-sections-panel" class="accordion-collapse collapse" data-preserve-attr="class" data-dashboard-key="settings-custom-sections" aria-labelledby="settings-custom-sections-heading">
+						<div class="accordion-body settings-section-body">
+							<p class="muted">Positions count every homepage section, with the landing section at position 1. A section needs a header and a body text or a background image. Sections never replace the built-in ones.</p>
+							<input type="hidden" name="custom_section_count" id="custom-section-count" value={ strconv.Itoa(len(content.CustomSections)) }/>
+							<div id="custom-sections-container">
+								if len(content.CustomSections) > 0 {
+									for idx, section := range content.CustomSections {
+										<div class="custom-section-card">
+											<div class="custom-section-card-header">
+												<span class="custom-section-number">{ strconv.Itoa(idx + 1) }</span>
+												<button type="button" class="custom-section-remove outline secondary" aria-label={ t("btn.delete") } onclick="return window.removeCustomSection ? window.removeCustomSection(this) : false">&times;</button>
+											</div>
+											<div>
+												<label>Position</label>
+												<input type="number" name={ fmt.Sprintf("custom_section_position_%d", idx) } class="custom-section-position" data-field="position" min="1" value={ strconv.Itoa(section.Position) }/>
+											</div>
+											<div class="grid custom-section-grid">
+												<div>
+													<label>Header (Italian)</label>
+													<input type="text" name={ fmt.Sprintf("custom_section_header_it_%d", idx) } class="custom-section-text" data-field="header_it" value={ section.HeaderIt }/>
+												</div>
+												<div>
+													<label>Header (English)</label>
+													<input type="text" name={ fmt.Sprintf("custom_section_header_en_%d", idx) } class="custom-section-text" data-field="header_en" value={ section.HeaderEn }/>
+												</div>
+												<div>
+													<label>Subtitle (Italian)</label>
+													<input type="text" name={ fmt.Sprintf("custom_section_subtitle_it_%d", idx) } class="custom-section-text" data-field="subtitle_it" value={ section.SubtitleIt }/>
+												</div>
+												<div>
+													<label>Subtitle (English)</label>
+													<input type="text" name={ fmt.Sprintf("custom_section_subtitle_en_%d", idx) } class="custom-section-text" data-field="subtitle_en" value={ section.SubtitleEn }/>
+												</div>
+												<div>
+													<label>Body (Italian)</label>
+													<textarea name={ fmt.Sprintf("custom_section_body_it_%d", idx) } class="custom-section-text" data-field="body_it" rows="3">{ section.BodyIt }</textarea>
+												</div>
+												<div>
+													<label>Body (English)</label>
+													<textarea name={ fmt.Sprintf("custom_section_body_en_%d", idx) } class="custom-section-text" data-field="body_en" rows="3">{ section.BodyEn }</textarea>
+												</div>
+											</div>
+											<div class="grid hero-background-grid">
+												<div>
+													<label>Desktop / horizontal</label>
+													<div class="managed-image-field">
+														<input
+															type="file"
+															accept="image/*"
+															class="managed-image-file"
+															data-target-input={ "custom-section-desktop-data-" + strconv.Itoa(idx) }
+															data-preview-target={ "custom-section-desktop-preview-" + strconv.Itoa(idx) }
+															data-media-id-input={ "custom-section-desktop-media-id-" + strconv.Itoa(idx) }
+															data-format="image/jpeg"
+															data-quality="0.78"
+															data-max-width="1600"
+															data-max-height="900"
+															data-max-bytes="262144"
+														/>
+														<input type="hidden" name={ fmt.Sprintf("custom_section_desktop_%d", idx) } id={ "custom-section-desktop-data-" + strconv.Itoa(idx) } class="custom-section-image-hidden"/>
+														<input type="hidden" name={ fmt.Sprintf("custom_section_desktop_media_id_%d", idx) } id={ "custom-section-desktop-media-id-" + strconv.Itoa(idx) } class="custom-section-media-id-hidden" value={ mediaIDValue(section.DesktopMediaID) }/>
+														if section.DesktopMediaID > 0 {
+															<img class="hero-background-preview dashboard-lazy-image" id={ "custom-section-desktop-preview-" + strconv.Itoa(idx) } data-src={ publicImageURL(section.DesktopMediaID) } loading="lazy" decoding="async" alt="desktop background preview"/>
+														} else {
+															<img class="hero-background-preview" id={ "custom-section-desktop-preview-" + strconv.Itoa(idx) } style="display:none" alt="desktop background preview"/>
+														}
+													</div>
+												</div>
+												<div>
+													<label>Mobile / vertical</label>
+													<div class="managed-image-field">
+														<input
+															type="file"
+															accept="image/*"
+															class="managed-image-file"
+															data-target-input={ "custom-section-mobile-data-" + strconv.Itoa(idx) }
+															data-preview-target={ "custom-section-mobile-preview-" + strconv.Itoa(idx) }
+															data-media-id-input={ "custom-section-mobile-media-id-" + strconv.Itoa(idx) }
+															data-format="image/jpeg"
+															data-quality="0.78"
+															data-max-width="1080"
+															data-max-height="1440"
+															data-max-bytes="196608"
+														/>
+														<input type="hidden" name={ fmt.Sprintf("custom_section_mobile_%d", idx) } id={ "custom-section-mobile-data-" + strconv.Itoa(idx) } class="custom-section-image-hidden"/>
+														<input type="hidden" name={ fmt.Sprintf("custom_section_mobile_media_id_%d", idx) } id={ "custom-section-mobile-media-id-" + strconv.Itoa(idx) } class="custom-section-media-id-hidden" value={ mediaIDValue(section.MobileMediaID) }/>
+														if section.MobileMediaID > 0 {
+															<img class="hero-background-preview hero-background-preview-portrait dashboard-lazy-image" id={ "custom-section-mobile-preview-" + strconv.Itoa(idx) } data-src={ publicImageURL(section.MobileMediaID) } loading="lazy" decoding="async" alt="mobile background preview"/>
+														} else {
+															<img class="hero-background-preview hero-background-preview-portrait" id={ "custom-section-mobile-preview-" + strconv.Itoa(idx) } style="display:none" alt="mobile background preview"/>
+														}
+													</div>
+												</div>
+											</div>
+										</div>
+									}
+								}
+							</div>
+							<button type="button" id="add-custom-section-btn" class="add-entry-btn" onclick="return window.addCustomSection ? window.addCustomSection() : false">+ Add custom section</button>
+							<template id="custom-section-card-template">
+								<div class="custom-section-card">
+									<div class="custom-section-card-header">
+										<span class="custom-section-number">1</span>
+										<button type="button" class="custom-section-remove outline secondary" aria-label={ t("btn.delete") } onclick="return window.removeCustomSection ? window.removeCustomSection(this) : false">&times;</button>
+									</div>
+									<div>
+										<label>Position</label>
+										<input type="number" name="custom_section_position___INDEX__" class="custom-section-position" data-field="position" min="1"/>
+									</div>
+									<div class="grid custom-section-grid">
+										<div>
+											<label>Header (Italian)</label>
+											<input type="text" name="custom_section_header_it___INDEX__" class="custom-section-text" data-field="header_it"/>
+										</div>
+										<div>
+											<label>Header (English)</label>
+											<input type="text" name="custom_section_header_en___INDEX__" class="custom-section-text" data-field="header_en"/>
+										</div>
+										<div>
+											<label>Subtitle (Italian)</label>
+											<input type="text" name="custom_section_subtitle_it___INDEX__" class="custom-section-text" data-field="subtitle_it"/>
+										</div>
+										<div>
+											<label>Subtitle (English)</label>
+											<input type="text" name="custom_section_subtitle_en___INDEX__" class="custom-section-text" data-field="subtitle_en"/>
+										</div>
+										<div>
+											<label>Body (Italian)</label>
+											<textarea name="custom_section_body_it___INDEX__" class="custom-section-text" data-field="body_it" rows="3"></textarea>
+										</div>
+										<div>
+											<label>Body (English)</label>
+											<textarea name="custom_section_body_en___INDEX__" class="custom-section-text" data-field="body_en" rows="3"></textarea>
+										</div>
+									</div>
+									<div class="grid hero-background-grid">
+										<div>
+											<label>Desktop / horizontal</label>
+											<div class="managed-image-field">
+												<input
+													type="file"
+													accept="image/*"
+													class="managed-image-file"
+													data-target-input="custom-section-desktop-data-__INDEX__"
+													data-preview-target="custom-section-desktop-preview-__INDEX__"
+													data-media-id-input="custom-section-desktop-media-id-__INDEX__"
+													data-format="image/jpeg"
+													data-quality="0.78"
+													data-max-width="1600"
+													data-max-height="900"
+													data-max-bytes="262144"
+												/>
+												<input type="hidden" name="custom_section_desktop___INDEX__" id="custom-section-desktop-data-__INDEX__" class="custom-section-image-hidden"/>
+												<input type="hidden" name="custom_section_desktop_media_id___INDEX__" id="custom-section-desktop-media-id-__INDEX__" class="custom-section-media-id-hidden"/>
+												<img class="hero-background-preview" id="custom-section-desktop-preview-__INDEX__" style="display:none" alt="desktop background preview"/>
+											</div>
+										</div>
+										<div>
+											<label>Mobile / vertical</label>
+											<div class="managed-image-field">
+												<input
+													type="file"
+													accept="image/*"
+													class="managed-image-file"
+													data-target-input="custom-section-mobile-data-__INDEX__"
+													data-preview-target="custom-section-mobile-preview-__INDEX__"
+													data-media-id-input="custom-section-mobile-media-id-__INDEX__"
+													data-format="image/jpeg"
+													data-quality="0.78"
+													data-max-width="1080"
+													data-max-height="1440"
+													data-max-bytes="196608"
+												/>
+												<input type="hidden" name="custom_section_mobile___INDEX__" id="custom-section-mobile-data-__INDEX__" class="custom-section-image-hidden"/>
+												<input type="hidden" name="custom_section_mobile_media_id___INDEX__" id="custom-section-mobile-media-id-__INDEX__" class="custom-section-media-id-hidden"/>
+												<img class="hero-background-preview hero-background-preview-portrait" id="custom-section-mobile-preview-__INDEX__" style="display:none" alt="mobile background preview"/>
+											</div>
+										</div>
+									</div>
+								</div>
+							</template>
+							<script nonce={ nonce }>
+								(function () {
+									function getCustomSectionsContainer() {
+										return document.getElementById("custom-sections-container");
+									}
+
+									function reindexCustomSections() {
+										var container = getCustomSectionsContainer();
+										var countInput = document.getElementById("custom-section-count");
+										if (!container || !countInput) return;
+										var cards = container.querySelectorAll(".custom-section-card");
+										cards.forEach(function (card, idx) {
+											var number = card.querySelector(".custom-section-number");
+											if (number) number.textContent = idx + 1;
+
+											card.querySelectorAll(".custom-section-text, .custom-section-position").forEach(function (el) {
+												el.name = "custom_section_" + el.dataset.field + "_" + idx;
+											});
+
+											var desktopFile = card.querySelector('.managed-image-file[data-target-input^="custom-section-desktop-data-"]');
+											var desktopHidden = card.querySelector('.custom-section-image-hidden[id^="custom-section-desktop-data-"]');
+											var desktopMediaId = card.querySelector('.custom-section-media-id-hidden[id^="custom-section-desktop-media-id-"]');
+											var desktopPreview = card.querySelector('.hero-background-preview[id^="custom-section-desktop-preview-"]');
+											if (desktopFile && desktopHidden && desktopMediaId && desktopPreview) {
+												desktopFile.dataset.targetInput = "custom-section-desktop-data-" + idx;
+												desktopFile.dataset.previewTarget = "custom-section-desktop-preview-" + idx;
+												desktopFile.dataset.mediaIdInput = "custom-section-desktop-media-id-" + idx;
+												desktopHidden.name = "custom_section_desktop_" + idx;
+												desktopHidden.id = "custom-section-desktop-data-" + idx;
+												desktopMediaId.name = "custom_section_desktop_media_id_" + idx;
+												desktopMediaId.id = "custom-section-desktop-media-id-" + idx;
+												desktopPreview.id = "custom-section-desktop-preview-" + idx;
+											}
+
+											var mobileFile = card.querySelector('.managed-image-file[data-target-input^="custom-section-mobile-data-"]');
+											var mobileHidden = card.querySelector('.custom-section-image-hidden[id^="custom-section-mobile-data-"]');
+											var mobileMediaId = card.querySelector('.custom-section-media-id-hidden[id^="custom-section-mobile-media-id-"]');
+											var mobilePreview = card.querySelector('.hero-background-preview[id^="custom-section-mobile-preview-"]');
+											if (mobileFile && mobileHidden && mobileMediaId && mobilePreview) {
+												mobileFile.dataset.targetInput = "custom-section-mobile-data-" + idx;
+												mobileFile.dataset.previewTarget = "custom-section-mobile-preview-" + idx;
+												mobileFile.dataset.mediaIdInput = "custom-section-mobile-media-id-" + idx;
+												mobileHidden.name = "custom_section_mobile_" + idx;
+												mobileHidden.id = "custom-section-mobile-data-" + idx;
+												mobileMediaId.name = "custom_section_mobile_media_id_" + idx;
+												mobileMediaId.id = "custom-section-mobile-media-id-" + idx;
+												mobilePreview.id = "custom-section-mobile-preview-" + idx;
+											}
+										});
+										countInput.value = cards.length;
+									}
+
+									window.addCustomSection = function () {
+										var container = getCustomSectionsContainer();
+										var template = document.getElementById("custom-section-card-template");
+										if (!container || !template) return false;
+										var idx = container.querySelectorAll(".custom-section-card").length;
+										var html = template.innerHTML.replaceAll("__INDEX__", String(idx));
+										container.insertAdjacentHTML("beforeend", html);
+										var card = container.lastElementChild;
+										reindexCustomSections();
+										if (card && window.initDashboardImageResizers) {
+											window.initDashboardImageResizers(card);
+										}
+										return false;
+									};
+
+									window.removeCustomSection = function (button) {
+										var card = button && button.closest ? button.closest(".custom-section-card") : null;
+										if (!card) return false;
+										card.remove();
+										reindexCustomSections();
+										return false;
+									};
+
+									reindexCustomSections();
+								})();
+							</script>
+						</div>
+					</div>
+				</div>
+			</div>
 			<div class="accordion dashboard-accordion" id="dashboard-settings-accordion">
 				<div class="accordion-item settings-section">
 					<h2 class="accordion-header" id="settings-appearance-heading">
