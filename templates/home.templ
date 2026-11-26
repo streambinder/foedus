@@ -204,6 +204,17 @@ func homePageStyle(settings models.Settings) string {
 	return "--home-page-bg:" + bg + ";"
 }
 
+// heroAnchorClass maps the anchor setting to the landing section class. An
+// empty or unknown value falls back to bottom, the current rendering.
+func heroAnchorClass(anchor string) string {
+	switch anchor {
+	case models.HeroTextAnchorTop, models.HeroTextAnchorCenter:
+		return "vp-hero-anchor-" + anchor
+	default:
+		return "vp-hero-anchor-" + models.HeroTextAnchorBottom
+	}
+}
+
 templ Home(settings models.Settings, content HomeContent, registryItems []models.RegistryItem, claimedAmounts map[int]int, bankConfigured bool, chatEnabled bool, soundtrackEnabled bool, inviteUpdateURL string, rsvpSubmitted bool, t i18n.T, lang string, ogMeta OGMeta) {
 	@Layout(settings.GroomName+" & "+settings.BrideName, lang, t, ogMeta, len(content.Places) > 0 || len(content.Honeymoon) > 0 || len(content.ParkingSpots) > 0, homepageHeroPreloads(content.HeroBackground), homePageStyle(settings), "") {
 		<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
@@ -211,7 +222,7 @@ templ Home(settings models.Settings, content HomeContent, registryItems []models
 			<symbol id="chev-u" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></symbol>
 		</svg>
 		<!-- section 1: title -->
-		<section id="landing" class={ templ.Classes("vp-section", "vp-hero", templ.KV("vp-hero-with-background", content.HeroBackground.DesktopMediaID > 0 || content.HeroBackground.MobileMediaID > 0)) }>
+		<section id="landing" class={ templ.Classes("vp-section", "vp-hero", heroAnchorClass(settings.HeroTextAnchor), templ.KV("vp-hero-with-background", content.HeroBackground.DesktopMediaID > 0 || content.HeroBackground.MobileMediaID > 0)) }>
 			if content.HeroBackground.DesktopMediaID > 0 || content.HeroBackground.MobileMediaID > 0 {
 				<picture class="vp-hero-background-layer" aria-hidden="true">
 					if content.HeroBackground.DesktopMediaID > 0 {
@@ -534,6 +545,21 @@ templ Home(settings models.Settings, content HomeContent, registryItems []models
 					<svg width="20" height="20" aria-hidden="true"><use href="#chev-u"/></svg>
 				</a>
 				<div class="vp-section-inner">
+					if settings.GiftsMode == models.GiftsModeCoordinate {
+						<div class="registry-v2">
+							<div class="section-heading">
+								<h2 class="section-title">{ t("home.registry_coordinate") }</h2>
+								if t("home.registry_description") != "" {
+									<p class="section-subtitle">{ t("home.registry_description") }</p>
+								}
+							</div>
+							<div class="gift-coordinate-box">
+								<code id="coordinate-iban">{ settings.BankAccountIBAN }</code>
+								<span class="gift-coordinate-owner">{ settings.BankAccountHolder }</span>
+								<button type="button" class="copy-btn" data-target="coordinate-iban">{ t("btn.copy") }</button>
+							</div>
+						</div>
+					} else {
 					<div class="registry-v2">
 						<div class="section-heading">
 							<h2 class="section-title">{ t("home.registry") }</h2>
@@ -607,6 +633,7 @@ templ Home(settings models.Settings, content HomeContent, registryItems []models
 							</div>
 						</div>
 					</div>
+					}
 				</div>
 			</section>
 		}
@@ -650,6 +677,7 @@ templ Home(settings models.Settings, content HomeContent, registryItems []models
 				data-copy-label={ t("btn.copy") }
 				data-copied-label={ t("btn.copied") }
 			></div>
+			if settings.GiftsMode != models.GiftsModeCoordinate {
 			<dialog id="transfer-modal" class="modal-overlay">
 				<div class="modal-box">
 					<p class="modal-intro">{ t("modal.transfer_intro") }<br/>{ t("modal.transfer_confirm_text") }</p>
@@ -719,6 +747,7 @@ templ Home(settings models.Settings, content HomeContent, registryItems []models
 					</div>
 				</div>
 			</dialog>
+			}
 		}
 		<script>
 			(function () {
@@ -959,21 +988,34 @@ templ Home(settings models.Settings, content HomeContent, registryItems []models
 				var currentItemId = null;
 				var currentAmount = 0;
 
-				var transferModal = document.getElementById("transfer-modal");
-				var pctModal = document.getElementById("pct-modal");
-				if (!transferModal) return;
-
-				// copy buttons
+				// copy buttons: bound here, before the transfer-modal guard,
+				// so they also work when no transfer modal renders, as in
+				// gifts coordinate mode. On click the button disables, shows
+				// the copied label, and restores after two seconds; a failed
+				// clipboard write leaves the button clickable.
 				document.querySelectorAll(".copy-btn").forEach(function (btn) {
 					btn.addEventListener("click", function () {
 						var target = document.getElementById(btn.dataset.target);
-						navigator.clipboard.writeText(target.textContent.trim());
-						btn.textContent = copiedLabel;
-						setTimeout(function () {
-							btn.textContent = copyLabel;
-						}, 1500);
+						navigator.clipboard.writeText(target.textContent.trim()).then(
+							function () {
+								btn.disabled = true;
+								btn.textContent = copiedLabel;
+								setTimeout(function () {
+									btn.textContent = copyLabel;
+									btn.disabled = false;
+								}, 2000);
+							},
+							function () {
+								btn.textContent = copyLabel;
+								btn.disabled = false;
+							},
+						);
 					});
 				});
+
+				var transferModal = document.getElementById("transfer-modal");
+				var pctModal = document.getElementById("pct-modal");
+				if (!transferModal) return;
 
 				// registry item buy buttons -> open percentage modal
 				document

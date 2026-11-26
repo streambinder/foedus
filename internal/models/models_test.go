@@ -66,6 +66,45 @@ func TestEventPassed(t *testing.T) {
 	}
 }
 
+func TestHeroTextAnchorAndGiftsMode(t *testing.T) {
+	for _, tc := range []struct {
+		in   string
+		want bool
+	}{
+		{"top", true},
+		{"center", true},
+		{"bottom", true},
+		{"", false},
+		{"Top", false},
+		{"middle", false},
+		{"left", false},
+	} {
+		if got := IsHeroTextAnchor(tc.in); got != tc.want {
+			t.Errorf("IsHeroTextAnchor(%q) = %v, want %v", tc.in, got, tc.want)
+		}
+	}
+	for _, tc := range []struct {
+		in   string
+		want bool
+	}{
+		{"standard", true},
+		{"coordinate", true},
+		{"", false},
+		{"Standard", false},
+		{"tiles", false},
+	} {
+		if got := IsGiftsMode(tc.in); got != tc.want {
+			t.Errorf("IsGiftsMode(%q) = %v, want %v", tc.in, got, tc.want)
+		}
+	}
+	if DefaultHeroTextAnchor != HeroTextAnchorBottom {
+		t.Errorf("DefaultHeroTextAnchor = %q, want bottom", DefaultHeroTextAnchor)
+	}
+	if DefaultGiftsMode != GiftsModeStandard {
+		t.Errorf("DefaultGiftsMode = %q, want standard", DefaultGiftsMode)
+	}
+}
+
 func TestIsHexColor(t *testing.T) {
 	for _, tc := range []struct {
 		in   string

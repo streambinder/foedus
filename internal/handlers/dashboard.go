@@ -765,6 +765,30 @@ func SaveSettings(c *fiber.Ctx) error {
 			}
 		}
 
+		// the hero text anchor and the gifts mode are plain enums: an empty
+		// field falls back to the default, anything outside the allowed set
+		// rejects the save.
+		for _, enumField := range []struct {
+			field    string
+			fallback string
+			valid    func(string) bool
+			target   *string
+		}{
+			{"hero_text_anchor", models.DefaultHeroTextAnchor, models.IsHeroTextAnchor, &updated.HeroTextAnchor},
+			{"gifts_mode", models.DefaultGiftsMode, models.IsGiftsMode, &updated.GiftsMode},
+		} {
+			raw := strings.TrimSpace(c.FormValue(enumField.field))
+			switch {
+			case raw == "":
+				*enumField.target = enumField.fallback
+			case !enumField.valid(raw):
+				logger.Warn("settings save rejected", "field", enumField.field, "value", raw)
+				return fiber.NewError(400, "invalid "+enumField.field)
+			default:
+				*enumField.target = raw
+			}
+		}
+
 		// the six single-image fields resolve inside the tx: each may insert new
 		// bytes or drop the row it replaces. The two flora fields resolve
 		// through their own wrapper, which repairs fake transparency first.

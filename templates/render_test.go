@@ -682,6 +682,41 @@ func TestRenderSettingsResults(t *testing.T) {
 	}
 }
 
+func TestRenderSettingsResultsGiftsMode(t *testing.T) {
+	settings, content, _, _ := dashboardFixtures()
+	translator := i18n.NewT("en")
+	for _, mode := range []string{"standard", "coordinate"} {
+		settings.GiftsMode = mode
+		out := render(t, SettingsResults(settings, content, "csrf", "nonce-value", translator, "en"))
+		if !strings.Contains(out, `<option value="`+mode+`" selected>`) {
+			t.Errorf("mode %q renders without the selected option", mode)
+		}
+	}
+	// unset falls back to the standard option
+	settings.GiftsMode = ""
+	out := render(t, SettingsResults(settings, content, "csrf", "nonce-value", translator, "en"))
+	if !strings.Contains(out, `<option value="standard" selected>`) {
+		t.Error("unset mode renders without the standard option selected")
+	}
+}
+
+func TestRenderSettingsResultsHeroAnchor(t *testing.T) {
+	settings, content, _, _ := dashboardFixtures()
+	translator := i18n.NewT("en")
+	for _, anchor := range []string{"top", "center", "bottom"} {
+		settings.HeroTextAnchor = anchor
+		out := render(t, SettingsResults(settings, content, "csrf", "nonce-value", translator, "en"))
+		if !strings.Contains(out, `<option value="`+anchor+`" selected>`) {
+			t.Errorf("anchor %q renders without the selected option", anchor)
+		}
+		for _, other := range []string{"top", "center", "bottom"} {
+			if other != anchor && strings.Contains(out, `<option value="`+other+`" selected>`) {
+				t.Errorf("anchor %q renders with %q selected", anchor, other)
+			}
+		}
+	}
+}
+
 func TestRenderCountersAndPollsResults(t *testing.T) {
 	translator := i18n.NewT("en")
 

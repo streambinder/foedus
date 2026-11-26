@@ -228,7 +228,52 @@ func TestHomepageLabelsRoundTripPerLanguage(t *testing.T) {
 	}
 }
 
-// Appearance columns ride the same typed settings row as everything else:
+// The anchor and the gifts mode ride the same typed settings row: the
+// schema defaults seed a fresh row, and values round-trip through
+// UpdateSettings like every other scalar.
+func TestSettingsAnchorAndGiftsModeRoundTrip(t *testing.T) {
+	newTestDB(t)
+
+	got, err := GetSettings()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.HeroTextAnchor != models.DefaultHeroTextAnchor || got.GiftsMode != models.DefaultGiftsMode {
+		t.Errorf("seeded anchor/mode %q/%q, want defaults %q/%q",
+			got.HeroTextAnchor, got.GiftsMode,
+			models.DefaultHeroTextAnchor, models.DefaultGiftsMode)
+	}
+
+	want := models.Settings{
+		GroomName: "Davide", BrideName: "Agnese",
+		HeroTextAnchor: models.HeroTextAnchorTop, GiftsMode: models.GiftsModeCoordinate,
+	}
+	if err := UpdateSettings(DB, want); err != nil {
+		t.Fatal(err)
+	}
+	got, err = GetSettings()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.HeroTextAnchor != models.HeroTextAnchorTop || got.GiftsMode != models.GiftsModeCoordinate {
+		t.Errorf("anchor/mode round-tripped as %q/%q, want top/coordinate",
+			got.HeroTextAnchor, got.GiftsMode)
+	}
+
+	// an empty value stores as-is: the render path, not the database,
+	// falls back to the defaults for rows written before the columns existed.
+	if err := UpdateSettings(DB, models.Settings{}); err != nil {
+		t.Fatal(err)
+	}
+	got, err = GetSettings()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.HeroTextAnchor != "" || got.GiftsMode != "" {
+		t.Errorf("cleared anchor/mode read back as %q/%q, want empty", got.HeroTextAnchor, got.GiftsMode)
+	}
+}
+
 // defaults seeded on a fresh row, values round-trip, absent flora overrides
 // read back as NULL/0.
 func TestSettingsAppearanceRoundTrip(t *testing.T) {

@@ -61,6 +61,130 @@ func TestDashboardIndex(t *testing.T) {
 	}
 }
 
+func TestSaveSettingsHeroTextAnchor(t *testing.T) {
+	for _, anchor := range []string{"top", "center", "bottom"} {
+		t.Run(anchor, func(t *testing.T) {
+			setupDB(t)
+			configureSettings(t, nil)
+			app := newTestApp()
+			defer app.Shutdown()
+			form := baseSettingsForm()
+			form.Set("hero_text_anchor", anchor)
+			status, _, _ := postForm(t, app, "/dashboard/settings", form)
+			if status != 302 {
+				t.Fatalf("status %d, want 302", status)
+			}
+			saved, err := database.GetSettings()
+			if err != nil {
+				t.Fatal(err)
+			}
+			if saved.HeroTextAnchor != anchor {
+				t.Errorf("anchor = %q, want %q", saved.HeroTextAnchor, anchor)
+			}
+		})
+	}
+
+	t.Run("invalid value", func(t *testing.T) {
+		setupDB(t)
+		configureSettings(t, nil)
+		app := newTestApp()
+		defer app.Shutdown()
+		form := baseSettingsForm()
+		form.Set("hero_text_anchor", "sideways")
+		status, _, _ := postForm(t, app, "/dashboard/settings", form)
+		if status != 400 {
+			t.Errorf("status %d, want 400", status)
+		}
+		saved, err := database.GetSettings()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if saved.HeroTextAnchor != "" {
+			t.Errorf("anchor = %q after rejection, want the stored empty value", saved.HeroTextAnchor)
+		}
+	})
+
+	t.Run("unset value", func(t *testing.T) {
+		setupDB(t)
+		configureSettings(t, nil)
+		app := newTestApp()
+		defer app.Shutdown()
+		status, _, _ := postForm(t, app, "/dashboard/settings", baseSettingsForm())
+		if status != 302 {
+			t.Fatalf("status %d, want 302", status)
+		}
+		saved, err := database.GetSettings()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if saved.HeroTextAnchor != "bottom" {
+			t.Errorf("anchor = %q, want the bottom default", saved.HeroTextAnchor)
+		}
+	})
+}
+
+func TestSaveSettingsGiftsMode(t *testing.T) {
+	for _, mode := range []string{"standard", "coordinate"} {
+		t.Run(mode, func(t *testing.T) {
+			setupDB(t)
+			configureSettings(t, nil)
+			app := newTestApp()
+			defer app.Shutdown()
+			form := baseSettingsForm()
+			form.Set("gifts_mode", mode)
+			status, _, _ := postForm(t, app, "/dashboard/settings", form)
+			if status != 302 {
+				t.Fatalf("status %d, want 302", status)
+			}
+			saved, err := database.GetSettings()
+			if err != nil {
+				t.Fatal(err)
+			}
+			if saved.GiftsMode != mode {
+				t.Errorf("mode = %q, want %q", saved.GiftsMode, mode)
+			}
+		})
+	}
+
+	t.Run("invalid value", func(t *testing.T) {
+		setupDB(t)
+		configureSettings(t, nil)
+		app := newTestApp()
+		defer app.Shutdown()
+		form := baseSettingsForm()
+		form.Set("gifts_mode", "tiles")
+		status, _, _ := postForm(t, app, "/dashboard/settings", form)
+		if status != 400 {
+			t.Errorf("status %d, want 400", status)
+		}
+		saved, err := database.GetSettings()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if saved.GiftsMode != "" {
+			t.Errorf("mode = %q after rejection, want the stored empty value", saved.GiftsMode)
+		}
+	})
+
+	t.Run("unset value", func(t *testing.T) {
+		setupDB(t)
+		configureSettings(t, nil)
+		app := newTestApp()
+		defer app.Shutdown()
+		status, _, _ := postForm(t, app, "/dashboard/settings", baseSettingsForm())
+		if status != 302 {
+			t.Fatalf("status %d, want 302", status)
+		}
+		saved, err := database.GetSettings()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if saved.GiftsMode != "standard" {
+			t.Errorf("mode = %q, want the standard default", saved.GiftsMode)
+		}
+	})
+}
+
 func TestGuestsFragment(t *testing.T) {
 	setupDB(t)
 	configureSettings(t, nil)
