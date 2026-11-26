@@ -13,6 +13,45 @@ const (
 	DefaultHomeBgColor   = "#fcf8f3"
 )
 
+// Hero text anchor values: the vertical position of the first homepage
+// section's text block. Bottom is the default and the current rendering.
+const (
+	HeroTextAnchorTop    = "top"
+	HeroTextAnchorCenter = "center"
+	HeroTextAnchorBottom = "bottom"
+)
+
+// DefaultHeroTextAnchor is the anchor a fresh settings row carries.
+const DefaultHeroTextAnchor = HeroTextAnchorBottom
+
+// Gifts section modes: standard is the claim flow, coordinate shows only
+// the bank coordinates with a copy button.
+const (
+	GiftsModeStandard   = "standard"
+	GiftsModeCoordinate = "coordinate"
+)
+
+// DefaultGiftsMode is the mode a fresh settings row carries.
+const DefaultGiftsMode = GiftsModeStandard
+
+// IsHeroTextAnchor reports whether s is a valid hero text anchor.
+func IsHeroTextAnchor(s string) bool {
+	switch s {
+	case HeroTextAnchorTop, HeroTextAnchorCenter, HeroTextAnchorBottom:
+		return true
+	}
+	return false
+}
+
+// IsGiftsMode reports whether s is a valid gifts section mode.
+func IsGiftsMode(s string) bool {
+	switch s {
+	case GiftsModeStandard, GiftsModeCoordinate:
+		return true
+	}
+	return false
+}
+
 var hexColorPattern = regexp.MustCompile(`^#[0-9a-fA-F]{6}$`)
 
 // IsHexColor reports whether s is a strict #rrggbb colour. Both the dashboard
@@ -61,6 +100,11 @@ type Settings struct {
 	StampMediaID   int
 	FloraBlMediaID int
 	FloraTrMediaID int
+	// Homepage options: the vertical anchor of the first-section text and
+	// the gifts section mode. Both default in the schema; an empty value
+	// read from an older row falls back the same way at render time.
+	HeroTextAnchor string
+	GiftsMode      string
 }
 
 func (s Settings) IsConfigured() bool {

@@ -853,6 +853,11 @@ templ SettingsResults(settings models.Settings, content SettingsContent, csrfTok
 				<input type="text" name="bank_account_iban" value={ settings.BankAccountIBAN } placeholder={ t("placeholder.bank_account_iban") }/>
 				<input type="text" name="bank_account_holder" value={ settings.BankAccountHolder } placeholder={ t("placeholder.bank_account_holder") }/>
 			</div>
+			<label for="gifts-mode">Gifts section mode</label>
+			<select name="gifts_mode" id="gifts-mode">
+				<option value="standard" selected?={ settings.GiftsMode == "standard" || settings.GiftsMode == "" }>Standard</option>
+				<option value="coordinate" selected?={ settings.GiftsMode == "coordinate" }>Coordinate</option>
+			</select>
 			<!-- share preview image (og:image) -->
 			<label>Share Preview Image</label>
 			<p class="muted" style="margin-top:-0.5rem;margin-bottom:0.75rem">Image shown when sharing the website link on WhatsApp and social media. Defaults to the built-in share preview graphic.</p>
@@ -879,6 +884,12 @@ templ SettingsResults(settings models.Settings, content SettingsContent, csrfTok
 					<div id="settings-homepage-backgrounds-panel" class="accordion-collapse collapse" data-preserve-attr="class" data-dashboard-key="settings-homepage-backgrounds" aria-labelledby="settings-homepage-backgrounds-heading">
 						<div class="accordion-body settings-section-body">
 							<p class="muted">Use one horizontal image for desktop and one vertical image for mobile for the same photo or moment. If only one side is uploaded, it falls back to the available image.</p>
+							<label for="hero-text-anchor">First-section text position</label>
+							<select name="hero_text_anchor" id="hero-text-anchor">
+								<option value="top" selected?={ settings.HeroTextAnchor == "top" }>Top</option>
+								<option value="center" selected?={ settings.HeroTextAnchor == "center" }>Center</option>
+								<option value="bottom" selected?={ settings.HeroTextAnchor == "bottom" || settings.HeroTextAnchor == "" }>Bottom</option>
+							</select>
 							<input type="hidden" name="homepage_hero_background_count" id="homepage-hero-background-count" value={ strconv.Itoa(len(content.HeroBackgrounds)) }/>
 							<div id="homepage-hero-backgrounds-container">
 								if len(content.HeroBackgrounds) > 0 {

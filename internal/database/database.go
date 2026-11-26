@@ -203,7 +203,9 @@ func migrate() {
 			home_bg_color          TEXT NOT NULL DEFAULT '` + models.DefaultHomeBgColor + `',
 			stamp_media_id         INTEGER REFERENCES media(id),
 			flora_bl_media_id      INTEGER REFERENCES media(id),
-			flora_tr_media_id      INTEGER REFERENCES media(id)
+			flora_tr_media_id      INTEGER REFERENCES media(id),
+			hero_text_anchor       TEXT NOT NULL DEFAULT 'bottom',
+			gifts_mode             TEXT NOT NULL DEFAULT 'standard'
 		) STRICT`,
 		`CREATE TABLE IF NOT EXISTS registry_items (
 			id         INTEGER PRIMARY KEY AUTOINCREMENT,

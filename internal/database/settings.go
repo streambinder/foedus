@@ -11,7 +11,8 @@ const settingsColumns = `groom_name, bride_name,
 	ceremony_datetime, ceremony_address, ceremony_location, ceremony_city, ceremony_lat, ceremony_lng, ceremony_media_id,
 	reception_datetime, reception_address, reception_location, reception_city, reception_lat, reception_lng, reception_media_id,
 	bank_account_iban, bank_account_holder, spotify_playlist, share_preview_media_id,
-	envelope_color, page_bg_color, home_bg_color, stamp_media_id, flora_bl_media_id, flora_tr_media_id`
+	envelope_color, page_bg_color, home_bg_color, stamp_media_id, flora_bl_media_id, flora_tr_media_id,
+	hero_text_anchor, gifts_mode`
 
 // seedSettings materialises the single settings row. Every read assumes it
 // exists, so this runs on every boot rather than only on a fresh database.
@@ -36,6 +37,7 @@ func GetSettings() (models.Settings, error) {
 		&settings.SpotifyPlaylist, &sharePreviewMediaID,
 		&settings.EnvelopeColor, &settings.PageBgColor, &settings.HomeBgColor,
 		&stampMediaID, &floraBlMediaID, &floraTrMediaID,
+		&settings.HeroTextAnchor, &settings.GiftsMode,
 	)
 	if err != nil {
 		return models.Settings{}, err
@@ -59,7 +61,8 @@ func UpdateSettings(q Querier, settings models.Settings) error {
 			reception_lat = ?, reception_lng = ?, reception_media_id = ?,
 			bank_account_iban = ?, bank_account_holder = ?, spotify_playlist = ?, share_preview_media_id = ?,
 			envelope_color = ?, page_bg_color = ?, home_bg_color = ?,
-			stamp_media_id = ?, flora_bl_media_id = ?, flora_tr_media_id = ?
+			stamp_media_id = ?, flora_bl_media_id = ?, flora_tr_media_id = ?,
+			hero_text_anchor = ?, gifts_mode = ?
 		WHERE id = 1`,
 		settings.GroomName, settings.BrideName,
 		settings.CeremonyDatetime, settings.CeremonyAddress, settings.CeremonyLocation, settings.CeremonyCity,
@@ -71,6 +74,7 @@ func UpdateSettings(q Querier, settings models.Settings) error {
 		settings.EnvelopeColor, settings.PageBgColor, settings.HomeBgColor,
 		nullableID(settings.StampMediaID),
 		nullableID(settings.FloraBlMediaID), nullableID(settings.FloraTrMediaID),
+		settings.HeroTextAnchor, settings.GiftsMode,
 	)
 	return err
 }
