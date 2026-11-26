@@ -1894,6 +1894,7 @@ dialog.modal-overlay:not([open]) .modal-box {
 }
 
 .gift-coordinate-owner {
+  font-family: Inter, sans-serif;
   font-size: var(--fs-md);
   color: var(--charcoal-dark);
 }

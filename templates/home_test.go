@@ -61,27 +61,35 @@ func TestRenderHomeGiftsCoordinateMode(t *testing.T) {
 	settings.GiftsMode = "coordinate"
 
 	out := render(t, Home(settings, content, items, claimed, true, false, false, "", false, i18n.NewT("it"), "it", OGMeta{}))
-	// the single box: IBAN in code, beneficiary below it, Copia below that
+	// the single box is a gift tile like the wedding-list ones: the gift
+	// icon above the text, IBAN in code, beneficiary below it, Copia below
+	// that, styled like the Dona button
 	for _, want := range []string{
 		`id="coordinate-iban"`, "IT60X0542811101000000123456",
 		`class="gift-coordinate-owner"`, "Davide Pucci",
 		`data-target="coordinate-iban"`, ">Copia</button>",
 		`<h2 class="section-title">Regalo</h2>`, "Nessuna idea? Ci pensiamo noi.",
+		`class="gift-tile"`, `class="free-gift-image-placeholder"`,
+		`class="gift-tile-btn copy-btn"`,
 	} {
 		if !strings.Contains(out, want) {
 			t.Errorf("coordinate mode missing %q", want)
 		}
+	}
+	if icon := strings.Index(out, `class="free-gift-image-placeholder"`); icon < 0 ||
+		strings.Index(out, `id="coordinate-iban"`) < icon {
+		t.Error("coordinate box must show the gift icon above the IBAN")
 	}
 	if iban := strings.Index(out, `id="coordinate-iban"`); iban < 0 ||
 		strings.Index(out, `class="gift-coordinate-owner"`) < iban ||
 		strings.Index(out, ">Copia</button>") < strings.Index(out, `class="gift-coordinate-owner"`) {
 		t.Error("coordinate box must order IBAN, beneficiary, then Copia")
 	}
-	// no gift tile, no Dona button, no claim modal; the section title is
-	// the coordinate one (the venues arrow keeps "Lista nozze" as the
+	// no registry item, no Dona button, no claim modal; the section title
+	// is the coordinate one (the venues arrow keeps "Lista nozze" as the
 	// aria-label of the link that points at this section)
 	for _, absent := range []string{
-		`class="gift-tile"`, `class="gift-tile gift-tile-is-gifted"`,
+		`class="gift-tile gift-tile-is-gifted"`,
 		"Toaster", "Lamp", "Vase", "Open gift", ">Dona<",
 		`id="transfer-modal"`, `id="pct-modal"`, `id="thanks-modal"`,
 		`<h2 class="section-title">Lista nozze</h2>`,
