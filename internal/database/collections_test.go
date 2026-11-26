@@ -796,6 +796,49 @@ func TestImpersonationsRoundTrip(t *testing.T) {
 	}
 }
 
+func TestCustomSectionsRoundTrip(t *testing.T) {
+	newTestDB(t)
+
+	got, err := GetCustomSections()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 0 {
+		t.Fatalf("empty custom sections = %+v", got)
+	}
+
+	if err := ReplaceCustomSections(DB, []models.CustomSection{
+		{Position: 2, HeaderIt: "Luna di miele", HeaderEn: "Honeymoon", BodyIt: "Il viaggio", DesktopMediaID: 0, MobileMediaID: 0},
+		{Position: 5, HeaderIt: "Foto", HeaderEn: "Photos", SubtitleIt: "I ricordi", BodyEn: "Memories"},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	got, err = GetCustomSections()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 2 || got[0].HeaderIt != "Luna di miele" || got[1].HeaderEn != "Photos" {
+		t.Fatalf("custom sections = %+v", got)
+	}
+	if got[0].Position != 2 || got[0].BodyIt != "Il viaggio" || got[0].SortOrder != 0 || got[1].SortOrder != 1 {
+		t.Errorf("custom section fields = %+v", got)
+	}
+	if got[1].SubtitleIt != "I ricordi" || got[1].BodyEn != "Memories" || got[1].DesktopMediaID != 0 {
+		t.Errorf("custom section per-language fields = %+v", got)
+	}
+
+	if err := ReplaceCustomSections(DB, nil); err != nil {
+		t.Fatal(err)
+	}
+	got, err = GetCustomSections()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 0 {
+		t.Fatalf("wiped custom sections = %+v", got)
+	}
+}
+
 func TestAllInvitationsSorting(t *testing.T) {
 	newTestDB(t)
 
