@@ -74,6 +74,10 @@ jobs:
           # multi-package mode misreports cross-dir typecheck errors
           VALIDATE_GO: false
           VALIDATE_GO_MODULES: false
+          # The .specify/ subtrees and manifests are Spec Kit managed files.
+          # .specify/memory/ stays linted: the constitution and the decision
+          # register are authored content.
+          FILTER_REGEX_EXCLUDE: "\\.specify/(commands|templates|scripts|workflows|integrations)/.*|\\.specify/[^/]+\\.json"
           SAVE_SUPER_LINTER_OUTPUT: false
           MULTI_STATUS: false
           LOG_LEVEL: WARN
