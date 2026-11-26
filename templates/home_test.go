@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/streambinder/foedus/internal/i18n"
+	"github.com/streambinder/foedus/internal/models"
 )
 
 func TestHeroAnchorClass(t *testing.T) {
@@ -127,5 +128,85 @@ func TestRenderHomeGiftsStandardMode(t *testing.T) {
 	}
 	if strings.Contains(out, `id="coordinate-iban"`) {
 		t.Error("standard mode renders the coordinate box")
+	}
+}
+
+func TestRenderHomeCustomSections(t *testing.T) {
+	settings := fullSettings()
+	settings.SpotifyPlaylist = ""
+	content := HomeContent{
+		CustomSections: []models.CustomSection{
+			{ID: 7, Position: 2, HeaderEn: "Extra", HeaderIt: "Extra", BodyEn: "More", BodyIt: "Altro", DesktopMediaID: 51, MobileMediaID: 52},
+			{ID: 8, Position: 99, HeaderEn: "Last", HeaderIt: "Ultima", BodyEn: "End", BodyIt: "Fine"},
+		},
+	}
+	out := render(t, Home(settings, content, nil, nil, false, false, false, "", false, i18n.NewT("en"), "en", OGMeta{}))
+	for _, want := range []string{
+		`id="custom-7"`,
+		`id="custom-8"`,
+		`<h2 class="section-title">Extra</h2>`,
+		`<p class="custom-section-body">More</p>`,
+		`srcset="/media/51"`,
+		`vp-custom-section-with-background`,
+	} {
+		if !strings.Contains(out, want) {
+			t.Errorf("custom sections render missing %q", want)
+		}
+	}
+	// position 2 sits between landing and venues; position 99 sits last
+	landing := strings.Index(out, `id="landing"`)
+	custom := strings.Index(out, `id="custom-7"`)
+	venues := strings.Index(out, `id="venues"`)
+	last := strings.Index(out, `id="custom-8"`)
+	if !(landing < custom && custom < venues && venues < last) {
+		t.Errorf("custom order wrong: landing %d custom %d venues %d last %d", landing, custom, venues, last)
+	}
+	// the arrows navigate through the custom section
+	if !strings.Contains(out, `<a href="#custom-7" class="vp-arrow vp-arrow-down"`) {
+		t.Error("landing down arrow misses the custom section")
+	}
+	if !strings.Contains(out, `<a href="#landing" class="vp-arrow vp-arrow-up"`) {
+		t.Error("custom section up arrow misses landing")
+	}
+}
+
+func TestRenderHomeCustomSectionsLanguage(t *testing.T) {
+	settings := fullSettings()
+	settings.SpotifyPlaylist = ""
+	content := HomeContent{
+		CustomSections: []models.CustomSection{
+			{ID: 9, Position: 2, HeaderIt: "Solo italiano", BodyIt: "Testo"},
+		},
+	}
+	out := render(t, Home(settings, content, nil, nil, false, false, false, "", false, i18n.NewT("en"), "en", OGMeta{}))
+	if strings.Contains(out, `id="custom-9"`) {
+		t.Error("italian-only section renders in English")
+	}
+	out = render(t, Home(settings, content, nil, nil, false, false, false, "", false, i18n.NewT("it"), "it", OGMeta{}))
+	if !strings.Contains(out, `id="custom-9"`) || !strings.Contains(out, "Solo italiano") {
+		t.Error("italian-only section missing in Italian")
+	}
+}
+
+func TestRenderHomeCustomHoneymoon(t *testing.T) {
+	settings := fullSettings()
+	settings.SpotifyPlaylist = ""
+	custom := models.CustomSection{ID: 10, Position: 5, HeaderEn: "Our honeymoon", HeaderIt: "La luna di miele", BodyEn: "The trip", BodyIt: "Il viaggio"}
+
+	// no honeymoon places: the built-in section stays hidden, the custom stands alone
+	content := HomeContent{CustomSections: []models.CustomSection{custom}}
+	out := render(t, Home(settings, content, nil, nil, false, false, false, "", false, i18n.NewT("en"), "en", OGMeta{}))
+	if !strings.Contains(out, `id="custom-10"`) {
+		t.Error("custom honeymoon section missing with no honeymoon places")
+	}
+	if strings.Contains(out, `id="honeymoon"`) {
+		t.Error("built-in honeymoon renders with no honeymoon places")
+	}
+
+	// honeymoon places: both the custom and the built-in section render
+	content.Honeymoon = []models.Place{{Label: "Safari", Name: "Serengeti"}}
+	out = render(t, Home(settings, content, nil, nil, false, false, false, "", false, i18n.NewT("en"), "en", OGMeta{}))
+	if !strings.Contains(out, `id="custom-10"`) || !strings.Contains(out, `id="honeymoon"`) {
+		t.Error("custom and built-in honeymoon do not both render")
 	}
 }

@@ -1,6 +1,7 @@
 package templates
 
 import (
+	"slices"
 	"strings"
 	"testing"
 
@@ -290,77 +291,136 @@ func TestTimelineAndParkingJSON(t *testing.T) {
 	}
 }
 
-func TestSectionNavigationHelpers(t *testing.T) {
+func TestPlanHomeSections(t *testing.T) {
 	place := []models.Place{{}}
 	playlist := "https://open.spotify.com/playlist/abc123"
 
-	if got := prevSectionBeforeRegistry(nil, place, ""); got != "#honeymoon" {
-		t.Errorf("prev registry honeymoon = %q", got)
+	// base order with no customs: every built-in that renders, in canonical order
+	plan := planHomeSections(playlist, place, place, true, nil, "en")
+	want := []string{"#landing", "#venues", "#soundtrack", "#places", "#honeymoon", "#registry"}
+	if got := plan.order; !slices.Equal(got, want) {
+		t.Errorf("base order = %v, want %v", got, want)
 	}
-	if got := prevSectionBeforeRegistry(place, nil, ""); got != "#places" {
-		t.Errorf("prev registry places = %q", got)
+	if got := prevAnchor(plan.order, "#landing"); got != "" {
+		t.Errorf("prev landing = %q, want empty", got)
 	}
-	if got := prevSectionBeforeRegistry(nil, nil, playlist); got != "#soundtrack" {
-		t.Errorf("prev registry soundtrack = %q", got)
+	if got := nextAnchor(plan.order, "#landing"); got != "#venues" {
+		t.Errorf("next landing = %q, want #venues", got)
 	}
-	if got := prevSectionBeforeRegistry(nil, nil, ""); got != "#venues" {
-		t.Errorf("prev registry venues = %q", got)
+	if got := prevAnchor(plan.order, "#registry"); got != "#honeymoon" {
+		t.Errorf("prev registry = %q, want #honeymoon", got)
 	}
-
-	if got := nextSectionAfterVenues(playlist, nil, nil, false); got != "#soundtrack" {
-		t.Errorf("after venues soundtrack = %q", got)
-	}
-	if got := nextSectionAfterVenues("", place, nil, false); got != "#places" {
-		t.Errorf("after venues places = %q", got)
-	}
-	if got := nextSectionAfterVenues("", nil, place, false); got != "#honeymoon" {
-		t.Errorf("after venues honeymoon = %q", got)
-	}
-	if got := nextSectionAfterVenues("", nil, nil, true); got != "#registry" {
-		t.Errorf("after venues registry = %q", got)
-	}
-	if got := nextSectionAfterVenues("", nil, nil, false); got != "" {
-		t.Errorf("after venues none = %q", got)
+	if got := nextAnchor(plan.order, "#registry"); got != "" {
+		t.Errorf("next registry = %q, want empty", got)
 	}
 
-	if got := nextSectionAfterSoundtrack(place, nil, false); got != "#places" {
-		t.Errorf("after soundtrack places = %q", got)
-	}
-	if got := nextSectionAfterSoundtrack(nil, place, false); got != "#honeymoon" {
-		t.Errorf("after soundtrack honeymoon = %q", got)
-	}
-	if got := nextSectionAfterSoundtrack(nil, nil, true); got != "#registry" {
-		t.Errorf("after soundtrack registry = %q", got)
-	}
-	if got := nextSectionAfterSoundtrack(nil, nil, false); got != "" {
-		t.Errorf("after soundtrack none = %q", got)
+	// no soundtrack, no places, no honeymoon, no registry: only landing and venues
+	plan = planHomeSections("", nil, nil, false, nil, "en")
+	want = []string{"#landing", "#venues"}
+	if got := plan.order; !slices.Equal(got, want) {
+		t.Errorf("minimal order = %v, want %v", got, want)
 	}
 
-	if got := nextSectionAfterPlaces(place, false); got != "#honeymoon" {
-		t.Errorf("after places honeymoon = %q", got)
+	// a custom at position 2 renders between landing and venues
+	customs := []models.CustomSection{{ID: 7, Position: 2, HeaderEn: "Extra", BodyEn: "More"}}
+	plan = planHomeSections("", nil, nil, false, customs, "en")
+	want = []string{"#landing", "#custom-7", "#venues"}
+	if got := plan.order; !slices.Equal(got, want) {
+		t.Errorf("position 2 order = %v, want %v", got, want)
 	}
-	if got := nextSectionAfterPlaces(nil, true); got != "#registry" {
-		t.Errorf("after places registry = %q", got)
+	if got := plan.before["#venues"]; len(got) != 1 || got[0].ID != 7 {
+		t.Errorf("before venues = %+v, want the custom section", got)
 	}
-	if got := nextSectionAfterPlaces(nil, false); got != "" {
-		t.Errorf("after places none = %q", got)
-	}
-
-	if got := prevSectionBeforeHoneymoon(place, ""); got != "#places" {
-		t.Errorf("prev honeymoon places = %q", got)
-	}
-	if got := prevSectionBeforeHoneymoon(nil, playlist); got != "#soundtrack" {
-		t.Errorf("prev honeymoon soundtrack = %q", got)
-	}
-	if got := prevSectionBeforeHoneymoon(nil, ""); got != "#venues" {
-		t.Errorf("prev honeymoon venues = %q", got)
+	if got := nextAnchor(plan.order, "#landing"); got != "#custom-7" {
+		t.Errorf("next landing with custom = %q, want #custom-7", got)
 	}
 
-	if got := nextSectionAfterHoneymoon(true); got != "#registry" {
-		t.Errorf("after honeymoon registry = %q", got)
+	// a custom at position 1 renders before landing; one past the end renders last
+	customs = []models.CustomSection{
+		{ID: 8, Position: 1, HeaderEn: "First", BodyEn: "First body"},
+		{ID: 9, Position: 99, HeaderEn: "Last", BodyEn: "Last body"},
 	}
-	if got := nextSectionAfterHoneymoon(false); got != "" {
-		t.Errorf("after honeymoon none = %q", got)
+	plan = planHomeSections("", nil, nil, true, customs, "en")
+	want = []string{"#custom-8", "#landing", "#venues", "#registry", "#custom-9"}
+	if got := plan.order; !slices.Equal(got, want) {
+		t.Errorf("edges order = %v, want %v", got, want)
+	}
+	if got := plan.before["#landing"]; len(got) != 1 || got[0].ID != 8 {
+		t.Errorf("before landing = %+v, want the first custom", got)
+	}
+	if got := plan.before[""]; len(got) != 1 || got[0].ID != 9 {
+		t.Errorf("past end = %+v, want the last custom", got)
+	}
+
+	// a tie at one position keeps the dashboard form order
+	customs = []models.CustomSection{
+		{ID: 11, Position: 2, HeaderEn: "Second", BodyEn: "Second body"},
+		{ID: 10, Position: 2, HeaderEn: "First", BodyEn: "First body"},
+	}
+	plan = planHomeSections("", nil, nil, false, customs, "en")
+	want = []string{"#landing", "#custom-11", "#custom-10", "#venues"}
+	if got := plan.order; !slices.Equal(got, want) {
+		t.Errorf("tie order = %v, want %v", got, want)
+	}
+
+	// a section invisible in the language leaves the order entirely
+	customs = []models.CustomSection{{ID: 12, Position: 2, HeaderIt: "Solo italiano", BodyIt: "Testo"}}
+	plan = planHomeSections("", nil, nil, false, customs, "en")
+	want = []string{"#landing", "#venues"}
+	if got := plan.order; !slices.Equal(got, want) {
+		t.Errorf("hidden in English = %v, want %v", got, want)
+	}
+	plan = planHomeSections("", nil, nil, false, customs, "it")
+	want = []string{"#landing", "#custom-12", "#venues"}
+	if got := plan.order; !slices.Equal(got, want) {
+		t.Errorf("shown in Italian = %v, want %v", got, want)
+	}
+}
+
+func TestCustomSectionTextAndBackground(t *testing.T) {
+	section := models.CustomSection{
+		HeaderIt: "Titolo", SubtitleIt: "Sottotitolo", BodyIt: "Corpo",
+		HeaderEn: "Title", SubtitleEn: "Subtitle", BodyEn: "Body",
+		DesktopMediaID: 5, MobileMediaID: 6,
+	}
+	header, subtitle, body, ok := customSectionText(section, "it")
+	if !ok || header != "Titolo" || subtitle != "Sottotitolo" || body != "Corpo" {
+		t.Errorf("italian text = %q %q %q %v", header, subtitle, body, ok)
+	}
+	header, subtitle, body, ok = customSectionText(section, "en")
+	if !ok || header != "Title" || subtitle != "Subtitle" || body != "Body" {
+		t.Errorf("english text = %q %q %q %v", header, subtitle, body, ok)
+	}
+
+	// no header in the language: the section does not render there
+	if _, _, _, ok := customSectionText(models.CustomSection{BodyEn: "Body"}, "en"); ok {
+		t.Error("headerless section renders")
+	}
+	// header but neither body nor image: the section does not render
+	if _, _, _, ok := customSectionText(models.CustomSection{HeaderEn: "Title"}, "en"); ok {
+		t.Error("bodyless imageless section renders")
+	}
+	// header plus image but no body: the section renders
+	if _, _, _, ok := customSectionText(models.CustomSection{HeaderEn: "Title", DesktopMediaID: 5}, "en"); !ok {
+		t.Error("header plus image section does not render")
+	}
+
+	// per-viewport fallback, each way, as the hero does
+	desktop, mobile := customSectionBackground(models.CustomSection{DesktopMediaID: 5})
+	if desktop != 5 || mobile != 5 {
+		t.Errorf("desktop-only background = %d %d, want 5 5", desktop, mobile)
+	}
+	desktop, mobile = customSectionBackground(models.CustomSection{MobileMediaID: 6})
+	if desktop != 6 || mobile != 6 {
+		t.Errorf("mobile-only background = %d %d, want 6 6", desktop, mobile)
+	}
+	desktop, mobile = customSectionBackground(models.CustomSection{DesktopMediaID: 5, MobileMediaID: 6})
+	if desktop != 5 || mobile != 6 {
+		t.Errorf("pair background = %d %d, want 5 6", desktop, mobile)
+	}
+	desktop, mobile = customSectionBackground(models.CustomSection{})
+	if desktop != 0 || mobile != 0 {
+		t.Errorf("empty background = %d %d, want 0 0", desktop, mobile)
 	}
 }
 

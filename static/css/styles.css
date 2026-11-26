@@ -340,6 +340,45 @@ html:has(.vp-section) body {
   background: rgb(18 24 27 / 42%);
 }
 
+/* ---------------------------------------------------------------
+   custom homepage sections: same full-bleed background as the hero,
+   texts centred like the other section headings
+   --------------------------------------------------------------- */
+.vp-custom-section {
+  text-align: center;
+  background: var(--home-page-bg, var(--ivory));
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.custom-section-body {
+  font-family: Inter, sans-serif;
+  font-size: var(--fs-md);
+  line-height: 1.65;
+  color: var(--charcoal-dark);
+  max-width: 36rem;
+  margin: var(--sp-4) auto 0;
+}
+
+.vp-custom-section-with-background .section-title,
+.vp-custom-section-with-background .section-subtitle,
+.vp-custom-section-with-background .custom-section-body {
+  color: rgb(255 248 240 / 96%);
+  text-shadow: 0 2px 10px rgb(10 14 16 / 28%);
+}
+
+.vp-custom-section-with-background .vp-arrow {
+  color: rgb(255 255 255 / 82%);
+  border-color: rgb(255 255 255 / 28%);
+  background: rgb(18 24 27 / 24%);
+}
+
+.vp-custom-section-with-background .vp-arrow:hover {
+  color: var(--white);
+  border-color: rgb(255 255 255 / 50%);
+  background: rgb(18 24 27 / 42%);
+}
+
 .vp-venues {
   background: var(--home-page-bg, var(--ivory));
   overflow: hidden;

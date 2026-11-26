@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"sort"
 	"strconv"
 
 	"github.com/streambinder/foedus/internal/i18n"
@@ -68,73 +69,120 @@ func parkingJSON(spots []models.ParkingSpot) string {
 	return string(b)
 }
 
-func prevSectionBeforeRegistry(places []models.Place, honeymoonLocations []models.Place, playlist string) string {
-	if len(honeymoonLocations) > 0 {
-		return "#honeymoon"
-	}
-	if len(places) > 0 {
-		return "#places"
-	}
+// homeSectionPlan is the rendered homepage order: the ordered anchor list
+// plus, for each built-in anchor, the custom sections to render before it.
+// Customs past the last built-in ride under the empty key.
+type homeSectionPlan struct {
+	order  []string
+	before map[string][]models.CustomSection
+}
+
+// planHomeSections merges the custom sections into the rendered built-in
+// order. The built-ins keep their canonical relative order — landing,
+// venues, soundtrack, places, honeymoon, registry — with only the ones
+// that render taking a place. A custom section with position P renders
+// before the built-in at rendered place P, and a position past the last
+// built-in renders after it. Ties at one position keep the dashboard
+// form order. Sections invisible in the language are left out entirely.
+func planHomeSections(playlist string, places, honeymoon []models.Place, bankConfigured bool, customs []models.CustomSection, lang string) homeSectionPlan {
+	builtIns := []string{"#landing", "#venues"}
 	if hasSpotifyPlaylist(playlist) {
-		return "#soundtrack"
-	}
-	return "#venues"
-}
-
-func nextSectionAfterVenues(playlist string, places []models.Place, honeymoonLocations []models.Place, bankConfigured bool) string {
-	if hasSpotifyPlaylist(playlist) {
-		return "#soundtrack"
+		builtIns = append(builtIns, "#soundtrack")
 	}
 	if len(places) > 0 {
-		return "#places"
+		builtIns = append(builtIns, "#places")
 	}
-	if len(honeymoonLocations) > 0 {
-		return "#honeymoon"
+	if len(honeymoon) > 0 {
+		builtIns = append(builtIns, "#honeymoon")
 	}
 	if bankConfigured {
-		return "#registry"
+		builtIns = append(builtIns, "#registry")
+	}
+	// visible customs in merge order: position, then the form order the
+	// slice already arrives in (sort_order, id). A stable sort keeps the
+	// ties in that order.
+	visible := make([]models.CustomSection, 0, len(customs))
+	for _, custom := range customs {
+		if _, _, _, ok := customSectionText(custom, lang); ok {
+			visible = append(visible, custom)
+		}
+	}
+	sort.SliceStable(visible, func(i, j int) bool { return visible[i].Position < visible[j].Position })
+	plan := homeSectionPlan{
+		order:  make([]string, 0, len(builtIns)+len(visible)),
+		before: make(map[string][]models.CustomSection),
+	}
+	next := 0
+	for place, anchor := range builtIns {
+		// rendered places are 1-based; a position at or below the place
+		// renders before this built-in, so position 1 renders before
+		// landing and a position past the end renders after the last one.
+		for next < len(visible) && visible[next].Position <= place+1 {
+			plan.before[anchor] = append(plan.before[anchor], visible[next])
+			plan.order = append(plan.order, "#custom-"+strconv.Itoa(visible[next].ID))
+			next++
+		}
+		plan.order = append(plan.order, anchor)
+	}
+	for ; next < len(visible); next++ {
+		plan.before[""] = append(plan.before[""], visible[next])
+		plan.order = append(plan.order, "#custom-"+strconv.Itoa(visible[next].ID))
+	}
+	return plan
+}
+
+// prevAnchor returns the anchor before the given one in the order, or the
+// empty string at the start.
+func prevAnchor(order []string, anchor string) string {
+	for i, a := range order {
+		if a == anchor && i > 0 {
+			return order[i-1]
+		}
 	}
 	return ""
 }
 
-func nextSectionAfterSoundtrack(places []models.Place, honeymoonLocations []models.Place, bankConfigured bool) string {
-	if len(places) > 0 {
-		return "#places"
-	}
-	if len(honeymoonLocations) > 0 {
-		return "#honeymoon"
-	}
-	if bankConfigured {
-		return "#registry"
+// nextAnchor returns the anchor after the given one in the order, or the
+// empty string at the end.
+func nextAnchor(order []string, anchor string) string {
+	for i, a := range order {
+		if a == anchor && i+1 < len(order) {
+			return order[i+1]
+		}
 	}
 	return ""
 }
 
-func nextSectionAfterPlaces(honeymoonLocations []models.Place, bankConfigured bool) string {
-	if len(honeymoonLocations) > 0 {
-		return "#honeymoon"
+// customSectionText returns the header, subtitle, and body of a custom
+// section in the requested language, and whether the section renders in
+// that language: it needs a header and a body or a background image.
+func customSectionText(section models.CustomSection, lang string) (header, subtitle, body string, ok bool) {
+	if lang == "it" {
+		header, subtitle, body = section.HeaderIt, section.SubtitleIt, section.BodyIt
+	} else {
+		header, subtitle, body = section.HeaderEn, section.SubtitleEn, section.BodyEn
 	}
-	if bankConfigured {
-		return "#registry"
+	if header == "" {
+		return "", "", "", false
 	}
-	return ""
+	if body == "" && section.DesktopMediaID <= 0 && section.MobileMediaID <= 0 {
+		return "", "", "", false
+	}
+	return header, subtitle, body, true
 }
 
-func prevSectionBeforeHoneymoon(places []models.Place, playlist string) string {
-	if len(places) > 0 {
-		return "#places"
+// customSectionBackground returns the desktop and mobile media ids of a
+// custom section with the hero fallback applied each way: a missing side
+// falls back to the other side.
+func customSectionBackground(section models.CustomSection) (desktop, mobile int) {
+	desktop, mobile = section.DesktopMediaID, section.MobileMediaID
+	if desktop <= 0 {
+		desktop = mobile
 	}
-	if hasSpotifyPlaylist(playlist) {
-		return "#soundtrack"
+	if mobile <= 0 {
+		mobile = desktop
 	}
-	return "#venues"
-}
-
-func nextSectionAfterHoneymoon(bankConfigured bool) string {
-	if bankConfigured {
-		return "#registry"
-	}
-	return ""
+	return desktop, mobile
 }
 
 // progress percentage (0-100) for a partially-claimed item
@@ -215,12 +263,56 @@ func heroAnchorClass(anchor string) string {
 	}
 }
 
+templ CustomSection(section models.CustomSection, plan homeSectionPlan, lang string) {
+	{{ header, subtitle, body, _ := customSectionText(section, lang) }}
+	{{ desktopMediaID, mobileMediaID := customSectionBackground(section) }}
+	{{ anchor := "#custom-" + strconv.Itoa(section.ID) }}
+	<section id={ "custom-" + strconv.Itoa(section.ID) } class={ templ.Classes("vp-section", "vp-custom-section", templ.KV("vp-custom-section-with-background", desktopMediaID > 0 || mobileMediaID > 0)) }>
+		if desktopMediaID > 0 || mobileMediaID > 0 {
+			<picture class="vp-hero-background-layer" aria-hidden="true">
+				if desktopMediaID > 0 {
+					<source media="(min-width: 768px)" srcset={ publicImageURL(desktopMediaID) }/>
+				}
+				<img src={ heroFallbackImage(models.HeroBackground{DesktopMediaID: desktopMediaID, MobileMediaID: mobileMediaID}) } alt={ header } width="1600" height="1000" loading="lazy" decoding="async"/>
+			</picture>
+			<div class="vp-hero-background-wash" aria-hidden="true"></div>
+		}
+		if prev := prevAnchor(plan.order, anchor); prev != "" {
+			<a href={ templ.SafeURL(prev) } class="vp-arrow vp-arrow-up" aria-label="Previous section">
+				<svg width="20" height="20" aria-hidden="true"><use href="#chev-u"/></svg>
+			</a>
+		}
+		<div class="vp-section-inner">
+			<div class="section-heading">
+				<h2 class="section-title">{ header }</h2>
+				if subtitle != "" {
+					<p class="section-subtitle">{ subtitle }</p>
+				}
+			</div>
+			if body != "" {
+				<p class="custom-section-body">{ body }</p>
+			}
+		</div>
+		if next := nextAnchor(plan.order, anchor); next != "" {
+			<a href={ templ.SafeURL(next) } class="vp-arrow vp-arrow-down" aria-label="Next section">
+				<svg width="20" height="20" aria-hidden="true"><use href="#chev-d"/></svg>
+			</a>
+		}
+	</section>
+}
+
 templ Home(settings models.Settings, content HomeContent, registryItems []models.RegistryItem, claimedAmounts map[int]int, bankConfigured bool, chatEnabled bool, soundtrackEnabled bool, inviteUpdateURL string, rsvpSubmitted bool, t i18n.T, lang string, ogMeta OGMeta) {
 	@Layout(settings.GroomName+" & "+settings.BrideName, lang, t, ogMeta, len(content.Places) > 0 || len(content.Honeymoon) > 0 || len(content.ParkingSpots) > 0, homepageHeroPreloads(content.HeroBackground), homePageStyle(settings), "") {
 		<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
 			<symbol id="chev-d" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></symbol>
 			<symbol id="chev-u" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></symbol>
 		</svg>
+		// the rendered order of every section on the page, built-ins and
+		// customs merged; the arrows below all read their neighbours here.
+		{{ plan := planHomeSections(settings.SpotifyPlaylist, content.Places, content.Honeymoon, bankConfigured, content.CustomSections, lang) }}
+		for _, cs := range plan.before["#landing"] {
+			@CustomSection(cs, plan, lang)
+		}
 		<!-- section 1: title -->
 		<section id="landing" class={ templ.Classes("vp-section", "vp-hero", heroAnchorClass(settings.HeroTextAnchor), templ.KV("vp-hero-with-background", content.HeroBackground.DesktopMediaID > 0 || content.HeroBackground.MobileMediaID > 0)) }>
 			if content.HeroBackground.DesktopMediaID > 0 || content.HeroBackground.MobileMediaID > 0 {
@@ -246,17 +338,24 @@ templ Home(settings models.Settings, content HomeContent, registryItems []models
 					</p>
 				}
 			</div>
-			<a href="#venues" class="vp-arrow vp-arrow-down" aria-label={ t("home.ceremony") }>
-				<svg width="20" height="20" aria-hidden="true"><use href="#chev-d"/></svg>
-			</a>
+			if next := nextAnchor(plan.order, "#landing"); next != "" {
+				<a href={ templ.SafeURL(next) } class="vp-arrow vp-arrow-down" aria-label={ t("home.ceremony") }>
+					<svg width="20" height="20" aria-hidden="true"><use href="#chev-d"/></svg>
+				</a>
+			}
 		</section>
+		for _, cs := range plan.before["#venues"] {
+			@CustomSection(cs, plan, lang)
+		}
 		<!-- section 2: ceremony & celebration -->
 		<section id="venues" class="vp-section vp-venues">
 			@Flora(settings, "bl")
 			@Flora(settings, "tr")
-			<a href="#landing" class="vp-arrow vp-arrow-up" aria-label={ t("home.getting_married") }>
-				<svg width="20" height="20" aria-hidden="true"><use href="#chev-u"/></svg>
-			</a>
+			if prev := prevAnchor(plan.order, "#venues"); prev != "" {
+				<a href={ templ.SafeURL(prev) } class="vp-arrow vp-arrow-up" aria-label={ t("home.getting_married") }>
+					<svg width="20" height="20" aria-hidden="true"><use href="#chev-u"/></svg>
+				</a>
+			}
 			<div class="vp-section-inner">
 				<div class="section-heading">
 					<h2 class="section-title">{ t("home.venues") }</h2>
@@ -383,18 +482,23 @@ templ Home(settings models.Settings, content HomeContent, registryItems []models
 					</div>
 				}
 			</div>
-			if nextSectionAfterVenues(settings.SpotifyPlaylist, content.Places, content.Honeymoon, bankConfigured) != "" {
-				<a href={ templ.SafeURL(nextSectionAfterVenues(settings.SpotifyPlaylist, content.Places, content.Honeymoon, bankConfigured)) } class="vp-arrow vp-arrow-down" aria-label={ t("home.registry") }>
+			if next := nextAnchor(plan.order, "#venues"); next != "" {
+				<a href={ templ.SafeURL(next) } class="vp-arrow vp-arrow-down" aria-label={ t("home.registry") }>
 					<svg width="20" height="20" aria-hidden="true"><use href="#chev-d"/></svg>
 				</a>
 			}
 		</section>
+		for _, cs := range plan.before["#soundtrack"] {
+			@CustomSection(cs, plan, lang)
+		}
 		<!-- section: soundtrack (spotify collaborative playlist) -->
 		if hasSpotifyPlaylist(settings.SpotifyPlaylist) {
 			<section id="soundtrack" class="vp-section vp-soundtrack">
-				<a href="#venues" class="vp-arrow vp-arrow-up" aria-label={ t("home.ceremony") }>
-					<svg width="20" height="20" aria-hidden="true"><use href="#chev-u"/></svg>
-				</a>
+				if prev := prevAnchor(plan.order, "#soundtrack"); prev != "" {
+					<a href={ templ.SafeURL(prev) } class="vp-arrow vp-arrow-up" aria-label={ t("home.ceremony") }>
+						<svg width="20" height="20" aria-hidden="true"><use href="#chev-u"/></svg>
+					</a>
+				}
 				<div class="soundtrack-header">
 					<div class="section-heading soundtrack-heading">
 						<h2 class="section-title">{ t("home.soundtrack") }</h2>
@@ -444,12 +548,15 @@ templ Home(settings models.Settings, content HomeContent, registryItems []models
 					allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
 					loading="lazy"
 				></iframe>
-				if nextSectionAfterSoundtrack(content.Places, content.Honeymoon, bankConfigured) != "" {
-					<a href={ templ.SafeURL(nextSectionAfterSoundtrack(content.Places, content.Honeymoon, bankConfigured)) } class="vp-arrow vp-arrow-down" aria-label="Next section">
+				if next := nextAnchor(plan.order, "#soundtrack"); next != "" {
+					<a href={ templ.SafeURL(next) } class="vp-arrow vp-arrow-down" aria-label="Next section">
 						<svg width="20" height="20" aria-hidden="true"><use href="#chev-d"/></svg>
 					</a>
 				}
 			</section>
+		}
+		for _, cs := range plan.before["#places"] {
+			@CustomSection(cs, plan, lang)
 		}
 		if len(content.Places) > 0 || len(content.Honeymoon) > 0 {
 				<svg class="places-filter-defs" aria-hidden="true" focusable="false" width="0" height="0" style="position:absolute">
@@ -466,12 +573,8 @@ templ Home(settings models.Settings, content HomeContent, registryItems []models
 			<!-- section: places -->
 			if len(content.Places) > 0 {
 				<section id="places" class="vp-section vp-places" data-story-map-section="places">
-					if hasSpotifyPlaylist(settings.SpotifyPlaylist) {
-						<a href="#soundtrack" class="vp-arrow vp-arrow-up" aria-label="Previous section">
-							<svg width="20" height="20" aria-hidden="true"><use href="#chev-u"/></svg>
-						</a>
-					} else {
-						<a href="#venues" class="vp-arrow vp-arrow-up" aria-label="Previous section">
+					if prev := prevAnchor(plan.order, "#places"); prev != "" {
+						<a href={ templ.SafeURL(prev) } class="vp-arrow vp-arrow-up" aria-label="Previous section">
 							<svg width="20" height="20" aria-hidden="true"><use href="#chev-u"/></svg>
 						</a>
 					}
@@ -502,18 +605,23 @@ templ Home(settings models.Settings, content HomeContent, registryItems []models
 							</div>
 						</div>
 					</dialog>
-					if nextSectionAfterPlaces(content.Honeymoon, bankConfigured) != "" {
-						<a href={ templ.SafeURL(nextSectionAfterPlaces(content.Honeymoon, bankConfigured)) } class="vp-arrow vp-arrow-down" aria-label="Next section">
+					if next := nextAnchor(plan.order, "#places"); next != "" {
+						<a href={ templ.SafeURL(next) } class="vp-arrow vp-arrow-down" aria-label="Next section">
 							<svg width="20" height="20" aria-hidden="true"><use href="#chev-d"/></svg>
 						</a>
 					}
 				</section>
 			}
+			for _, cs := range plan.before["#honeymoon"] {
+				@CustomSection(cs, plan, lang)
+			}
 			if len(content.Honeymoon) > 0 {
 				<section id="honeymoon" class="vp-section vp-honeymoon" data-story-map-section="honeymoon">
-					<a href={ templ.SafeURL(prevSectionBeforeHoneymoon(content.Places, settings.SpotifyPlaylist)) } class="vp-arrow vp-arrow-up" aria-label="Previous section">
-						<svg width="20" height="20" aria-hidden="true"><use href="#chev-u"/></svg>
-					</a>
+					if prev := prevAnchor(plan.order, "#honeymoon"); prev != "" {
+						<a href={ templ.SafeURL(prev) } class="vp-arrow vp-arrow-up" aria-label="Previous section">
+							<svg width="20" height="20" aria-hidden="true"><use href="#chev-u"/></svg>
+						</a>
+					}
 					<div class="timeline-story-map-shell" aria-hidden="true">
 						<div class="places-map-background timeline-map-background">
 							<div class="timeline-map places-map"></div>
@@ -529,21 +637,26 @@ templ Home(settings models.Settings, content HomeContent, registryItems []models
 						</div>
 					</div>
 					<div class="timeline-data" style="display:none">{ locationTimelineJSON(content.Honeymoon, lang) }</div>
-					if nextSectionAfterHoneymoon(bankConfigured) != "" {
-						<a href={ templ.SafeURL(nextSectionAfterHoneymoon(bankConfigured)) } class="vp-arrow vp-arrow-down" aria-label="Next section">
+					if next := nextAnchor(plan.order, "#honeymoon"); next != "" {
+						<a href={ templ.SafeURL(next) } class="vp-arrow vp-arrow-down" aria-label="Next section">
 							<svg width="20" height="20" aria-hidden="true"><use href="#chev-d"/></svg>
 						</a>
 					}
 				</section>
 			}
+		for _, cs := range plan.before["#registry"] {
+			@CustomSection(cs, plan, lang)
+		}
 		<!-- section: registry / gifts -->
 		if bankConfigured {
 			<section id="registry" class="vp-section vp-registry">
 				@Flora(settings, "bl")
 				@Flora(settings, "tr")
-				<a href={ templ.SafeURL(prevSectionBeforeRegistry(content.Places, content.Honeymoon, settings.SpotifyPlaylist)) } class="vp-arrow vp-arrow-up" aria-label={ t("home.ceremony") }>
-					<svg width="20" height="20" aria-hidden="true"><use href="#chev-u"/></svg>
-				</a>
+				if prev := prevAnchor(plan.order, "#registry"); prev != "" {
+					<a href={ templ.SafeURL(prev) } class="vp-arrow vp-arrow-up" aria-label={ t("home.ceremony") }>
+						<svg width="20" height="20" aria-hidden="true"><use href="#chev-u"/></svg>
+					</a>
+				}
 				<div class="vp-section-inner">
 					if settings.GiftsMode == models.GiftsModeCoordinate {
 						<div class="registry-v2">
@@ -645,6 +758,9 @@ templ Home(settings models.Settings, content HomeContent, registryItems []models
 					}
 				</div>
 			</section>
+		}
+		for _, cs := range plan.before[""] {
+			@CustomSection(cs, plan, lang)
 		}
 		if len(content.Accommodations) > 0 {
 			<dialog id="accommodations-modal" class="modal-overlay">
