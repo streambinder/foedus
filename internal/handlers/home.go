@@ -71,6 +71,9 @@ func loadHomeContent() (templates.HomeContent, error) {
 		return content, err
 	}
 	content.HeroBackground = pickHeroBackground(backgrounds)
+	if content.CustomSections, err = database.GetCustomSections(); err != nil {
+		return content, err
+	}
 	return content, nil
 }
 
