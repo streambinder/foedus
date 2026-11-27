@@ -1966,13 +1966,54 @@ dialog.modal-overlay:not([open]) .modal-box {
   font-size: var(--fs-md);
   letter-spacing: 0.05em;
   color: var(--charcoal-dark);
-  word-break: break-all;
+  white-space: nowrap;
+}
+
+.gift-coordinate-field {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-1);
+}
+
+.gift-coordinate-label {
+  font-family: "Playfair Display", serif;
+  font-size: var(--fs-sm);
+  letter-spacing: 0.04em;
+  color: var(--sage-dark);
 }
 
 .gift-coordinate-owner {
-  font-family: Inter, sans-serif;
-  font-size: var(--fs-md);
+  font-family: "Playfair Display", serif;
+  font-size: var(--fs-lg);
   color: var(--charcoal-dark);
+  white-space: nowrap;
+}
+
+/* the coordinate tile is wider than the registry tiles so the IBAN
+   and the beneficiary each fit on one line, and its icon area is
+   compact: no 4/3 image ratio, just the icon with a little padding */
+.gift-tile.gift-coordinate-tile {
+  flex: 0 0 auto;
+  width: 100%;
+  max-width: 30rem;
+}
+
+.gift-coordinate-tile .gift-tile-image {
+  aspect-ratio: auto;
+  padding: var(--sp-3) 0 var(--sp-1);
+}
+
+/* on very narrow screens the single-line IBAN and beneficiary shrink
+   instead of overflowing the tile */
+@media (width < 400px) {
+  .gift-coordinate-box code {
+    font-size: var(--fs-sm);
+  }
+
+  .gift-coordinate-owner {
+    font-size: var(--fs-md);
+  }
 }
 
 .modal-actions {

@@ -667,15 +667,21 @@ templ Home(settings models.Settings, content HomeContent, registryItems []models
 								}
 							</div>
 							<div class="gift-coordinate-box">
-								<div class="gift-tile">
+								<div class="gift-tile gift-coordinate-tile">
 									<div class="gift-tile-image">
 										<div class="free-gift-image-placeholder">
 											<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"></rect><path d="M12 8v13"></path><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"></path><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"></path></svg>
 										</div>
 									</div>
 									<div class="gift-tile-body">
-										<code id="coordinate-iban">{ settings.BankAccountIBAN }</code>
-										<span class="gift-coordinate-owner">{ settings.BankAccountHolder }</span>
+										<div class="gift-coordinate-field">
+											<span class="gift-coordinate-label">{ t("modal.iban") }</span>
+											<code id="coordinate-iban">{ settings.BankAccountIBAN }</code>
+										</div>
+										<div class="gift-coordinate-field">
+											<span class="gift-coordinate-label">{ t("modal.owner") }</span>
+											<span class="gift-coordinate-owner">{ settings.BankAccountHolder }</span>
+										</div>
 										<button type="button" class="gift-tile-btn copy-btn" data-target="coordinate-iban">{ t("btn.copy") }</button>
 									</div>
 								</div>

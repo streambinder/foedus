@@ -62,16 +62,20 @@ func TestRenderHomeGiftsCoordinateMode(t *testing.T) {
 	settings.GiftsMode = "coordinate"
 
 	out := render(t, Home(settings, content, items, claimed, true, false, false, "", false, i18n.NewT("it"), "it", OGMeta{}))
-	// the single box is a gift tile like the wedding-list ones: the gift
-	// icon above the text, IBAN in code, beneficiary below it, Copia below
-	// that, styled like the Dona button
+	// the single box is a gift tile like the wedding-list ones, wider so
+	// the IBAN and the beneficiary each fit on one line: the gift icon
+	// above the text, then a labelled IBAN field, a labelled beneficiary
+	// field in Playfair Display, and Copia below that, styled like the
+	// Dona button
 	for _, want := range []string{
 		`id="coordinate-iban"`, "IT60X0542811101000000123456",
 		`class="gift-coordinate-owner"`, "Davide Pucci",
 		`data-target="coordinate-iban"`, ">Copia</button>",
 		`<h2 class="section-title">Regalo</h2>`, "Nessuna idea? Ci pensiamo noi.",
-		`class="gift-tile"`, `class="free-gift-image-placeholder"`,
+		`class="gift-tile gift-coordinate-tile"`, `class="free-gift-image-placeholder"`,
 		`class="gift-tile-btn copy-btn"`,
+		`class="gift-coordinate-field"`, `class="gift-coordinate-label"`,
+		">IBAN</span>", ">Intestatario</span>",
 	} {
 		if !strings.Contains(out, want) {
 			t.Errorf("coordinate mode missing %q", want)
@@ -85,6 +89,14 @@ func TestRenderHomeGiftsCoordinateMode(t *testing.T) {
 		strings.Index(out, `class="gift-coordinate-owner"`) < iban ||
 		strings.Index(out, ">Copia</button>") < strings.Index(out, `class="gift-coordinate-owner"`) {
 		t.Error("coordinate box must order IBAN, beneficiary, then Copia")
+	}
+	if ibanLabel := strings.Index(out, ">IBAN</span>"); ibanLabel < 0 ||
+		strings.Index(out, `id="coordinate-iban"`) < ibanLabel {
+		t.Error("coordinate box must show the IBAN label above the IBAN")
+	}
+	if ownerLabel := strings.Index(out, ">Intestatario</span>"); ownerLabel < 0 ||
+		strings.Index(out, `class="gift-coordinate-owner"`) < ownerLabel {
+		t.Error("coordinate box must show the beneficiary label above the beneficiary")
 	}
 	// no registry item, no Dona button, no claim modal; the section title
 	// is the coordinate one (the venues arrow keeps "Lista nozze" as the
@@ -102,7 +114,7 @@ func TestRenderHomeGiftsCoordinateMode(t *testing.T) {
 
 	// the english title defaults to Gift and the button to Copy
 	out = render(t, Home(settings, content, items, claimed, true, false, false, "", false, i18n.NewT("en"), "en", OGMeta{}))
-	for _, want := range []string{"Gift", ">Copy</button>"} {
+	for _, want := range []string{"Gift", ">Copy</button>", ">Account holder</span>"} {
 		if !strings.Contains(out, want) {
 			t.Errorf("coordinate mode in english missing %q", want)
 		}
