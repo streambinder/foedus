@@ -404,6 +404,13 @@ func TestCustomSectionTextAndBackground(t *testing.T) {
 	if _, _, _, ok := customSectionText(models.CustomSection{HeaderEn: "Title", DesktopMediaID: 5}, "en"); !ok {
 		t.Error("header plus image section does not render")
 	}
+	// header plus body image but no body: the section renders, in either language
+	if _, _, _, ok := customSectionText(models.CustomSection{HeaderEn: "Title", BodyMediaID: 9}, "en"); !ok {
+		t.Error("header plus body image section does not render")
+	}
+	if _, _, _, ok := customSectionText(models.CustomSection{HeaderIt: "Titolo", BodyMediaID: 9}, "it"); !ok {
+		t.Error("header plus body image section does not render in Italian")
+	}
 
 	// per-viewport fallback, each way, as the hero does
 	desktop, mobile := customSectionBackground(models.CustomSection{DesktopMediaID: 5})

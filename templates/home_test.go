@@ -200,6 +200,68 @@ func TestRenderHomeCustomSectionsLanguage(t *testing.T) {
 	}
 }
 
+func TestRenderHomeCustomSectionBodyImage(t *testing.T) {
+	settings := fullSettings()
+	settings.SpotifyPlaylist = ""
+	content := HomeContent{
+		CustomSections: []models.CustomSection{
+			{ID: 11, Position: 2, HeaderEn: "Story", HeaderIt: "Storia", BodyEn: "Our story", BodyIt: "La nostra storia", BodyMediaID: 61},
+			{ID: 12, Position: 3, HeaderEn: "Photos", HeaderIt: "Foto", BodyMediaID: 62},
+		},
+	}
+	out := render(t, Home(settings, content, nil, nil, false, false, false, "", false, i18n.NewT("en"), "en", OGMeta{}))
+	// the body image renders below the body text
+	body := strings.Index(out, `<p class="custom-section-body">Our story</p>`)
+	image := strings.Index(out, `<img class="custom-section-body-image" src="/media/61"`)
+	if body < 0 || image < 0 || !(body < image) {
+		t.Errorf("body image missing or not below the body text: body %d image %d", body, image)
+	}
+	// a section with only a header and a body image renders, with no body paragraph
+	if !strings.Contains(out, `id="custom-12"`) || !strings.Contains(out, `src="/media/62"`) {
+		t.Error("header plus body image section missing")
+	}
+	if got := strings.Count(out, `<p class="custom-section-body">`); got != 1 {
+		t.Errorf("body paragraphs = %d, want 1", got)
+	}
+}
+
+func TestRenderHomeCustomSectionsEveryPosition(t *testing.T) {
+	settings, content, items, claimed := homeFixtures()
+	// one custom section before every built-in section, plus one past
+	// the end: every before-slot renders its section
+	content.CustomSections = []models.CustomSection{
+		{ID: 21, Position: 1, HeaderEn: "Before landing", BodyEn: "First"},
+		{ID: 22, Position: 2, HeaderEn: "Before venues", BodyEn: "Second"},
+		{ID: 23, Position: 3, HeaderEn: "Before soundtrack", BodyEn: "Third"},
+		{ID: 24, Position: 4, HeaderEn: "Before places", BodyEn: "Fourth"},
+		{ID: 25, Position: 5, HeaderEn: "Before honeymoon", BodyEn: "Fifth"},
+		{ID: 26, Position: 6, HeaderEn: "Before registry", BodyEn: "Sixth"},
+		{ID: 27, Position: 7, HeaderEn: "Past the end", BodyEn: "Last"},
+	}
+	out := render(t, Home(settings, content, items, claimed, true, false, true, "", false, i18n.NewT("en"), "en", OGMeta{}))
+	order := []string{
+		`id="custom-21"`, `id="landing"`,
+		`id="custom-22"`, `id="venues"`,
+		`id="custom-23"`, `id="soundtrack"`,
+		`id="custom-24"`, `id="places"`,
+		`id="custom-25"`, `id="honeymoon"`,
+		`id="custom-26"`, `id="registry"`,
+		`id="custom-27"`,
+	}
+	previous := -1
+	for _, want := range order {
+		at := strings.Index(out, want)
+		if at < 0 {
+			t.Errorf("custom section order missing %q", want)
+			continue
+		}
+		if at <= previous {
+			t.Errorf("custom section order wrong at %q: %d after %d", want, at, previous)
+		}
+		previous = at
+	}
+}
+
 func TestRenderHomeCustomHoneymoon(t *testing.T) {
 	settings := fullSettings()
 	settings.SpotifyPlaylist = ""

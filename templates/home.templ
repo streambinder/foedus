@@ -155,7 +155,9 @@ func nextAnchor(order []string, anchor string) string {
 
 // customSectionText returns the header, subtitle, and body of a custom
 // section in the requested language, and whether the section renders in
-// that language: it needs a header and a body or a background image.
+// that language: it needs a header and a body, a background image, or a
+// body image. The body image is language-neutral, so it satisfies the
+// content check for either language.
 func customSectionText(section models.CustomSection, lang string) (header, subtitle, body string, ok bool) {
 	if lang == "it" {
 		header, subtitle, body = section.HeaderIt, section.SubtitleIt, section.BodyIt
@@ -165,7 +167,7 @@ func customSectionText(section models.CustomSection, lang string) (header, subti
 	if header == "" {
 		return "", "", "", false
 	}
-	if body == "" && section.DesktopMediaID <= 0 && section.MobileMediaID <= 0 {
+	if body == "" && section.DesktopMediaID <= 0 && section.MobileMediaID <= 0 && section.BodyMediaID <= 0 {
 		return "", "", "", false
 	}
 	return header, subtitle, body, true
@@ -291,6 +293,9 @@ templ CustomSection(section models.CustomSection, plan homeSectionPlan, lang str
 			</div>
 			if body != "" {
 				<p class="custom-section-body">{ body }</p>
+			}
+			if section.BodyMediaID > 0 {
+				<img class="custom-section-body-image" src={ publicImageURL(section.BodyMediaID) } alt={ header } loading="lazy" decoding="async"/>
 			}
 		</div>
 		if next := nextAnchor(plan.order, anchor); next != "" {
