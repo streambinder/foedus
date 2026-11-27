@@ -1,7 +1,11 @@
 package handlers
 
 import (
+	"bytes"
 	"encoding/base64"
+	"image"
+	"image/color"
+	"image/png"
 	"net/url"
 	"strconv"
 	"strings"
@@ -511,6 +515,47 @@ func TestImageHelpers(t *testing.T) {
 	}
 	if _, _, err := decodeDataURI("data:image/png;base64,%%%"); err == nil {
 		t.Error("broken payload accepted")
+	}
+}
+
+func TestTransparentPNGMediaRoundTrip(t *testing.T) {
+	setupDB(t)
+
+	// 2x1 PNG: one fully transparent pixel, one opaque pixel.
+	img := image.NewNRGBA(image.Rect(0, 0, 2, 1))
+	img.SetNRGBA(0, 0, color.NRGBA{R: 255, G: 255, B: 255, A: 0})
+	img.SetNRGBA(1, 0, color.NRGBA{R: 10, G: 20, B: 30, A: 255})
+	var buf bytes.Buffer
+	if err := png.Encode(&buf, img); err != nil {
+		t.Fatalf("encode transparent png: %v", err)
+	}
+	uri := "data:image/png;base64," + base64.StdEncoding.EncodeToString(buf.Bytes())
+
+	id, err := resolveImageMediaIDFromSet(database.DB, uri, "", map[int]struct{}{})
+	if err != nil {
+		t.Fatalf("resolve transparent png: %v", err)
+	}
+	stored, err := database.GetMedia(id)
+	if err != nil {
+		t.Fatalf("get stored media: %v", err)
+	}
+	if stored.Mime != "image/png" {
+		t.Errorf("stored mime = %q, want image/png", stored.Mime)
+	}
+	if !bytes.Equal(stored.Bytes, buf.Bytes()) {
+		t.Error("stored bytes differ from the uploaded PNG")
+	}
+	decoded, err := png.Decode(bytes.NewReader(stored.Bytes))
+	if err != nil {
+		t.Fatalf("decode stored png: %v", err)
+	}
+	_, _, _, a0 := decoded.At(0, 0).RGBA()
+	_, _, _, a1 := decoded.At(1, 0).RGBA()
+	if a0 != 0 {
+		t.Errorf("transparent pixel alpha = %d, want 0", a0)
+	}
+	if a1 != 0xffff {
+		t.Errorf("opaque pixel alpha = %d, want 65535", a1)
 	}
 }
 
