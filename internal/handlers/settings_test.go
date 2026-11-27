@@ -211,6 +211,12 @@ func TestSaveSettingsRejections(t *testing.T) {
 			f.Set("custom_section_header_en_0", "Header")
 			f.Set("custom_section_desktop_media_id_0", "987")
 		}},
+		{"custom section foreign body media", func(f url.Values) {
+			f.Set("custom_section_count", "1")
+			f.Set("custom_section_position_0", "2")
+			f.Set("custom_section_header_en_0", "Header")
+			f.Set("custom_section_body_image_media_id_0", "987")
+		}},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -355,6 +361,24 @@ func TestSaveSettingsCustomSections(t *testing.T) {
 		t.Errorf("sections after header+body save = %+v", sections)
 	}
 
+	// header + body image, no body text and no background
+	form = baseSettingsForm()
+	form.Set("custom_section_count", "1")
+	form.Set("custom_section_position_0", "4")
+	form.Set("custom_section_header_en_0", "Gallery")
+	form.Set("custom_section_body_image_0", pngDataURI(t, "gallery"))
+	status, _, _ = postForm(t, app, "/dashboard/settings", form)
+	if status != 302 {
+		t.Fatalf("header+body image save: status %d, want 302", status)
+	}
+	sections, err = database.GetCustomSections()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(sections) != 1 || sections[0].HeaderEn != "Gallery" || sections[0].BodyMediaID == 0 {
+		t.Errorf("sections after header+body image save = %+v", sections)
+	}
+
 	// clearing all cards wipes the table
 	form = baseSettingsForm()
 	form.Set("custom_section_count", "0")
@@ -368,6 +392,52 @@ func TestSaveSettingsCustomSections(t *testing.T) {
 	}
 	if len(sections) != 0 {
 		t.Errorf("sections after clear = %+v", sections)
+	}
+}
+
+func TestSaveSettingsCustomSectionBodyImageRemoved(t *testing.T) {
+	setupDB(t)
+	configureSettings(t, nil)
+	app := newTestApp()
+	defer app.Shutdown()
+
+	form := baseSettingsForm()
+	form.Set("custom_section_count", "1")
+	form.Set("custom_section_position_0", "2")
+	form.Set("custom_section_header_en_0", "Gallery")
+	form.Set("custom_section_body_image_0", pngDataURI(t, "gallery"))
+	status, _, _ := postForm(t, app, "/dashboard/settings", form)
+	if status != 302 {
+		t.Fatalf("save with body image: status %d, want 302", status)
+	}
+	sections, err := database.GetCustomSections()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(sections) != 1 || sections[0].BodyMediaID == 0 {
+		t.Fatalf("sections after save = %+v", sections)
+	}
+	oldBodyMediaID := sections[0].BodyMediaID
+
+	// save the same section again without the body image
+	form = baseSettingsForm()
+	form.Set("custom_section_count", "1")
+	form.Set("custom_section_position_0", "2")
+	form.Set("custom_section_header_en_0", "Gallery")
+	form.Set("custom_section_body_en_0", "Now with text instead")
+	status, _, _ = postForm(t, app, "/dashboard/settings", form)
+	if status != 302 {
+		t.Fatalf("save without body image: status %d, want 302", status)
+	}
+	sections, err = database.GetCustomSections()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(sections) != 1 || sections[0].BodyMediaID != 0 {
+		t.Errorf("sections after removal = %+v", sections)
+	}
+	if _, err := database.GetMedia(oldBodyMediaID); err == nil {
+		t.Error("removed body image media row still exists")
 	}
 }
 
