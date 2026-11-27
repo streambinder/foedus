@@ -531,6 +531,33 @@ func TestRenderDashboardPlaceMediaVariants(t *testing.T) {
 	}
 }
 
+func TestRenderDashboardCustomSectionBodyImage(t *testing.T) {
+	settings, content, _, _ := dashboardFixtures()
+	// a section with a body image renders the preview with its data-src;
+	// a section without one renders the hidden preview
+	content.CustomSections = []models.CustomSection{
+		{ID: 11, Position: 2, HeaderEn: "Gallery", BodyMediaID: 45},
+		{ID: 12, Position: 3, HeaderEn: "No image", BodyEn: "Text"},
+	}
+	out := render(t, Dashboard(settings, content, nil,
+		nil, 1, 1, 0, 0,
+		nil, 1, 1, nil,
+		nil, nil, 1, 1, "",
+		nil, nil, 1, 1,
+		0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0,
+		1, 1, "", "", "", "", i18n.NewT("en"), "en"))
+	for _, want := range []string{
+		`id="custom-section-body-image-preview-0"`,
+		`data-src="/media/45"`,
+		`id="custom-section-body-image-preview-1"`,
+	} {
+		if !strings.Contains(out, want) {
+			t.Errorf("custom section body image preview missing %q", want)
+		}
+	}
+}
+
 func TestRenderDashboardEmpty(t *testing.T) {
 	out := render(t, Dashboard(models.Settings{}, SettingsContent{}, nil,
 		nil, 1, 1, 0, 0,

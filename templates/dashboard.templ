@@ -1091,12 +1091,12 @@ templ SettingsResults(settings models.Settings, content SettingsContent, csrfTok
 					<h2 class="accordion-header" id="settings-custom-sections-heading">
 						<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-preserve-attr="class aria-expanded" data-bs-target="#settings-custom-sections-panel" aria-expanded="false" aria-controls="settings-custom-sections-panel">
 							<span class="settings-section-title">Custom Sections</span>
-							<span class="settings-section-description">Add your own homepage sections with a full-bleed background image, texts in both languages, and a position across all sections.</span>
+							<span class="settings-section-description">Add your own homepage sections with a full-bleed background image, an optional body image, texts in both languages, and a position across all sections.</span>
 						</button>
 					</h2>
 					<div id="settings-custom-sections-panel" class="accordion-collapse collapse" data-preserve-attr="class" data-dashboard-key="settings-custom-sections" aria-labelledby="settings-custom-sections-heading">
 						<div class="accordion-body settings-section-body">
-							<p class="muted">Positions count every homepage section, with the landing section at position 1. A section needs a header and a body text or a background image. Sections never replace the built-in ones.</p>
+							<p class="muted">Positions count every homepage section, with the landing section at position 1. A section needs a header and a body text, a background image, or a body image. Sections never replace the built-in ones.</p>
 							<input type="hidden" name="custom_section_count" id="custom-section-count" value={ strconv.Itoa(len(content.CustomSections)) }/>
 							<div id="custom-sections-container">
 								if len(content.CustomSections) > 0 {
@@ -1138,7 +1138,7 @@ templ SettingsResults(settings models.Settings, content SettingsContent, csrfTok
 											</div>
 											<div class="grid hero-background-grid">
 												<div>
-													<label>Desktop / horizontal</label>
+													<label>Background — Desktop / horizontal</label>
 													<div class="managed-image-field">
 														<input
 															type="file"
@@ -1163,7 +1163,7 @@ templ SettingsResults(settings models.Settings, content SettingsContent, csrfTok
 													</div>
 												</div>
 												<div>
-													<label>Mobile / vertical</label>
+													<label>Background — Mobile / vertical</label>
 													<div class="managed-image-field">
 														<input
 															type="file"
@@ -1186,6 +1186,31 @@ templ SettingsResults(settings models.Settings, content SettingsContent, csrfTok
 															<img class="hero-background-preview hero-background-preview-portrait" id={ "custom-section-mobile-preview-" + strconv.Itoa(idx) } style="display:none" alt="mobile background preview"/>
 														}
 													</div>
+												</div>
+											</div>
+											<div>
+												<label>Body image</label>
+												<div class="managed-image-field">
+													<input
+														type="file"
+														accept="image/*"
+														class="managed-image-file"
+														data-target-input={ "custom-section-body-image-data-" + strconv.Itoa(idx) }
+														data-preview-target={ "custom-section-body-image-preview-" + strconv.Itoa(idx) }
+														data-media-id-input={ "custom-section-body-image-media-id-" + strconv.Itoa(idx) }
+														data-format="image/jpeg"
+														data-quality="0.78"
+														data-max-width="1600"
+														data-max-height="1600"
+														data-max-bytes="262144"
+													/>
+													<input type="hidden" name={ fmt.Sprintf("custom_section_body_image_%d", idx) } id={ "custom-section-body-image-data-" + strconv.Itoa(idx) } class="custom-section-image-hidden"/>
+													<input type="hidden" name={ fmt.Sprintf("custom_section_body_image_media_id_%d", idx) } id={ "custom-section-body-image-media-id-" + strconv.Itoa(idx) } class="custom-section-media-id-hidden" value={ mediaIDValue(section.BodyMediaID) }/>
+													if section.BodyMediaID > 0 {
+														<img class="hero-background-preview dashboard-lazy-image" id={ "custom-section-body-image-preview-" + strconv.Itoa(idx) } data-src={ publicImageURL(section.BodyMediaID) } loading="lazy" decoding="async" alt="body image preview"/>
+													} else {
+														<img class="hero-background-preview" id={ "custom-section-body-image-preview-" + strconv.Itoa(idx) } style="display:none" alt="body image preview"/>
+													}
 												</div>
 											</div>
 										</div>
@@ -1231,7 +1256,7 @@ templ SettingsResults(settings models.Settings, content SettingsContent, csrfTok
 									</div>
 									<div class="grid hero-background-grid">
 										<div>
-											<label>Desktop / horizontal</label>
+											<label>Background — Desktop / horizontal</label>
 											<div class="managed-image-field">
 												<input
 													type="file"
@@ -1252,7 +1277,7 @@ templ SettingsResults(settings models.Settings, content SettingsContent, csrfTok
 											</div>
 										</div>
 										<div>
-											<label>Mobile / vertical</label>
+											<label>Background — Mobile / vertical</label>
 											<div class="managed-image-field">
 												<input
 													type="file"
@@ -1271,6 +1296,27 @@ templ SettingsResults(settings models.Settings, content SettingsContent, csrfTok
 												<input type="hidden" name="custom_section_mobile_media_id___INDEX__" id="custom-section-mobile-media-id-__INDEX__" class="custom-section-media-id-hidden"/>
 												<img class="hero-background-preview hero-background-preview-portrait" id="custom-section-mobile-preview-__INDEX__" style="display:none" alt="mobile background preview"/>
 											</div>
+										</div>
+									</div>
+									<div>
+										<label>Body image</label>
+										<div class="managed-image-field">
+											<input
+												type="file"
+												accept="image/*"
+												class="managed-image-file"
+												data-target-input="custom-section-body-image-data-__INDEX__"
+												data-preview-target="custom-section-body-image-preview-__INDEX__"
+												data-media-id-input="custom-section-body-image-media-id-__INDEX__"
+												data-format="image/jpeg"
+												data-quality="0.78"
+												data-max-width="1600"
+												data-max-height="1600"
+												data-max-bytes="262144"
+											/>
+											<input type="hidden" name="custom_section_body_image___INDEX__" id="custom-section-body-image-data-__INDEX__" class="custom-section-image-hidden"/>
+											<input type="hidden" name="custom_section_body_image_media_id___INDEX__" id="custom-section-body-image-media-id-__INDEX__" class="custom-section-media-id-hidden"/>
+											<img class="hero-background-preview" id="custom-section-body-image-preview-__INDEX__" style="display:none" alt="body image preview"/>
 										</div>
 									</div>
 								</div>
@@ -1322,6 +1368,21 @@ templ SettingsResults(settings models.Settings, content SettingsContent, csrfTok
 												mobileMediaId.name = "custom_section_mobile_media_id_" + idx;
 												mobileMediaId.id = "custom-section-mobile-media-id-" + idx;
 												mobilePreview.id = "custom-section-mobile-preview-" + idx;
+											}
+
+											var bodyFile = card.querySelector('.managed-image-file[data-target-input^="custom-section-body-image-data-"]');
+											var bodyHidden = card.querySelector('.custom-section-image-hidden[id^="custom-section-body-image-data-"]');
+											var bodyMediaId = card.querySelector('.custom-section-media-id-hidden[id^="custom-section-body-image-media-id-"]');
+											var bodyPreview = card.querySelector('.hero-background-preview[id^="custom-section-body-image-preview-"]');
+											if (bodyFile && bodyHidden && bodyMediaId && bodyPreview) {
+												bodyFile.dataset.targetInput = "custom-section-body-image-data-" + idx;
+												bodyFile.dataset.previewTarget = "custom-section-body-image-preview-" + idx;
+												bodyFile.dataset.mediaIdInput = "custom-section-body-image-media-id-" + idx;
+												bodyHidden.name = "custom_section_body_image_" + idx;
+												bodyHidden.id = "custom-section-body-image-data-" + idx;
+												bodyMediaId.name = "custom_section_body_image_media_id_" + idx;
+												bodyMediaId.id = "custom-section-body-image-media-id-" + idx;
+												bodyPreview.id = "custom-section-body-image-preview-" + idx;
 											}
 										});
 										countInput.value = cards.length;

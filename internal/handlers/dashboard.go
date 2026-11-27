@@ -622,6 +622,7 @@ func collectExistingMediaIDs(settings models.Settings, content templates.Setting
 	for _, section := range content.CustomSections {
 		add(section.DesktopMediaID)
 		add(section.MobileMediaID)
+		add(section.BodyMediaID)
 	}
 	return ids
 }
@@ -706,10 +707,10 @@ func parseHeroBackgrounds(c *fiber.Ctx, q database.Querier, logger *slog.Logger,
 }
 
 // parseCustomSections reads the declared custom-section cards. A card with
-// every text field empty, no position, and no media on either side is
+// every text field empty, no position, and no media on any side is
 // skipped; any other card must have a header in at least one language, a
-// body or a background image in at least one language, and a position of 1
-// or above — otherwise the whole save is rejected.
+// body, a background image, or a body image in at least one language, and
+// a position of 1 or above — otherwise the whole save is rejected.
 func parseCustomSections(c *fiber.Ctx, q database.Querier, logger *slog.Logger, existingMediaIDs map[int]struct{}) ([]models.CustomSection, error) {
 	declared, _ := strconv.Atoi(c.FormValue("custom_section_count"))
 	var sections []models.CustomSection
@@ -735,16 +736,23 @@ func parseCustomSections(c *fiber.Ctx, q database.Querier, logger *slog.Logger, 
 			logger.Warn("settings save rejected", "field", fmt.Sprintf("custom_section_mobile_%d", index), "error", err.Error())
 			return nil, err
 		}
-		if headerIt == "" && headerEn == "" && subtitleIt == "" && subtitleEn == "" && bodyIt == "" && bodyEn == "" && rawPosition == "" && desktopMediaID == 0 && mobileMediaID == 0 {
+		bodyMediaID, err := resolveImageMediaIDFromSet(q,
+			c.FormValue(fmt.Sprintf("custom_section_body_image_%d", index)),
+			c.FormValue(fmt.Sprintf("custom_section_body_image_media_id_%d", index)), existingMediaIDs)
+		if err != nil {
+			logger.Warn("settings save rejected", "field", fmt.Sprintf("custom_section_body_image_%d", index), "error", err.Error())
+			return nil, err
+		}
+		if headerIt == "" && headerEn == "" && subtitleIt == "" && subtitleEn == "" && bodyIt == "" && bodyEn == "" && rawPosition == "" && desktopMediaID == 0 && mobileMediaID == 0 && bodyMediaID == 0 {
 			continue
 		}
 		if headerIt == "" && headerEn == "" {
 			logger.Warn("settings save rejected", "field", fmt.Sprintf("custom_section_header_%d", index))
 			return nil, fiber.NewError(400, "custom section needs a header")
 		}
-		if bodyIt == "" && bodyEn == "" && desktopMediaID == 0 && mobileMediaID == 0 {
+		if bodyIt == "" && bodyEn == "" && desktopMediaID == 0 && mobileMediaID == 0 && bodyMediaID == 0 {
 			logger.Warn("settings save rejected", "field", fmt.Sprintf("custom_section_body_%d", index))
-			return nil, fiber.NewError(400, "custom section needs a body or a background image")
+			return nil, fiber.NewError(400, "custom section needs a body, a background image, or a body image")
 		}
 		position, err := strconv.Atoi(rawPosition)
 		if err != nil || position < 1 {
@@ -761,6 +769,7 @@ func parseCustomSections(c *fiber.Ctx, q database.Querier, logger *slog.Logger, 
 			BodyEn:         bodyEn,
 			DesktopMediaID: desktopMediaID,
 			MobileMediaID:  mobileMediaID,
+			BodyMediaID:    bodyMediaID,
 		})
 	}
 	// guard against a silent wipe: if the form claimed N section cards but

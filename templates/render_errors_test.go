@@ -121,13 +121,14 @@ func TestRenderWriteErrorSweeps(t *testing.T) {
 		{ID: 3, Title: "Plain", Artist: "Artist"},
 	}
 	// every custom-section card shape the settings accordion renders:
-	// both images, desktop-only, mobile-only, and no media, mirroring
-	// the hero-backgrounds fixture shapes above
+	// both images, desktop-only, mobile-only, body image, and no media,
+	// mirroring the hero-backgrounds fixture shapes above
 	content.CustomSections = []models.CustomSection{
 		{ID: 7, Position: 2, HeaderIt: "Titolo", HeaderEn: "Title", SubtitleEn: "Sub", BodyEn: "Body", DesktopMediaID: 41, MobileMediaID: 42},
 		{ID: 8, Position: 3, HeaderEn: "Desktop only", DesktopMediaID: 43},
 		{ID: 9, Position: 4, HeaderEn: "Mobile only", MobileMediaID: 44},
 		{ID: 10, Position: 5, HeaderEn: "No media", BodyEn: "Text"},
+		{ID: 11, Position: 6, HeaderEn: "Body image", BodyMediaID: 45},
 	}
 	sweepComponent(t, "dashboard full", Dashboard(settings, content, guests,
 		gifts, 2, 3, len(gifts), 80,
@@ -168,6 +169,9 @@ func TestRenderWriteErrorSweeps(t *testing.T) {
 	customPlan := planHomeSections("", nil, nil, false, homeContent.CustomSections, "en")
 	sweepComponent(t, "custom section full", CustomSection(homeContent.CustomSections[0], customPlan, "en"))
 	sweepComponent(t, "custom section plain", CustomSection(homeContent.CustomSections[2], customPlan, "en"))
+	// the body-image shape: without it the sweep never fails inside the
+	// <img> writes of the body image
+	sweepComponent(t, "custom section body image", CustomSection(models.CustomSection{ID: 11, Position: 6, HeaderEn: "Body image", BodyMediaID: 45}, customPlan, "en"))
 
 	inv, invPolls := invitationFixtures()
 	sweepComponent(t, "invitation form", Invitation(inv, fullSettings(), invPolls, false, false, i18n.NewT("en"), "en", ogMeta, "Title", ""))
