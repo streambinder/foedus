@@ -183,10 +183,11 @@ type HeroBackground struct {
 }
 
 // CustomSection is an admin-defined homepage section: a background image
-// pair (or none), a header, a subtitle, and a body text per language, and
-// a position counted across all homepage sections, with the landing
-// section at position 1. SortOrder is the dashboard form order; it
-// breaks ties between sections at the same position.
+// pair (or none), a single body image (or none), a header, a subtitle, and
+// a body text per language, and a position counted across all homepage
+// sections, with the landing section at position 1. SortOrder is the
+// dashboard form order; it breaks ties between sections at the same
+// position.
 type CustomSection struct {
 	ID             int
 	Position       int
@@ -198,6 +199,7 @@ type CustomSection struct {
 	BodyEn         string
 	DesktopMediaID int
 	MobileMediaID  int
+	BodyMediaID    int
 	SortOrder      int
 	CreatedAt      Timestamp
 }

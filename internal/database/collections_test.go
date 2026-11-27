@@ -807,8 +807,12 @@ func TestCustomSectionsRoundTrip(t *testing.T) {
 		t.Fatalf("empty custom sections = %+v", got)
 	}
 
+	bodyMediaID, err := InsertMedia(DB, "image/png", []byte("body-img"))
+	if err != nil {
+		t.Fatal(err)
+	}
 	if err := ReplaceCustomSections(DB, []models.CustomSection{
-		{Position: 2, HeaderIt: "Luna di miele", HeaderEn: "Honeymoon", BodyIt: "Il viaggio", DesktopMediaID: 0, MobileMediaID: 0},
+		{Position: 2, HeaderIt: "Luna di miele", HeaderEn: "Honeymoon", BodyIt: "Il viaggio", DesktopMediaID: 0, MobileMediaID: 0, BodyMediaID: bodyMediaID},
 		{Position: 5, HeaderIt: "Foto", HeaderEn: "Photos", SubtitleIt: "I ricordi", BodyEn: "Memories"},
 	}); err != nil {
 		t.Fatal(err)
@@ -822,6 +826,9 @@ func TestCustomSectionsRoundTrip(t *testing.T) {
 	}
 	if got[0].Position != 2 || got[0].BodyIt != "Il viaggio" || got[0].SortOrder != 0 || got[1].SortOrder != 1 {
 		t.Errorf("custom section fields = %+v", got)
+	}
+	if got[0].BodyMediaID != bodyMediaID || got[1].BodyMediaID != 0 {
+		t.Errorf("custom section body media ids = %d, %d", got[0].BodyMediaID, got[1].BodyMediaID)
 	}
 	if got[1].SubtitleIt != "I ricordi" || got[1].BodyEn != "Memories" || got[1].DesktopMediaID != 0 {
 		t.Errorf("custom section per-language fields = %+v", got)

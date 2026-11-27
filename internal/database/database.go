@@ -304,6 +304,7 @@ func migrate() {
 			body_en          TEXT NOT NULL DEFAULT '',
 			desktop_media_id INTEGER REFERENCES media(id),
 			mobile_media_id  INTEGER REFERENCES media(id),
+			body_media_id    INTEGER REFERENCES media(id),
 			sort_order       INTEGER NOT NULL DEFAULT 0,
 			created_at       INTEGER NOT NULL DEFAULT (unixepoch())
 		) STRICT`,
