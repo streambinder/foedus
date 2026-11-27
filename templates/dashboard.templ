@@ -1198,11 +1198,12 @@ templ SettingsResults(settings models.Settings, content SettingsContent, csrfTok
 														data-target-input={ "custom-section-body-image-data-" + strconv.Itoa(idx) }
 														data-preview-target={ "custom-section-body-image-preview-" + strconv.Itoa(idx) }
 														data-media-id-input={ "custom-section-body-image-media-id-" + strconv.Itoa(idx) }
+														data-preserve-alpha="true"
 														data-format="image/jpeg"
 														data-quality="0.78"
 														data-max-width="1600"
 														data-max-height="1600"
-														data-max-bytes="262144"
+														data-max-bytes="2097152"
 													/>
 													<input type="hidden" name={ fmt.Sprintf("custom_section_body_image_%d", idx) } id={ "custom-section-body-image-data-" + strconv.Itoa(idx) } class="custom-section-image-hidden"/>
 													<input type="hidden" name={ fmt.Sprintf("custom_section_body_image_media_id_%d", idx) } id={ "custom-section-body-image-media-id-" + strconv.Itoa(idx) } class="custom-section-media-id-hidden" value={ mediaIDValue(section.BodyMediaID) }/>
@@ -1308,11 +1309,12 @@ templ SettingsResults(settings models.Settings, content SettingsContent, csrfTok
 												data-target-input="custom-section-body-image-data-__INDEX__"
 												data-preview-target="custom-section-body-image-preview-__INDEX__"
 												data-media-id-input="custom-section-body-image-media-id-__INDEX__"
+												data-preserve-alpha="true"
 												data-format="image/jpeg"
 												data-quality="0.78"
 												data-max-width="1600"
 												data-max-height="1600"
-												data-max-bytes="262144"
+												data-max-bytes="2097152"
 											/>
 											<input type="hidden" name="custom_section_body_image___INDEX__" id="custom-section-body-image-data-__INDEX__" class="custom-section-image-hidden"/>
 											<input type="hidden" name="custom_section_body_image_media_id___INDEX__" id="custom-section-body-image-media-id-__INDEX__" class="custom-section-media-id-hidden"/>

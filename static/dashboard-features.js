@@ -1258,11 +1258,40 @@ initDashboardFeatures();
         );
         if (!targetInput) return;
 
+        // Inputs that opt in with data-preserve-alpha keep PNG uploads
+        // byte-identical: drawing a PNG onto a canvas and exporting it as
+        // JPEG flattens the alpha channel to black, and the server can never
+        // recover it. Only PNGs within the server cap skip the canvas; other
+        // files keep the resize path below.
+        const preserveAlpha = fileInput.dataset.preserveAlpha === "true";
+        const serverCapBytes = 5 * 1024 * 1024;
+        if (
+          preserveAlpha &&
+          file.type === "image/png" &&
+          file.size <= serverCapBytes
+        ) {
+          const reader = new FileReader();
+          reader.onload = () => {
+            targetInput.value = reader.result;
+            if (tokenInput) tokenInput.value = "";
+            if (previewImg) {
+              setPreviewImage(previewImg, reader.result);
+            }
+          };
+          reader.readAsDataURL(file);
+          return;
+        }
+
         const img = new Image();
         img.onload = () => {
           let w = img.width;
           let h = img.height;
-          const format = fileInput.dataset.format || "image/png";
+          // An oversize PNG still keeps its alpha while being downscaled:
+          // the canvas export below uses PNG instead of the JPEG default.
+          const format =
+            preserveAlpha && file.type === "image/png"
+              ? "image/png"
+              : fileInput.dataset.format || "image/png";
           const quality = parseFloat(fileInput.dataset.quality || "0.92");
           const maxBytes = parseInt(fileInput.dataset.maxBytes || "0", 10);
           const maxWidth = parseInt(fileInput.dataset.maxWidth || "0", 10);
